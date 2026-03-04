@@ -3,7 +3,7 @@
 // REQUIREMENTS:
   - Windows 10/11
   - Make sure you have Java Runtime installed from https://www.java.com/en/download/manual.jsp
-  - Make sure you are on Minecraft Java Edition on Version 1.20.3-1.20.6 (1.20.4 preferred)
+  - Make sure you are on Minecraft Java Edition on Version 1.20.0-1.20.6 (1.20.4 preferred)
 
 // BOT CREATION:
   - You need to have an application for the bot registered (preferably not on your main Twitch account) on the Twitch Developer Console (https://dev.twitch.tv/console)
@@ -12,7 +12,11 @@
 // TOKENS:
   - The file for tokens can be found at AppData --> Roaming --> TwitchCraftBot --> viewer_tokens.json
   - You can manually alter token amounts within this file for viewers as long as the bot is not active
-  - FORMAT: {"VIEWER_USER": TOKEN_AMOUNT, "VIEWER_USER": TOKEN_AMOUNT, "VIEWER_USER": TOKEN_AMOUNT}
+  - FORMAT: {
+			"VIEWER_NAME": TOKEN_AMOUNT,
+			"VIEWER_NAME": TOKEN_AMOUNT,
+			"VIEWER_NAME": TOKEN_AMOUNT
+			}
   - You only need the { and } at the start and end of the file respectively
   - If you manually alter token amounts, make sure you keep formatting correct
   - You can also give tokens to viewers while the bot is actively by sending commands in your Twitch chat (!givetokens [<user>] [<amount>] and !removetokens [<user>] [<amount>])
@@ -62,4 +66,4 @@
   - If you delete the config.json file, you must redo the bot setup
   - If you have a world on the TwitchCraft Minecraft server saved, it may be affected
 
-- Thank you to Lander for inspiration for this mod, with his original creation being BOTpercent_v2
+- Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!
