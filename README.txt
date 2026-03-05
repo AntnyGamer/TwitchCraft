@@ -66,4 +66,5 @@
   - If you delete the config.json file, you must redo the bot setup
   - If you have a world on the TwitchCraft Minecraft server saved, it may be affected
 
+- Commands for the bot can be found on https://rentry.co/bot-commands
 - Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!
