@@ -23,7 +23,7 @@
   - All viewers who have your Twitch stream open within the Twitch app or a browser tab will earn 1 token every 30-60 seconds
   
 // JDK17:
-  - If needed, you may need to download Java SE 17 (jdk17) at https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
+  - If needed, you may need to download Java SE 17 (jdk17) from https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
   - Use the Installer version of Java SE Development Kit 17 and make sure it is just version 17 and not 17.0.*
   
 // MULTIPLAYER:
@@ -68,3 +68,4 @@
 
 - Commands for the bot can be found on https://rentry.co/bot-commands
 - Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!
+
