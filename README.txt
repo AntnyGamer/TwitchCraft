@@ -42,7 +42,7 @@
 
 // IF YOU GET AN INVALID TOKEN OR LONG ERROR UPON STARTING:
   1. Get a new Twitch token by opening the file GetBotToken.exe
-  2. Input your Client ID and Client Secret (can be found on https://dev.twitch.tv/console after creating your bot)
+  2. Input your bot's Client ID (can be found on https://dev.twitch.tv/console after creating your bot)
   3. Input the Redirect URL which is http://localhost
   4. Paste the token into config.json (AppData --> Roaming --> TwitchCraftBot --> config.json) where it says "twitch_bottoken": "INSERT_TOKEN_HERE"
   5. If this doesn't work, make sure you followed the steps correctly. If it still errors, refer to the jdk17 instructions above as that is likely the issue
@@ -55,9 +55,9 @@
 // BOT CRASHING OR NO ERROR REASON:
   1. Check Task Manager to for any instances of the bot or javaw.exe already running and then close them
   2. Open config.json (AppData --> Roaming --> TwitchCraftBot --> config.json)
-  3. Find lines 22 and 23 ("StreamerName" and "BotName")
-  4. Ensure that the Twitch username of the account you are streaming on is correctly inputted on line 22
-  5. Ensure that the username of your Twitch bot is correctly inputted on line 23
+  3. Find lines 23 and 24 ("StreamerName" and "BotName")
+  4. Ensure that the Twitch username of the account you are streaming on is correctly inputted on line 23
+  5. Ensure that the username of your Twitch bot is correctly inputted on line 24
   6. If the crashing still persists, ensure you have all files that are associated with the bot installed and in the correct place
  
 // CHANGING THE BOT ACCOUNT OR APPLICATION:
@@ -68,4 +68,3 @@
 
 - Commands for the bot can be found on https://rentry.co/bot-commands
 - Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!
-
