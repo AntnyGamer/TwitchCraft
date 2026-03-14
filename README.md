@@ -20,7 +20,7 @@
     }
    - You only need the { and } at the start and end of the file respectively
    - If you manually alter token amounts, make sure you keep formatting correct
-   - You can also give tokens to viewers while the bot is active by sending commands in your Twitch chat (`!givetokens [<user>] [<amount>] and !removetokens [<user>] [<amount>]`)
+   - You can also give tokens to viewers while the bot is active by sending commands in your Twitch chat (`!givetokens [<user>] [<amount>]` and `!removetokens [<user>] [<amount>]`)
    - All viewers who have your Twitch stream open within the Twitch app or a browser tab will earn 1 token every 30–60 seconds
    
  **// JDK17:**
