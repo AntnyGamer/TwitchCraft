@@ -38,7 +38,7 @@
    4. Forward TCP port 25565 to your local IP
    5. Allow Java through Windows Firewall
    6. Friends connect using your PUBLIC IP (search "what is my ip" in a browser)
-   - If on the same WiFi, use your local IP instead
+If on the same WiFi, use your local IP instead
 
  // IF YOU GET AN INVALID TOKEN OR LONG ERROR UPON STARTING:
    1. Get a new Twitch token by opening the file GetBotToken.exe
@@ -66,8 +66,8 @@
    - If you delete the config.json file, you must redo the bot setup
    - If you have a world saved on the TwitchCraft Minecraft server, it may be affected
 
- - Commands for the bot can be found at https://rentry.co/bot-commands
- - Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!
+Commands for the bot can be found at https://rentry.co/bot-commands
+Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!
 
 Watch the trailer for the mod here!
-[![TwitchCraft - Trailer](https://img.youtube.com/vi/HM2Um3Uf1hk/0.jpg)](https://www.youtube.com/watch?v=HM2Um3Uf1hk)
+[TwitchCraft - Trailer](https://www.youtube.com/watch?v=HM2Um3Uf1hk)
