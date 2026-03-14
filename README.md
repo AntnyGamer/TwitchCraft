@@ -69,4 +69,4 @@
  - Commands for the bot can be found at https://rentry.co/bot-commands
  - Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!
 
-[![TwitchCraft - Trailer](https://img.youtube.com/vi/HM2Um3Uf1hk/0.jpg)](https://www.youtube.com/watch?v=VHM2Um3Uf1hk)
+[![TwitchCraft - Trailer](https://img.youtube.com/vi/HM2Um3Uf1hk/0.jpg)](https://www.youtube.com/watch?v=HM2Um3Uf1hk)
