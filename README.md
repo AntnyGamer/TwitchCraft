@@ -27,7 +27,7 @@
 
 **// JDK17:**
 - If needed, you may need to download Java SE 17 (jdk17) from https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
-- Use the Installer version of Java SE Development Kit 17 and make sure it is exactly version 17 and not 17.0.*
+- Use the Installer version of Java SE Development Kit 17 and make sure it is version 17 exactly, not 17.0.*
 
 **// MULTIPLAYER:**  
 <br>_Making your server multiplayer is harder than just checking the Multiplayer checkbox. These steps work for most home routers, but menu names and settings may vary:_
