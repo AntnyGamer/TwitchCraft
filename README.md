@@ -73,7 +73,7 @@ _Some ISPs or router setups may require extra steps_
 - If you have a world saved on the TwitchCraft Minecraft server, it may be affected
 
 _Commands for the bot can be found at https://rentry.co/bot-commands_  
-_Thank you to Lil_KleinStein for inspiration for this mod, with his Minecraft streams inspiring the theme and creation!_
+_Thank you to Lil_KleinStein for inspiration for this bot, with his Minecraft streams inspiring the theme and creation!_
 
 Watch the trailer for the mod here!  
 [TwitchCraft - Trailer](https://www.youtube.com/watch?v=HM2Um3Uf1hk)
