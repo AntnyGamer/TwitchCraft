@@ -3,7 +3,7 @@
 **// REQUIREMENTS:**
 - Windows 10/11
 - Make sure you have Java Runtime installed from https://www.java.com/en/download/manual.jsp
-- Make sure you are on Minecraft Java Edition version 1.20.0–1.20.6 (1.20.4 preferred)
+- Make sure you are on Minecraft Java Edition version 1.20.0–1.20.4 (1.20.4 preferred)
 
 **// BOT ACCOUNT AND APPLICATION SETUP:**
 - You need to register an application for the bot (should not be on your main Twitch account) on the Twitch Developer Console (https://dev.twitch.tv/console)
