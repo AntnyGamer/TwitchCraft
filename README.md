@@ -5,7 +5,7 @@
 - Make sure you have Java Runtime installed from https://www.java.com/en/download/manual.jsp
 - Make sure you are on Minecraft Java Edition version 1.20.0–1.20.6 (1.20.4 preferred)
 
-**// BOT CREATION:**
+**// BOT ACCOUNT AND APPLICATION SETUP:**
 - You need to register an application for the bot (should not be on your main Twitch account) on the Twitch Developer Console (https://dev.twitch.tv/console)
 - Ensure 2FA is enabled as it is necessary for registering an application
 - The OAuth Redirect URL of the bot should be http://localhost
@@ -20,16 +20,17 @@
 "VIEWER_NAME": TOKEN_AMOUNT,<br>
 "VIEWER_NAME": TOKEN_AMOUNT<br>
 }
+- Do not add a comma after the last entry
 - You only need the { and } at the start and end of the file respectively
 - If you manually adjust token amounts, make sure you keep formatting correct
 - You can also give tokens to viewers while the bot is active by sending commands in your Twitch chat (`!givetokens [<user>] [<amount>]` and `!removetokens [<user>] [<amount>]`)
-- All viewers who have your Twitch stream open within the Twitch app or a browser tab will earn 1 token every 30–60 seconds
+- All viewers who have your stream open in a browser or the Twitch app earn 1 token every 30–60 seconds.
 
 **// JDK17:**
 - If needed, you may need to download Java SE 17 (jdk17) from https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
-- Use the Installer version of Java SE Development Kit 17 and make sure it is version 17 exactly, not 17.0.*
+- Use the Windows x64 Installer version of Java SE Development Kit (JDK) 17. Any JDK 17.x version should work.
 
-**// MULTIPLAYER:**  
+**// MULTIPLAYER (NOT REQUIRED):**  
 <br>_Making your server multiplayer is harder than just checking the Multiplayer checkbox. These steps work for most home routers, but menu names and settings may vary:_
 1. Find your local IP and Default Gateway:
    1. Press Win + R
