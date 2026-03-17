@@ -3,7 +3,7 @@
 **// REQUIREMENTS:**
 - Windows 10/11
 - Make sure you have Java Runtime installed from https://www.java.com/en/download/manual.jsp
-- Make sure you are on Minecraft Java Edition version 1.20.0–1.20.4 (1.20.4 preferred)
+- Make sure you are on Minecraft Java Edition version 1.20.0–1.21.4 (1.20.4 preferred)
 
 **// BOT ACCOUNT AND APPLICATION SETUP:**
 - You need to register an application for the bot (should not be on your main Twitch account) on the Twitch Developer Console (https://dev.twitch.tv/console)
@@ -27,8 +27,12 @@
 - All viewers who have your stream open in a browser or the Twitch app earn 1 token every 30–60 seconds.
 
 **// JDK17:**
-- If needed, you may need to download Java SE 17 (jdk17) from https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
-- Use the Windows x64 Installer version of Java SE Development Kit (JDK) 17. Any JDK 17.x version should work.
+   - For versions 1.20.0–1.20.4, you may need to download Java SE 17 (jdk17) from https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
+   - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 17. Any JDK 17.x version should work.
+
+**// JDK21:**
+   - For versions 1.20.5–1.21.4, you may need to download Java SE 21 (jdk21) from https://www.oracle.com/java/technologies/downloads/#jdk21-windows
+   - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 21. Any JDK 21.x version should work.
 
 **// MULTIPLAYER (NOT REQUIRED):**  
 <br>_Making your server multiplayer is harder than just checking the Multiplayer checkbox. These steps work for most home routers, but menu names and settings may vary:_
@@ -52,7 +56,6 @@ _Some ISPs or router setups may require extra steps_
 2. Enter your bot's Client ID (can be found on https://dev.twitch.tv/console after creating your bot)
 3. Enter the Redirect URL, which is http://localhost
 4. Paste the token into config.json (AppData --> Roaming --> TwitchCraftBot --> config.json) where it says `"twitch_bottoken": "INSERT_TOKEN_HERE"`
-5. If this doesn't work, make sure you followed the steps correctly. If it still errors, refer to the JDK17 instructions above, as that is likely the issue
 
 **// MISSING OR NOT FOUND ERROR:**
 1. Open config.json (AppData --> Roaming --> TwitchCraftBot --> config.json)
@@ -65,7 +68,7 @@ _Some ISPs or router setups may require extra steps_
 3. Find lines 23 and 24 ("StreamerName" and "BotName")
 4. Ensure that the Twitch username of the account you are streaming on is correctly entered on line 23
 5. Ensure that the username of your Twitch bot is correctly entered on line 24
-6. If the crashing still persists, ensure you have all files associated with the bot installed and in the correct location
+6. If the crashing still persists, ensure you have all files associated with the bot installed and in the correct location, and refer to JDK17/21 instructions above
 
 **// CHANGING THE BOT ACCOUNT OR APPLICATION:**
 - When changing the account or application of your bot on the Twitch Developer Console, you must delete or update the config.json file
@@ -74,7 +77,7 @@ _Some ISPs or router setups may require extra steps_
 - If you have a world saved on the TwitchCraft Minecraft server, it may be affected
 
 _Commands for the bot can be found at https://rentry.co/bot-commands_  
-_Thank you to Lil_KleinStein for inspiration for this bot, with his Minecraft streams inspiring the theme and creation!_
+_Special thanks to Lil_KleinStein, whose Minecraft streams inspired the theme and creation of this bot._
 
 Watch the trailer for the mod here!  
 [TwitchCraft - Trailer](https://www.youtube.com/watch?v=HM2Um3Uf1hk)
