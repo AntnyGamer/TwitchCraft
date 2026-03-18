@@ -35,7 +35,7 @@
    - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 21. Any JDK 21.x version should work.
 
 **// MULTIPLAYER (NOT REQUIRED):**  
-<br>_Making your server multiplayer is harder than just checking the Multiplayer checkbox. These steps work for most home routers, but menu names and settings may vary:_
+_Making your server multiplayer is harder than just checking the Multiplayer checkbox. These steps work for most home routers, but menu names and settings may vary:_
 1. Find your local IP and Default Gateway:
    1. Press Win + R
    2. Type cmd
