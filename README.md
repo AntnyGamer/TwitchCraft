@@ -55,17 +55,17 @@ _Some ISPs or router setups may require extra steps_
 1. Get a new Twitch token by opening the file GetBotToken.exe
 2. Enter your bot's Client ID (can be found on https://dev.twitch.tv/console after creating your bot)
 3. Enter the Redirect URL, which is http://localhost
-4. Paste the token into config.json (AppData --> Roaming --> TwitchCraftBot --> config.json) where it says `"twitch_bottoken": "INSERT_TOKEN_HERE"`
+4. Paste the token into config.json (AppData --> Roaming --> TwitchCraftBot --> config.json) where it says `"BotToken": "INSERT_TOKEN_HERE"`
 
 **// MISSING OR NOT FOUND ERROR:**
 1. Open config.json (AppData --> Roaming --> TwitchCraftBot --> config.json)
-2. Find lines 13 and 14 ("ServerDirectory" and "JarPath")
-3. Ensure that your PC username is correctly entered both times where it says `C:\\Users\\YOUR_USER\\` (between `Users\\` and `\\AppData`)
+2. Find lines 12 and 13 ("ServerDirectory" and "JarPath")
+3. Ensure that your Windows username is correctly entered both times where it says `C:\\Users\\YOUR_USER\\` (between `Users\\` and `\\AppData`)
 
 **// BOT CRASHING OR NO ERROR REASON:**
 1. Check Task Manager for any instances of the bot or javaw.exe already running and close them
 2. Open config.json (AppData --> Roaming --> TwitchCraftBot --> config.json)
-3. Find lines 23 and 24 ("StreamerName" and "BotName")
+3. Find lines 22 and 23 ("StreamerName" and "BotName")
 4. Ensure that the Twitch username of the account you are streaming on is correctly entered on line 23
 5. Ensure that the username of your Twitch bot is correctly entered on line 24
 6. If the crashing still persists, ensure you have all files associated with the bot installed and in the correct location, and refer to JDK17/21 instructions above
