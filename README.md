@@ -34,6 +34,11 @@
    - For versions 1.20.5–1.21.4, you may need to download Java SE 21 (jdk21) from https://www.oracle.com/java/technologies/downloads/#jdk21-windows
    - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 21. Any JDK 21.x version should work.
 
+**// JOINING THE SERVER (AS THE STREAMER):**
+   1. Make sure you are on the same Minecraft version the bot is running on
+   2. On the Multiplayer tab, add a new server
+   3. The server address is 127.0.0.1 (unless you specified a different address)
+
 **// MULTIPLAYER (NOT REQUIRED):**  
 _Making your server multiplayer is harder than just checking the Multiplayer checkbox. These steps work for most home routers, but menu names and settings may vary:_
 1. Find your local IP and Default Gateway:
