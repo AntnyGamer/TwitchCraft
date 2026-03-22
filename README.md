@@ -58,7 +58,7 @@ _Some ISPs or router setups may require extra steps_
 
 **// FEATURES IN THE SERVER:**
 1. Any chat messages from your Twitch stream are sent into Minecraft
-2. Typing /trigger locateplayers in the Minecraft chat will allow you to see the coordinates of all players when in Multiplayer
+2. Typing `/trigger locateplayers` in the Minecraft chat will allow you to see the coordinates of all players when in Multiplayer
 3. A player list sidebar and player healthbars displayed in the tab list when in Multiplayer
 
 **// IF YOU GET AN INVALID TOKEN OR LONG ERROR UPON STARTING:**
