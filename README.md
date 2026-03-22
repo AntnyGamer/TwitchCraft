@@ -2,7 +2,7 @@
 
 **// REQUIREMENTS:**
 - Windows 10/11
-- Make sure you have Java Runtime installed from https://www.java.com/en/download/manual.jsp
+- Make sure you install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
 - Make sure you are on Minecraft Java Edition version 1.20.0–1.21.4 (1.20.4 preferred)
 
 **// BOT ACCOUNT AND APPLICATION SETUP:**
@@ -56,6 +56,11 @@ _Making your server multiplayer is harder than just checking the Multiplayer che
 _If on the same WiFi, use your local IP instead_  
 _Some ISPs or router setups may require extra steps_
 
+**// FEATURES IN THE SERVER:**
+1. Any chat messages from your Twitch stream are sent into Minecraft
+2. Typing /trigger locateplayers in the Minecraft chat will allow you to see the coordinates of all players when in Multiplayer
+3. A player list sidebar and player healthbars displayed in the tab list when in Multiplayer
+
 **// IF YOU GET AN INVALID TOKEN OR LONG ERROR UPON STARTING:**
 1. Get a new Twitch token by opening the file GetBotToken.exe
 2. Enter your bot's Client ID (can be found on https://dev.twitch.tv/console after creating your bot)
@@ -64,15 +69,15 @@ _Some ISPs or router setups may require extra steps_
 
 **// MISSING OR NOT FOUND ERROR:**
 1. Open config.json (AppData --> Roaming --> TwitchCraftBot --> config.json)
-2. Find lines 12 and 13 ("ServerDirectory" and "JarPath")
+2. Find the values for "ServerDirectory" and "JarPath"
 3. Ensure that your Windows username is correctly entered both times where it says `C:\\Users\\YOUR_USER\\` (between `Users\\` and `\\AppData`)
 
 **// BOT CRASHING OR NO ERROR REASON:**
 1. Check Task Manager for any instances of the bot or javaw.exe already running and close them
 2. Open config.json (AppData --> Roaming --> TwitchCraftBot --> config.json)
-3. Find lines 22 and 23 ("StreamerName" and "BotName")
-4. Ensure that the Twitch username of the account you are streaming on is correctly entered on line 23
-5. Ensure that the username of your Twitch bot is correctly entered on line 24
+3. Find the values for "StreamerName" and "BotName"
+4. Ensure that the Twitch username of the account you are streaming on is correctly entered
+5. Ensure that the username of your Twitch bot is correctly entered
 6. If the crashing still persists, ensure you have all files associated with the bot installed and in the correct location, and refer to JDK17/21 instructions above
 
 **// CHANGING THE BOT ACCOUNT OR APPLICATION:**
