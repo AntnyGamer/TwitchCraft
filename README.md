@@ -39,7 +39,7 @@
    2. On the Multiplayer tab, add a new server
    3. The server address is 127.0.0.1 (unless you specified a different address)
 
-**// MULTIPLAYER (NOT REQUIRED):**  
+**// MULTIPLAYER (NOT REQUIRED):**
 _Making your server multiplayer is harder than just checking the Multiplayer checkbox. These steps work for most home routers, but menu names and settings may vary:_
 1. Find your local IP and Default Gateway:
    1. Press Win + R
@@ -53,7 +53,7 @@ _Making your server multiplayer is harder than just checking the Multiplayer che
 6. Allow Java through Windows Firewall
 7. Friends connect using your PUBLIC IP (search "what is my ip" in a browser)
 
-_If on the same WiFi, use your local IP instead_  
+_If on the same WiFi, use your local IP instead_
 _Some ISPs or router setups may require extra steps_
 
 **// FEATURES IN THE SERVER:**
@@ -86,8 +86,8 @@ _Some ISPs or router setups may require extra steps_
 - If you delete the config.json file, you must redo the bot setup
 - If you have a world saved on the TwitchCraft Minecraft server, it may be affected
 
-_Commands for the bot can be found at https://rentry.co/bot-commands_  
+_Commands for the bot can be found at https://rentry.co/bot-commands_
 _Special thanks to Lil_KleinStein, whose Minecraft streams inspired the theme and creation of this bot!_
 
-Watch the trailer for the mod here!  
+Watch the trailer for the mod here:
 [TwitchCraft - Trailer](https://www.youtube.com/watch?v=HM2Um3Uf1hk)
