@@ -24,15 +24,15 @@
 - You only need the { and } at the start and end of the file respectively
 - If you manually adjust token amounts, make sure you keep formatting correct
 - You can also give tokens to viewers while the bot is active by sending commands in your Twitch chat (`!givetokens [<user>] [<amount>]` and `!removetokens [<user>] [<amount>]`)
-- All viewers who have your stream open in a browser or the Twitch app earn 1 token every 30–60 seconds.
+- All viewers who have your stream open in a browser or the Twitch app earn 1 token every 30–60 seconds
 
 **// JDK17:**
    - For versions 1.20.0–1.20.4, you may need to download Java SE 17 (jdk17) from https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
-   - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 17. Any JDK 17.x version should work.
+   - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 17. Any JDK 17.x version should work
 
 **// JDK21:**
    - For versions 1.20.5–1.21.4, you may need to download Java SE 21 (jdk21) from https://www.oracle.com/java/technologies/downloads/#jdk21-windows
-   - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 21. Any JDK 21.x version should work.
+   - Use the Windows x64 Installer version of Java SE Development Kit (JDK) 21. Any JDK 21.x version should work
 
 **// JOINING THE SERVER (AS THE STREAMER):**
    1. Make sure you are on the same Minecraft version the bot is running on
@@ -87,7 +87,7 @@ _Some ISPs or router setups may require extra steps_
 - If you have a world saved on the TwitchCraft Minecraft server, it may be affected
 
 _Commands for the bot can be found at https://rentry.co/bot-commands_  
-_Special thanks to Lil_KleinStein, whose Minecraft streams inspired the theme and creation of this bot._
+_Special thanks to Lil_KleinStein, whose Minecraft streams inspired the theme and creation of this bot!_
 
 Watch the trailer for the mod here!  
 [TwitchCraft - Trailer](https://www.youtube.com/watch?v=HM2Um3Uf1hk)
