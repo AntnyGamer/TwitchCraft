@@ -177,7 +177,7 @@ _Notes:_
 - TwitchCraft website: https://antnygamer.wixsite.com/twitchcraft
 - TwitchCraft commands: https://rentry.co/bot-commands
 - TwitchCraft trailer: https://www.youtube.com/watch?v=HM2Um3Uf1hk
-- TwitchCraft setup tutorial: https://bit.ly/twitchcraft_tutorial
+- TwitchCraft setup tutorial: https://bit.ly/twitchcraft-tutorial
 
 **// OTHER INFO:**
 - Special thanks to Lil_KleinStein, whose Minecraft streams inspired the theme and creation of TwitchCraft!
