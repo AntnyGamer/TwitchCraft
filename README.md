@@ -36,13 +36,13 @@
 
 **// JDK SETUP:**
 - For Minecraft versions 1.20.0–1.20.4:
-  - You may need Java SE 17 (JDK 17)
+  - You will need Java SE 17 (JDK 17)
   - Download: https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
   - Use the Windows x64 Installer version
   - Any JDK 17.x version should work
 
 - For Minecraft versions 1.20.5–1.21.4:
-  - You may need Java SE 21 (JDK 21)
+  - You will need Java SE 21 (JDK 21)
   - Download: https://www.oracle.com/java/technologies/downloads/#jdk21-windows
   - Use the Windows x64 Installer version
   - Any JDK 21.x version should work
@@ -81,7 +81,7 @@ _Enabling multiplayer in TwitchCraft does not automatically make your server pub
 
 _These steps work for most routers, but menu names and settings may vary:_
 
-1. Enable Multiplayer in TwitchCraft before starting the server
+1. Enable multiplayer in TwitchCraft before starting the server
 2. Find your local IP and Default Gateway
    1. Press Win + R
    2. Type: cmd
@@ -108,9 +108,9 @@ _Notes:_
 
 **// SERVER FEATURES:**
 - Twitch chat messages are sent into Minecraft
-- Typing `/trigger locateplayers` in Minecraft chat lets you see the coordinates of all players when in Multiplayer
-- A player list sidebar is shown in Multiplayer
-- Player healthbars are displayed in the tab list when in Multiplayer
+- Typing `/trigger locateplayers` in Minecraft chat lets you see the coordinates of all players when in multiplayer
+- A player list sidebar is shown in multiplayer
+- Player healthbars are displayed in the tab list when in multiplayer
 
 **// TOKENS:**
 - Token file location: AppData --> Roaming --> TwitchCraftBot --> viewer_tokens.json
@@ -137,7 +137,7 @@ _Notes:_
 **// TROUBLESHOOTING:**
 
 **INVALID TOKEN OR LONG ERROR ON STARTUP**
-1. Redo the steps of the Getting A Bot Token section
+1. Repeat the steps in the Getting A Bot Token section
 2. Paste the token into config.json at:
    AppData --> Roaming --> TwitchCraftBot --> config.json
 3. Replace:
