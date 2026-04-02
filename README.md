@@ -115,7 +115,7 @@ _Notes:_
 **// TROUBLESHOOTING:**
 
 **INVALID TOKEN OR LONG ERROR ON STARTUP**
-1. Redo the steps of the getting bot token section
+1. Redo the steps of the Getting A Bot Token section
 2. Paste the token into config.json at:
    AppData --> Roaming --> TwitchCraftBot --> config.json
 3. Replace:
@@ -128,8 +128,8 @@ _Notes:_
    - `"ServerDirectory"`
    - `"JarPath"`
 3. Make sure your Windows username is correctly entered both times in:
-   `C:\\Users\\YOUR_USER\\`
-   specifically between `Users\\` and `\\AppData`
+   <br>`C:\\Users\\YOUR_USER\\`
+   <br>specifically between `Users\\` and `\\AppData`
 
 **TWITCHCRAFT CRASHING OR NO ERROR REASON**
 1. Open Task Manager
