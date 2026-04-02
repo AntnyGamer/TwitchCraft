@@ -1,21 +1,17 @@
-**// TWITCHCRAFT BOT**
+**// TWITCHCRAFT BOT SCREENSHOT SHOWCASE**
 
 <p align="center">
   <img src="Screenshots/1TC_Setup.png" width="700">
 </p>
-
 <p align="center">
   <img src="Screenshots/2TC_Start.png" width="700">
 </p>
-
 <p align="center">
   <img src="Screenshots/3TC_Start_MP.png" width="700">
 </p>
-
 <p align="center">
   <img src="Screenshots/4TC_Main.png" width="700">
 </p>
-
 <p align="center">
   <img src="Screenshots/5TC_Settings.png" width="700">
 </p>
@@ -178,14 +174,10 @@ _Notes:_
 - If you have a saved world on the TwitchCraft Minecraft server, it may be affected
 
 **// LINKS:**
-- TwitchCraft website:
-  https://antnygamer.wixsite.com/twitchcraft
-- TwitchCraft commands:
-  https://rentry.co/bot-commands
-- TwitchCraft trailer:
-  https://www.youtube.com/watch?v=HM2Um3Uf1hk
-- TwitchCraft setup tutorial:
-  https://bit.ly/twitchcraft_tutorial
+- TwitchCraft website: https://antnygamer.wixsite.com/twitchcraft
+- TwitchCraft commands: https://rentry.co/bot-commands
+- TwitchCraft trailer: https://www.youtube.com/watch?v=HM2Um3Uf1hk
+- TwitchCraft setup tutorial: https://bit.ly/twitchcraft_tutorial
 
 **// OTHER INFO:**
 - Special thanks to Lil_KleinStein, whose Minecraft streams inspired the theme and creation of TwitchCraft!
