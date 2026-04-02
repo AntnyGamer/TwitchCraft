@@ -1,23 +1,23 @@
 **// TWITCHCRAFT BOT**
 
 <p align="center">
-  <img src="TwitchCraftBot1.png" width="700">
+  <img src="Screenshots/1TC_Setup.png" width="700">
 </p>
 
 <p align="center">
-  <img src="TwitchCraftBot2.png" width="700">
+  <img src="Screenshots/2TC_Start.png" width="700">
 </p>
 
 <p align="center">
-  <img src="TwitchCraftBot3.png" width="700">
+  <img src="Screenshots/3TC_Start_MP.png" width="700">
 </p>
 
 <p align="center">
-  <img src="TwitchCraftBot4.png" width="700">
+  <img src="Screenshots/4TC_Main.png" width="700">
 </p>
 
 <p align="center">
-  <img src="TwitchCraftBot5.png" width="700">
+  <img src="Screenshots/5TC_Settings.png" width="700">
 </p>
 
 **// HOW TO USE:**
