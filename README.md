@@ -1,3 +1,25 @@
+**// TWITCHCRAFT BOT**
+
+<p align="center">
+  <img src="TwitchCraftBot1.png" width="700">
+</p>
+
+<p align="center">
+  <img src="TwitchCraftBot2.png" width="700">
+</p>
+
+<p align="center">
+  <img src="TwitchCraftBot3.png" width="700">
+</p>
+
+<p align="center">
+  <img src="TwitchCraftBot4.png" width="700">
+</p>
+
+<p align="center">
+  <img src="TwitchCraftBot5.png" width="700">
+</p>
+
 **// HOW TO USE:**
 
 **// REQUIREMENTS:**
