@@ -21,7 +21,7 @@
 **// REQUIREMENTS:**
 - Windows 10/11
 - Install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
-- Use Minecraft Java Edition version 1.20.0–1.21.4 (1.20.4 preferred)
+- Use Minecraft Java Edition version 1.20.0–26.1.1 (1.20.4 preferred)
 
 **// BOT ACCOUNT SETUP:**
 - Register an application for the bot on the Twitch Developer Console (https://dev.twitch.tv/console)
@@ -37,11 +37,17 @@
   - Use the Windows x64 Installer version
   - Any JDK 17.x version should work
 
-- For Minecraft versions 1.20.5–1.21.4:
+- For Minecraft versions 1.20.5–1.21.11:
   - You will need Java SE 21 (JDK 21)
   - Download: https://www.oracle.com/java/technologies/downloads/#jdk21-windows
   - Use the Windows x64 Installer version
   - Any JDK 21.x version should work
+ 
+- For Minecraft versions 26.1–26.1.1:
+  - You will need Java SE 25 (JDK 25)
+  - Download: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
+  - Use the Windows x64 Installer version
+  - Any JDK 25.x version should work
 
 **// GETTING A BOT TOKEN:**
 1. Open GetBotToken.exe
@@ -165,7 +171,7 @@ _Notes:_
 8. If the crashing still continues, make sure:
    - All TwitchCraft files are installed
    - All files are in the correct location
-   - You followed the JDK 17 / JDK 21 instructions above
+   - You followed the Java / JDK Setup instructions above
 
 **// CHANGING THE BOT ACCOUNT OR APPLICATION:**
 - If you change the account or application used by your bot on the Twitch Developer Console, you must delete or update config.json
