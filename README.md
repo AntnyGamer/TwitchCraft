@@ -112,7 +112,7 @@ _Notes:_
 - Twitch chat messages are sent into Minecraft
 - Typing `/trigger locateplayers` in Minecraft chat lets you see the coordinates of all players when in multiplayer
 - A player list sidebar is shown in multiplayer
-- Player healthbars are displayed in the tab list when in multiplayer
+- Player health bars are displayed in the tab list when in multiplayer
 
 **// TOKENS:**
 - Token file location: AppData --> Roaming --> TwitchCraftBot --> viewer_tokens.json
