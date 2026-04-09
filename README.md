@@ -21,7 +21,7 @@
 **// REQUIREMENTS:**
 - Windows 10/11
 - Install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
-- Use Minecraft Java Edition version 1.20.0–26.1.1 (1.20.4 preferred)
+- Use Minecraft Java Edition version 1.20.0–26.1.2 (1.20.4 preferred)
 
 **// BOT ACCOUNT SETUP:**
 - Register an application for the bot on the Twitch Developer Console (https://dev.twitch.tv/console)
@@ -43,7 +43,7 @@
   - Use the Windows x64 Installer version
   - Any JDK 21.x version should work
  
-- For Minecraft versions 26.1–26.1.1:
+- For Minecraft versions 26.1–26.1.2:
   - You will need Java SE 25 (JDK 25)
   - Download: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
   - Use the Windows x64 Installer version
@@ -186,4 +186,4 @@ _Notes:_
 - TwitchCraft setup tutorial: https://bit.ly/twitchcraft-tutorial
 
 **// OTHER INFO:**
-- Special thanks to Lil_KleinStein, whose Minecraft streams inspired the theme and creation of TwitchCraft!
+- Special thanks to Lil_KleinStein, whose Minecraft streams inspired TwitchCraft's theme and creation!
