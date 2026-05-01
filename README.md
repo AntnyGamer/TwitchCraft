@@ -21,33 +21,33 @@
 **// REQUIREMENTS:**
 - Windows 10/11
 - Install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
-- Use Minecraft Java Edition version 1.20.0–26.1.2 (1.20.4 preferred)
+- Use Minecraft Java Edition version 1.20.0–26.1.2
 
 **// BOT ACCOUNT SETUP:**
-- Register an application for the bot on the Twitch Developer Console (https://dev.twitch.tv/console)
+- Register an application for the bot on the Twitch Developer Console: https://dev.twitch.tv/console
 - Do not use your main Twitch account for the bot if possible
 - Make sure 2FA is enabled, since it is required to register an application
-- Set the OAuth Redirect URL to http://localhost
+- Set the OAuth Redirect URL to: http://localhost
 - Add the bot as a moderator in your Twitch chat
 
-**// JDK SETUP:**
-- For Minecraft versions 1.20.0–1.20.4:
-  - You will need Java SE 17 (JDK 17)
-  - Download: https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
-  - Use the Windows x64 Installer version
-  - Any JDK 17.x version should work
+**// JAVA / JDK SETUP:**
+For Minecraft versions 1.20.0–1.20.4:
+- You will need Java SE 17 (JDK 17)
+- Download: https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
+- Use the Windows x64 Installer version
+- Any JDK 17.x version should work
 
-- For Minecraft versions 1.20.5–1.21.11:
-  - You will need Java SE 21 (JDK 21)
-  - Download: https://www.oracle.com/java/technologies/downloads/#jdk21-windows
-  - Use the Windows x64 Installer version
-  - Any JDK 21.x version should work
- 
-- For Minecraft versions 26.1–26.1.2:
-  - You will need Java SE 25 (JDK 25)
-  - Download: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
-  - Use the Windows x64 Installer version
-  - Any JDK 25.x version should work
+For Minecraft versions 1.20.5–1.21.11:
+- You will need Java SE 21 (JDK 21)
+- Download: https://www.oracle.com/java/technologies/downloads/#jdk21-windows
+- Use the Windows x64 Installer version
+- Any JDK 21.x version should work
+
+For Minecraft versions 26.1–26.1.2:
+- You will need Java SE 25 (JDK 25)
+- Download: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
+- Use the Windows x64 Installer version
+- Any JDK 25.x version should work
 
 **// GETTING A BOT TOKEN:**
 1. Open GetBotToken.exe
@@ -63,8 +63,8 @@
 4. Enter your:
    - Minecraft version
    - Server address
-   - Twitch bot token
    - Twitch Client ID
+   - Twitch bot token
    - Twitch channel / streamer name
    - Twitch bot name
 5. If you want to use an existing world, import it before starting
@@ -90,7 +90,7 @@ _These steps work for most routers, but menu names and settings may vary:_
    3. Type: ipconfig
    4. Find:
       - "IPv4 Address"
-      - the number-only "Default Gateway" (example: 192.168.1.1)
+      - the number-only "Default Gateway" example: 192.168.1.1
 3. Open your router login page
    - Type your Default Gateway into a browser
 4. Log in to your router
@@ -105,7 +105,7 @@ _These steps work for most routers, but menu names and settings may vary:_
    - Search "what is my ip" in a browser
 
 _Notes:_
-- If someone is on the same Wi-Fi as you, they should use your local IP instead
+- If someone is on the same network as you, they should use your local IP instead
 - Some ISPs or router setups may require extra steps
 
 **// SERVER FEATURES:**
@@ -186,4 +186,6 @@ _Notes:_
 - TwitchCraft setup tutorial: https://bit.ly/twitchcraft-tutorial
 
 **// OTHER INFO:**
+- Never share your Twitch bot token publicly. Anyone with the token may be able to control your bot account until the token is reset.
+- TwitchCraft creates backup config files (.bak). These are for reference and are not normally used by the app.
 - Special thanks to Lil_KleinStein, whose Minecraft streams inspired TwitchCraft's theme and creation!
