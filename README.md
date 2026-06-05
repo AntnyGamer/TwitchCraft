@@ -299,6 +299,6 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 
 ## 14. Other Info
 
-- Never share your Twitch bot token publicly. Anyone with the token may be able to act as your bot account until the token is reset.
-- TwitchCraft creates backup `.bak` config files. These are for reference and are not normally used by TwitchCraft.
+- Never share your Twitch bot token publicly. Anyone with the token may be able to act as your bot account until the token is reset
+- TwitchCraft creates backup `.bak` config files. These are for reference and are not normally used by TwitchCraft
 - Special thanks to Lil_KleinStein, whose Minecraft streams inspired TwitchCraft's theme and creation!
