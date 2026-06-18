@@ -59,7 +59,6 @@ For Minecraft versions **26.1–26.2.0**:
 
 1. Open `GetBotToken.exe`
 2. Enter your bot's Client ID
-
    * This can be found at: https://dev.twitch.tv/console
 3. Enter the Redirect URL: `http://localhost`
 4. Get a new Twitch token
@@ -70,7 +69,6 @@ For Minecraft versions **26.1–26.2.0**:
 2. Do not remove any files from the extracted folder
 3. Open `TwitchCraft.exe`
 4. Enter your:
-
    * Minecraft version
    * Server Bind IP
    * Twitch Client ID
@@ -85,11 +83,8 @@ For Minecraft versions **26.1–26.2.0**:
 ## 6. Joining The Server As The Streamer
 
 1. Make sure you are on the same Minecraft version TwitchCraft is running on
-
 2. Open the Multiplayer tab in Minecraft
-
 3. Add a new server
-
 4. Enter this server address:
 
    ```text
@@ -106,45 +101,100 @@ These steps work for most routers, but menu names and settings may vary:
 
 1. Enable multiplayer in TwitchCraft before starting the server
 2. Find your local IP and Default Gateway
-
    1. Press **Win + R**
    2. Type: `cmd`
    3. Type: `ipconfig`
    4. Find:
-
       * `"IPv4 Address"`
       * The number-only `"Default Gateway"` example: `192.168.1.1`
 3. Open your router login page
-
    * Type your Default Gateway into a browser
 4. Log in to your router
-
    * You may need your router username and password
 5. Find the router setting named one of the following:
-
    * Port Forwarding
    * NAT
    * Virtual Server
 6. Forward TCP port `25565` to your local IP
 7. Allow Java through Windows Firewall
 8. Have friends connect using your public IP
-
    * Search `"what is my ip"` in a browser
 
 **Notes:**
 
+* Only give your public IP to people that you trust
 * If someone is on the same network as you, they should use your local IP instead
-* Only give your local IP to people that you trust
 * Some ISPs or router setups may require extra steps
 
-## 8. Server Features
+## 8. Remote Control Mode (Optional)
+
+Remote Control Mode lets TwitchCraft control an already-running Minecraft server instead of starting its own local server.
+
+Use this mode if:
+
+* Your Minecraft server is hosted by a server host or on another computer
+* You want to collaborate with one or more Twitch streamers
+* You want TwitchCraft to control an existing server through RCON
+
+**Important:**
+
+* The remote Minecraft server must already be running
+* The remote Minecraft server must have RCON enabled
+* TwitchCraft must be able to reach the remote server's RCON port
+* Remote Control Mode does not start or stop the remote Minecraft server for you
+
+On the computer or host running the Minecraft server:
+
+1. Open `server.properties`
+2. Make sure these settings exist:
+
+   ```properties
+   enable-rcon=true
+   rcon.port=25575
+   rcon.password=YOUR_PASSWORD_HERE
+   ```
+
+3. Replace `YOUR_PASSWORD_HERE` with a strong private password
+4. Save `server.properties`
+5. Restart the Minecraft server
+6. Make sure the RCON port is allowed through the server firewall if needed
+
+In TwitchCraft as the remote user:
+
+1. Open TwitchCraft
+2. Go to the Start screen
+3. Press **Ctrl + Alt + R**
+4. Remote Control Mode will appear
+5. Enter the Remote Host
+   * Use the server's public IP or domain if the server is hosted somewhere else
+   * Use the server's local IP if the server is on your home network
+   * Use `127.0.0.1` if TwitchCraft is running on the same computer as the Minecraft server
+6. Enter the RCON Port
+   * The default port is `25575`
+   * This must match `rcon.port` in `server.properties`
+7. Enter the RCON Password
+   * This must match `rcon.password` in `server.properties`
+8. Enter your Minecraft username if asked
+9. Click **Start**
+
+To leave Remote Control Mode:
+
+* Press **Ctrl + Alt + R** again on the Start screen
+
+**Safety notes:**
+
+* Never share your RCON password publicly
+* Only allow RCON access from people or computers you trust
+* If you port forward RCON, use a strong password and understand the security risk
+
+## 9. Server Features
 
 * Twitch chat messages are sent into Minecraft
 * Typing `/trigger locateplayers` in Minecraft chat lets you see the coordinates of all players when in multiplayer
 * A player list sidebar is shown in multiplayer
 * Player health bars are displayed in the tab list when in multiplayer
 
-## 9. Tokens
+## 10. Tokens
 
 **Actual token file location:**
 
@@ -179,7 +229,7 @@ While TwitchCraft is active, you can use these Twitch chat commands:
 
 * All viewers who have your stream open in a browser or the Twitch app earn 1 token every 30–60 seconds
 
-## 10. Statistics
+## 11. Statistics
 
 **Statistics file location:**
 
@@ -215,90 +265,13 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 * Time survived
 * Sessions started
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
-### Invalid Token Or Long Error On Startup
+Troubleshooting has moved to a document for long-term use and dynamic updating.
 
-1. Repeat the steps in the **Getting A Bot Token** section
+* Troubleshooting guide: https://bit.ly/twitchcraft-troubleshooting
 
-2. Paste the token into `config.json` at:
-
-   ```text
-   AppData --> Roaming --> TwitchCraftBot --> config.json
-   ```
-
-3. Replace:
-
-   ```json
-   "BotToken": "INSERT_TOKEN_HERE"
-   ```
-
-### Missing Or Not Found Error
-
-1. Open `config.json` at:
-
-   ```text
-   AppData --> Roaming --> TwitchCraftBot --> config.json
-   ```
-
-2. Find:
-
-   * `"ServerDirectory"`
-   * `"JarPath"`
-
-3. Make sure your Windows username is correctly entered both times in:
-
-   ```text
-   C:\Users\YOUR_USER\
-   ```
-
-   Specifically between `Users\` and `\AppData`.
-
-### Start Button Is Disabled
-
-1. Hover over the disabled Start button
-2. Read the tooltip telling you why TwitchCraft cannot start yet
-3. Make sure:
-
-   * Your Minecraft username is entered and valid
-   * The server address / port is valid
-   * A world import is not still running
-   * TwitchCraft is not already starting
-
-### TwitchCraft Crashing Or No Error Reason
-
-1. Open Task Manager
-
-2. Check for any existing instances of:
-
-   * `TwitchCraft.exe`
-   * `javaw.exe`
-   * `java.exe`
-
-3. Close them if they are already running
-
-4. Open `config.json` at:
-
-   ```text
-   AppData --> Roaming --> TwitchCraftBot --> config.json
-   ```
-
-5. Find:
-
-   * `"StreamerName"`
-   * `"BotName"`
-
-6. Make sure the Twitch username of the account you are streaming on is correctly entered
-
-7. Make sure the username of your Twitch bot is correctly entered
-
-8. If the crashing still continues, make sure:
-
-   * All TwitchCraft files are installed
-   * All files are in the correct location
-   * You followed the Java / JDK Setup instructions above
-
-## 12. Changing The Bot Account Or Application
+## 13. Changing The Bot Account Or Application
 
 * If you change the account or application used by your bot on the Twitch Developer Console, you must delete or update `config.json`
 * After doing this, restart TwitchCraft
@@ -306,14 +279,15 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 * If you have a saved world on the TwitchCraft Minecraft server, it may be affected
 * Changing the bot account does not delete `viewer_tokens.db` or `statistics.db`
 
-## 13. Links
+## 14. Links
 
 * TwitchCraft website: https://antnygamer.wixsite.com/twitchcraft
 * TwitchCraft commands: https://rentry.co/bot-commands
 * TwitchCraft trailer: https://www.youtube.com/watch?v=HM2Um3Uf1hk
 * TwitchCraft setup tutorial: https://bit.ly/twitchcraft-tutorial
+* TwitchCraft troubleshooting: https://bit.ly/twitchcraft-troubleshooting
 
-## 14. Other Info
+## 15. Other Info
 
 * Never share your Twitch bot token publicly. Anyone with the token may be able to control your bot account until the token is reset
 * TwitchCraft creates backup `.bak` config files. These are for reference and are not normally used by TwitchCraft
