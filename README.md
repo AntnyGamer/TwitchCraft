@@ -22,7 +22,7 @@
 
 * Windows 10/11
 * Install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
-* Use Minecraft Java Edition version 1.20.0–26.2.0
+* Use Minecraft Java Edition version 1.20.0–1.21.11 or 26.1–26.2.0
 
 ## 2. Bot Account Setup
 
@@ -70,7 +70,7 @@ For Minecraft versions **26.1–26.2.0**:
 3. Open `TwitchCraft.exe`
 4. Enter your:
    * Minecraft version
-   * Server Bind IP
+   * Server Bind IP (optional, advanced users only)
    * Twitch Client ID
    * Twitch bot token
    * Twitch channel / streamer name
@@ -80,7 +80,7 @@ For Minecraft versions **26.1–26.2.0**:
 6. If you want to use an existing world, import it before starting
 7. Click **Start**
 
-## 6. Joining The Server As The Streamer
+## 6. Joining The Server (As The Streamer)
 
 1. Make sure you are on the same Minecraft version TwitchCraft is running on
 2. Open the Multiplayer tab in Minecraft
@@ -95,7 +95,7 @@ For Minecraft versions **26.1–26.2.0**:
 
 ## 7. Multiplayer (Optional)
 
-Enabling multiplayer in TwitchCraft does not automatically make your server publicly reachable.
+Enabling multiplayer in TwitchCraft does not automatically make your server publicly reachable
 
 These steps work for most routers, but menu names and settings may vary:
 
@@ -106,7 +106,7 @@ These steps work for most routers, but menu names and settings may vary:
    3. Type: `ipconfig`
    4. Find:
       * `"IPv4 Address"`
-      * The number-only `"Default Gateway"` example: `192.168.1.1`
+      * The number-only `"Default Gateway"` (example: `192.168.1.1`)
 3. Open your router login page
    * Type your Default Gateway into a browser
 4. Log in to your router
@@ -117,7 +117,7 @@ These steps work for most routers, but menu names and settings may vary:
    * Virtual Server
 6. Forward TCP port `25565` to your local IP
 7. Allow Java through Windows Firewall
-8. Have friends connect using your public IP
+8. Have friends connect using your **PUBLIC IP**
    * Search `"what is my ip"` in a browser
 
 **Notes:**
@@ -128,7 +128,7 @@ These steps work for most routers, but menu names and settings may vary:
 
 ## 8. Remote Control Mode (Optional)
 
-Remote Control Mode lets TwitchCraft control an already-running Minecraft server instead of starting its own local server.
+Remote Control Mode lets TwitchCraft control an already-running Minecraft server instead of starting its own local server
 
 Use this mode if:
 
@@ -221,8 +221,8 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> viewer_tokens.json
 While TwitchCraft is active, you can use these Twitch chat commands:
 
 ```text
-!givetokens [<user>] [<amount>]
-!removetokens [<user>] [<amount>]
+!givetokens <user> <amount>
+!removetokens <user> <amount>
 ```
 
 **Token earning:**
@@ -248,7 +248,7 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 
 * Statistics can be enabled or disabled in Settings
 * Existing saved stats are still shown when statistics are disabled, but new stats are not counted
-* Reset Statistics clears the saved statistics after confirmation
+* Reset Statistics clears all of the saved statistics
 * Editing the exported statistics JSON files will not affect TwitchCraft
 * Do not edit `statistics.db` while TwitchCraft is active
 * If you manually adjust statistics, edit `statistics.db` with a SQLite editor while TwitchCraft is shut down
@@ -267,7 +267,7 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 
 ## 12. Troubleshooting
 
-Troubleshooting has moved to a document for long-term use and dynamic updating.
+Troubleshooting has moved to a document for long-term use and dynamic updating
 
 * Troubleshooting guide: https://bit.ly/twitchcraft-troubleshooting
 
