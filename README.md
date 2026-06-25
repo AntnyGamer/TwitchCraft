@@ -146,7 +146,7 @@ Use this mode if:
 On the computer or host running the Minecraft server:
 
 1. Open `server.properties`
-2. Make sure these settings exist:
+2. Find these settings:
 
    ```properties
    enable-rcon=true
