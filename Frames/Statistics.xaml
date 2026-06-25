@@ -1,0 +1,146 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraftBot_V1.Frames.Statistics" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <Style x:Key="StatHeaderText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Variable Display Semibold" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Foreground" Value="#FFFF1B1B" />
+        </Style>
+
+        <Style x:Key="StatLabelText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Variable Display Semibold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#FFC6C6C6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="StatValueText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </UserControl.Resources>
+    <Grid ClipToBounds="True">
+            <Rectangle IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,4" EndPoint="0,0">
+                        <GradientStop Color="#00000000" Offset="0" />
+                        <GradientStop Color="#DD000000" Offset="1" />
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"><Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True"><Button Width="100" Height="30" Content="Back" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="BackButton_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+
+            <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="306,18,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" Opacity="1" />
+                </TextBlock.Effect>
+            </TextBlock>
+
+            <Border Width="350" Height="326" BorderBrush="#FF5A5A5A" BorderThickness="2" Background="#EE202020" CornerRadius="8" Padding="12" Margin="-375,94,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="142" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Session" Style="{StaticResource StatHeaderText}" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Commands" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="SessionCommandsText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Most used" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="SessionMostUsedCommandText" Text="None yet" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Tokens spent" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="SessionTokensSpentText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Effects received" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="4" Grid.Column="1" x:Name="SessionEffectsText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="5" Grid.Column="1" x:Name="SessionDangerousText" Text="None yet" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="6" Grid.Column="1" x:Name="SessionNicestText" Text="None yet" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Deaths" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="7" Grid.Column="1" x:Name="SessionDeathsText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Time survived" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="8" Grid.Column="1" x:Name="SessionSurvivedText" Text="Waiting for join" Style="{StaticResource StatValueText}" />
+                </Grid>
+            </Border>
+
+            <Border Width="350" Height="326" BorderBrush="#FF5A5A5A" BorderThickness="2" Background="#EE202020" CornerRadius="8" Padding="12" Margin="375,94,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="142" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="25" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="All-Time" Style="{StaticResource StatHeaderText}" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Commands" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TotalCommandsText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Most used" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalMostUsedCommandText" Text="None yet" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Tokens spent" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TotalTokensSpentText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Effects received" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TotalEffectsText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="5" Grid.Column="1" x:Name="TotalDangerousText" Text="None yet" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="6" Grid.Column="1" x:Name="TotalNicestText" Text="None yet" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Deaths" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="7" Grid.Column="1" x:Name="TotalDeathsText" Text="0" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Longest survived" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="8" Grid.Column="1" x:Name="TotalLongestText" Text="None" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Shortest survived" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="9" Grid.Column="1" x:Name="TotalShortestText" Text="None" Style="{StaticResource StatValueText}" />
+
+                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Sessions" Style="{StaticResource StatLabelText}" />
+                    <TextBlock Grid.Row="10" Grid.Column="1" x:Name="TotalSessionsStartedText" Text="0" Style="{StaticResource StatValueText}" />
+                </Grid>
+            </Border>
+
+            <TextBlock Width="350" Height="15" TextAlignment="Center" Text="In-game statistics only apply to the username written in the config." FontFamily="Segoe UI Variable Display Semibold" FontSize="11" Foreground="#FFC6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="225,429,0,0" />
+
+            <Border x:Name="StatisticsDisabledBox" Width="484" Height="53" Background="#CCFFFFFF" CornerRadius="12" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="158,60,0,0">
+                <TextBlock x:Name="StatisticsDisabledText" Text="Statistics are disabled. Existing saved stats are shown, but new stats will not be counted." TextAlignment="Center" TextWrapping="Wrap" FontFamily="Segoe UI Variable Display Semibold" FontSize="20" Foreground="#FFFF4C4C" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="10,0" />
+            </Border>
+        </Grid></Viewbox></Grid></UserControl>

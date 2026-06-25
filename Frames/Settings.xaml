@@ -1,0 +1,100 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraftBot_V1.Frames.Settings" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <Grid ClipToBounds="True">
+        <Rectangle IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
+                    <GradientStop Color="#00000000" Offset="0" />
+                    <GradientStop Color="#DD000000" Offset="1" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
+                <Rectangle IsHitTestVisible="False" Width="703" Height="343" Fill="#FF656565" Stroke="Black" StrokeThickness="2" RadiusX="5" RadiusY="5" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,86,0,0" />
+
+                <Button Content="Back" Width="100" Height="30" Click="Back_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+
+                <TextBlock Text="SETTINGS" FontFamily="Cascadia Mono" FontSize="36" FontWeight="Bold" Margin="0,22,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" />
+                    </TextBlock.Effect>
+                </TextBlock>
+
+                <Button x:Name="GeneralCategoryButton" Content="General" Width="132" Height="30" Click="GeneralCategory_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="-300,99,0,0" />
+                <Button x:Name="GameplayCategoryButton" Content="Gameplay" Width="132" Height="30" Click="GameplayCategory_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Opacity="0.78" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,99,0,0" />
+                <Button x:Name="DangerousCategoryButton" Content="Dangerous" Width="132" Height="30" Click="DangerousCategory_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Opacity="0.78" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="300,99,0,0" />
+
+                <Grid x:Name="GeneralSettingsPage" Width="660" Height="270" Visibility="Visible" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,154,0,0">
+                    <TextBlock Text="GENERAL SETTINGS" FontFamily="Segoe UI Variable Display bold" FontSize="18" Foreground="#C6C6C6" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" />
+
+                    <TextBlock Text="Enable passive tokens earning?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,38,0,0" />
+                    <CheckBox x:Name="PassiveTokensCheckbox" IsChecked="True" Checked="PassiveTokensCheckbox_Changed" Unchecked="PassiveTokensCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="247,43,0,0" />
+
+                    <TextBlock Text="Enable statistics?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,72,0,0" />
+                    <CheckBox x:Name="StatisticsEnabledCheckbox" IsChecked="True" Checked="StatisticsEnabledCheckbox_Changed" Unchecked="StatisticsEnabledCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="149,77,0,0" />
+
+                    <TextBlock Width="392" Text="Allow Twitch moderators to use streamer commands?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,106,0,0" />
+                    <CheckBox x:Name="ModeratorCommandsCheckbox" Checked="ModeratorCommandsCheckbox_Changed" Unchecked="ModeratorCommandsCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="412,110,0,0" />
+
+                    <TextBlock Width="392" Text="Add global cooldown for game-affecting commands?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,140,0,0" />
+                    <CheckBox x:Name="GlobalCooldownCheckbox" Checked="GlobalCooldownCheckbox_Changed" Unchecked="GlobalCooldownCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="409,145,0,0" />
+                    <ComboBox x:Name="GlobalCooldownSecondsDropdown" Width="68" Height="26" Visibility="Collapsed" SelectionChanged="GlobalCooldownSecondsDropdown_SelectionChanged" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="361,140,0,0" />
+
+                    <TextBlock Width="320" Text="Relay non-command chat to Minecraft?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,174,0,0" />
+                    <CheckBox x:Name="NonCommandChatTellrawsCheckbox" IsChecked="True" Checked="NonCommandChatTellrawsCheckbox_Changed" Unchecked="NonCommandChatTellrawsCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="309,179,0,0" />
+                </Grid>
+
+                <Grid x:Name="GameplaySettingsPage" Width="660" Height="270" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,154,0,0">
+                    <TextBlock Text="GAMEPLAY SETTINGS" FontFamily="Segoe UI Variable Display bold" FontSize="18" Foreground="#C6C6C6" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top" />
+
+                    <TextBlock Text="Enable minigames?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,38,0,0" />
+                    <CheckBox x:Name="MinigamesCheckbox" IsChecked="True" Checked="MinigamesCheckbox_Changed" Unchecked="MinigamesCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="161,43,0,0" />
+
+                    <TextBlock Text="Cooldown between minigames (in minutes):" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,72,0,0" />
+                    <ComboBox x:Name="MinigameCooldownDropdown" Width="72" Height="26" SelectionChanged="MinigameCooldownDropdown_SelectionChanged" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="341,72,0,0" />
+
+                    <TextBlock Text="Enable PVP in multiplayer?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,106,0,0" />
+                    <CheckBox x:Name="PVPCheckbox" Checked="PVPCheckbox_Changed" Unchecked="PVPCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="214,111,0,0" />
+
+                    <TextBlock Text="Enable hardcore mode?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,140,0,0" />
+                    <CheckBox x:Name="HardcoreCheckbox" IsChecked="True" Checked="HardcoreCheckbox_Changed" Unchecked="HardcoreCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="193,145,0,0" />
+
+                    <TextBlock Text="Difficulty:" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,174,0,0" />
+                    <ComboBox x:Name="DifficultyDropdown" Width="100" Height="26" SelectionChanged="DifficultyDropdown_SelectionChanged" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="94,173,0,0">
+                        <ComboBoxItem Content="Easy" />
+                        <ComboBoxItem Content="Medium" />
+                        <ComboBoxItem Content="Hard" />
+                    </ComboBox>
+                </Grid>
+
+                <Grid x:Name="DangerousSettingsPage" Width="660" Height="236" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,145,0,0">
+                    <Border IsHitTestVisible="False" Width="660" Height="236" Background="#FF530000" BorderBrush="Black" BorderThickness="2" CornerRadius="5" Opacity="0.5" HorizontalAlignment="Left" VerticalAlignment="Top" />
+
+                    <TextBlock Text="DANGEROUS SETTINGS!" FontFamily="Segoe UI Variable Display bold" FontSize="18" Foreground="#C6C6C6" HorizontalAlignment="Center" VerticalAlignment="Top" FontWeight="Bold" Margin="0,10,0,0" />
+
+                    <TextBlock Text="Min RAM (GB):" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="37,48,0,0" />
+                    <TextBox x:Name="MinRamTextBox" Width="54" Height="26" TextChanged="RamTextBox_Changed" PreviewTextInput="NumbersOnly_PreviewTextInput" FontFamily="Arial Rounded MT Bold" FontSize="16" MaxLength="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="167,47,0,0" />
+
+                    <TextBlock Text="Max RAM (GB):" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="37,80,0,0" />
+                    <TextBox x:Name="MaxRamTextBox" Width="54" Height="26" TextChanged="RamTextBox_Changed" PreviewTextInput="NumbersOnly_PreviewTextInput" FontFamily="Arial Rounded MT Bold" FontSize="16" MaxLength="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="167,79,0,0" />
+
+                    <TextBlock Width="250" Text="RAM changes apply on next server start." TextWrapping="Wrap" FontFamily="Segoe UI Variable Display Semibold" FontSize="13" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="37,113,0,0" />
+
+                    <Button Content="Get A New Bot Token" Width="178" Height="30" Click="OpenGetBotToken_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="37,152,0,0" />
+                    <TextBlock Width="270" Text="Opens GetBotToken.exe so you can replace the saved bot token." TextWrapping="Wrap" FontFamily="Segoe UI Variable Display Semibold" FontSize="13" Foreground="#C6C6C6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="37,190,0,0" />
+
+                    <Button Content="Reset Statistics" Width="142" Height="30" Click="ResetStats_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="384,52,0,0" />
+                    <TextBlock Width="250" Text="Clears lifetime and session statistics for TwitchCraft." TextWrapping="Wrap" FontFamily="Segoe UI Variable Display Semibold" FontSize="13" Foreground="#C6C6C6" TextAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="330,87,0,0" />
+                    <Button Content="Delete Config" Width="122" Height="30" Click="DeleteConfig_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="394,141,0,0" />
+
+                    <TextBlock Width="250" Text="Deleting your config is equivalent to a factory reset." TextWrapping="Wrap" FontFamily="Segoe UI Variable Display Semibold" FontSize="13" Foreground="#C6C6C6" VerticalAlignment="Top" HorizontalAlignment="Left" TextAlignment="Center" Margin="330,179,0,0" />
+                </Grid>
+
+                <Button Content="Reset to Defaults" Width="140" Height="30" Click="ResetDefaults_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,393,0,0" />
+
+            </Grid>
+        </Viewbox>
+    </Grid>
+</UserControl>

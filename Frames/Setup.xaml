@@ -1,0 +1,95 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraftBot_V1.Frames.Setup" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="VersionItemTemplate">
+            <TextBlock Text="{Binding Label}" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid ClipToBounds="True">
+        <Rectangle IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
+                    <GradientStop Color="#00000000" Offset="0" />
+                    <GradientStop Color="#DD000000" Offset="1" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
+                <TextBlock x:Name="Title" Text="TwitchCraft Bot Setup" FontFamily="Cascadia Mono" FontSize="27.75" Foreground="Red" TextAlignment="Center" Margin="0,31,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" />
+
+                <TextBlock x:Name="JavaRequirementText" Width="90" Text="JDK 17 REQUIRED" FontFamily="Segoe UI Variable Display Semibold" FontSize="10" Foreground="#FFD6D6D6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,125,0,0" />
+
+                <TextBlock x:Name="MCVersion" Text="Minecraft Version:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,140,0,0" />
+
+                <TextBlock x:Name="InfoText" Text="Make sure all information is entered correctly." FontFamily="Segoe UI Variable Display Semibold" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="582,426,0,0" />
+
+                <ComboBox x:Name="MCVersionDropdown" Width="200" Height="33" FontFamily="Arial Rounded MT Bold" FontSize="16" SelectionChanged="MCVersionDropdown_SelectionChanged" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,133,0,0">
+                    <ComboBox.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" FontFamily="Segoe UI Variable Display Semibold" FontSize="15" Foreground="#111111" FontWeight="Bold" Margin="6,4,6,2" TextDecorations="Underline" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ComboBox.GroupStyle>
+                </ComboBox>
+
+                <CheckBox x:Name="MCVersionCheckbox" Content="Supported versions only" IsChecked="True" Checked="MCVersionCheckbox_CheckedChanged" Unchecked="MCVersionCheckbox_CheckedChanged" Foreground="White" Background="White" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="590,142,0,0" />
+
+                <TextBlock x:Name="MCBindIP" FontFamily="Segoe UI Variable Display Semibold" HorizontalAlignment="Left" VerticalAlignment="Top" Width="170" Margin="175,174,0,0">
+                <Run Text="Minecraft Bind IP:" FontSize="14" Foreground="White" />
+                <Run Text=" (advanced) " FontSize="10" Foreground="#FFD6D6D6" />
+                </TextBlock>
+
+                <TextBox x:Name="MCBindIPTextbox" Width="200" Height="30" Text="127.0.0.1" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,169,0,0" />
+
+                <TextBlock x:Name="ClientID" Text="Twitch Client ID:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,206,0,0" />
+
+                <PasswordBox x:Name="ClientIDPasswordBox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" PasswordChar="●" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,201,0,0" />
+
+                <TextBox x:Name="ClientIDTextbox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Hidden" IsUndoEnabled="False" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,201,0,0" />
+
+                <CheckBox x:Name="ClientIDCheckbox" Content="Show" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="590,208,0,0" />
+
+                <TextBlock x:Name="BotToken" Text="Twitch Bot Token:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,238,0,0" />
+
+                <Button x:Name="BotTokenHelpButton" Width="18" Height="18" Click="BotTokenHelpButton_Click" FontFamily="Segoe UI" FontSize="12" FontWeight="Bold" Content="?" Foreground="Black" Background="White" BorderBrush="#FF707070" BorderThickness="1" ToolTipService.ShowDuration="15000" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="146,238,0,0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Ellipse Fill="{TemplateBinding Background}" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1" Margin="0" SnapsToDevicePixels="False" />
+                                <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}" FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Margin="0,-1,0,0" IsHitTestVisible="False" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <Button.ToolTip>
+                        <ToolTip>
+                            <TextBlock Text="You can get your bot token through GetBotToken.exe (in the same folder as this .exe)." TextWrapping="Wrap" Width="220" />
+                        </ToolTip>
+                    </Button.ToolTip>
+                </Button>
+
+                <PasswordBox x:Name="BotTokenPasswordBox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" PasswordChar="●" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,233,0,0" />
+
+                <TextBox x:Name="BotTokenTextbox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Hidden" IsUndoEnabled="False" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,233,0,0" />
+
+                <CheckBox x:Name="BotTokenCheckbox" Content="Show" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="590,240,0,0" />
+
+                <TextBlock x:Name="TwitchUser" Text="Twitch Channel Name:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,270,0,0" />
+
+                <TextBox x:Name="TwitchUserTextbox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,265,0,0" />
+
+                <TextBlock x:Name="BotUser" Text="Twitch Bot Name:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,302,0,0" />
+
+                <TextBox x:Name="BotUserTextbox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,297,0,0" />
+
+                <Button x:Name="StartButton" Width="116" Height="51" Content="Start" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" Click="StartButton_Click" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,356,0,0" />
+
+            </Grid>
+        </Viewbox>
+    </Grid>
+</UserControl>
