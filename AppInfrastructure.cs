@@ -128,6 +128,12 @@ internal static class TextSegmentHelper
     }
 }
 
+internal enum FileReplaceMode
+{
+    Atomic,
+    Fallback
+}
+
 internal static class FileSystemHelper
 {
     public static string GetUniqueTempPath(string path)
@@ -144,7 +150,7 @@ internal static class FileSystemHelper
             Directory.CreateDirectory(directory);
     }
 
-    public static bool ReplaceOrMoveWithFallback(string tempPath, string targetPath, string? backupPath, string logMessage)
+    public static FileReplaceMode ReplaceOrMoveWithFallback(string tempPath, string targetPath, string? backupPath, string logMessage)
     {
         try
         {
@@ -153,7 +159,7 @@ internal static class FileSystemHelper
             else
                 File.Move(tempPath, targetPath);
 
-            return true;
+            return FileReplaceMode.Atomic;
         }
         catch (Exception ex)
         {
@@ -181,7 +187,7 @@ internal static class FileSystemHelper
                 TryDeleteFile(tempPath);
             }
 
-            return false;
+            return FileReplaceMode.Fallback;
         }
     }
 

@@ -269,7 +269,7 @@ public partial class Settings : UserControl
             await UpdateConfigAsync(config =>
             {
                 config.Settings.GlobalGameCommandCooldownEnabled = enabled;
-                if (enabled && !IsValidGlobalCooldownSeconds(config.Settings.GlobalGameCommandCooldownSeconds))
+                if (enabled && !TryGetGlobalCooldownLabel(config.Settings.GlobalGameCommandCooldownSeconds, out _))
                     config.Settings.GlobalGameCommandCooldownSeconds = DefaultGlobalCooldownSeconds;
             });
         }
@@ -326,7 +326,7 @@ public partial class Settings : UserControl
 
         bool PVPEnabled = PVPCheckbox.IsChecked == true;
         bool hardcoreEnabled = HardcoreCheckbox.IsChecked != false;
-        string difficulty = GetSelectedDifficulty();
+        string difficulty = ConfigurationStore.NormalizeDifficulty((DifficultyDropdown.SelectedItem as ComboBoxItem)?.Content as string);
 
         await UpdateConfigAsync(
             config =>
@@ -513,9 +513,6 @@ public partial class Settings : UserControl
         GlobalCooldownSecondsDropdown.SelectedItem = label;
     }
 
-    private static bool IsValidGlobalCooldownSeconds(double seconds)
-        => TryGetGlobalCooldownLabel(seconds, out _);
-
     private static bool TryGetGlobalCooldownLabel(double seconds, out string label)
     {
         foreach ((double optionSeconds, string optionLabel) in GlobalCooldownOptions)
@@ -584,7 +581,4 @@ public partial class Settings : UserControl
             _ => 1
         };
     }
-
-    private string GetSelectedDifficulty()
-        => ConfigurationStore.NormalizeDifficulty((DifficultyDropdown.SelectedItem as ComboBoxItem)?.Content as string);
 }

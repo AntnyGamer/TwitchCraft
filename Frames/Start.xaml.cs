@@ -30,7 +30,8 @@ public partial class Start : UserControl
     public Start()
     {
         InitializeComponent();
-        BotVersion.Text = "Bot Version: " + (typeof(Start).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "unknown");
+        string? botVersion = typeof(Start).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        BotVersion.Text = "Bot Version: " + (botVersion ?? "unknown").Split('+', 2)[0];
         Focusable = true;
         MCUserTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();
         RemoteHostTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();
@@ -195,6 +196,9 @@ public partial class Start : UserControl
     {
         try
         {
+            if (_launchClickInProgress || _worldImportInProgress)
+                return;
+
             TwitchCraftBot? parent = AppHelpers.GetParentBot(this);
             if (parent == null)
             {

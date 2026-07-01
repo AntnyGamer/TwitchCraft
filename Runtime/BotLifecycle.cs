@@ -210,7 +210,7 @@ public sealed partial class BotMainHandler
             _tokenStore.Load();
             EnsureStatisticsLoaded();
             Interlocked.Exchange(ref _serverExitExpected, 0);
-            ResetSessionState(resetStatistics);
+            ResetSessionState(false);
 
             _sessionCts = new CancellationTokenSource();
             CancellationToken token = _sessionCts.Token;
@@ -228,6 +228,10 @@ public sealed partial class BotMainHandler
                 await EnsureServerProcessStartedAsync(token).ConfigureAwait(false);
             }
 
+            _runtimeState = RuntimeState.Running;
+            if (resetStatistics || countSessionStarted) ResetStatisticsForNewSession();
+            if (countSessionStarted) RecordSessionStartedForStatistics();
+
             MinigameManager.StartMinigameLoops(this, token);
 
             if (!config.Settings.RemoteControlEnabled)
@@ -240,12 +244,6 @@ public sealed partial class BotMainHandler
             TrackSessionBackgroundTask(Task.Run(() => RunViewerRosterLoopAsync(token), token));
             TrackSessionBackgroundTask(Task.Run(() => RunPlayerRosterLoopAsync(token), token));
             TrackSessionBackgroundTask(Task.Run(() => RunPassiveRewardLoopAsync(token), token));
-
-            _runtimeState = RuntimeState.Running;
-            if (countSessionStarted)
-            {
-                RecordSessionStartedForStatistics();
-            }
 
             if (!config.Settings.RemoteControlEnabled)
                 TrackSessionBackgroundTask(Task.Run(() => WatchServerProcessExitAsync(token), token));

@@ -852,7 +852,7 @@ public sealed partial class BotMainHandler
             }
 
             string viewer = pair.Key;
-            if (viewer.Length == 0 || (excluded.Length > 0 && string.Equals(viewer, excluded, StringComparison.OrdinalIgnoreCase)))
+            if (excluded.Length > 0 && string.Equals(viewer, excluded, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }

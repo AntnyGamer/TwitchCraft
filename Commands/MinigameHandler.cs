@@ -46,7 +46,7 @@ public static partial class MinigameManager
                 maxSeconds.ToString(CultureInfo.InvariantCulture) +
                 " seconds for how long the chicken survives! Max " +
                 MaxMinigameBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
-                " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet [<amount>] [<seconds>])",
+                " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
                 cancellationToken).ConfigureAwait(false);
 
             await Task.Delay(ChickenRunBettingDelay, cancellationToken).ConfigureAwait(false);
@@ -158,7 +158,7 @@ public static partial class MinigameManager
             await ShowMinigameSubtitleAsync(runtime, "GUESS THE NUMBER", cancellationToken).ConfigureAwait(false);
             await SafeReplyAsync(
                 runtime,
-                "🔴 Guess The Number has started! Use !guess [<number>] to guess a number between " +
+                "🔴 Guess The Number has started! Use !guess <number> to guess a number between " +
                 minValue.ToString(CultureInfo.InvariantCulture) + " and " +
                 maxValue.ToString(CultureInfo.InvariantCulture) + ". If you win you will get free tokens! You have 60 seconds!",
                 cancellationToken).ConfigureAwait(false);
@@ -228,7 +228,7 @@ public static partial class MinigameManager
             await ShowMinigameSubtitleAsync(runtime, "WITHER BATTLE", cancellationToken).ConfigureAwait(false);
             await SafeReplyAsync(
                 runtime,
-                "🔴 A Wither Battle has started! Use !damagewither [<amount>] for the next 5 minutes. Your token bet is your damage dealt. The Wither has " +
+                "🔴 A Wither Battle has started! Use !damagewither <amount> for the next 5 minutes. Your token bet is your damage dealt. The Wither has " +
                 witherHealth.ToString(CultureInfo.InvariantCulture) +
                 " HP. Max " +
                 MaxMinigameBetPerPlayer.ToString(CultureInfo.InvariantCulture) +

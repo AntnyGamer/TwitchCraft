@@ -137,12 +137,9 @@ public sealed class ConfigurationStore
         for (int i = 0; i < host.Length; i++)
         {
             char c = host[i];
-            if (char.IsControl(c) || char.IsWhiteSpace(c))
+            if (char.IsControl(c) || char.IsWhiteSpace(c) || c is '/' or '\\')
                 return false;
         }
-
-        if (host.Contains('/') || host.Contains('\\'))
-            return false;
 
         if (!TryRemoveOptionalRemotePort(host, out string hostOnly))
             return false;
@@ -165,7 +162,8 @@ public sealed class ConfigurationStore
         int labelLength = 0;
         for (int i = 0; i < hostOnly.Length; i++)
         {
-            if (hostOnly[i] == '.')
+            char c = hostOnly[i];
+            if (c == '.')
             {
                 if (labelLength == 0 || labelLength > 63)
                     return false;
@@ -173,6 +171,9 @@ public sealed class ConfigurationStore
                 labelLength = 0;
                 continue;
             }
+
+            if (c != '-' && c != '_' && !char.IsAsciiLetterOrDigit(c))
+                return false;
 
             labelLength++;
         }
@@ -207,7 +208,7 @@ public sealed class ConfigurationStore
         }
 
         int colonIndex = host.LastIndexOf(':');
-        if (colonIndex > 0 && host.IndexOf(':') == colonIndex)
+        if (colonIndex > 0 && host.AsSpan(0, colonIndex).IndexOf(':') < 0)
         {
             ReadOnlySpan<char> portText = host.AsSpan(colonIndex + 1);
             if (IsValidPortText(portText))

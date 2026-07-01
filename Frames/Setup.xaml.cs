@@ -335,6 +335,9 @@ public partial class Setup : UserControl
                     ?? throw new InvalidOperationException("The selected version did not include a server download URL.");
                 string serverSha = (string?)server["sha1"]
                     ?? throw new InvalidOperationException("The selected version did not include a SHA-1 checksum.");
+                long? serverSize = (long?)server["size"];
+                if (!serverSize.HasValue || serverSize.Value <= 0)
+                    serverSize = null;
 
                 ConfigurationStore.CheckRootFolder();
                 string serverDir = Path.Combine(ConfigurationStore.WorkingDirectory, "MCServer");
@@ -348,7 +351,7 @@ public partial class Setup : UserControl
                 if (!ErrorHandling.ConfirmVerifyServerJar(this, MCVersion))
                     return;
 
-                await CheckServerJarAsync(SetupHttpClient, serverUrl, jarPath, serverSha, cancellationToken);
+                await CheckServerJarAsync(SetupHttpClient, serverUrl, jarPath, serverSha, serverSize, cancellationToken);
                 ErrorHandling.ShowVerificationMatched(this);
 
                 ServerPropertyEditor.CleanupUnusedServerJars(serverDir, jarPath);
@@ -398,7 +401,7 @@ public partial class Setup : UserControl
         return JObject.Parse(await SetupHttpClient.GetStringAsync(detailUri, cancellationToken));
     }
 
-    private static async Task CheckServerJarAsync(HttpClient http, string serverUrl, string jarPath, string expectedSha, CancellationToken cancellationToken)
+    private static async Task CheckServerJarAsync(HttpClient http, string serverUrl, string jarPath, string expectedSha, long? expectedSize, CancellationToken cancellationToken)
     {
         if (!IsValidSHA1Hex(expectedSha))
             throw new InvalidOperationException("The selected Minecraft server checksum was missing or invalid.");
@@ -407,7 +410,7 @@ public partial class Setup : UserControl
 
         if (File.Exists(jarPath))
         {
-            bool existingJarValid = await Task.Run(() => VerifySHA1Matches(jarPath, expectedSha), cancellationToken).ConfigureAwait(false);
+            bool existingJarValid = await Task.Run(() => VerifyServerJarMatches(jarPath, expectedSha, expectedSize), cancellationToken).ConfigureAwait(false);
             if (existingJarValid)
                 return;
         }
@@ -418,10 +421,10 @@ public partial class Setup : UserControl
         try
         {
             await DownloadServerJarAsync(http, downloadUri, tempPath, cancellationToken).ConfigureAwait(false);
-            await Task.Run(() => VerifySha1(tempPath, expectedSha), cancellationToken).ConfigureAwait(false);
-            bool atomicReplace = FileSystemHelper.ReplaceOrMoveWithFallback(tempPath, jarPath, backupPath, "Atomic server jar replace failed; falling back to copy");
-            if (!atomicReplace)
-                await Task.Run(() => VerifySha1(jarPath, expectedSha), cancellationToken).ConfigureAwait(false);
+            await Task.Run(() => VerifyServerJar(tempPath, expectedSha, expectedSize), cancellationToken).ConfigureAwait(false);
+            FileReplaceMode replaceMode = FileSystemHelper.ReplaceOrMoveWithFallback(tempPath, jarPath, backupPath, "Atomic server jar replace failed; falling back to copy");
+            if (replaceMode == FileReplaceMode.Fallback)
+                await Task.Run(() => VerifyServerJar(jarPath, expectedSha, expectedSize), cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is HttpRequestException || ex is InvalidOperationException)
         {
@@ -498,11 +501,14 @@ public partial class Setup : UserControl
         return true;
     }
 
-    private static bool VerifySHA1Matches(string filePath, string expectedSha)
+    private static bool VerifyServerJarMatches(string filePath, string expectedSha, long? expectedSize = null)
     {
         try
         {
             using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, DownloadBufferSize, FileOptions.SequentialScan);
+            if (expectedSize.HasValue && fs.Length != expectedSize.Value)
+                return false;
+
             string actual = Convert.ToHexStringLower(SHA1.HashData(fs));
             return string.Equals(actual, expectedSha, StringComparison.OrdinalIgnoreCase);
         }
@@ -513,10 +519,10 @@ public partial class Setup : UserControl
         }
     }
 
-    private static void VerifySha1(string filePath, string expectedSha)
+    private static void VerifyServerJar(string filePath, string expectedSha, long? expectedSize = null)
     {
-        if (!VerifySHA1Matches(filePath, expectedSha))
-            throw new InvalidOperationException("The downloaded server jar did not match the expected SHA-1.");
+        if (!VerifyServerJarMatches(filePath, expectedSha, expectedSize))
+            throw new InvalidOperationException("The downloaded server jar did not match the expected size or SHA-1 checksum.");
     }
 
     private static BotConfig BuildConfig(string MCVersion, string serverDir, string jarPath, string bindIP, string javaExe, string javaHome, string clientID, string botToken, string channel, string botUser)

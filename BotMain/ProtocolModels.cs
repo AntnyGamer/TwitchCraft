@@ -79,7 +79,7 @@ internal static class CommandUserHelper
 internal static class MinecraftNameHelper
 {
     internal static bool IsValidPlayerName(string? value)
-        => TryNormalizePlayerName(value, out _);
+        => !string.IsNullOrEmpty(value) && IsValidPlayerNameSegment(value.AsSpan().Trim());
 
     internal static bool TryNormalizePlayerName(string? value, out string normalized)
     {
