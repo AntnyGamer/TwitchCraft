@@ -20,7 +20,7 @@
 
 ## 1. Requirements
 
-* Windows 10/11
+* Windows 10/11 (64-bit)
 * Install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
 * Use Minecraft Java Edition version 1.20.0–1.21.11 or 26.1–26.2.0
 
@@ -118,7 +118,7 @@ These steps work for most routers, but menu names and settings may vary:
 6. Forward TCP port `25565` to your local IP
 7. Allow Java through Windows Firewall
 8. Have friends connect using your **PUBLIC IP**
-   * Search `"what is my ip"` in a browser
+   * Search `"what is my IP"` in a browser
 
 **Notes:**
 
@@ -189,7 +189,7 @@ To leave Remote Control Mode:
 
 ## 9. Server Features
 
-* Twitch chat messages are sent into Minecraft
+* Twitch chat messages are relayed into Minecraft
 * Typing `/trigger locateplayers` in Minecraft chat lets you see the coordinates of all players when in multiplayer
 * A player list sidebar is shown in multiplayer
 * Player health bars are displayed in the tab list when in multiplayer
@@ -212,7 +212,7 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> viewer_tokens.json
 
 * Viewer tokens are stored in `viewer_tokens.db`
 * The exported `viewer_tokens.json` file is only for viewing
-* Editing the exported JSON file will not affect TwitchCraft
+* Editing the exported JSON file will NOT affect TwitchCraft
 * Do not edit `viewer_tokens.db` while TwitchCraft is active
 * If you manually adjust tokens, edit `viewer_tokens.db` with a SQLite editor while TwitchCraft is shut down
 
@@ -274,10 +274,10 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 ## 13. Changing The Bot Account Or Application
 
 * If you change the account or application used by your bot on the Twitch Developer Console, you must delete or update `config.json`
-* After doing this, restart TwitchCraft
-* If you delete `config.json`, you must redo the bot setup
-* If you have a saved world on the TwitchCraft Minecraft server, it may be affected
 * Changing the bot account does not delete `viewer_tokens.db` or `statistics.db`
+* If you delete `config.json`, you must setup TwitchCraft again
+* After doing this, restart TwitchCraft
+* If you have a saved world on the TwitchCraft Minecraft server, it may be affected
 
 ## 14. Links
 
