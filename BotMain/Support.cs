@@ -8,7 +8,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    // ===== Active configuration helpers =====
+    // ===== Active config helpers =====
 
     private static BotConfig CloneConfig(BotConfig source)
     {
@@ -89,6 +89,9 @@ public sealed partial class BotMainHandler
             }
 
             SetActiveConfig(activeConfig);
+
+            if (!activeConfig.Settings.GlobalGameCommandCooldownEnabled)
+                ClearGlobalGameCommandCooldown();
 
             if (refreshMinigameLoops || minigamesEnabledChanged)
             {
@@ -176,8 +179,6 @@ public sealed partial class BotMainHandler
 
     private static bool IsEmptyCollection<T>(IEnumerable<T> values)
         => values is ICollection<T> { Count: 0 } || values is IReadOnlyCollection<T> { Count: 0 };
-
-    // ===== Shared catalogs =====
 
     private void RefreshCatalogLists()
     {

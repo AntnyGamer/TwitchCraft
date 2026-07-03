@@ -493,6 +493,12 @@ public sealed class ConfigurationStore
 
     public static string NormalizeRconPassword(string? value) => CleanText(value);
 
+    public static bool TryNormalizeRconPassword(string? value, out string password)
+    {
+        password = CleanText(value);
+        return password.Length > 0 && password.AsSpan().IndexOfAny('\r', '\n') < 0;
+    }
+
     private static string GetTempPath(string path) => path + ".tmp";
 }
 

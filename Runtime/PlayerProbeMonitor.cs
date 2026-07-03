@@ -74,7 +74,7 @@ public sealed partial class BotMainHandler
     private bool HasPendingRespawnPositionRequest(string playerName)
     {
         lock (_respawnPositionProbeGate)
-            return _pendingRespawnPositionRequests.ContainsKey(playerName);
+            return _pendingRespawnPositionRequests.TryGetValue(playerName, out _);
     }
 
     private static bool TryParseGamemodeAnnouncementLine(string line, out string playerName, out int gameType)
@@ -417,17 +417,17 @@ public sealed partial class BotMainHandler
         return waiters;
     }
 
-    private static async Task WaitForGameTypeBatchAsync(Dictionary<string, TaskCompletionSource<int?>> waiters, CancellationToken cancellationToken)
+    private static Task WaitForGameTypeBatchAsync(Dictionary<string, TaskCompletionSource<int?>> waiters, CancellationToken cancellationToken)
     {
         if (waiters.Count == 0)
-            return;
+            return Task.CompletedTask;
 
         Task<int?>[] tasks = new Task<int?>[waiters.Count];
         int index = 0;
         foreach (TaskCompletionSource<int?> waiter in waiters.Values)
             tasks[index++] = waiter.Task;
 
-        await Task.WhenAll(tasks).WaitAsync(cancellationToken).ConfigureAwait(false);
+        return Task.WhenAll(tasks).WaitAsync(cancellationToken);
     }
 
     private void CleanupCreatedGameTypeBatchWaiters(Dictionary<string, TaskCompletionSource<int?>> waiters, List<string> createdWaiterPlayers)

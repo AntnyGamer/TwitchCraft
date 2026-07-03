@@ -436,11 +436,10 @@ public partial class Settings : UserControl
             refreshMinigameLoops: true);
     }
 
-    private async Task UpdateBoolSettingIfReadyAsync(bool enabled, Action<BotConfig, bool> update, bool refreshMinigameLoops = false)
-    {
-        if (!_initializing)
-            await UpdateConfigAsync(config => update(config, enabled), refreshMinigameLoops: refreshMinigameLoops);
-    }
+    private Task UpdateBoolSettingIfReadyAsync(bool enabled, Action<BotConfig, bool> update, bool refreshMinigameLoops = false)
+        => _initializing
+            ? Task.CompletedTask
+            : UpdateConfigAsync(config => update(config, enabled), refreshMinigameLoops: refreshMinigameLoops);
 
     private async Task UpdateConfigAsync(Action<BotConfig> update, Action<BotConfig>? beforeSave = null, bool refreshMinigameLoops = false)
     {

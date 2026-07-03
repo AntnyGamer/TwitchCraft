@@ -13,8 +13,6 @@ public static partial class MinigameManager
     private static readonly TimeSpan ChickenRunBettingDelay = TimeSpan.FromMinutes(1.0);
     private static readonly TimeSpan WitherBattleDuration = TimeSpan.FromMinutes(5.0);
 
-    // ===== Shared minigame state =====
-
     private static readonly Lock MinigameGate = new();
     private static readonly Dictionary<BotMainHandler, ChickenRunState> ChickenRunStates = [];
     private static readonly Dictionary<BotMainHandler, GuessNumberState> GuessNumberStates = [];

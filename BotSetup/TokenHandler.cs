@@ -328,30 +328,24 @@ internal sealed class TokenHandler(string path)
 
         query.Append(");");
         command.CommandText = query.ToString();
-        HashSet<string> foundUsers = new(count, StringComparer.OrdinalIgnoreCase);
         using (SqliteDataReader reader = command.ExecuteReader())
         {
             while (reader.Read())
             {
                 string username = Normalize(reader.GetString(0));
                 if (username.Length == 0)
-                {
                     continue;
-                }
 
-                int balance = ClampTokenBalance(reader.GetInt64(1));
-                SetCachedBalanceNoLock(username, balance);
-                foundUsers.Add(username);
+                SetCachedBalanceNoLock(username, ClampTokenBalance(reader.GetInt64(1)));
+                _loadedUsers.Add(username);
             }
         }
 
         for (int i = 0; i < count; i++)
         {
             string username = users[startIndex + i];
-            if (!foundUsers.Contains(username))
-            {
+            if (!_loadedUsers.Contains(username))
                 SetCachedBalanceNoLock(username, 0);
-            }
 
             _loadedUsers.Add(username);
         }
@@ -401,14 +395,14 @@ internal sealed class TokenHandler(string path)
         if (balance <= 0)
         {
             using SqliteCommand delete = CreateDeleteBalanceCommand(connection, null);
-            delete.Parameters["$username"].Value = normalized;
+            delete.Parameters[0].Value = normalized;
             delete.ExecuteNonQuery();
             return;
         }
 
         using SqliteCommand upsert = CreateUpsertBalanceCommand(connection, null);
-        upsert.Parameters["$username"].Value = normalized;
-        upsert.Parameters["$balance"].Value = balance;
+        upsert.Parameters[0].Value = normalized;
+        upsert.Parameters[1].Value = balance;
         upsert.ExecuteNonQuery();
     }
 
@@ -435,13 +429,13 @@ internal sealed class TokenHandler(string path)
     {
         if (balance <= 0)
         {
-            delete.Parameters["$username"].Value = normalized;
+            delete.Parameters[0].Value = normalized;
             delete.ExecuteNonQuery();
             return;
         }
 
-        upsert.Parameters["$username"].Value = normalized;
-        upsert.Parameters["$balance"].Value = balance;
+        upsert.Parameters[0].Value = normalized;
+        upsert.Parameters[1].Value = balance;
         upsert.ExecuteNonQuery();
     }
 

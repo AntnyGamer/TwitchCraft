@@ -313,7 +313,6 @@ public sealed partial class BotMainHandler
         return [botID, broadcasterID];
     }
 
-    // ===== Public viewer roster helpers =====
     public List<string> GetKnownChattersSnapshot()
     {
         lock (_viewerGate)

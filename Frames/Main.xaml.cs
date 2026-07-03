@@ -192,13 +192,9 @@ public partial class Main : UserControl
     private void ClearQueuedFlush(bool isMinecraftLog)
     {
         if (isMinecraftLog)
-        {
             _minecraftFlushQueued = false;
-        }
         else
-        {
             _twitchFlushQueued = false;
-        }
     }
 
     private void SafeInvoke(Action action)

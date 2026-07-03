@@ -1,6 +1,10 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -10,7 +14,13 @@ namespace TwitchCraftBot_V1;
 internal static class ErrorHandling
 {
     private const string DefaultTitle = "TwitchCraftBot";
+    private const string LogFileName = "TwitchCraftBot.log";
+    private const long MaxLogBytes = 1_000_000;
+    private static readonly Lock LogGate = new();
+    private static readonly UTF8Encoding Utf8NoBom = new(false);
     private static bool _initialized;
+    private static bool _logInitialized;
+    private static StreamWriter? _logWriter;
 
     public static void Initialize(Application? application)
     {
@@ -18,6 +28,9 @@ internal static class ErrorHandling
             return;
 
         application.DispatcherUnhandledException += Application_DispatcherUnhandledException;
+        application.Exit += Application_Exit;
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
         _initialized = true;
     }
 
@@ -411,6 +424,7 @@ Do you want to reset the Bind IP to its default?";
     public static void LogNonFatal(string context, Exception? ex)
     {
         Trace.TraceWarning(FormatLogMessage(context, ex));
+        WriteLog("WARN", context, ex);
     }
 
     public static string FormatLogMessage(string context, SocketException ex)
@@ -418,9 +432,76 @@ Do you want to reset the Bind IP to its default?";
         return context + ": " + ex.SocketErrorCode;
     }
 
+    private static void WriteLog(string level, string context, Exception? ex)
+    {
+        EnsureLogInitialized();
+
+        string timestamp = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture);
+        string message = ex == null ? context : context + Environment.NewLine + ex;
+
+        try
+        {
+            lock (LogGate)
+            {
+                _logWriter?.WriteLine(timestamp + " [" + level + "] " + message);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static void EnsureLogInitialized()
+    {
+        if (_logInitialized)
+            return;
+
+        lock (LogGate)
+        {
+            if (_logInitialized)
+                return;
+
+            try
+            {
+                string directory = BotSetup.ConfigurationStore.WorkingDirectory;
+                Directory.CreateDirectory(directory);
+                string logPath = Path.Combine(directory, LogFileName);
+
+                if (File.Exists(logPath) && new FileInfo(logPath).Length > MaxLogBytes)
+                    File.Move(logPath, logPath + ".old", true);
+
+                _logWriter = new StreamWriter(new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), Utf8NoBom)
+                {
+                    AutoFlush = true
+                };
+            }
+            catch
+            {
+            }
+
+            _logInitialized = true;
+        }
+    }
+
+    private static void CloseLog()
+    {
+        try
+        {
+            lock (LogGate)
+            {
+                _logWriter?.Dispose();
+                _logWriter = null;
+            }
+        }
+        catch
+        {
+        }
+    }
+
     private static void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Exception? ex = e.Exception;
+        WriteLog("ERROR", "Unhandled UI exception", ex);
         string message;
 
         if (ex == null)
@@ -430,5 +511,20 @@ Do you want to reset the Bind IP to its default?";
 
         ShowError(null, "Unexpected Error", message);
         e.Handled = true;
+    }
+
+    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        WriteLog("ERROR", "Unhandled application exception", e.ExceptionObject as Exception);
+    }
+
+    private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        WriteLog("ERROR", "Unobserved task exception", e.Exception);
+    }
+
+    private static void Application_Exit(object sender, ExitEventArgs e)
+    {
+        CloseLog();
     }
 }

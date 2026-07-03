@@ -46,9 +46,9 @@ public sealed partial class BotMainHandler
         {
             this = default;
 
-            bool hasTcMarker = line.Contains("tc_", StringComparison.OrdinalIgnoreCase);
+            bool hasTcMarker = line.Contains("tc_", StringComparison.Ordinal);
             bool hasEntityData = line.Contains(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-            bool hasProbeMarkerStorage = line.Contains(ProbeMarkerStorage, StringComparison.OrdinalIgnoreCase);
+            bool hasProbeMarkerStorage = line.Contains(ProbeMarkerStorage, StringComparison.Ordinal);
             bool hasGameMode = line.Contains("game mode", StringComparison.OrdinalIgnoreCase);
             bool hasObjective = line.Contains("objective", StringComparison.OrdinalIgnoreCase);
             bool hasPlayerList = line.Contains("Player List", StringComparison.OrdinalIgnoreCase);
@@ -69,9 +69,9 @@ public sealed partial class BotMainHandler
             HasPlayerList = hasPlayerList;
             HasHealth = hasHealth;
             HasDisplaySlot = hasDisplaySlot;
-            HasTcPlayerList = hasTcMarker && line.Contains("tc_playerlist", StringComparison.OrdinalIgnoreCase);
-            HasTcHealth = hasTcMarker && line.Contains("tc_health", StringComparison.OrdinalIgnoreCase);
-            HasTcDeaths = hasTcMarker && line.Contains(DeathScoreObjective, StringComparison.OrdinalIgnoreCase);
+            HasTcPlayerList = hasTcMarker && line.Contains("tc_playerlist", StringComparison.Ordinal);
+            HasTcHealth = hasTcMarker && line.Contains("tc_health", StringComparison.Ordinal);
+            HasTcDeaths = hasTcMarker && line.Contains(DeathScoreObjective, StringComparison.Ordinal);
             hasAlreadyExists = hasObjective && line.Contains("already exists", StringComparison.OrdinalIgnoreCase);
             hasDoesNotExist = hasObjective && line.Contains("doesn't exist", StringComparison.OrdinalIgnoreCase);
         }

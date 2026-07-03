@@ -23,7 +23,7 @@
     <Grid ClipToBounds="True">
             <Rectangle IsHitTestVisible="False">
                 <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="0,4" EndPoint="0,0">
+                    <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
                         <GradientStop Color="#00000000" Offset="0" />
                         <GradientStop Color="#DD000000" Offset="1" />
                     </LinearGradientBrush>
@@ -32,7 +32,7 @@
 
         <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"><Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True"><Button Width="100" Height="30" Content="Back" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="BackButton_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="306,18,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="0,18,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <TextBlock.Effect>
                     <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" Opacity="1" />
                 </TextBlock.Effect>

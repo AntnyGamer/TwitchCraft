@@ -710,14 +710,6 @@ public sealed partial class BotMainHandler
 
         try
         {
-            socket.Close();
-        }
-        catch
-        {
-        }
-
-        try
-        {
             socket.Dispose();
         }
         catch
@@ -726,6 +718,7 @@ public sealed partial class BotMainHandler
     }
 
     // ===== Twitch chat output =====
+
     private static string NormalizeOutgoingChannelMessage(string message)
     {
         if (string.IsNullOrEmpty(message))

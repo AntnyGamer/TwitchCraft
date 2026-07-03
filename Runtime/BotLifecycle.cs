@@ -26,15 +26,20 @@ public sealed partial class BotMainHandler
             config.Server.RemoteHost = string.IsNullOrWhiteSpace(remoteHost) ? config.Server.RemoteHost : remoteHost.Trim();
             config.Server.RCON.Port = RCONPort;
             if (!string.IsNullOrWhiteSpace(RCONPassword))
-                config.Server.RCON.Password = RCONPassword.Trim();
+            {
+                if (!ConfigurationStore.TryNormalizeRconPassword(RCONPassword, out string normalizedRCONPassword))
+                    throw new InvalidOperationException("RCON password is invalid.");
+
+                config.Server.RCON.Password = normalizedRCONPassword;
+            }
         }
 
         ConfigurationStore.NormalizeForRuntime(config);
 
-        string trimmedMcUser = (streamerMinecraftName ?? string.Empty).Trim();
-        if (trimmedMcUser.Length > 0)
+        string trimmedMCUser = (streamerMinecraftName ?? string.Empty).Trim();
+        if (!string.IsNullOrEmpty(trimmedMCUser))
         {
-            config.Identity.StreamerMinecraftName = trimmedMcUser;
+            config.Identity.StreamerMinecraftName = trimmedMCUser;
         }
 
         string currentBind = ConfigurationStore.NormalizeBindIP(config.Server.BindIP);
@@ -216,7 +221,9 @@ public sealed partial class BotMainHandler
             CancellationToken token = _sessionCts.Token;
 
             lock (_backgroundTasksGate)
-                _backgroundTasks = [];
+            {
+                _backgroundTasks.Clear();
+            }
 
             if (config.Settings.RemoteControlEnabled)
             {
@@ -259,33 +266,26 @@ public sealed partial class BotMainHandler
             {
             }
 
-            CancellationTokenSource? failedSessionCts = _sessionCts;
-            _sessionCts = null;
+            var failedSessionCts = Interlocked.Exchange(ref _sessionCts, null);
 
-            try
-            {
-                failedSessionCts?.Cancel();
-            }
-            catch
-            {
-            }
-
-            try
-            {
-                failedSessionCts?.Dispose();
-            }
-            catch
-            {
-            }
+            failedSessionCts?.Cancel();
+            failedSessionCts?.Dispose();
 
             lock (_backgroundTasksGate)
-                _backgroundTasks = [];
+            {
+                _backgroundTasks.Clear();
+            }
+
             _runtimeState = RuntimeState.Stopped;
+
             SafeCloseIRCSocket();
+
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await SafeStopProcessAsync(false).ConfigureAwait(false);
+
             FlushStatisticsForShutdown();
             CloseDataStoreConnections();
+
             throw;
         }
         finally
@@ -349,7 +349,9 @@ public sealed partial class BotMainHandler
         finally
         {
             lock (_backgroundTasksGate)
-                _backgroundTasks = [];
+            {
+                _backgroundTasks.Clear();
+            }
             _sessionCts = null;
             if (sessionCts != null)
             {

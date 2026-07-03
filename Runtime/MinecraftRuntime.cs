@@ -140,7 +140,9 @@ public sealed partial class BotMainHandler
             CancellationTokenSource? sessionCts = _sessionCts;
             _sessionCts = null;
             lock (_backgroundTasksGate)
-                _backgroundTasks = [];
+            {
+                _backgroundTasks.Clear();
+            }
 
             ResetIRCQueues();
             MinigameManager.StopMinigameLoops(this, true);
@@ -289,10 +291,7 @@ public sealed partial class BotMainHandler
 
         try
         {
-            using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-            {
-            }
-
+            using FileStream _ = new(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
             return false;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -694,9 +693,10 @@ public sealed partial class BotMainHandler
         if (!remoteController && config.Server.Port == config.Server.RCON.Port)
             throw new InvalidOperationException("Minecraft server port and RCON port cannot be the same.");
 
-        string RCONPassword = config.Server.RCON.Password ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(RCONPassword) || RCONPassword.Contains('\r') || RCONPassword.Contains('\n'))
+        if (!ConfigurationStore.TryNormalizeRconPassword(config.Server.RCON.Password, out string normalizedRCONPassword))
             throw new InvalidOperationException("RCON password is missing or invalid.");
+
+        config.Server.RCON.Password = normalizedRCONPassword;
 
         if (string.IsNullOrWhiteSpace(config.Twitch.BotToken))
             throw new InvalidOperationException("Twitch bot token is missing.");
@@ -926,6 +926,7 @@ public sealed partial class BotMainHandler
     }
 
     // ===== Minecraft command I/O and version helpers =====
+
     public async Task<bool> ExecuteMinecraftCommandAsync(string command)
     {
         if (string.IsNullOrWhiteSpace(command))
@@ -1355,12 +1356,10 @@ public sealed partial class BotMainHandler
         }
     }
 
-    public async Task SendTellrawAsync(string selector, string message, string color, bool bold, CancellationToken cancellationToken)
-    {
-        await SendServerCommandAsync(
+    public Task SendTellrawAsync(string selector, string message, string color, bool bold, CancellationToken cancellationToken)
+        => SendServerCommandAsync(
             MinecraftCommandBuilder.Tellraw(string.IsNullOrWhiteSpace(selector) ? "@a" : selector, message, color, bold, UsesInlineTextComponentSyntax),
-            cancellationToken).ConfigureAwait(false);
-    }
+            cancellationToken);
 
     public bool HasOtherKnownPlayer(string excludedPlayerName)
     {
@@ -1379,25 +1378,19 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    public async Task SendTellrawToOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
+    public Task SendTellrawToOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
     {
         if (!MultiTargetingEnabled || target == null || string.IsNullOrWhiteSpace(message) || target.PlayerCount != 1)
-        {
-            return;
-        }
+            return Task.CompletedTask;
 
         if (!MinecraftNameHelper.TryNormalizePlayerName(target.MinecraftName, out string excludedName))
-        {
-            return;
-        }
+            return Task.CompletedTask;
 
         if (!HasOtherKnownPlayer(excludedName))
-        {
-            return;
-        }
+            return Task.CompletedTask;
 
         string selector = MinecraftCommandBuilder.AllExceptPlayerSelector(excludedName);
-        await SendTellrawAsync(selector, message, color, bold, cancellationToken).ConfigureAwait(false);
+        return SendTellrawAsync(selector, message, color, bold, cancellationToken);
     }
 
     public EffectDefinition GetRandomEffect()
