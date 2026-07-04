@@ -42,20 +42,21 @@ Please do **not** send real Twitch tokens, RCON passwords, private database file
 
 ## Response
 
-I will review valid security reports and try to fix confirmed vulnerabilities as soon as reasonably possible.
+Valid reports will be reviewed, and confirmed vulnerabilities will be addressed as soon as reasonably possible.
 
-If a vulnerability is confirmed, I may release a patched version and mention the issue in the release notes without exposing sensitive details.
+If a vulnerability is confirmed, a patched version may be released, and the issue may be mentioned in the release notes without exposing sensitive details.
 
 ## User Responsibility
 
 Users are responsible for keeping their own Twitch tokens, RCON passwords, configuration files, databases, and Minecraft server files private.
 
-Do not upload or share files such as:
+Do not upload or share the following unless specifically requested through a private reporting method:
 
 * `config.json`
 * `viewer_tokens.db`
 * `statistics.db`
 * `.db`, `.db-shm`, or `.db-wal` files
+* `.bak` files
 * Twitch bot tokens
 * RCON passwords
 * Personal Minecraft server files
