@@ -266,7 +266,7 @@ public static partial class MinigameManager
                 state.Bets.Clear();
             }
 
-            List<WitherBattleBet> bets = settlementBets ?? [];
+            List<WitherBattleBet> bets = settlementBets!;
             if (bets.Count == 0)
             {
                 await SafeReplyAsync(runtime, "The Wither Battle ended because nobody joined.", cancellationToken).ConfigureAwait(false);

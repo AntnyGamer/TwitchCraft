@@ -169,23 +169,11 @@ public partial class Main : UserControl
 
     private bool TryQueueFlush(bool isMinecraftLog)
     {
-        if (isMinecraftLog)
-        {
-            if (_minecraftFlushQueued)
-            {
-                return false;
-            }
-
-            _minecraftFlushQueued = true;
-            return true;
-        }
-
-        if (_twitchFlushQueued)
-        {
+        ref bool flushQueued = ref (isMinecraftLog ? ref _minecraftFlushQueued : ref _twitchFlushQueued);
+        if (flushQueued)
             return false;
-        }
 
-        _twitchFlushQueued = true;
+        flushQueued = true;
         return true;
     }
 
@@ -341,16 +329,11 @@ public partial class Main : UserControl
         }
     }
 
-    private void ExecuteWithParent(Action<TwitchCraftBot> action, Action? onFailure = null)
+    private void ExecuteWithParent(Action<TwitchCraftBot> action)
     {
         TwitchCraftBot? parent = AppHelpers.GetParentBot(this);
         if (parent != null)
-        {
             action(parent);
-            return;
-        }
-
-        onFailure?.Invoke();
     }
 
     private async Task ExecuteWithParentAsync(Func<TwitchCraftBot, Task> action, Action? onFailure = null)

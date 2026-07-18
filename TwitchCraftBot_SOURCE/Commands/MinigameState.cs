@@ -357,7 +357,7 @@ public static partial class MinigameManager
         try { loop.Cts.Dispose(); } catch { }
     }
 
-    private static void RemoveMinigameState(BotMainHandler runtime, bool preserveSchedule)
+    private static void RemoveMinigameState(BotMainHandler runtime)
     {
         lock (MinigameGate)
         {
@@ -365,11 +365,6 @@ public static partial class MinigameManager
             GuessNumberStates.Remove(runtime);
             WitherBattleStates.Remove(runtime);
             ActiveMinigames.Remove(runtime);
-            if (!preserveSchedule)
-            {
-                PreservedNextMinigameAtUtc?.Remove(runtime);
-                ClearEmptyPreservedScheduleNoLock();
-            }
         }
     }
 
@@ -434,7 +429,7 @@ public static partial class MinigameManager
                 RefundAllChickenRunBets(runtime);
                 RefundAllWitherBattleBets(runtime);
 
-                RemoveMinigameState(runtime, preserveSchedule: true);
+                RemoveMinigameState(runtime);
                 SetNextMinigameTime(runtime, 10.0);
 
                 try
@@ -574,11 +569,7 @@ public static partial class MinigameManager
         {
             await runtime.SendToChannelAsync(message, cancellationToken).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             runtime.AddChatLogLine(ErrorHandling.FormatLogMessage("Minigame chat reply failed", ex));
         }
@@ -597,11 +588,7 @@ public static partial class MinigameManager
                 "execute as @a at @s run playsound " + sound + " master @s ~ ~ ~ 2 1",
                 cancellationToken).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             runtime.AddServerLogLine(ErrorHandling.FormatLogMessage("Minigame sound playback failed", ex));
         }
@@ -622,11 +609,7 @@ public static partial class MinigameManager
                 ],
                 cancellationToken).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             runtime.AddServerLogLine(ErrorHandling.FormatLogMessage("Minigame subtitle failed", ex));
         }

@@ -35,7 +35,7 @@ public sealed partial class BotMainHandler
         if (markerIndex <= 0)
             return false;
 
-        string prefix = TrimPrefixAfterLastColon(line, 0, markerIndex);
+        string prefix = TrimPrefixAfterLastColon(line, markerIndex);
         if (!MinecraftNameHelper.IsValidPlayerName(prefix))
             return false;
 
@@ -82,7 +82,7 @@ public sealed partial class BotMainHandler
         playerName = string.Empty;
         gameType = -1;
 
-        string message = TrimPrefixAfterLastColon(line, 0, line.Length);
+        string message = TrimPrefixAfterLastColon(line, line.Length);
         if (message.Length == 0 || !message.Contains("game mode", StringComparison.OrdinalIgnoreCase))
             return false;
 
@@ -224,11 +224,10 @@ public sealed partial class BotMainHandler
         Lock gate,
         Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
         Func<TaskCompletionSource<TResult>, CancellationToken, Task<bool>> sendProbe,
-        TResult defaultResult,
         CancellationToken cancellationToken)
     {
         if (!MinecraftNameHelper.IsValidPlayerName(playerName))
-            return defaultResult;
+            return default!;
 
         TaskCompletionSource<TResult> waiter;
         bool createdWaiter = false;
@@ -249,16 +248,11 @@ public sealed partial class BotMainHandler
                 waiter,
                 createdWaiter,
                 ct => sendProbe(waiter, ct),
-                defaultResult,
                 cancellationToken).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            throw;
-        }
-        catch
-        {
-            return defaultResult;
+            return default!;
         }
         finally
         {
@@ -284,7 +278,6 @@ public sealed partial class BotMainHandler
             _selectedItemProbeGate,
             _pendingSelectedItemRequests,
             (waiter, ct) => SendInternalProbeCommandAsync("data get entity " + selector + " SelectedItem", () => waiter.TrySetResult(default), ct),
-            defaultResult: null,
             cancellationToken);
     }
 
@@ -351,11 +344,7 @@ public sealed partial class BotMainHandler
                 results[entry.Key] = task.IsCompletedSuccessfully ? task.Result : null;
             }
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             foreach (string player in players)
                 results[player] = null;
@@ -390,7 +379,6 @@ public sealed partial class BotMainHandler
             _respawnPositionProbeGate,
             _pendingRespawnPositionRequests,
             (waiter, ct) => SendInternalProbeCommandAsync("data get entity " + selector + " Pos", () => waiter.TrySetResult(false), ct),
-            defaultResult: false,
             cancellationToken);
     }
 

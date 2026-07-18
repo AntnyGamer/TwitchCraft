@@ -191,6 +191,7 @@ public sealed partial class BotMainHandler
 
                 _shellWindow?.AddChatLogLine("[IRC] Connected to #" + channelLogin + ".");
                 reconnectDelayMs = 1000;
+                bool separateBotAccount = !string.Equals(botName, channelLogin, StringComparison.OrdinalIgnoreCase);
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -279,7 +280,7 @@ public sealed partial class BotMainHandler
                             ? StripIRCTagsForLog(line)
                             : "<" + sender + "> " + payload);
 
-                    if (sender.Length == 0 || IsIgnoredIRCUser(sender, botName, channelLogin) || payload.Length == 0)
+                    if (sender.Length == 0 || IsIgnoredIRCUser(sender, botName, separateBotAccount) || payload.Length == 0)
                         continue;
 
                     if (message.Bits > 0)
@@ -298,7 +299,6 @@ public sealed partial class BotMainHandler
                             _IRCCommandQueue,
                             ct => DispatchCommandAsync(payload, sender, isModerator, ct),
                             payload,
-                            enforceLimit: true,
                             quick: false,
                             cancellationToken: cancellationToken))
                         {
@@ -311,7 +311,6 @@ public sealed partial class BotMainHandler
                             _IRCQuickQueue,
                             ct => SendTellrawAsync("@a", sender + ": " + payload, "white", false, ct),
                             "chat relay",
-                            enforceLimit: true,
                             quick: true,
                             cancellationToken: cancellationToken);
                     }
@@ -404,7 +403,6 @@ public sealed partial class BotMainHandler
         IRCWorkQueueState state,
         Func<CancellationToken, Task> work,
         string context,
-        bool enforceLimit,
         bool quick,
         CancellationToken cancellationToken)
     {
@@ -422,7 +420,7 @@ public sealed partial class BotMainHandler
                 return false;
 
             int depth = Interlocked.Increment(ref state.Depth);
-            if (enforceLimit && depth > state.MaxDepth)
+            if (depth > state.MaxDepth)
             {
                 Interlocked.Decrement(ref state.Depth);
                 return false;
@@ -522,9 +520,9 @@ public sealed partial class BotMainHandler
         state.Active = 0;
     }
 
-    private static bool IsIgnoredIRCUser(string sender, string botName, string channelLogin)
+    private static bool IsIgnoredIRCUser(string sender, string botName, bool separateBotAccount)
     {
-        if (!string.Equals(botName, channelLogin, StringComparison.OrdinalIgnoreCase) &&
+        if (separateBotAccount &&
             string.Equals(sender, botName, StringComparison.OrdinalIgnoreCase))
         {
             return true;
@@ -831,15 +829,11 @@ public sealed partial class BotMainHandler
         {
             await SendIRCLineAsync(writer, string.Concat(channelPrefix, safeMessage), cancellationToken).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
         catch (ObjectDisposedException)
         {
             return;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("IRC write failed", ex));
         }

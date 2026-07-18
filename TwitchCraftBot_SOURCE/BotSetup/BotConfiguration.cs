@@ -302,8 +302,15 @@ public sealed class ConfigurationStore
         lock (IoGate)
         {
             string tempPath = GetTempPath(ConfigPath);
+            bool hasConfig = File.Exists(ConfigPath);
+            bool hasTemp = File.Exists(tempPath);
             if (!TryLoadConfig(ConfigPath, out BotConfig config) && !TryLoadConfig(tempPath, out config))
+            {
+                if (hasConfig || hasTemp)
+                    throw new InvalidDataException("config.json could not be read. Restore a backup or run setup again.");
+
                 config = new BotConfig();
+            }
 
             Normalize(config);
             ResetTransientStartMode(config);

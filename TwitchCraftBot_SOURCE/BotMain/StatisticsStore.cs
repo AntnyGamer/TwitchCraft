@@ -207,6 +207,7 @@ internal static class BotStatisticsStore
             catch (Exception ex)
             {
                 ErrorHandling.LogNonFatal("Failed to load statistics database", ex);
+                ErrorHandling.ShowStatisticsLoadWarning();
                 return new BotLifetimeStatistics();
             }
         }
@@ -312,7 +313,7 @@ internal static class BotStatisticsStore
         {
             lock (IoGate)
             {
-                ExecuteIncrementEffectsGivenNoLock(null, safeEffects);
+                ExecuteIncrementEffectsGivenNoLock(safeEffects);
             }
 
             return true;
@@ -330,7 +331,7 @@ internal static class BotStatisticsStore
         {
             lock (IoGate)
             {
-                ExecuteIncrementSessionsStartedNoLock(null);
+                ExecuteIncrementSessionsStartedNoLock();
             }
 
             return true;
@@ -811,7 +812,7 @@ internal static class BotStatisticsStore
         _upsertViewerScoreCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteIncrementEffectsGivenNoLock(SqliteTransaction? transaction, long effectsGiven)
+    private static void ExecuteIncrementEffectsGivenNoLock(long effectsGiven)
     {
         if (_incrementEffectsGivenCommand == null)
         {
@@ -820,19 +821,17 @@ internal static class BotStatisticsStore
             _incrementEffectsGivenCommand.Prepare();
         }
 
-        _incrementEffectsGivenCommand.Transaction = transaction;
         _incrementEffectsGivenAmount!.Value = effectsGiven;
         _incrementEffectsGivenCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteIncrementSessionsStartedNoLock(SqliteTransaction? transaction)
+    private static void ExecuteIncrementSessionsStartedNoLock()
     {
         if (_incrementSessionsStartedCommand == null)
         {
             _incrementSessionsStartedCommand = CreatePreparedCommandNoLock("UPDATE GlobalStats SET SessionsStarted = SessionsStarted + 1 WHERE ID = 1;");
             _incrementSessionsStartedCommand.Prepare();
         }
-        _incrementSessionsStartedCommand.Transaction = transaction;
         _incrementSessionsStartedCommand.ExecuteNonQuery();
     }
 

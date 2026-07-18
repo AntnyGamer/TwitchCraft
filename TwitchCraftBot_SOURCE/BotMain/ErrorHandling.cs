@@ -337,6 +337,11 @@ Do you want to reset the Bind IP to its default?";
         ShowError(source, "Restart Error", message);
     }
 
+    public static void ShowStatisticsLoadWarning()
+    {
+        ShowWarning(null, "Statistics", "Statistics could not be loaded, so empty totals are being displayed. The statistics database was not reset.");
+    }
+
     private static void ShowInfo(object? source, string? title, string? message)
     {
         Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
@@ -521,6 +526,7 @@ Do you want to reset the Bind IP to its default?";
     private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         WriteLog("ERROR", "Unobserved task exception", e.Exception);
+        e.SetObserved();
     }
 
     private static void Application_Exit(object sender, ExitEventArgs e)

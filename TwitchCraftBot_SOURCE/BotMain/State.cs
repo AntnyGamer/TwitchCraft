@@ -149,8 +149,15 @@ public sealed partial class BotMainHandler
 
     internal void TrackSessionBackgroundTask(Task task)
     {
-        if (task == null || task.IsCompleted)
+        if (task == null)
             return;
+
+        if (task.IsCompleted)
+        {
+            if (task.IsFaulted)
+                ErrorHandling.LogNonFatal("Background task failed", task.Exception);
+            return;
+        }
 
         lock (_backgroundTasksGate)
             _backgroundTasks.Add(task);
@@ -158,6 +165,9 @@ public sealed partial class BotMainHandler
         _ = task.ContinueWith(
             completedTask =>
             {
+                if (completedTask.IsFaulted)
+                    ErrorHandling.LogNonFatal("Background task failed", completedTask.Exception);
+
                 lock (_backgroundTasksGate)
                     _backgroundTasks.Remove(completedTask);
             },
