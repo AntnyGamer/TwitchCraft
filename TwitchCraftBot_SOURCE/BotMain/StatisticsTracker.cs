@@ -603,17 +603,16 @@ public sealed partial class BotMainHandler
                 _totalStatistics.LastDeathScore = deathScore;
                 if (deathCount > 0)
                 {
-                    _ = RecordDeathNoLock(now, deathCount, survivedSeconds);
+                    RecordDeathNoLock(deathCount, survivedSeconds);
                 }
             }
         }
     }
 
-    private long RecordDeathNoLock(DateTime now, long deathCount, long survivedSeconds)
+    private void RecordDeathNoLock(long deathCount, long survivedSeconds)
     {
-        long normalizedDeathCount = Math.Max(1L, deathCount);
-        _sessionStatistics.Deaths += normalizedDeathCount;
-        _totalStatistics.Deaths += normalizedDeathCount;
+        _sessionStatistics.Deaths += deathCount;
+        _totalStatistics.Deaths += deathCount;
 
         survivedSeconds = Math.Max(0L, survivedSeconds);
         if (survivedSeconds > 0)
@@ -633,7 +632,6 @@ public sealed partial class BotMainHandler
         _sessionStatistics.CurrentLifeStartedUtc = null;
         _sessionStatistics.CurrentLifeHasStarted = true;
         _sessionStatistics.CurrentLifeWaitingForRespawn = true;
-        return survivedSeconds;
     }
 
     public BotStatisticsSnapshot GetStatisticsSnapshot(CancellationToken cancellationToken = default)
@@ -754,7 +752,7 @@ public sealed partial class BotMainHandler
     {
         long seconds = GetCurrentLifeSurvivalSeconds(session, now);
         bool hasStartedLife = session.CurrentLifeHasStarted || session.CurrentLifeStartedUtc != null || session.CurrentLifeAccumulatedSeconds > 0;
-        return hasStartedLife ? SecondsToDuration(Math.Max(0, seconds)) ?? TimeSpan.Zero : null;
+        return hasStartedLife ? SecondsToDuration(seconds) ?? TimeSpan.Zero : null;
     }
 
     private static long GetCurrentLifeSurvivalSeconds(BotSessionStatistics session, DateTime now)
@@ -775,7 +773,7 @@ public sealed partial class BotMainHandler
             return 0;
         }
 
-        return Math.Max(0L, (long)Math.Floor((nowUtc - startedUtc).TotalSeconds));
+        return (long)Math.Floor((nowUtc - startedUtc).TotalSeconds);
     }
 
     private static int ClampDeathScore(long deathScore)

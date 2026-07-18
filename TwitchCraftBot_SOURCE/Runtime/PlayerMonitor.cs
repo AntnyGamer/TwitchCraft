@@ -118,7 +118,6 @@ public sealed partial class BotMainHandler
         Func<CancellationToken, Task> work,
         Action clearQueued,
         string? errorContext = null,
-        Action<Exception>? onError = null,
         CancellationToken token = default)
     {
         TrackSessionBackgroundTask(Task.Run(async () =>
@@ -132,9 +131,7 @@ public sealed partial class BotMainHandler
             }
             catch (Exception ex)
             {
-                if (onError != null)
-                    onError(ex);
-                else if (!string.IsNullOrWhiteSpace(errorContext))
+                if (!string.IsNullOrWhiteSpace(errorContext))
                     ErrorHandling.LogNonFatal(errorContext, ex);
             }
             finally
@@ -227,13 +224,12 @@ public sealed partial class BotMainHandler
         TaskCompletionSource<TResult> waiter,
         bool createdWaiter,
         Func<CancellationToken, Task<bool>> sendProbe,
-        TResult defaultResult,
         CancellationToken cancellationToken)
     {
         if (createdWaiter && !await sendProbe(cancellationToken).ConfigureAwait(false))
         {
-            waiter.TrySetResult(defaultResult);
-            return defaultResult;
+            waiter.TrySetResult(default!);
+            return default!;
         }
 
         return await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -319,7 +315,7 @@ public sealed partial class BotMainHandler
         void ReleaseSuppressedLineOnce()
         {
             if (Interlocked.Exchange(ref suppressedLineReleasePending, 0) != 0)
-                ReleaseSuppressedOnlinePlayersLogLine();
+                _ = TryReleaseSuppressedOnlinePlayersLogLine();
         }
 
         try
@@ -538,11 +534,6 @@ public sealed partial class BotMainHandler
         return (line.Contains("players online:", StringComparison.OrdinalIgnoreCase)
                 || line.Contains("player online:", StringComparison.OrdinalIgnoreCase))
             && TryReleaseSuppressedOnlinePlayersLogLine();
-    }
-
-    private void ReleaseSuppressedOnlinePlayersLogLine()
-    {
-        _ = TryReleaseSuppressedOnlinePlayersLogLine();
     }
 
     private bool TryReleaseSuppressedOnlinePlayersLogLine()
@@ -1219,7 +1210,6 @@ public sealed partial class BotMainHandler
                     _spectatorProbeGate,
                     _pendingGameTypeRequests,
                     (waiter, ct) => SendInternalProbeCommandAsync($"data get entity {playerName} playerGameType", () => waiter.TrySetResult(default), ct),
-                    defaultResult: null,
                     t).ConfigureAwait(false);
             },
             () => Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 0),
@@ -1482,12 +1472,12 @@ public sealed partial class BotMainHandler
         if (string.IsNullOrEmpty(line) || markerIndex <= 0)
             return string.Empty;
 
-        return TrimPrefixAfterLastColon(line, 0, markerIndex);
+        return TrimPrefixAfterLastColon(line, markerIndex);
     }
 
-    private static string TrimPrefixAfterLastColon(string value, int start, int length)
+    private static string TrimPrefixAfterLastColon(string value, int length)
     {
-        string segment = TextSegmentHelper.TrimSegment(value, start, length);
+        string segment = TextSegmentHelper.TrimSegment(value, 0, length);
         if (segment.Length == 0)
             return string.Empty;
 

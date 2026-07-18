@@ -716,13 +716,9 @@ public sealed partial class BotMainHandler
         return host.Length == 0 ? "127.0.0.1" : host;
     }
 
-    private void ResetSessionState(bool resetStatistics)
+    private void ResetSessionState()
     {
         ResetIRCQueues();
-        if (resetStatistics)
-        {
-            ResetStatisticsForNewSession();
-        }
 
         lock (_viewerGate)
         {
@@ -782,21 +778,12 @@ public sealed partial class BotMainHandler
         _shellWindow?.DisplayNormalizedViewerList([]);
     }
 
-    private void SafeStopProcess(bool waitBriefly)
+    private void SafeStopProcess()
     {
         Process? process = _javaServerProcess;
         _javaServerProcess = null;
         if (process == null)
             return;
-
-        try
-        {
-            if (waitBriefly && !process.HasExited)
-                process.WaitForExit(5000);
-        }
-        catch
-        {
-        }
 
         try
         {
@@ -908,7 +895,7 @@ public sealed partial class BotMainHandler
         }
 
         SafeCloseIRCSocket();
-        SafeStopProcess(false);
+        SafeStopProcess();
 
         _tokenStore.TryExportReadableJson();
         FlushStatisticsForShutdown();

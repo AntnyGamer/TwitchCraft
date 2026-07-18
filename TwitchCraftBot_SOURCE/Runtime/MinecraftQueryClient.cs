@@ -47,7 +47,7 @@ internal static class MinecraftQueryClient
 
     private static int ParseChallengeToken(byte[] buffer, int sessionId)
     {
-        if (buffer.Length < 6 || buffer[0] != HandshakeType || ReadInt32BigEndian(buffer, 1) != sessionId)
+        if (buffer.Length < 6 || buffer[0] != HandshakeType || ReadInt32BigEndian(buffer) != sessionId)
             throw new InvalidOperationException("Minecraft query handshake returned an invalid response.");
 
         int end = 5;
@@ -63,7 +63,7 @@ internal static class MinecraftQueryClient
 
     private static List<string> ParsePlayers(byte[] buffer, int sessionId)
     {
-        if (buffer.Length < 5 || buffer[0] != StatType || ReadInt32BigEndian(buffer, 1) != sessionId)
+        if (buffer.Length < 5 || buffer[0] != StatType || ReadInt32BigEndian(buffer) != sessionId)
             throw new InvalidOperationException("Minecraft query stats returned an invalid response.");
 
         int playerSection = IndexOf(buffer, PlayerSectionMarker, 5);
@@ -106,8 +106,8 @@ internal static class MinecraftQueryClient
         return index < 0 ? -1 : offset + index;
     }
 
-    private static int ReadInt32BigEndian(byte[] buffer, int offset)
-        => (buffer[offset] << 24) | (buffer[offset + 1] << 16) | (buffer[offset + 2] << 8) | buffer[offset + 3];
+    private static int ReadInt32BigEndian(byte[] buffer)
+        => (buffer[1] << 24) | (buffer[2] << 16) | (buffer[3] << 8) | buffer[4];
 
     private static void WriteInt32BigEndian(byte[] buffer, int offset, int value)
     {

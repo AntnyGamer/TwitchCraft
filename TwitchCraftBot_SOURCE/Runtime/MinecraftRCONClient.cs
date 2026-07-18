@@ -34,7 +34,7 @@ internal static class MinecraftRCONClient
             {
                 await WriteCommandAsync(command, token).ConfigureAwait(false);
                 return true;
-            }, false, cancellationToken);
+            }, cancellationToken);
 
     public static Task<bool> ExecuteCommandsAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
         => InvalidRequest(host, port, password) || commands.Count == 0
@@ -43,12 +43,12 @@ internal static class MinecraftRCONClient
             {
                 await WriteCommandsAsync(commands, token).ConfigureAwait(false);
                 return true;
-            }, false, cancellationToken);
+            }, cancellationToken);
 
     public static Task<string?> ExecuteQueryAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
         => InvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command)
             ? Task.FromResult<string?>(null)
-            : WithConnectionAsync<string?>(host.Trim(), port, password, token => QueryAsync(command, token), null, cancellationToken);
+            : WithConnectionAsync<string?>(host.Trim(), port, password, token => QueryAsync(command, token), cancellationToken);
 
     public static async Task<List<string?>?> ExecuteQueriesAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
@@ -113,29 +113,22 @@ internal static class MinecraftRCONClient
         }
     }
 
-    private static async Task<T> WithConnectionAsync<T>(string host, int port, string password, Func<CancellationToken, Task<T>> action, T connectFailedResult, CancellationToken cancellationToken)
+    private static async Task<T> WithConnectionAsync<T>(string host, int port, string password, Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
     {
         await ConnectionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            for (int attempt = 0; ; attempt++)
+            try
             {
-                try
-                {
-                    if (!await EnsureConnectedAsync(host, port, password, cancellationToken).ConfigureAwait(false))
-                        return connectFailedResult;
+                if (!await EnsureConnectedAsync(host, port, password, cancellationToken).ConfigureAwait(false))
+                    return default!;
 
-                    return await action(cancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    DisposeConnection();
-                    throw;
-                }
-                catch when (attempt == 0)
-                {
-                    DisposeConnection();
-                }
+                return await action(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                DisposeConnection();
+                throw;
             }
         }
         finally
