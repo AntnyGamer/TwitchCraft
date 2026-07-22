@@ -15,6 +15,16 @@ dotnet build TwitchCraft.slnx -c Release --no-restore
 dotnet test TwitchCraft.slnx -c Release --no-build
 ```
 
+`TwitchCraft.slnx` is the canonical repository validation entry point. Its Release build compiles the TwitchCraft WPF application, the regression test project, and the distributed `GetBotToken` helper. The smaller solution files may still be used for isolated development.
+
+To produce a local coverage report equivalent to CI, run:
+
+```powershell
+dotnet test TwitchCraft.slnx -c Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+```
+
+Coverage output is written under `TestResults/` and is not committed.
+
 ## Publish
 
 To publish a Windows x64 single-file build, run:
@@ -45,6 +55,12 @@ If you only want to run the source code while developing, use:
 
 ```powershell
 dotnet run --project ".\TwitchCraftBot_SOURCE\TwitchCraftBot.csproj"
+```
+
+To run the token helper from source, use:
+
+```powershell
+dotnet run --project ".\GetBotToken_SOURCE\GetBotToken.csproj"
 ```
 
 If you want to create a release build for users, use the publish command above.

@@ -1,3 +1,7 @@
+# AI Assistance Disclosure
+
+This document explains how AI assistance was used during TwitchCraft's development and the project creator's role in directing and testing the application.
+
 As a creator in the modern digital world, I feel it is my responsibility to state that this application, in some areas, has been fully generated with AI, while in other areas, has been created with assistance from AI. I only know Lua code, so C# is out of my league, but I felt it would be best for this application.
 
 Yet, even with AI, each and every idea and feature in this application was guided fully by me, and my only use of the AI was to turn my dream into a reality.

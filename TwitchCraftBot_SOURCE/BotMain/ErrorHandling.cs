@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -27,11 +26,11 @@ internal static partial class ErrorHandling
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
-    private static readonly string ApplicationVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+    private static readonly string ApplicationVersion = ApplicationVersionProvider.Resolve();
     private static readonly string SessionId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
     private static bool _initialized;
     private static bool _logInitialized;
-    private static StreamWriter? _logWriter;
+    private static RollingJsonLogWriter? _logWriter;
 
     public static void Initialize(Application? application)
     {
@@ -144,8 +143,6 @@ internal static partial class ErrorHandling
 
     private static void WriteLog(string level, string context, Exception? ex)
     {
-        EnsureLogInitialized();
-
         try
         {
             var logEvent = new StructuredLogEvent
@@ -163,7 +160,8 @@ internal static partial class ErrorHandling
 
             lock (LogGate)
             {
-                _logWriter?.WriteLine(line);
+                EnsureLogInitializedNoLock();
+                _logWriter?.TryWriteLine(line);
             }
         }
         catch
@@ -171,49 +169,23 @@ internal static partial class ErrorHandling
         }
     }
 
-    private static void EnsureLogInitialized()
+    private static void EnsureLogInitializedNoLock()
     {
         if (_logInitialized)
             return;
 
-        lock (LogGate)
+        try
         {
-            if (_logInitialized)
-                return;
-
-            try
-            {
-                string directory = BotSetup.ConfigurationStore.WorkingDirectory;
-                Directory.CreateDirectory(directory);
-                string logPath = Path.Combine(directory, LogFileName);
-
-                if (File.Exists(logPath) && new FileInfo(logPath).Length > MaxLogBytes)
-                    RotateLogs(logPath);
-
-                _logWriter = new StreamWriter(new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), Utf8NoBom)
-                {
-                    AutoFlush = true
-                };
-            }
-            catch
-            {
-            }
-
-            _logInitialized = true;
+            string directory = BotSetup.ConfigurationStore.WorkingDirectory;
+            Directory.CreateDirectory(directory);
+            string logPath = Path.Combine(directory, LogFileName);
+            _logWriter = new RollingJsonLogWriter(logPath, MaxLogBytes, MaxRetainedLogFiles, Utf8NoBom);
         }
-    }
-
-    private static void RotateLogs(string logPath)
-    {
-        for (int index = MaxRetainedLogFiles; index >= 1; index--)
+        catch
         {
-            string source = index == 1 ? logPath : logPath + "." + (index - 1).ToString(CultureInfo.InvariantCulture);
-            if (!File.Exists(source))
-                continue;
-
-            string destination = logPath + "." + index.ToString(CultureInfo.InvariantCulture);
-            File.Move(source, destination, true);
         }
+
+        _logInitialized = true;
     }
 
     private static void CloseLog()
@@ -224,6 +196,7 @@ internal static partial class ErrorHandling
             {
                 _logWriter?.Dispose();
                 _logWriter = null;
+                _logInitialized = false;
             }
         }
         catch

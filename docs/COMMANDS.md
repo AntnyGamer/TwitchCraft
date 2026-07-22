@@ -12,7 +12,7 @@ In singleplayer, targeted commands use the configured streamer Minecraft account
 !heal random
 ```
 
-For paid targeted commands, the listed base cost is multiplied by the number of resolved target players. Invalid, offline, protected, or unavailable targets are rejected before dispatch where applicable. Spectators may be filtered from gameplay targeting.
+For paid targeted commands, one target pays the listed base cost. Multiple targets use the existing reduced scaling formula `base cost × (player count + 1) ÷ 2`, rounded down to a whole token. Invalid, offline, protected, or unavailable targets are rejected before dispatch where applicable. Spectators may be filtered from gameplay targeting.
 
 Paid gameplay commands refund the charged tokens when TwitchCraft cannot dispatch the Minecraft command. A successfully dispatched command is not refunded merely because its effect was not visible in game.
 

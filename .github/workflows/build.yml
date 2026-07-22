@@ -29,4 +29,12 @@ jobs:
         run: dotnet build TwitchCraft.slnx -c Release --no-restore
 
       - name: Test
-        run: dotnet test TwitchCraft.slnx -c Release --no-build
+        run: dotnet test TwitchCraft.slnx -c Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+
+      - name: Upload code coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: error

@@ -2,12 +2,11 @@
 
 ## ACCESSING LOG FILE
 
-1. A log file will be created when an error or warning occurs inside TwitchCraft
-2. You can find the log file at:
-   - `AppData --> Roaming --> TwitchCraftBot --> latest.log`
-3. If the log file reaches 1MB in size, previous log entries will be moved to a new file called:
-   - `latest.log.old`
-4. Only a maximum of 2MB of log data can be stored
+1. TwitchCraft creates a structured JSON-lines log when an error or warning is recorded.
+2. The active log is `%APPDATA%\TwitchCraftBot\TwitchCraftBot.log`.
+3. Before a write would cross the 1 MB limit, TwitchCraft rotates the active log during the running session and writes the pending event to the new active file.
+4. Up to five rotated files are retained as `TwitchCraftBot.log.1` through `TwitchCraftBot.log.5`, in addition to the active log.
+5. Twitch and RCON secrets are redacted automatically, but review a log before sharing it because exception text can still contain other personal information.
 
 ## INVALID TOKEN OR LONG ERROR ON STARTUP
 
@@ -194,4 +193,4 @@
    - `sync-chunk-writes = false`
 8. If you are still experiencing lag or low FPS, consider using a more powerful PC or reducing background usage
 
-If this troubleshooting guide does not resolve your issue or question, please contact the creator of TwitchCraft and include your `latest.log` file (if possible) along with a description of the problem.
+If this troubleshooting guide does not resolve your issue or question, please contact the creator of TwitchCraft and include your `TwitchCraftBot.log` file (if possible) along with a description of the problem.

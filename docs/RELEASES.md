@@ -4,7 +4,7 @@
 
 Before publishing, align these values:
 
-- Application `Version` and `FileVersion` in `TwitchCraftBot_SOURCE/TwitchCraftBot.csproj`
+- Application `Version` and `FileVersion` in `TwitchCraftBot_SOURCE/TwitchCraftBot.csproj`; `FileVersion` is the canonical user-facing version reported in structured logs
 - Git tag
 - GitHub Release title
 - `CHANGELOG.md` heading and date
@@ -23,10 +23,13 @@ Do not publish from an unreviewed working tree.
    dotnet test TwitchCraft.slnx -c Release --no-build
    ```
 
-4. Manually smoke-test startup, Twitch connection, local server startup, remote RCON, one paid command/refund path, multiplayer targeting, settings save/load, and shutdown.
-5. Check the release archive for tokens, passwords, configs, databases, logs, worlds, build symbols, and unrelated files.
-6. Verify documentation links and supported Minecraft/Java versions.
-7. Create the tag and release only after review.
+4. Confirm the root solution built TwitchCraft, `TwitchCraftBot.Tests`, and `GetBotToken`.
+5. Download or inspect the CI `code-coverage` artifact; no percentage gate is enforced until a stable baseline is documented.
+6. Manually smoke-test startup, Twitch connection, local server startup, remote RCON, one paid command/refund path, multiplayer targeting, settings save/load, and shutdown.
+7. Launch `GetBotToken` and smoke-test its Client ID, redirect URL, and browser authorization flow.
+8. Check the release archive for tokens, passwords, configs, databases, logs, worlds, build symbols, and unrelated files.
+9. Verify documentation links and supported Minecraft/Java versions.
+10. Create the tag and release only after review.
 
 ## Release notes
 

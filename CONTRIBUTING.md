@@ -19,7 +19,15 @@ dotnet build TwitchCraft.slnx -c Release --no-restore
 dotnet test TwitchCraft.slnx -c Release --no-build
 ```
 
-The Release build and all tests must pass before a pull request is ready for review.
+The root solution is the canonical validation entry point. Its Release build compiles TwitchCraft, `TwitchCraftBot.Tests`, and the distributed `GetBotToken` helper. The Release build and all tests must pass before a pull request is ready for review.
+
+CI also collects an XPlat Code Coverage report and publishes `coverage.cobertura.xml` as the `code-coverage` workflow artifact. To reproduce that collection locally:
+
+```powershell
+dotnet test TwitchCraft.slnx -c Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+```
+
+No coverage percentage gate is enforced until a stable baseline is measured and documented.
 
 ## Source layout
 

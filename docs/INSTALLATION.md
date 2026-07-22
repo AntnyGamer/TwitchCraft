@@ -51,6 +51,8 @@ dotnet build TwitchCraft.slnx -c Release --no-restore
 dotnet test TwitchCraft.slnx -c Release --no-build
 ```
 
+The root solution validates all distributed .NET software: TwitchCraft, its regression tests, and `GetBotToken`. To launch the token helper directly from source, run `dotnet run --project .\GetBotToken_SOURCE\GetBotToken.csproj`.
+
 See [BUILDING.md](../BUILDING.md) for the application publish command.
 
 ## Next steps

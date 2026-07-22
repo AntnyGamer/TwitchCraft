@@ -40,102 +40,79 @@ public static partial class CommandList
                 return string.Empty;
             return args[index] ?? string.Empty;
         }
-        async Task<bool> RequireTokens(string sender, int cost, CancellationToken ct)
-        {
-            if (cost <= 0)
-                return true;
-            if (runtime.TrySpendTokens(sender, cost))
-                return true;
-            await SayInsufficientTokens(sender, cost, ct).ConfigureAwait(false);
-            return false;
-        }
         async Task<bool> RequireTokenBalance(string sender, int cost, CancellationToken ct)
         {
             if (cost <= 0 || runtime.GetTokens(sender) >= cost) return true;
             await SayInsufficientTokens(sender, cost, ct).ConfigureAwait(false);
             return false;
         }
+        async Task<bool> ExecutePaidCommandTransaction(
+            string sender,
+            int cost,
+            Func<CancellationToken, Task<bool>> dispatchAsync,
+            Func<CancellationToken, Task<long?>> reserveCooldownAsync,
+            Action<long> releaseCooldown,
+            CancellationToken ct,
+            Action? onSendFailure = null)
+        {
+            PaidCommandTransactionDependencies dependencies = new()
+            {
+                ReserveCooldownAsync = reserveCooldownAsync,
+                ReleaseCooldown = releaseCooldown,
+                TrySpendTokens = amount => runtime.TrySpendTokens(sender, amount),
+                RefundTokens = amount => runtime.AdjustTokens(sender, amount),
+                DispatchAsync = dispatchAsync,
+                RecordStatistics = amount => runtime.RecordCurrentGameAffectingCommandForStatistics(sender, amount),
+                ReportInsufficientTokensAsync = (amount, token) => SayInsufficientTokens(sender, amount, token),
+                ReportDispatchFailureAsync = token => SayToChannel(
+                    sender + ", the Minecraft command could not be sent, so your tokens were refunded.",
+                    token),
+                NotifyFailure = onSendFailure
+            };
+
+            return await PaidCommandTransaction.ExecuteAsync(dependencies, cost, ct).ConfigureAwait(false);
+        }
         async Task<bool> TrySendPaidCommandsWithoutGameCooldown(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct, Action? onSendFailure = null)
         {
-            if (!await RequireTokens(sender, cost, ct).ConfigureAwait(false))
-            {
-                onSendFailure?.Invoke();
-                return false;
-            }
-            IEnumerable<string> commands;
-            try
-            {
-                commands = buildCommands();
-            }
-            catch
-            {
-                if (cost > 0)
-                    runtime.AdjustTokens(sender, cost);
-                onSendFailure?.Invoke();
-                throw;
-            }
-            if (await runtime.SendServerCommandsAsync(commands, ct).ConfigureAwait(false))
-            {
-                runtime.RecordCurrentGameAffectingCommandForStatistics(sender, cost);
-                return true;
-            }
-            runtime.AdjustTokens(sender, cost);
-            onSendFailure?.Invoke();
-            await SayToChannel(sender + ", the Minecraft command could not be sent, so your tokens were refunded.", ct).ConfigureAwait(false);
-            return false;
+            return await ExecutePaidCommandTransaction(
+                sender,
+                cost,
+                token => runtime.SendServerCommandsAsync(buildCommands(), token),
+                _ => Task.FromResult<long?>(0),
+                _ => { },
+                ct,
+                onSendFailure).ConfigureAwait(false);
         }
         async Task<bool> TrySendPaidCommandWithoutGameCooldown(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
         {
-            if (!await RequireTokens(sender, cost, ct).ConfigureAwait(false))
-            {
-                onSendFailure?.Invoke();
-                return false;
-            }
-            if (await runtime.SendServerCommandAsync(command, ct).ConfigureAwait(false))
-            {
-                runtime.RecordCurrentGameAffectingCommandForStatistics(sender, cost);
-                return true;
-            }
-            runtime.AdjustTokens(sender, cost);
-            onSendFailure?.Invoke();
-            await SayToChannel(sender + ", the Minecraft command could not be sent, so your tokens were refunded.", ct).ConfigureAwait(false);
-            return false;
+            return await ExecutePaidCommandTransaction(
+                sender,
+                cost,
+                token => runtime.SendServerCommandAsync(command, token),
+                _ => Task.FromResult<long?>(0),
+                _ => { },
+                ct,
+                onSendFailure).ConfigureAwait(false);
         }
         async Task<bool> TrySendPricedCommands(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct)
         {
-            long? cooldownReservation = await TryReserveGameCommandCooldown(sender, ct).ConfigureAwait(false);
-            if (!cooldownReservation.HasValue)
-                return false;
-            try
-            {
-                if (await TrySendPaidCommandsWithoutGameCooldown(sender, cost, buildCommands, ct).ConfigureAwait(false))
-                    return true;
-                runtime.ClearGlobalGameCommandCooldown(cooldownReservation.Value);
-                return false;
-            }
-            catch
-            {
-                runtime.ClearGlobalGameCommandCooldown(cooldownReservation.Value);
-                throw;
-            }
+            return await ExecutePaidCommandTransaction(
+                sender,
+                cost,
+                token => runtime.SendServerCommandsAsync(buildCommands(), token),
+                token => TryReserveGameCommandCooldown(sender, token),
+                runtime.ClearGlobalGameCommandCooldown,
+                ct).ConfigureAwait(false);
         }
         async Task<bool> TrySendPricedCommand(string sender, int cost, string command, CancellationToken ct)
         {
-            long? cooldownReservation = await TryReserveGameCommandCooldown(sender, ct).ConfigureAwait(false);
-            if (!cooldownReservation.HasValue)
-                return false;
-            try
-            {
-                if (await TrySendPaidCommandWithoutGameCooldown(sender, cost, command, ct).ConfigureAwait(false))
-                    return true;
-                runtime.ClearGlobalGameCommandCooldown(cooldownReservation.Value);
-                return false;
-            }
-            catch
-            {
-                runtime.ClearGlobalGameCommandCooldown(cooldownReservation.Value);
-                throw;
-            }
+            return await ExecutePaidCommandTransaction(
+                sender,
+                cost,
+                token => runtime.SendServerCommandAsync(command, token),
+                token => TryReserveGameCommandCooldown(sender, token),
+                runtime.ClearGlobalGameCommandCooldown,
+                ct).ConfigureAwait(false);
         }
         static bool TargetsEveryone(ResolvedTarget? target)
         {

@@ -46,7 +46,7 @@ The supplied source is already split into focused partial files. Future work sho
 5. Paid commands reserve/charge tokens before dispatch.
 6. Commands are built with selector, JSON, SNBT, and version-aware escaping.
 7. The local transport serializes writes to Java stdin; remote mode sends RCON packets.
-8. A dispatch failure refunds the charge and releases its cooldown reservation where required. A successful dispatch records statistics.
+8. The narrow `PaidCommandTransaction` coordinator records statistics only after dispatch succeeds. Before success, a failure refunds the charge exactly once and releases only that command's cooldown reservation.
 
 ## Local and remote modes
 
@@ -66,4 +66,4 @@ Cancellation tokens stop background loops. Local mode requests graceful server s
 
 ## Testability direction
 
-The first tests cover pure builders, normalizers, and parsers without UI automation or a Minecraft server. Future safe seams are constructor-injected `TimeProvider`, logging, token store, Minecraft command client, Twitch client, and statistics store. These should be introduced one dependency at a time without a repository-wide dependency-injection framework conversion.
+Tests cover pure builders, normalizers, parsers, secret redaction, rolling-log behavior, application-version metadata, and paid-command transaction semantics without UI automation or a Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, token store, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.

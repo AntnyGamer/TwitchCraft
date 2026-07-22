@@ -18,6 +18,25 @@
   <img src="Screenshots/5TC_Settings.png" width="700">
 </p>
 
+## Documentation
+
+The repository-local documentation is the canonical source for TwitchCraft setup, commands, and troubleshooting:
+
+* [Installation](docs/INSTALLATION.md)
+* [Configuration](docs/CONFIGURATION.md)
+* [Commands](docs/COMMANDS.md)
+* [Multiplayer](docs/MULTIPLAYER.md)
+* [Remote Control](docs/REMOTE-CONTROL.md)
+* [Troubleshooting](docs/TROUBLESHOOTING.md)
+* [Architecture](docs/ARCHITECTURE.md)
+* [Release process](docs/RELEASES.md)
+* [Changelog](CHANGELOG.md)
+* [Contributing](CONTRIBUTING.md)
+* [Security policy](SECURITY.md)
+* [AI Assistance Disclosure](docs/NOTE.md)
+
+External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation.
+
 ## 1. Requirements
 
 * Windows 10/11 (64-bit)
@@ -267,9 +286,9 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 
 ## 12. Troubleshooting
 
-Troubleshooting has moved to a document for long-term use and dynamic updating
+Use the canonical [repository troubleshooting guide](docs/TROUBLESHOOTING.md) for current instructions.
 
-* Troubleshooting guide: https://bit.ly/twitchcraft-troubleshooting
+* Supplemental troubleshooting mirror: https://bit.ly/twitchcraft-troubleshooting
 
 ## 13. Changing The Bot Account Or Application
 
@@ -282,10 +301,10 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 ## 14. Links
 
 * TwitchCraft website: https://antnygamer.wixsite.com/twitchcraft
-* TwitchCraft commands: https://rentry.co/bot-commands
+* Supplemental TwitchCraft command mirror: https://rentry.co/bot-commands
 * TwitchCraft trailer: https://www.youtube.com/watch?v=HM2Um3Uf1hk
 * TwitchCraft setup tutorial: https://bit.ly/twitchcraft-tutorial
-* TwitchCraft troubleshooting: https://bit.ly/twitchcraft-troubleshooting
+* Supplemental TwitchCraft troubleshooting mirror: https://bit.ly/twitchcraft-troubleshooting
 
 ## 15. Other Info
 

@@ -8,17 +8,22 @@ All notable project changes should be recorded here. This project follows a Keep
 
 * Windows GitHub Actions validation for restore, Release build, and tests.
 * Regression tests for Minecraft command escaping/building, configuration normalization, Twitch token handling, command parsing, and IRC parsing.
+* Deterministic regression tests for paid-command charging, exactly-once refunds, dispatch completion, cooldown reservation release, and statistics recording.
+* CI collection and downloadable artifact publishing for XPlat Code Coverage.
 * Canonical repository documentation, contribution guidance, issue forms, and a pull-request checklist.
 * Structured JSON-lines diagnostics with session/application metadata, bounded rolling retention, and automatic secret/path redaction.
 
 ### Changed
 
 * Clarified that TwitchCraft is a standalone Windows Twitch-to-Minecraft integration application rather than a Forge/Fabric client mod.
-* Updated the source solution path and added a repository-level solution containing the application and test projects.
+* Updated the source solution path and added a repository-level solution containing TwitchCraft, its tests, and the distributed GetBotToken helper.
+* Made repository-local setup, command, and troubleshooting documentation the canonical source linked from the README.
 
 ### Fixed
 
-* None recorded yet.
+* Structured logs now report the executable `FileVersion` users see instead of the unrelated assembly compatibility version.
+* Log files now rotate at the size boundary during a running session instead of waiting for the next application start.
+* Paid-command failures release only their own global cooldown reservation, refund exactly once, and record statistics only after dispatch succeeds.
 
 ### Security
 
