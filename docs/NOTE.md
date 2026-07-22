@@ -1,15 +1,15 @@
-# AI Assistance Disclosure
+## Statement on AI Assistance
 
-This document explains how AI assistance was used during TwitchCraft's development and the project creator's role in directing and testing the application.
+As a creator in the modern digital world, I believe it is my responsibility to be transparent about how TwitchCraft was developed.
 
-As a creator in the modern digital world, I feel it is my responsibility to state that this application, in some areas, has been fully generated with AI, while in other areas, has been created with assistance from AI. I only know Lua code, so C# is out of my league, but I felt it would be best for this application.
+Some areas of this application were fully generated with AI, while others were created with AI assistance. My programming experience is primarily in Lua, so C# was outside my existing skill set. However, I believed C# was the best choice for this application and used AI as a tool to help bring my ideas to life.
 
-Yet, even with AI, each and every idea and feature in this application was guided fully by me, and my only use of the AI was to turn my dream into a reality.
+Every idea, feature, mechanic, and major design decision in TwitchCraft was directed by me. AI did not create the vision for this project; it helped me turn that vision into a functioning application.
 
-The features, the abilities, and the core parts of TwitchCraft were crafted by me personally. I have spent hundreds of hours working with AI to construct this bot, and tens to hundreds of more hours testing it.
+The features, capabilities, and core identity of TwitchCraft were personally planned and shaped by me. I have spent hundreds of hours developing the application with AI assistance, along with many additional hours testing, troubleshooting, refining, and improving it.
 
-From its original versions to the modern-day versions of TwitchCraft, I have been deep into the process throughout.
+From the earliest versions to the modern versions of TwitchCraft, I have remained deeply involved in every stage of its development.
 
-I understand if you may not want to use this application because of its AI generation, but I can promise you I put innumerable and irreversible time and effort into this project.
+I understand that some people may choose not to use this application because AI was involved in its creation. However, I want users to know that I have invested an immense amount of time, effort, creativity, and dedication into this project.
 
 Thank you for taking the time to read this statement and for considering TwitchCraft.
