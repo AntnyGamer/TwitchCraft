@@ -1,95 +1,197 @@
-# Troubleshooting
+# TWITCHCRAFT TROUBLESHOOTING
 
-Before changing files, close TwitchCraft and make a backup of `%APPDATA%\TwitchCraftBot`.
+## ACCESSING LOG FILE
 
-## TwitchCraft does not open
+1. A log file will be created when an error or warning occurs inside TwitchCraft
+2. You can find the log file at:
+   - `AppData --> Roaming --> TwitchCraftBot --> latest.log`
+3. If the log file reaches 1MB in size, previous log entries will be moved to a new file called:
+   - `latest.log.old`
+4. Only a maximum of 2MB of log data can be stored
 
-**Likely causes:** incomplete extraction, blocked download, missing runtime dependencies, or a startup exception.
+## INVALID TOKEN OR LONG ERROR ON STARTUP
 
-**Check:** extract the complete release to a writable folder, confirm Windows 10/11 64-bit, and look for the latest TwitchCraft diagnostic log under `%APPDATA%\TwitchCraftBot`.
+5. Repeat the steps in the Getting A Bot Token section in the README
+6. Paste the token into `config.json` at:
+   - `AppData --> Roaming --> TwitchCraftBot --> config.json`
+7. Replace:
+   - `"BotToken": "INSERT_TOKEN_HERE"`
 
-**Fix:** re-extract a trusted release, keep distributed files together, and retry. Do not download replacement DLLs from unrelated sites.
+## JAVA OR SERVER JAR ERROR
 
-## The bot does not join Twitch chat
+1. Open the Setup page in TwitchCraft
+2. Make sure the correct Java / JDK version is installed for your Minecraft version
+3. Open `config.json` at:
+   - `AppData --> Roaming --> TwitchCraftBot --> config.json`
+4. Check that these paths point to real files or folders:
+   - `"ExecutablePath"`
+   - `"ServerDirectory"`
+   - `"JarPath"`
+5. If the `server.jar` download fails, check your internet connection and run Setup again
+6. If the downloaded server jar fails verification, delete the bad `server.jar` and download it again
 
-**Likely causes:** expired/revoked token, wrong bot name, wrong channel, incorrect Client ID, or network/TLS filtering.
+## START BUTTON IS DISABLED
 
-**Check:** verify the bot account and channel spelling and generate a fresh token with the configured Twitch application.
+1. Hover over the disabled Start button
+2. Read the tooltip telling you why TwitchCraft cannot start yet
+3. Make sure:
+   - Your Minecraft username is entered AND valid
+   - The server address / port is valid
+   - A world import is not still running
+   - TwitchCraft is not already starting
 
-**Fix:** update the token in TwitchCraft and restart. Never post the old or new token while asking for help.
+## TWITCHCRAFT CRASHING OR NO ERROR REASON
 
-## The bot joins, but commands do nothing
+1. Open Task Manager
+2. Check for any existing instances of:
+   - `TwitchCraft.exe`
+   - `javaw.exe`
+   - `java.exe`
+3. Close them if they are already running
+4. Open `config.json` at:
+   - `AppData --> Roaming --> TwitchCraftBot --> config.json`
+5. Find:
+   - `"StreamerName"`
+   - `"BotName"`
+6. Make sure the Twitch username of the account you are streaming on is correctly entered
+7. Make sure the username of your Twitch bot is correctly entered
+8. If the crashing still continues, make sure:
+   - All TwitchCraft files are installed
+   - All files are in the correct location
+   - You followed the Java / JDK Setup in the README
 
-**Likely causes:** Minecraft is not ready, command spelling/arguments are invalid, target is offline, moderator permission is disabled, or a cooldown is active.
+## SERVER STARTS THEN CLOSES
 
-**Check:** try `!tokens`, `!playerlist`, and a low-cost command; read the bot's Twitch response and the TwitchCraft server/chat panels.
+1. Open `config.json` at:
+   - `AppData --> Roaming --> TwitchCraftBot --> config.json`
+2. Check these settings:
+   - `"MemoryMinGB"`
+   - `"MemoryMaxGB"`
+   - `"Port"`
+   - `"RCON"`
+3. Make sure minimum RAM is not higher than maximum RAM
+4. Make sure RAM is between 1 GB and 256 GB
+5. Make sure the Minecraft server port is between 1 and 65535
+6. Make sure the Minecraft server port and RCON port are different
+7. Close any other program already using the same server port
 
-**Fix:** wait for server readiness, use the exact syntax in [COMMANDS.md](COMMANDS.md), and verify the target and permission settings.
+## BOT CONNECTS BUT COMMANDS DO NOTHING
 
-## The Minecraft server does not start
+1. Make sure the bot account is actually in your Twitch chat
+2. Make the bot a moderator in your Twitch chat by typing:
+   - `/mod BOT_NAME`
+3. Open `config.json` at:
+   - `AppData --> Roaming --> TwitchCraftBot --> config.json`
+4. Make sure these names are correct:
+   - `"StreamerName"` is the channel you are streaming on
+   - `"BotName"` is the Twitch bot account
+5. Make sure the Minecraft username entered on the Start page is correct
+6. Wait until the Minecraft server is fully loaded before testing commands
+7. If a command costs tokens, make sure the viewer has enough tokens
 
-**Likely causes:** wrong Java version, invalid/missing server jar, locked server directory, insufficient memory, port conflict, or a damaged world.
+## VIEWER LIST OR PLAYER LIST NOT UPDATING
 
-**Check:** match Java to the table in [INSTALLATION.md](INSTALLATION.md), confirm no stale Java server uses the same folder/port, and inspect the latest sanitized log.
+1. Make sure the bot is a moderator in your Twitch chat
+2. If Twitch chatters stop updating, repeat the bot token setup steps
+3. If Minecraft players stop updating, restart the Minecraft server and TwitchCraft
+4. If you manually edited `server.properties`, make sure it contains:
+   - `enable-query=true`
+   - `query.port` matches your Minecraft server port
+5. Do not change query or RCON settings while the server is already running
+6. Wait a few seconds after a player joins or leaves because TwitchCraft refreshes player snapshots in the background
 
-**Fix:** correct Java selection, close the stale process, verify the jar, reduce memory to a value the computer can supply, or test with a backed-up clean world.
+## MULTIPLAYER NOT WORKING FOR OTHERS
 
-## TwitchCraft reports the wrong Java version
+1. Enable Multiplayer before pressing Start
+2. Remember that Multiplayer does not stay enabled after reopening TwitchCraft
+3. Give other people your public IP address or server domain, not `localhost` or `127.0.0.1`
+4. Port forward the Minecraft server port in your router (if needed)
+5. Allow `java.exe` and `javaw.exe` through Windows Firewall
+6. Make sure the port you give people (if needed) matches the Port setting in TwitchCraft
+7. Restart TwitchCraft after changing ports or firewall settings
 
-**Check:** run the selected `java.exe -version` and inspect `JAVA_HOME` and `PATH`.
+## REMOTE CONTROL MODE OR RCON WILL NOT CONNECT
 
-**Fix:** install the required 64-bit JDK and select its executable/home path. Multiple installed JDKs are allowed if TwitchCraft points to the intended one.
+1. Only use Remote Control Mode if want to gain control to an already running server
+2. Press `Ctrl + Alt + R` on the Start page to show Remote Control Mode options
+3. Make sure the remote host server has RCON enabled in `server.properties`:
+   - `enable-rcon=true`
+   - `rcon.port=THE_RCON_PORT`
+   - `rcon.password=THE_RCON_PASSWORD`
+4. Enter the remote server host in TwitchCraft without extra spaces
+5. Enter a valid RCON port from 1 to 65535
+6. Make sure the RCON password in TwitchCraft exactly matches the server RCON password
+7. Restart the host Minecraft server after changing RCON settings
+8. Remember that Remote Control Mode does not stay enabled after reopening TwitchCraft
 
-## RCON authentication fails
+## WORLD IMPORT WILL NOT FINISH
 
-**Likely causes:** RCON disabled, mismatched password/port, server not restarted, or firewall/tunnel misconfiguration.
+1. Wait for the import to finish before pressing Start
+2. Make sure you selected the actual Minecraft world folder
+3. The selected world folder should contain `level.dat`
+4. Make sure the server folder is not read-only
+5. Make sure your drive has enough free space for a temporary import and backup
+6. If an import failed earlier, restart TwitchCraft and try the import again
 
-**Fix:** follow [REMOTE-CONTROL.md](REMOTE-CONTROL.md). Do not expose the RCON port publicly as a troubleshooting shortcut.
+## RESET OR RESTART DOES NOT WORK
 
-## Friends cannot join
+1. Remote Control Mode cannot reset a remote server world because TwitchCraft does not own that world
+2. Open Task Manager and close any stuck `java.exe` or `javaw.exe` processes
+3. Make sure the Minecraft server log is not locked by another Java process
+4. Make sure the server folder and world folder are not read-only
+5. If reset still fails, restart your computer and try again before deleting any files manually
 
-**Check:** confirm server readiness, matching Minecraft version, game port, Windows Firewall, router forwarding or VPN, and whether the ISP uses carrier-grade NAT.
+## STATISTICS OR TOKENS NOT SAVING
 
-**Fix:** follow [MULTIPLAYER.md](MULTIPLAYER.md). Forward the game port only; RCON is not required for players.
+1. Close TwitchCraft normally so it can finish saving data
+2. Open the TwitchCraftBot folder at:
+   - `AppData --> Roaming --> TwitchCraftBot`
+3. Make sure these database files are not deleted while TwitchCraft is running:
+   - `viewer_tokens.db`
+   - `statistics.db`
+4. Do not edit the database files while TwitchCraft is open
+5. JSON exports are for viewing only and should not be used as the real save files
+6. For statistics:
+   - Make sure Statistics are enabled in Settings if statistics are not changing
+   - Make sure your server logs are in English and do not change the wording of common Minecraft messages (ex: join/leave messages, death messages)
+7. For tokens:
+   - Make sure passive token earning is enabled if viewers are not gaining passive coins
 
-## A command charged tokens but appeared to fail
+## SETTINGS DO NOT STAY ENABLED AFTER REOPENING
 
-**Check:** read Twitch chat and the server panel. TwitchCraft refunds a paid command when dispatch reports failure. A command accepted by the server may still have no visible effect because of game state, target state, permissions, or version syntax.
+1. Multiplayer and Remote Control Mode are startup choices
+2. Enable Multiplayer again before pressing Start if you want a multiplayer server
+3. Press `Ctrl + Alt + R` again if you need Remote Control Mode after reopening TwitchCraft
+4. Other Settings page options should still save normally
+5. If normal settings do not save, close TwitchCraft and check that `config.json` is not read-only or broken
 
-**Fix:** capture the command name, target mode, Minecraft version, local/remote mode, time, and sanitized diagnostic event. Do not manually edit the database while TwitchCraft is running.
+## CONFIG.JSON COULD NOT BE READ
 
-## The token or statistics database is locked
+1. Close TwitchCraft before editing `config.json`
+2. Open `config.json` at:
+   - `AppData --> Roaming --> TwitchCraftBot --> config.json`
+3. Check for missing commas, missing quotes, or extra brackets
+4. If you are not sure what changed, restore a backup of `config.json`
+5. If there is no backup, run Setup again to recreate the config file
 
-**Likely causes:** another TwitchCraft process, a database browser, backup software, or a previous process that has not exited.
+## TWITCHCRAFT OR MINECRAFT SERVER IS LAGGING OR LOW FPS
 
-**Fix:** close TwitchCraft and every database tool, verify no duplicate process remains, then retry. Preserve `.db`, `.db-wal`, and `.db-shm` together when making a live-state backup.
+1. Open Task Manager
+2. Close any background applications that are using high CPU, GPU, or RAM usage
+3. Find the Dangerous Settings within TwitchCraft and lower min and max RAM
+4. Lower your in-game Minecraft settings (render distance, graphics, etc.)
+5. If still experiencing lag or low FPS, open `server.properties` at:
+   - `AppData --> Roaming --> TwitchCraftBot --> MCServer --> server.properties`
+6. Find the properties:
+   - `entity-broadcast-range-percentage`
+   - `simulation-distance`
+   - `sync-chunk-writes`
+   - `view-distance`
+7. Lower these values if needed:
+   - `entity-broadcast-range-percentage = 50–75`
+   - `simulation-distance = 6–8`
+   - `view-distance = 6–10`
+   - `sync-chunk-writes = false`
+8. If you are still experiencing lag or low FPS, consider using a more powerful PC or reducing background usage
 
-## World import fails
-
-**Check:** select the actual world folder containing `level.dat`, verify free disk space, close Minecraft/server processes using the folder, and confirm access permissions.
-
-**Fix:** retry from a copied world backup. Never use the only copy of a world as the import source.
-
-## Sharing diagnostics safely
-
-Include:
-
-- TwitchCraft version
-- Windows version
-- Minecraft and Java versions
-- Local or remote mode
-- Singleplayer or multiplayer
-- Exact reproduction steps and time of failure
-- The smallest relevant sanitized log excerpt
-
-Remove or replace:
-
-- Twitch bot tokens and OAuth strings
-- RCON passwords
-- Authorization headers
-- Client secrets
-- Public IP addresses and private hostnames when unnecessary
-- Full local usernames/paths when unnecessary
-- Raw private chat, databases, worlds, and `config.json`
-
-If a secret may have been shared, rotate it before continuing the support conversation.
+If this troubleshooting guide does not resolve your issue or question, please contact the creator of TwitchCraft and include your `latest.log` file (if possible) along with a description of the problem.
