@@ -1,0 +1,32 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore TwitchCraft.slnx
+
+      - name: Build
+        run: dotnet build TwitchCraft.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test TwitchCraft.slnx -c Release --no-build

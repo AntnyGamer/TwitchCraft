@@ -17,3 +17,6 @@ bin/
 exports/
 obj/
 publish/
+TestResults/
+*.trx
+coverage.*

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/AntnyGamer/TwitchCraft/security/policy
+    about: Report vulnerabilities privately. Never open a public issue containing secrets.
+  - name: Troubleshooting guide
+    url: https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/TROUBLESHOOTING.md
+    about: Check symptom-based fixes and safe diagnostic-sharing guidance first.

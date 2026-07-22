@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="TwitchCraftBot_SOURCE/TwitchCraftBot.csproj" />
+  <Project Path="TwitchCraftBot.Tests/TwitchCraftBot.Tests.csproj" />
+</Solution>

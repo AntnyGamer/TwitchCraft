@@ -1,0 +1,69 @@
+# Architecture
+
+TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI.
+
+```text
+Twitch IRC over TLS
+        ↓
+TwitchRuntime: connection, queues, parsing, identity
+        ↓
+Command registry and handlers
+        ├── TokenHandler (SQLite + JSON export)
+        ├── StatisticsTracker / StatisticsStore (SQLite + JSON export)
+        └── Minecraft runtime
+              ├── Local Java process + stdin
+              └── Remote RCON + query clients
+```
+
+## Main folders
+
+- `BotMain/` — central runtime state, protocol models, statistics, UI dispatch, and error handling
+- `BotSetup/` — configuration, validation, server properties, Java discovery, world import, datapack setup, and token persistence
+- `Commands/` — command models/builders, registration, gameplay/economy handlers, targeting, refunds, and minigames
+- `Runtime/` — lifecycle, Twitch connection/queues, local and remote Minecraft control, player monitoring, and server probes
+- `Frames/` — WPF pages and their event logic
+- `Assets/` — images, icon, server icon, and locate-players datapack
+- `TwitchCraftBot.Tests/` — non-UI behavioral regression tests
+
+The supplied source is already split into focused partial files. Future work should move ownership into services gradually rather than splitting state across additional partial files.
+
+## Startup flow
+
+1. WPF starts and installs global exception handlers.
+2. The application checks its `%APPDATA%\TwitchCraftBot` working directory and loads normalized configuration.
+3. The user selects local or remote mode and a starting profile.
+4. The bot runtime initializes token/statistics stores and Twitch identity.
+5. Local mode prepares the server directory, locates Java, and starts the Java process; remote mode verifies RCON.
+6. Twitch IRC connects over TLS, authenticates, joins the configured channel, and starts bounded processing queues.
+7. Player monitoring and optional minigame/statistics loops start after Minecraft readiness.
+
+## Command execution
+
+1. Twitch IRC parses tags, sender, moderator state, and `PRIVMSG` content.
+2. The command parser normalizes the command name and arguments.
+3. The registry resolves the handler and statistics flags.
+4. Shared helpers validate permissions, server readiness, cooldowns, token balance, and targets.
+5. Paid commands reserve/charge tokens before dispatch.
+6. Commands are built with selector, JSON, SNBT, and version-aware escaping.
+7. The local transport serializes writes to Java stdin; remote mode sends RCON packets.
+8. A dispatch failure refunds the charge and releases its cooldown reservation where required. A successful dispatch records statistics.
+
+## Local and remote modes
+
+Local mode owns Java process startup, output/error readers, server preparation, shutdown, and local command writes. Remote mode connects to an existing server and owns only its RCON/query connection. Both modes expose common high-level send/query methods to command handlers.
+
+## Persistence
+
+- `config.json` uses normalized models, temporary-file writes, replacement fallback, and a backup.
+- Viewer balances use SQLite with a readable JSON export.
+- Statistics use SQLite with aggregate/viewer JSON exports.
+- Database operations use synchronization and parameterized statements.
+- Server/world files remain separate from configuration and databases.
+
+## Shutdown and recovery
+
+Cancellation tokens stop background loops. Local mode requests graceful server shutdown before forceful process cleanup. RCON and network clients disconnect, background tasks are observed, stores are flushed/disposed, and the diagnostic writer closes on application exit. Unexpected exceptions are captured for diagnostics while user-facing dialogs remain concise.
+
+## Testability direction
+
+The first tests cover pure builders, normalizers, and parsers without UI automation or a Minecraft server. Future safe seams are constructor-injected `TimeProvider`, logging, token store, Minecraft command client, Twitch client, and statistics store. These should be introduced one dependency at a time without a repository-wide dependency-injection framework conversion.

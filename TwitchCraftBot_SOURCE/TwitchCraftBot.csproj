@@ -39,6 +39,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="TwitchCraftBot.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Resource Include="Assets\Background1.png" />
 		<Resource Include="Assets\DiamondPickaxe.png" />
 		<Resource Include="Assets\Gear.png" />
