@@ -11,7 +11,7 @@ body:
     id: problem
     attributes:
       label: Problem or use case
-      description: What is difficult or impossible today?
+      description: What is difficult or impossible to do today?
     validations:
       required: true
 

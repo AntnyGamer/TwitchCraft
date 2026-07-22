@@ -15,7 +15,7 @@ In the remote server's `server.properties`:
 ```properties
 enable-rcon=true
 rcon.port=25575
-rcon.password=REPLACE_WITH_A_LONG_RANDOM_PASSWORD
+rcon.password=REPLACE_WITH_YOUR_PASSWORD
 ```
 
 Restart the server after changing these values. Restrict the firewall so only the TwitchCraft machine or private network can reach the RCON port.

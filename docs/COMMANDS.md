@@ -42,14 +42,14 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!clear` | `!clear [target]` | 125 | Player(s) | Everyone | Clears the target inventory. |
 | `!clearhand` | `!clearhand [target]` | 25 | Player(s) | Everyone | Clears the main-hand item. |
 | `!effect` | `!effect [count 1-25] [target]` | 1 per effect | Player(s) | Everyone | Gives one or more random effects; cost scales by effect count and targets. |
-| `!explode` | `!explode [target]` | 15 | Player(s) | Everyone | Summons primed TNT and plays its sound. |
+| `!explode` | `!explode [target]` | 15 | Player(s) | Everyone | Summons primed TNT. |
 | `!fireworks` | `!fireworks [target]` | 10 | Player(s) | Everyone | Launches a short series of fireworks. |
 | `!freeze` | `!freeze [target]` | 30 | Player(s) | Everyone | Applies extreme slowness for 15 seconds. |
 | `!givelight` | `!givelight [target]` | 3 | Player(s) | Everyone | Places a light source near the target. |
 | `!heal` | `!heal [target]` | 3 | Player(s) | Everyone | Gives instant health. |
 | `!insult` | `!insult [target]` | 5 | Player(s) | Everyone | Shows an insulting title to the target. |
 | `!invincible` | `!invincible [target]` | 15 | Player(s) | Everyone | Gives maximum resistance for 15 seconds. |
-| `!johnny` | `!johnny [target]` | 40 | Player(s) | Everyone | Starts the Johnny encounter sequence. |
+| `!johnny` | `!johnny [target]` | 40 | Player(s) | Everyone | Spawns in a "Johnny" vindicator, very strong. |
 | `!lava` | `!lava [target]` | 15 | Player(s) | Everyone | Places lava above the target. |
 | `!lightning` | `!lightning [target]` | 50 | Player(s) | Everyone | Strikes lightning; separate five-minute global cooldown. |
 | `!loot` | `!loot [target]` | 5 | Player(s) | Everyone | Spawns several random loot-table drops. |
@@ -57,10 +57,10 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!mob` | `!mob [target]` | 10 | Player(s) | Everyone | Summons a random mob at the target. |
 | `!night` | `!night` | 15 | World | Everyone | Sets the world time to night. |
 | `!removeblock` | `!removeblock [target]` | 50 | Player(s) | Everyone | Removes the block below the target while protecting selected container/bedrock blocks. |
-| `!rename` | `!rename [target]` | 10 | Player(s) | Everyone | Renames each target's held renameable item after the Twitch sender. |
-| `!scared` | `!scared [target]` | 15 | Player(s) | Everyone | Runs the scared/cat event. |
-| `!slaughter` | `!slaughter [target]` | 30 | Player(s) | Everyone | Removes nearby mobs around the target using the version-aware command sequence. |
-| `!swarm` | `!swarm [target]` | 45 | Player(s) | Everyone | Summons five distinct random mobs at each target. |
+| `!rename` | `!rename [target]` | 10 | Player(s) | Everyone | Renames the target's held renameable item after the Twitch sender. |
+| `!scared` | `!scared [target]` | 15 | Player(s) | Everyone | Spawns a bunch of cats and calls the target a scaredy cat. |
+| `!slaughter` | `!slaughter [target]` | 30 | Player(s) | Everyone | Removes nearby mobs around the target. |
+| `!swarm` | `!swarm [target]` | 45 | Player(s) | Everyone | Summons five distinct random mobs at the target. |
 | `!switchmilk` | `!switchmilk [target]` | 6 | Player(s) | Everyone | Changes one milk bucket into an empty, water, or lava bucket if present. |
 | `!teleport` | `!teleport [target]` | 70 | Player(s) | Everyone | Spreads the target to a random location with dimension-aware limits. |
 | `!totem` | `!totem [target]` | 100 | Player(s) | Everyone | Places a Totem of Undying in the off hand. |
