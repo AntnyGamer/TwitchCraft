@@ -17,6 +17,7 @@ internal sealed class RollingJsonLogWriter : IDisposable
     private StreamWriter? _writer;
     private long _currentBytes;
     private bool _disposed;
+    private bool _retentionCleaned;
 
     internal RollingJsonLogWriter(
         string logPath,
@@ -78,6 +79,12 @@ internal sealed class RollingJsonLogWriter : IDisposable
         if (!string.IsNullOrWhiteSpace(directory))
             Directory.CreateDirectory(directory);
 
+        if (!_retentionCleaned)
+        {
+            CleanupExcessRetainedFilesCore(directory);
+            _retentionCleaned = true;
+        }
+
         FileStream stream = new(_logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
         _currentBytes = stream.Length;
         _writer = new StreamWriter(stream, _encoding)
@@ -110,6 +117,36 @@ internal sealed class RollingJsonLogWriter : IDisposable
         }
 
         EnsureWriterCore();
+    }
+
+    private void CleanupExcessRetainedFilesCore(string? directory)
+    {
+        try
+        {
+            string searchDirectory = string.IsNullOrWhiteSpace(directory)
+                ? Environment.CurrentDirectory
+                : directory;
+            string fileName = Path.GetFileName(_logPath);
+
+            foreach (string path in Directory.EnumerateFiles(searchDirectory, fileName + ".*"))
+            {
+                string suffix = Path.GetFileName(path)[(fileName.Length + 1)..];
+                if (int.TryParse(suffix, NumberStyles.None, CultureInfo.InvariantCulture, out int index) &&
+                    index > _maxRetainedFiles)
+                {
+                    try
+                    {
+                        File.Delete(path);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
     }
 
     private void DisposeWriterCore()

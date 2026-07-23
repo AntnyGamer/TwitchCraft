@@ -9,6 +9,14 @@ public static partial class CommandList
 {
     private sealed partial class CommandBuildContext
     {
+        private static readonly Task<long?> NoCooldownReservationTask = Task.FromResult<long?>(0);
+
+        private static Task<long?> ReserveNoCooldownAsync(CancellationToken _) => NoCooldownReservationTask;
+
+        private static void ReleaseNoCooldown(long _)
+        {
+        }
+
         void AddCommand(string commandName, ChatCommandHandler handler, ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None)
         {
             handlers[commandName] = handler;
@@ -46,7 +54,7 @@ public static partial class CommandList
             await SayInsufficientTokens(sender, cost, ct).ConfigureAwait(false);
             return false;
         }
-        async Task<bool> ExecutePaidCommandTransaction(
+        Task<bool> ExecutePaidCommandTransaction(
             string sender,
             int cost,
             Func<CancellationToken, Task<bool>> dispatchAsync,
@@ -70,49 +78,53 @@ public static partial class CommandList
                 NotifyFailure = onSendFailure
             };
 
-            return await PaidCommandTransaction.ExecuteAsync(dependencies, cost, ct).ConfigureAwait(false);
+            return PaidCommandTransaction.ExecuteAsync(dependencies, cost, ct);
         }
-        async Task<bool> TrySendPaidCommandsWithoutGameCooldown(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct, Action? onSendFailure = null)
+
+        Task<bool> TrySendPaidCommandsWithoutGameCooldown(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct, Action? onSendFailure = null)
         {
-            return await ExecutePaidCommandTransaction(
+            return ExecutePaidCommandTransaction(
                 sender,
                 cost,
                 token => runtime.SendServerCommandsAsync(buildCommands(), token),
-                _ => Task.FromResult<long?>(0),
-                _ => { },
+                ReserveNoCooldownAsync,
+                ReleaseNoCooldown,
                 ct,
-                onSendFailure).ConfigureAwait(false);
+                onSendFailure);
         }
-        async Task<bool> TrySendPaidCommandWithoutGameCooldown(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
+
+        Task<bool> TrySendPaidCommandWithoutGameCooldown(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
         {
-            return await ExecutePaidCommandTransaction(
+            return ExecutePaidCommandTransaction(
                 sender,
                 cost,
                 token => runtime.SendServerCommandAsync(command, token),
-                _ => Task.FromResult<long?>(0),
-                _ => { },
+                ReserveNoCooldownAsync,
+                ReleaseNoCooldown,
                 ct,
-                onSendFailure).ConfigureAwait(false);
+                onSendFailure);
         }
-        async Task<bool> TrySendPricedCommands(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct)
+
+        Task<bool> TrySendPricedCommands(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct)
         {
-            return await ExecutePaidCommandTransaction(
+            return ExecutePaidCommandTransaction(
                 sender,
                 cost,
                 token => runtime.SendServerCommandsAsync(buildCommands(), token),
                 token => TryReserveGameCommandCooldown(sender, token),
                 runtime.ClearGlobalGameCommandCooldown,
-                ct).ConfigureAwait(false);
+                ct);
         }
-        async Task<bool> TrySendPricedCommand(string sender, int cost, string command, CancellationToken ct)
+
+        Task<bool> TrySendPricedCommand(string sender, int cost, string command, CancellationToken ct)
         {
-            return await ExecutePaidCommandTransaction(
+            return ExecutePaidCommandTransaction(
                 sender,
                 cost,
                 token => runtime.SendServerCommandAsync(command, token),
                 token => TryReserveGameCommandCooldown(sender, token),
                 runtime.ClearGlobalGameCommandCooldown,
-                ct).ConfigureAwait(false);
+                ct);
         }
         static bool TargetsEveryone(ResolvedTarget? target)
         {

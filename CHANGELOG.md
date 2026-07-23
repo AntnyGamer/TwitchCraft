@@ -38,6 +38,19 @@ All notable project changes should be recorded here. This project follows a Keep
 
 * Automated UI and live Minecraft/RCON integration tests are not yet included.
 
+## [1.7.1.2] - 2026-07-22
+
+### Changed
+
+* Updated the TwitchCraft bot source and file-version metadata to `1.7.1.2`.
+* Reorganized the bot source into focused application, diagnostics, identity, infrastructure, runtime, statistics, and token areas.
+* Updated `SQLitePCLRaw.bundle_e_sqlite3` from `3.0.3` to `3.0.4`.
+* Updated the GetBotToken helper to `1.4.0.0`, including its token authorization and validation flow.
+
+### Security
+
+* Preserved registered Twitch/RCON secret and user-path redaction in structured diagnostics after the source reorganization.
+
 ## [1.7.1.1] - 2026-07-18
 
 ### Changed

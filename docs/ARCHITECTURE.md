@@ -17,10 +17,15 @@ Command registry and handlers
 
 ## Main folders
 
-- `BotMain/` — central runtime state, protocol models, statistics, UI dispatch, and error handling
-- `BotSetup/` — configuration, validation, server properties, Java discovery, world import, datapack setup, and token persistence
-- `Commands/` — command models/builders, registration, gameplay/economy handlers, targeting, refunds, and minigames
-- `Runtime/` — lifecycle, Twitch connection/queues, local and remote Minecraft control, player monitoring, and server probes
+- `Application/` — application helpers, shared infrastructure, and UI-thread dispatch
+- `BotSetup/` — configuration, validation, server properties, Java discovery, world import, and datapack setup
+- `Commands/` — command parsing/building, registration, gameplay/economy handlers, targeting, refunds, and `Minigames/`
+- `Diagnostics/` — exception handling, structured rolling logs, application-version metadata, and secret redaction
+- `Identity/` — Twitch token, Twitch username, and Minecraft username normalization
+- `Infrastructure/` — shared file, JSON export, sorted-list, and text-segment helpers
+- `Runtime/` — lifecycle and central runtime state, with `Minecraft/`, `Players/`, and `Twitch/` transport/monitoring areas
+- `Statistics/` — lifetime/session statistics models, tracking, SQLite persistence, and JSON exports
+- `Tokens/` — viewer-token accounting, SQLite persistence, and JSON export
 - `Frames/` — WPF pages and their event logic
 - `Assets/` — images, icon, server icon, and locate-players datapack
 - `TwitchCraftBot.Tests/` — non-UI behavioral regression tests

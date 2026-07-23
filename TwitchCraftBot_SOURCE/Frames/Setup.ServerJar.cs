@@ -2,15 +2,11 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Buffers;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1.Frames;
 
