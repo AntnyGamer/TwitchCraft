@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+*.cs text eol=lf
+*.xaml text eol=lf
+*.csproj text eol=lf
+*.json text eol=lf
+*.mcfunction text eol=lf
+
+*.png binary
+*.ico binary

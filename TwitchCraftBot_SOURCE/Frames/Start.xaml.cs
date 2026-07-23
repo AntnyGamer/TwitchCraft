@@ -31,7 +31,7 @@ public partial class Start : UserControl
     {
         InitializeComponent();
         string? botVersion = typeof(Start).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        BotVersion.Text = "Bot Version: " + (botVersion ?? "unknown").Split('+', 2)[0];
+        BotVersion.Text = "Bot Version: " + (botVersion ?? "Unknown").Split('+', 2)[0];
         Focusable = true;
         MCUserTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();
         RemoteHostTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();

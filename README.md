@@ -18,6 +18,25 @@
   <img src="Screenshots/5TC_Settings.png" width="700">
 </p>
 
+## Documentation
+
+The repository-local documentation is the canonical source for TwitchCraft setup, commands, and troubleshooting:
+
+* [Installation](docs/INSTALLATION.md)
+* [Configuration](docs/CONFIGURATION.md)
+* [Commands](docs/COMMANDS.md)
+* [Multiplayer](docs/MULTIPLAYER.md)
+* [Remote Control](docs/REMOTE-CONTROL.md)
+* [Troubleshooting](docs/TROUBLESHOOTING.md)
+* [Architecture](docs/ARCHITECTURE.md)
+* [Release process](docs/RELEASES.md)
+* [Changelog](CHANGELOG.md)
+* [Contributing](CONTRIBUTING.md)
+* [Security policy](SECURITY.md)
+* [AI Assistance Disclosure](docs/NOTE.md)
+
+External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation.
+
 ## 1. Requirements
 
 * Windows 10/11 (64-bit)
@@ -29,7 +48,7 @@
 * Register an application for the bot on the Twitch Developer Console: https://dev.twitch.tv/console
 * Do not use your main Twitch account for the bot if possible
 * Make sure 2FA is enabled, since it is required to register an application
-* Set the OAuth Redirect URL to: `http://localhost`
+* Set the OAuth Redirect URL to: `http://localhost:3000/`
 * Add the bot as a moderator in your Twitch chat by typing `/mod` followed by your bot's name
 
 ## 3. Java / JDK Setup
@@ -60,7 +79,7 @@ For Minecraft versions **26.1–26.2.0**:
 1. Open `GetBotToken.exe`
 2. Enter your bot's Client ID
    * This can be found at: https://dev.twitch.tv/console
-3. Enter the Redirect URL: `http://localhost`
+3. Enter the Redirect URL: `http://localhost:3000/`
 4. Get a new Twitch token
 
 ## 5. Starting TwitchCraft
@@ -257,7 +276,7 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 
 * Game commands run
 * Most used command
-* Coins spent
+* Tokens spent
 * Effects received by the streamer
 * Nicest viewer
 * Most dangerous viewer
@@ -267,9 +286,9 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 
 ## 12. Troubleshooting
 
-Troubleshooting has moved to a document for long-term use and dynamic updating
+Use the canonical [repository troubleshooting guide](docs/TROUBLESHOOTING.md) for current instructions.
 
-* Troubleshooting guide: https://bit.ly/twitchcraft-troubleshooting
+* Supplemental troubleshooting mirror: https://bit.ly/twitchcraft-troubleshooting
 
 ## 13. Changing The Bot Account Or Application
 
@@ -282,10 +301,10 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 ## 14. Links
 
 * TwitchCraft website: https://antnygamer.wixsite.com/twitchcraft
-* TwitchCraft commands: https://rentry.co/bot-commands
+* Supplemental TwitchCraft command mirror: https://rentry.co/bot-commands
 * TwitchCraft trailer: https://www.youtube.com/watch?v=HM2Um3Uf1hk
 * TwitchCraft setup tutorial: https://bit.ly/twitchcraft-tutorial
-* TwitchCraft troubleshooting: https://bit.ly/twitchcraft-troubleshooting
+* Supplemental TwitchCraft troubleshooting mirror: https://bit.ly/twitchcraft-troubleshooting
 
 ## 15. Other Info
 

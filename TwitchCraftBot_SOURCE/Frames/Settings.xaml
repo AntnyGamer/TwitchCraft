@@ -43,7 +43,7 @@
                     <ComboBox x:Name="GlobalCooldownSecondsDropdown" Width="68" Height="26" Visibility="Collapsed" SelectionChanged="GlobalCooldownSecondsDropdown_SelectionChanged" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="361,140,0,0" />
 
                     <TextBlock Width="320" Text="Relay non-command chat to Minecraft?" FontFamily="Segoe UI Variable Display Semibold" FontSize="16" Foreground="#C6C6C6" TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,174,0,0" />
-                    <CheckBox x:Name="NonCommandChatTellrawsCheckbox" IsChecked="True" Checked="NonCommandChatTellrawsCheckbox_Changed" Unchecked="NonCommandChatTellrawsCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="309,179,0,0" />
+                    <CheckBox x:Name="NonCommandChatRelayCheckbox" IsChecked="True" Checked="NonCommandChatRelayCheckbox_Changed" Unchecked="NonCommandChatRelayCheckbox_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="309,179,0,0" />
                 </Grid>
 
                 <Grid x:Name="GameplaySettingsPage" Width="660" Height="270" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,154,0,0">

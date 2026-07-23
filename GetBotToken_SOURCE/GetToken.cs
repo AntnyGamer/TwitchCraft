@@ -1,51 +1,57 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Buffers;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace GetBotToken;
 
 internal static class GetToken
 {
-    private const int ListenPort = 80;
-    private const string TwitchAuthorizeBase = "https://id.twitch.tv/oauth2/authorize";
+    private const string TwitchAuthorizeUrl = "https://id.twitch.tv/oauth2/authorize";
+    private const string TwitchValidateUrl = "https://id.twitch.tv/oauth2/validate";
     private const string BotScopes = "chat:read chat:edit moderator:read:chatters";
-    private static readonly TimeSpan ListenTimeout = TimeSpan.FromMinutes(5);
+    private const int DefaultPort = 3000;
 
-    private static void Main()
+    private static readonly TimeSpan ListenTimeout = TimeSpan.FromMinutes(5);
+    private static readonly HttpClient HttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(10)
+    };
+
+    private static async Task Main()
     {
         Console.BackgroundColor = ConsoleColor.Black;
         Console.ForegroundColor = ConsoleColor.White;
         Console.Clear();
         Console.WriteLine();
 
-        string clientId = PromptWithConfirm(
-            "Please input your Client ID from dev.twitch.tv: ",
-            s => !string.IsNullOrWhiteSpace(s),
-            "Client ID can't be empty.");
-
-        string redirectUrl = PromptWithConfirm(
-            "Please input your Redirect URL from dev.twitch.tv: ",
-            IsValidRedirectUrl,
-            "Redirect URL must be exactly http://localhost or http://localhost/");
-
+        string clientId = PromptClientId();
+        RedirectInfo redirect = PromptRedirectUrl();
         string state = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
         string authUrl =
-            $"{TwitchAuthorizeBase}?response_type=token" +
+            $"{TwitchAuthorizeUrl}?response_type=token" +
             $"&client_id={Uri.EscapeDataString(clientId)}" +
-            $"&redirect_uri={Uri.EscapeDataString(redirectUrl)}" +
+            $"&redirect_uri={Uri.EscapeDataString(redirect.Url)}" +
             $"&scope={Uri.EscapeDataString(BotScopes)}" +
-            $"&state={Uri.EscapeDataString(state)}";
+            $"&state={state}";
 
-        if (!TryCreateLoopbackServer(ListenPort, state, out var server, out string bindError) || server is null)
+        if (!LoopbackTokenServer.TryCreate(redirect.Port, state, clientId, out var server, out string bindError))
         {
-            ShowError($"ERROR: Could not bind http://localhost on port {ListenPort}.");
+            ShowError($"ERROR: Could not bind localhost on port {redirect.Port}.");
             Console.WriteLine(bindError);
             Console.WriteLine();
-            Console.WriteLine($"Close anything else using localhost:{ListenPort} and try again.");
-            Console.WriteLine("Common causes: IIS, Web Deploy, Apache, Nginx, Docker, Skype, or another token tool instance.");
-            Console.ReadKey();
+            Console.WriteLine($"Close anything using localhost:{redirect.Port} and try again.");
+            Console.WriteLine("Common causes include another token tool, IIS, Apache, Nginx, or Docker.");
+            EndProgram();
             return;
         }
 
@@ -53,78 +59,111 @@ internal static class GetToken
         {
             Console.WriteLine();
             Console.WriteLine("Opening browser for Twitch authorization.");
-            Console.WriteLine("The Redirect URL for your bot must match exactly what you entered.");
+            Console.WriteLine($"Redirect URL: {redirect.Url}");
+            Console.WriteLine("This must exactly match the Redirect URL in your Twitch app.");
             Console.WriteLine();
 
             OpenBrowser(authUrl);
+            AuthResult result = await server.WaitForResultAsync(ListenTimeout);
 
-            if (server.WaitForToken(ListenTimeout, out string token, out string error))
+            if (result.Error.Length == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("SUCCESS: Your bot token is below:");
                 Console.ResetColor();
                 Console.WriteLine();
-                Console.WriteLine(token);
+                Console.WriteLine(result.Token);
                 Console.WriteLine();
-                Console.WriteLine("Input this into the TwitchCraft setup to use the bot.");
+                Console.WriteLine($"Authorized Twitch account: {result.Login}");
+                Console.WriteLine("Input this token into the TwitchCraft setup to use the bot.");
             }
             else
             {
-                ShowError("ERROR: Failed to receive the token from localhost.");
-                Console.WriteLine(error);
+                ShowError("ERROR: Failed to receive a valid token.");
+                Console.WriteLine(result.Error);
                 Console.WriteLine();
-                Console.WriteLine("Make sure the Redirect URL in your Twitch app exactly matches what you entered here.");
-                Console.WriteLine("For this file, use exactly: http://localhost or http://localhost/");
+                Console.WriteLine("Make sure the Redirect URL in your Twitch app exactly matches the URL above.");
             }
         }
 
-        Console.WriteLine();
-        Console.WriteLine("Press any key to end.");
-        Console.ReadKey();
+        EndProgram();
     }
 
-
-    private static bool IsValidRedirectUrl(string s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return false;
-        if (!Uri.TryCreate(s.Trim(), UriKind.Absolute, out var uri) || uri is null) return false;
-
-        return string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase)
-            && (uri.IsDefaultPort || uri.Port == ListenPort)
-            && (uri.AbsolutePath.Length == 0 || uri.AbsolutePath == "/");
-    }
-
-    private static string PromptWithConfirm(string prompt, Func<string, bool> validate, string error)
+    private static string PromptClientId()
     {
         while (true)
         {
-            Console.Write(prompt);
+            Console.Write("Please input your Client ID from dev.twitch.tv: ");
             string value = (Console.ReadLine() ?? string.Empty).Trim();
 
-            if (!validate(value))
+            if (value.Length == 0)
             {
-                ShowError("ERROR: " + error);
+                ShowError("ERROR: Client ID can't be empty.");
                 Console.WriteLine();
                 continue;
             }
 
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("You entered: " + value);
-            Console.ResetColor();
-
-            if (PromptYesNo("Is this correct? "))
-                return value;
-
+            if (Confirm(value)) return value;
             Console.WriteLine("Please re-enter.\n");
         }
     }
 
-    private static bool PromptYesNo(string prompt)
+    private static RedirectInfo PromptRedirectUrl()
     {
         while (true)
         {
-            Console.Write(prompt);
+            Console.Write("Please input your Redirect URL from dev.twitch.tv: ");
+            string value = (Console.ReadLine() ?? string.Empty).Trim();
+
+            if (!TryNormalizeRedirectUrl(value, out RedirectInfo redirect))
+            {
+                ShowError("ERROR: Use http://localhost with an optional port from 1 to 65535. Do not add a path, query, or fragment.");
+                Console.WriteLine();
+                continue;
+            }
+
+            if (Confirm(redirect.Url)) return redirect;
+            Console.WriteLine("Please re-enter.\n");
+        }
+    }
+
+    private static bool TryNormalizeRedirectUrl(string value, out RedirectInfo redirect)
+    {
+        const string prefix = "http://localhost";
+        redirect = default;
+
+        if (!value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return false;
+
+        ReadOnlySpan<char> suffix = value.AsSpan(prefix.Length);
+        bool hasTrailingSlash = !suffix.IsEmpty && suffix[^1] == '/';
+        if (hasTrailingSlash) suffix = suffix[..^1];
+
+        int port = DefaultPort;
+        if (!suffix.IsEmpty)
+        {
+            ReadOnlySpan<char> portText = suffix[1..];
+            if (suffix[0] != ':' || portText.IsEmpty) return false;
+
+            foreach (char character in portText)
+                if ((uint)(character - '0') > 9) return false;
+
+            if (!int.TryParse(portText, out port) || port is < 1 or > 65535)
+                return false;
+        }
+
+        redirect = new($"http://localhost:{port}" + (hasTrailingSlash ? "/" : string.Empty), port);
+        return true;
+    }
+
+    private static bool Confirm(string value)
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("You entered: " + value);
+        Console.ResetColor();
+
+        while (true)
+        {
+            Console.Write("Is this correct? ");
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("Y");
             Console.ResetColor();
@@ -143,81 +182,17 @@ internal static class GetToken
         }
     }
 
-    private static bool TryCreateLoopbackServer(int port, string expectedState, out LoopbackTokenServer? server, out string error)
+    private static void OpenBrowser(string url)
     {
-        bool hasIpv4 = TryStartListener(IPAddress.Loopback, port, out var ipv4, out string ipv4Error);
-        bool hasIpv6 = TryStartListener(IPAddress.IPv6Loopback, port, out var ipv6, out string ipv6Error);
-
-        if (hasIpv4 || hasIpv6)
-        {
-            server = new LoopbackTokenServer(ipv4, ipv6, expectedState);
-            error = string.Empty;
-            return true;
-        }
-
-        server = null;
-        error = CombineErrors(ipv4Error, ipv6Error);
-        return false;
-    }
-
-    private static bool TryStartListener(IPAddress address, int port, out TcpListener? listener, out string error)
-    {
-        listener = null;
-        error = string.Empty;
-
         try
         {
-            listener = new TcpListener(address, port);
-            if (address.AddressFamily == AddressFamily.InterNetworkV6)
-                listener.Server.DualMode = false;
-
-            listener.Start(20);
-            return true;
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Exception ex)
         {
-            error = ex.Message;
-            try { listener?.Stop(); } catch { }
-            listener = null;
-            return false;
-        }
-    }
-
-    private static string CombineErrors(string first, string second)
-    {
-        if (string.IsNullOrWhiteSpace(first)) return second;
-        if (string.IsNullOrWhiteSpace(second) || first == second) return first;
-        return $"IPv4: {first}{Environment.NewLine}IPv6: {second}";
-    }
-
-    private static void OpenBrowser(string url)
-    {
-        if (TryStartProcess(new ProcessStartInfo { FileName = url, UseShellExecute = true, Verb = "open" }))
-            return;
-
-        if (TryStartProcess(new ProcessStartInfo
-        {
-            FileName = "cmd",
-            Arguments = $"/c start \"\" \"{url}\"",
-            CreateNoWindow = true,
-            UseShellExecute = false
-        }))
-            return;
-
-        ShowError("ERROR: Failed to open your browser. Copy/paste this URL into a browser:");
-        Console.WriteLine(url);
-    }
-
-    private static bool TryStartProcess(ProcessStartInfo startInfo)
-    {
-        try
-        {
-            Process.Start(startInfo);
-            return true;
-        }
-        catch
-        {
-            return false;
+            Debug.WriteLine(ex);
+            ShowError("ERROR: Failed to open your browser. Copy and paste this URL into a browser:");
+            Console.WriteLine(url);
         }
     }
 
@@ -228,51 +203,111 @@ internal static class GetToken
         Console.ResetColor();
     }
 
+    private static void EndProgram()
+    {
+        Console.WriteLine();
+        Console.WriteLine("Press any key to end.");
+        Console.ReadKey();
+    }
+
+    private readonly record struct RedirectInfo(string Url, int Port);
+    private readonly record struct AuthResult(string Token, string Login, string Error);
+
     private sealed class LoopbackTokenServer : IDisposable
     {
-        private const int MaxRequestBytes = 16384;
-        private const int MaxBodyBytes = 8192;
+        private const int MaxRequestBytes = 16_384;
+        private const int MaxBodyBytes = 4_096;
+
+        private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
         private readonly TcpListener? _ipv4;
         private readonly TcpListener? _ipv6;
         private readonly string _expectedState;
-        private readonly TaskCompletionSource<string> _tokenSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly string _clientId;
+        private readonly string _htmlPage;
         private readonly CancellationTokenSource _cts = new();
-        private readonly List<Task> _workers = [];
+        private readonly TaskCompletionSource<AuthResult> _resultSource =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly Task[] _workers;
         private int _shutdownStarted;
 
-        public LoopbackTokenServer(TcpListener? ipv4, TcpListener? ipv6, string expectedState)
+        private LoopbackTokenServer(
+            TcpListener? ipv4,
+            TcpListener? ipv6,
+            string expectedState,
+            string clientId)
         {
             _ipv4 = ipv4;
             _ipv6 = ipv6;
             _expectedState = expectedState;
+            _clientId = clientId;
+            _htmlPage = BuildHtmlPage(expectedState);
 
-            if (_ipv4 is not null) _workers.Add(AcceptLoopAsync(_ipv4, _cts.Token));
-            if (_ipv6 is not null) _workers.Add(AcceptLoopAsync(_ipv6, _cts.Token));
+            _workers = (ipv4, ipv6) switch
+            {
+                (not null, not null) => [AcceptLoopAsync(ipv4, _cts.Token), AcceptLoopAsync(ipv6, _cts.Token)],
+                (not null, null) => [AcceptLoopAsync(ipv4, _cts.Token)],
+                (null, not null) => [AcceptLoopAsync(ipv6, _cts.Token)],
+                _ => []
+            };
         }
 
-        public bool WaitForToken(TimeSpan timeout, out string token, out string error)
+        public static bool TryCreate(
+            int port,
+            string expectedState,
+            string clientId,
+            out LoopbackTokenServer server,
+            out string error)
         {
+            TcpListener? ipv4 = StartListener(IPAddress.Loopback, port, out string ipv4Error);
+            TcpListener? ipv6 = StartListener(IPAddress.IPv6Loopback, port, out string ipv6Error);
+
+            if (ipv4 is not null || ipv6 is not null)
+            {
+                server = new(ipv4, ipv6, expectedState, clientId);
+                error = string.Empty;
+                return true;
+            }
+
+            server = null!;
+            error = string.IsNullOrWhiteSpace(ipv4Error)
+                ? ipv6Error
+                : string.IsNullOrWhiteSpace(ipv6Error) || ipv4Error == ipv6Error
+                    ? ipv4Error
+                    : $"IPv4: {ipv4Error}{Environment.NewLine}IPv6: {ipv6Error}";
+            return false;
+        }
+
+        private static TcpListener? StartListener(IPAddress address, int port, out string error)
+        {
+            TcpListener? listener = null;
+
             try
             {
-                if (_tokenSource.Task.Wait(timeout))
-                {
-                    token = _tokenSource.Task.GetAwaiter().GetResult();
-                    error = string.Empty;
-                    return true;
-                }
-
-                BeginShutdown();
-                token = string.Empty;
-                error = "Timed out waiting for Twitch to return the token.";
-                return false;
+                listener = new(address, port);
+                listener.Server.ExclusiveAddressUse = true;
+                listener.Start(8);
+                error = string.Empty;
+                return listener;
             }
             catch (Exception ex)
             {
+                StopListener(listener);
+                error = ex.Message;
+                return null;
+            }
+        }
+
+        public async Task<AuthResult> WaitForResultAsync(TimeSpan timeout)
+        {
+            try
+            {
+                return await _resultSource.Task.WaitAsync(timeout);
+            }
+            catch (TimeoutException)
+            {
                 BeginShutdown();
-                token = string.Empty;
-                error = ex is AggregateException aggregate ? aggregate.GetBaseException().Message : ex.Message;
-                return false;
+                return new(string.Empty, string.Empty, "Timed out waiting for Twitch to return the token.");
             }
         }
 
@@ -282,234 +317,474 @@ internal static class GetToken
             {
                 try
                 {
-                    TcpClient client = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
-                    _ = HandleClientAsync(client, cancellationToken);
+                    using TcpClient client = await listener.AcceptTcpClientAsync(cancellationToken);
+                    await HandleClientAsync(client, cancellationToken);
                 }
-                catch (OperationCanceledException) { break; }
-                catch (ObjectDisposedException) { break; }
-                catch
+                catch (Exception ex)
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
+                    if (!cancellationToken.IsCancellationRequested)
+                        CompleteFailure("The local token listener failed: " + ex.Message);
+                    break;
                 }
             }
         }
 
         private async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
         {
-            using (client)
-            {
-                try
-                {
-                    client.NoDelay = true;
-                    using NetworkStream stream = client.GetStream();
-                    HttpRequest request = await ReadRequestAsync(stream, cancellationToken).ConfigureAwait(false);
+            using var readCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            readCts.CancelAfter(RequestTimeout);
+            NetworkStream? stream = null;
 
-                    switch (request)
-                    {
-                        case { Method: "POST", Path: "/token" }:
-                            await HandleTokenPostAsync(stream, request.Body).ConfigureAwait(false);
-                            break;
-                        case { Method: "GET", Path: "/favicon.ico" }:
-                            await WriteResponseAsync(stream, "204 No Content", "text/plain; charset=utf-8", string.Empty, cancellationToken).ConfigureAwait(false);
-                            break;
-                        case { Method: "GET", Path: "/" }:
-                            await WriteResponseAsync(stream, "200 OK", "text/html; charset=utf-8", BuildHtmlPage(), cancellationToken).ConfigureAwait(false);
-                            break;
-                        default:
-                            await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", "Bad request.", cancellationToken).ConfigureAwait(false);
-                            break;
-                    }
-                }
-                catch
+            try
+            {
+                client.NoDelay = true;
+                stream = client.GetStream();
+                HttpRequest request = await ReadRequestAsync(stream, readCts.Token);
+
+                if (request.Method == "GET" && request.Path == "/")
                 {
+                    await WriteResponseAsync(stream, "200 OK", "text/html; charset=utf-8", _htmlPage, cancellationToken);
+                }
+                else if (request.Method == "POST" && request.Path == "/token")
+                {
+                    await HandleTokenPostAsync(stream, request.Body, cancellationToken);
+                }
+                else if (request.Method == "GET" && request.Path == "/favicon.ico")
+                {
+                    await WriteResponseAsync(stream, "204 No Content", "text/plain; charset=utf-8", string.Empty, cancellationToken);
+                }
+                else
+                {
+                    await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", "Bad request.", cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    await TryWriteErrorAsync(stream, "408 Request Timeout", "Request timed out.");
+            }
+            catch (Exception ex) when (ex is IOException or SocketException)
+            {
+                Debug.WriteLine(ex);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                await TryWriteErrorAsync(stream, "500 Internal Server Error", "Local server error.");
+            }
+        }
+
+        private async Task HandleTokenPostAsync(
+            NetworkStream stream,
+            string body,
+            CancellationToken cancellationToken)
+        {
+            ParseForm(body, out string token, out string state, out string authError);
+
+            if (!string.Equals(state, _expectedState, StringComparison.Ordinal))
+            {
+                await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", "Invalid authorization state.", cancellationToken);
+                return;
+            }
+
+            if (authError.Length != 0)
+            {
+                string error = "Twitch authorization failed: " + SanitizeMessage(authError);
+                CompleteFailure(error);
+                await WriteResponseAsync(stream, "200 OK", "text/plain; charset=utf-8", error, CancellationToken.None);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", "Missing access token.", cancellationToken);
+                return;
+            }
+
+            TokenValidation validation = await ValidateTokenAsync(token, cancellationToken);
+            if (!validation.IsValid)
+            {
+                CompleteFailure(validation.Error);
+                await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", validation.Error, CancellationToken.None);
+                return;
+            }
+
+            if (_resultSource.TrySetResult(new(token, validation.Login, string.Empty)))
+                BeginShutdown();
+
+            await WriteResponseAsync(
+                stream,
+                "200 OK",
+                "text/plain; charset=utf-8",
+                "Token successfully sent to TwitchCraft. You may close this page.",
+                CancellationToken.None);
+        }
+
+        private async Task<TokenValidation> ValidateTokenAsync(
+            string token,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, TwitchValidateUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("OAuth", token);
+
+                using HttpResponseMessage response = await HttpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                    return new(false, string.Empty, "Twitch rejected the access token.");
+
+                await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using JsonDocument json = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+                JsonElement root = json.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
+                    return new(false, string.Empty, "Twitch returned an invalid token-validation response.");
+
+                string validatedClientId = GetString(root, "client_id");
+                string login = GetString(root, "login");
+                string userId = GetString(root, "user_id");
+
+                if (!string.Equals(validatedClientId, _clientId, StringComparison.Ordinal))
+                    return new(false, string.Empty, "The token belongs to a different Twitch Client ID.");
+
+                if (login.Length == 0 || userId.Length == 0)
+                    return new(false, string.Empty, "Twitch did not return a valid user account for this token.");
+
+                if (!root.TryGetProperty("expires_in", out JsonElement expires) ||
+                    !expires.TryGetInt32(out int expiresIn) ||
+                    expiresIn <= 0)
+                {
+                    return new(false, string.Empty, "The Twitch token is expired or invalid.");
+                }
+
+                if (!root.TryGetProperty("scopes", out JsonElement scopes) ||
+                    scopes.ValueKind != JsonValueKind.Array)
+                {
+                    return new(false, string.Empty, "Twitch did not return the token scopes.");
+                }
+
+                int scopeMask = 0;
+                foreach (JsonElement scope in scopes.EnumerateArray())
+                {
+                    if (scope.ValueKind != JsonValueKind.String) continue;
+                    scopeMask |= scope.GetString() switch
+                    {
+                        "chat:read" => 1,
+                        "chat:edit" => 2,
+                        "moderator:read:chatters" => 4,
+                        _ => 0
+                    };
+                }
+
+                string missingScope = (scopeMask & 1) == 0 ? "chat:read"
+                    : (scopeMask & 2) == 0 ? "chat:edit"
+                    : (scopeMask & 4) == 0 ? "moderator:read:chatters"
+                    : string.Empty;
+
+                return missingScope.Length == 0
+                    ? new(true, login, string.Empty)
+                    : new(false, string.Empty, "The token is missing the required scope: " + missingScope);
+            }
+            catch (OperationCanceledException)
+            {
+                return new(false, string.Empty, "Timed out while validating the token with Twitch.");
+            }
+            catch (HttpRequestException ex)
+            {
+                Debug.WriteLine(ex);
+                return new(false, string.Empty, "Could not connect to Twitch to validate the token.");
+            }
+            catch (JsonException ex)
+            {
+                Debug.WriteLine(ex);
+                return new(false, string.Empty, "Twitch returned an invalid token-validation response.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return new(false, string.Empty, "An unexpected error occurred while validating the Twitch token.");
+            }
+        }
+
+        private static string GetString(JsonElement root, string propertyName) =>
+            root.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
+
+        private static void ParseForm(
+            string body,
+            out string token,
+            out string state,
+            out string authError)
+        {
+            token = string.Empty;
+            state = string.Empty;
+            authError = string.Empty;
+
+            foreach (string part in body.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                int separator = part.IndexOf('=');
+                if (separator < 0) continue;
+
+                string name = DecodeFormValue(part[..separator]);
+                string value = DecodeFormValue(part[(separator + 1)..]);
+
+                switch (name)
+                {
+                    case "access_token": token = value; break;
+                    case "state": state = value; break;
+                    case "error_description": authError = value; break;
+                    case "error" when authError.Length == 0: authError = value; break;
                 }
             }
         }
 
-        private async Task HandleTokenPostAsync(NetworkStream stream, string body)
+        private static string DecodeFormValue(string value) =>
+            Uri.UnescapeDataString(value.Replace('+', ' '));
+
+        private static string SanitizeMessage(string value) =>
+            value.Replace('\r', ' ').Replace('\n', ' ').Trim();
+
+        private static async Task<HttpRequest> ReadRequestAsync(
+            NetworkStream stream,
+            CancellationToken cancellationToken)
         {
-            string accessToken = ExtractFormValue(body, "access_token");
-            string state = ExtractFormValue(body, "state");
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(MaxRequestBytes);
+            int total = 0;
 
-            if (!string.Equals(state, _expectedState, StringComparison.Ordinal))
+            try
             {
-                await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", "Invalid authorization state.", CancellationToken.None).ConfigureAwait(false);
-                return;
+                int headerEnd = -1;
+                while (total < MaxRequestBytes)
+                {
+                    int previousTotal = total;
+                    int read = await stream.ReadAsync(
+                        buffer.AsMemory(total, MaxRequestBytes - total),
+                        cancellationToken);
+
+                    if (read <= 0) break;
+                    total += read;
+                    headerEnd = FindHeaderEnd(buffer, Math.Max(0, previousTotal - 3), total);
+                    if (headerEnd >= 0) break;
+                }
+
+                if (headerEnd < 0) return default;
+
+                string[] lines = Encoding.ASCII.GetString(buffer, 0, headerEnd)
+                    .Split("\r\n", StringSplitOptions.None);
+                string[] firstLine = lines[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                if (firstLine.Length != 3 ||
+                    firstLine[1][0] != '/' ||
+                    !firstLine[2].StartsWith("HTTP/1.", StringComparison.Ordinal))
+                {
+                    return default;
+                }
+
+                int contentLength = 0;
+                bool foundContentLength = false;
+
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    int colon = lines[i].IndexOf(':');
+                    if (colon <= 0) return default;
+
+                    string name = lines[i][..colon].Trim();
+                    string value = lines[i][(colon + 1)..].Trim();
+
+                    if (name.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase))
+                        return default;
+
+                    if (!name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (foundContentLength ||
+                        !int.TryParse(value, out contentLength) ||
+                        contentLength is < 0 or > MaxBodyBytes)
+                    {
+                        return default;
+                    }
+
+                    foundContentLength = true;
+                }
+
+                int bodyStart = headerEnd + 4;
+                int requiredBytes = bodyStart + contentLength;
+                if (requiredBytes > MaxRequestBytes) return default;
+
+                while (total < requiredBytes)
+                {
+                    int read = await stream.ReadAsync(
+                        buffer.AsMemory(total, requiredBytes - total),
+                        cancellationToken);
+
+                    if (read <= 0) return default;
+                    total += read;
+                }
+
+                string target = firstLine[1];
+                int queryStart = target.IndexOf('?');
+                string path = queryStart < 0 ? target : target[..queryStart];
+                string body = contentLength == 0
+                    ? string.Empty
+                    : Encoding.UTF8.GetString(buffer, bodyStart, contentLength);
+
+                return new(firstLine[0].ToUpperInvariant(), path, body);
+            }
+            finally
+            {
+                if (total > 0)
+                    CryptographicOperations.ZeroMemory(buffer.AsSpan(0, total));
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+
+        private static int FindHeaderEnd(byte[] data, int start, int end)
+        {
+            for (int i = start; i <= end - 4; i++)
+            {
+                if (data[i] == '\r' && data[i + 1] == '\n' &&
+                    data[i + 2] == '\r' && data[i + 3] == '\n')
+                {
+                    return i;
+                }
             }
 
-            if (string.IsNullOrWhiteSpace(accessToken))
+            return -1;
+        }
+
+        private static async Task WriteResponseAsync(
+            NetworkStream stream,
+            string status,
+            string contentType,
+            string body,
+            CancellationToken cancellationToken)
+        {
+            byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
+            byte[] headerBytes = Encoding.ASCII.GetBytes(
+                $"HTTP/1.1 {status}\r\n" +
+                "Connection: close\r\n" +
+                $"Content-Type: {contentType}\r\n" +
+                $"Content-Length: {bodyBytes.Length}\r\n" +
+                "Cache-Control: no-store, no-cache, must-revalidate\r\n" +
+                "Pragma: no-cache\r\n" +
+                "X-Content-Type-Options: nosniff\r\n" +
+                "Referrer-Policy: no-referrer\r\n" +
+                "Cross-Origin-Opener-Policy: same-origin\r\n" +
+                "Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'\r\n\r\n");
+
+            await stream.WriteAsync(headerBytes, cancellationToken);
+            if (bodyBytes.Length != 0)
+                await stream.WriteAsync(bodyBytes, cancellationToken);
+        }
+
+        private static async Task TryWriteErrorAsync(
+            NetworkStream? stream,
+            string status,
+            string message)
+        {
+            if (stream is null) return;
+
+            try
             {
-                await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", "Missing access token.", CancellationToken.None).ConfigureAwait(false);
-                return;
+                await WriteResponseAsync(
+                    stream,
+                    status,
+                    "text/plain; charset=utf-8",
+                    message,
+                    CancellationToken.None);
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+        }
 
-            await WriteResponseAsync(stream, "200 OK", "text/plain; charset=utf-8", "OK", CancellationToken.None).ConfigureAwait(false);
+        private static string BuildHtmlPage(string expectedState) => $$"""
+            <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TwitchCraft</title></head><body>
+            <div id="msg" style="font-family:Arial,sans-serif;padding:18px;white-space:pre-wrap;font-size:34px;line-height:1.2"></div>
+            <script>
+            (async()=>{
+              const msg=document.getElementById("msg"),set=t=>msg.textContent=t;
+              try{
+                const hash=new URLSearchParams(location.hash.slice(1));
+                const query=new URLSearchParams(location.search);
+                const token=hash.get("access_token")||"";
+                const state=hash.get("state")||query.get("state")||"";
+                const error=query.get("error_description")||query.get("error")||hash.get("error_description")||hash.get("error")||"";
+                history.replaceState(null,"","/");
 
-            if (_tokenSource.TrySetResult(accessToken))
+                if(!token&&!error){set("Waiting for Twitch authorization...");return;}
+                if(state!=="{{expectedState}}"){set("Invalid Twitch authorization response. Please close this page and try again.");return;}
+
+                const form=new URLSearchParams({state});
+                if(token)form.set("access_token",token);
+                if(error)form.set("error_description",error);
+
+                for(let attempt=0;attempt<6;attempt++){
+                  try{
+                    set(token?(attempt?"Received token. Retrying app handoff...":"Received token. Sending it to the app..."):"Sending the authorization result to the app...");
+                    const response=await fetch("/token",{method:"POST",body:form,cache:"no-store"});
+                    const text=await response.text();
+                    set(text||(response.ok?"Authorization completed. You may close this page.":"The app rejected the authorization response."));
+                    return;
+                  }catch{
+                    if(attempt<5)await new Promise(resolve=>setTimeout(resolve,500));
+                  }
+                }
+
+                set(token?"Token found, but failed to send it to the app. Your bot token is below:\n\n"+token+"\n\nInput this into the TwitchCraft setup to use the bot.":"Twitch authorization failed: "+error);
+              }catch{
+                history.replaceState(null,"","/");
+                set("Error parsing the Twitch authorization response.");
+              }
+            })();
+            </script></body></html>
+            """;
+
+        private void CompleteFailure(string error)
+        {
+            if (_resultSource.TrySetResult(new(string.Empty, string.Empty, error)))
                 BeginShutdown();
         }
 
         private void BeginShutdown()
         {
             if (Interlocked.Exchange(ref _shutdownStarted, 1) != 0) return;
-
             _cts.Cancel();
-            try { _ipv4?.Stop(); } catch { }
-            try { _ipv6?.Stop(); } catch { }
+            StopListener(_ipv4);
+            StopListener(_ipv6);
         }
 
-        private static async Task<HttpRequest> ReadRequestAsync(NetworkStream stream, CancellationToken cancellationToken)
+        private static void StopListener(TcpListener? listener)
         {
-            static HttpRequest Bad() => new(string.Empty, string.Empty, string.Empty);
-
-            byte[] buffer = new byte[MaxRequestBytes];
-            int total = 0;
-            int headerEnd = -1;
-
-            while (total < buffer.Length)
+            try
             {
-                int read = await stream.ReadAsync(buffer.AsMemory(total, buffer.Length - total), cancellationToken).ConfigureAwait(false);
-                if (read <= 0) break;
-
-                total += read;
-                headerEnd = FindHeaderEnd(buffer, total);
-                if (headerEnd >= 0) break;
+                listener?.Stop();
             }
-
-            if (headerEnd < 0) return Bad();
-
-            string headerText = Encoding.UTF8.GetString(buffer, 0, headerEnd);
-            string[] lines = headerText.Split(["\r\n"], StringSplitOptions.None);
-            string[] first = (lines.Length > 0 ? lines[0] : string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-            if (first.Length < 3 || first[1].Length == 0 || first[1][0] != '/') return Bad();
-
-            string method = first[0].Trim().ToUpperInvariant();
-            string rawTarget = first[1].Trim();
-            int queryIndex = rawTarget.IndexOf('?');
-            string path = queryIndex >= 0 ? rawTarget[..queryIndex] : rawTarget;
-
-            int contentLength = 0;
-            for (int i = 1; i < lines.Length; i++)
+            catch (Exception ex)
             {
-                int colon = lines[i].IndexOf(':');
-                if (colon <= 0) return Bad();
-
-                string name = lines[i][..colon].Trim();
-                string value = lines[i][(colon + 1)..].Trim();
-
-                if (name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase) &&
-                    (!int.TryParse(value, out contentLength) || contentLength < 0 || contentLength > MaxBodyBytes))
-                    return Bad();
+                Debug.WriteLine(ex);
             }
-
-            int bodyStart = headerEnd + 4;
-            int bufferedBodyBytes = Math.Max(0, total - bodyStart);
-            byte[] bodyBytes = contentLength > 0 ? new byte[contentLength] : [];
-
-            if (contentLength > 0)
-            {
-                if (bufferedBodyBytes > 0)
-                {
-                    int copied = Math.Min(bufferedBodyBytes, contentLength);
-                    Buffer.BlockCopy(buffer, bodyStart, bodyBytes, 0, copied);
-                    bufferedBodyBytes = copied;
-                }
-
-                while (bufferedBodyBytes < contentLength)
-                {
-                    int read = await stream.ReadAsync(bodyBytes.AsMemory(bufferedBodyBytes, contentLength - bufferedBodyBytes), cancellationToken).ConfigureAwait(false);
-                    if (read <= 0) return Bad();
-                    bufferedBodyBytes += read;
-                }
-            }
-
-            return new(method, path, bodyBytes.Length > 0 ? Encoding.UTF8.GetString(bodyBytes) : string.Empty);
-        }
-
-        private static int FindHeaderEnd(byte[] data, int count)
-        {
-            for (int i = 0; i <= count - 4; i++)
-                if (data[i] == 13 && data[i + 1] == 10 && data[i + 2] == 13 && data[i + 3] == 10)
-                    return i;
-
-            return -1;
-        }
-
-        private static string ExtractFormValue(string formBody, string key)
-        {
-            if (string.IsNullOrEmpty(formBody) || string.IsNullOrEmpty(key)) return string.Empty;
-
-            foreach (string part in formBody.Split('&', StringSplitOptions.RemoveEmptyEntries))
-            {
-                int equals = part.IndexOf('=');
-                if (equals < 0) continue;
-
-                string name = Uri.UnescapeDataString(part[..equals].Replace('+', ' '));
-                if (!string.Equals(name, key, StringComparison.Ordinal)) continue;
-
-                return Uri.UnescapeDataString(part[(equals + 1)..].Replace('+', ' '));
-            }
-
-            return string.Empty;
-        }
-
-        private static async Task WriteResponseAsync(NetworkStream stream, string status, string contentType, string body, CancellationToken cancellationToken)
-        {
-            byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
-            byte[] headerBytes = Encoding.UTF8.GetBytes(
-                "HTTP/1.1 " + status + "\r\n" +
-                "Connection: close\r\n" +
-                "Content-Type: " + contentType + "\r\n" +
-                "Content-Length: " + bodyBytes.Length + "\r\n" +
-                "Cache-Control: no-store, no-cache, must-revalidate\r\n" +
-                "Pragma: no-cache\r\n\r\n");
-
-            await stream.WriteAsync(headerBytes, cancellationToken).ConfigureAwait(false);
-            if (bodyBytes.Length > 0)
-                await stream.WriteAsync(bodyBytes, cancellationToken).ConfigureAwait(false);
-        }
-
-        private string BuildHtmlPage()
-        {
-            return "<!DOCTYPE html><html><head><meta charset='utf-8'><title>TwitchCraft</title></head><body>"
-                + "<div id='msg' style='font-family:Inter;padding:18px;white-space:pre-wrap;font-size:34px;line-height:1.2'></div>"
-                + "<script>"
-                + "(function(){"
-                + "var expectedState='" + _expectedState + "';"
-                + "var e=document.getElementById('msg');"
-                + "function set(t){e.textContent=t;}"
-                + "function showToken(t){set('Token found, but failed to send it to the app. Your bot token is below:\\n\\n'+t+'\\n\\nInput this into the TwitchCraft setup to use the bot.');}"
-                + "function send(t,s,tries){"
-                + "set(tries<5?'Received token. Retrying app handoff...':'Received token. Sending it to the app...');"
-                + "fetch('/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'access_token='+encodeURIComponent(t)+'&state='+encodeURIComponent(s)})"
-                + ".then(function(r){if(!r.ok) throw new Error('HTTP '+r.status); set('Your bot token is: '+t+'\\n\\nInput this into the TwitchCraft setup to use the bot!');})"
-                + ".catch(function(){if(tries>0){setTimeout(function(){send(t,s,tries-1);},500);return;}showToken(t);});"
-                + "}"
-                + "try{"
-                + "var h=window.location.hash||'';"
-                + "var p=new URLSearchParams(h.charAt(0)==='#'?h.substring(1):h);"
-                + "var t=p.get('access_token');"
-                + "var s=p.get('state')||'';"
-                + "var err=p.get('error_description')||p.get('error');"
-                + "if(err){set('Twitch returned an error: '+err);return;}"
-                + "if(!t){set('Waiting for Twitch token...');return;}"
-                + "if(s!==expectedState){set('Invalid Twitch authorization response. Please close this page and try again.');return;}"
-                + "history.replaceState(null,'','/');"
-                + "send(t,s,5);"
-                + "}catch(ex){set('Error parsing token.');}"
-                + "})();"
-                + "</script></body></html>";
         }
 
         public void Dispose()
         {
             BeginShutdown();
-            try { Task.WaitAll([.. _workers], TimeSpan.FromSeconds(1)); } catch { }
+
+            try
+            {
+                Task.WaitAll(_workers, TimeSpan.FromSeconds(1));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+
             _cts.Dispose();
         }
 
         private readonly record struct HttpRequest(string Method, string Path, string Body);
+        private readonly record struct TokenValidation(bool IsValid, string Login, string Error);
     }
 }

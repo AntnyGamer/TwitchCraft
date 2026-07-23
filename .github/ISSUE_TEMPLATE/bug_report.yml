@@ -1,0 +1,104 @@
+name: Bug report
+description: Report a reproducible TwitchCraft problem without sharing secrets.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Never include Twitch tokens, RCON passwords, authorization headers, private databases, full config files, public IP addresses, or unredacted logs.
+
+  - type: input
+    id: twitchcraft-version
+    attributes:
+      label: TwitchCraft version
+      placeholder: e.g. 1.7.1.1
+    validations:
+      required: true
+
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      placeholder: e.g. Windows 11 24H2
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft-version
+    attributes:
+      label: Minecraft version
+      placeholder: e.g. 1.21.11
+    validations:
+      required: true
+
+  - type: input
+    id: java-version
+    attributes:
+      label: Java version
+      placeholder: e.g. Temurin 21.0.8, 64-bit
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Server mode
+      options:
+        - Local server
+        - Remote Control Mode
+    validations:
+      required: true
+
+  - type: dropdown
+    id: players
+    attributes:
+      label: Player mode
+      options:
+        - Singleplayer
+        - Multiplayer
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Give the smallest reliable sequence that triggers the problem.
+      placeholder: |
+        1. Start TwitchCraft with...
+        2. Send...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized diagnostic excerpt
+      description: Include only the smallest relevant excerpt after removing all secrets, addresses, private paths, and private chat.
+      render: text
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I checked this report and its attachments for Twitch tokens, RCON passwords, authorization headers, config files, private databases, public IP addresses, and unredacted logs.
+          required: true
+        - label: I searched existing issues and read the repository troubleshooting guide.
+          required: true

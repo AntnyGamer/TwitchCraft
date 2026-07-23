@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose a focused improvement to TwitchCraft.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Explain the user problem first. Do not include tokens, passwords, private server details, or personal data.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What is difficult or impossible to do today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe what TwitchCraft should do from the user's perspective.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility considerations
+      description: Consider Minecraft versions, local/remote mode, multiplayer, token pricing/refunds, cooldowns, permissions, statistics, and UI impact.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmation
+      options:
+        - label: I searched existing issues and documentation for this request.
+          required: true
+        - label: This issue contains no credentials, private configuration, databases, or unredacted logs.
+          required: true

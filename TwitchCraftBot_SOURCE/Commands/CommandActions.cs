@@ -48,7 +48,7 @@ public sealed partial class BotMainHandler
     private long _switchMilkTagCounter;
 
     public string CreateSwitchMilkTag()
-        => "tc_switchmilk_" + Interlocked.Increment(ref _switchMilkTagCounter).ToString(CultureInfo.InvariantCulture);
+        => string.Create(CultureInfo.InvariantCulture, $"tc_switchmilk_{Interlocked.Increment(ref _switchMilkTagCounter)}");
 
     private long GlobalGameCommandCooldownTicks
     {
