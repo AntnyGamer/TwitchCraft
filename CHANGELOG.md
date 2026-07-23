@@ -2,54 +2,27 @@
 
 All notable project changes should be recorded here. This project follows a Keep a Changelog-style structure; version numbers should match the application metadata and release tag.
 
-## [Unreleased]
+## [1.7.1.2] - 2026-07-22
 
 ### Added
 
-* Windows GitHub Actions validation for restore, Release build, and tests.
-* Regression tests for Minecraft command escaping/building, configuration normalization, Twitch token handling, command parsing, and IRC parsing.
-* Deterministic regression tests for paid-command charging, exactly-once refunds, dispatch completion, cooldown reservation release, and statistics recording.
-* CI collection and downloadable artifact publishing for XPlat Code Coverage.
-* Canonical repository documentation, contribution guidance, issue forms, and a pull-request checklist.
-* Structured JSON-lines diagnostics with session/application metadata, bounded rolling retention, and automatic secret/path redaction.
+* Added automated tests, GitHub Actions build validation, and code coverage artifacts.
+* Added project documentation and contributor templates.
 
 ### Changed
 
-* Clarified that TwitchCraft is a standalone Windows Twitch-to-Minecraft integration application rather than a Forge/Fabric client mod.
-* Updated the source solution path and added a repository-level solution containing TwitchCraft, its tests, and the distributed GetBotToken helper.
-* Made repository-local setup, command, and troubleshooting documentation the canonical source linked from the README.
+* Updated and reorganized the TwitchCraft source code.
+* Updated GetBotToken to version `1.4.0.0`.
+* Updated SQLite components and improved diagnostic logging.
 
 ### Fixed
 
-* Structured logs now report the executable `FileVersion` users see instead of the unrelated assembly compatibility version.
-* Log files now rotate at the size boundary during a running session instead of waiting for the next application start.
-* Paid-command failures release only their own global cooldown reservation, refund exactly once, and record statistics only after dispatch succeeds.
+* Fixed paid-command refunds, cooldown release, and statistics recording after failed dispatches.
+* Fixed application version reporting and in-session log rotation.
 
 ### Security
 
-* Added safe-log-sharing and secret-handling guidance.
-* Redacted registered Twitch/RCON secrets, OAuth and authorization values, RCON property values, and Windows user profile names before diagnostic output is written.
-
-### Removed
-
-* None.
-
-### Known Issues
-
-* Automated UI and live Minecraft/RCON integration tests are not yet included.
-
-## [1.7.1.2] - 2026-07-22
-
-### Changed
-
-* Updated the TwitchCraft bot source and file-version metadata to `1.7.1.2`.
-* Reorganized the bot source into focused application, diagnostics, identity, infrastructure, runtime, statistics, and token areas.
-* Updated `SQLitePCLRaw.bundle_e_sqlite3` from `3.0.3` to `3.0.4`.
-* Updated the GetBotToken helper to `1.4.0.0`, including its token authorization and validation flow.
-
-### Security
-
-* Preserved registered Twitch/RCON secret and user-path redaction in structured diagnostics after the source reorganization.
+* Added automatic redaction of Twitch tokens, RCON passwords, authorization values, and Windows usernames from diagnostic logs.
 
 ## [1.7.1.1] - 2026-07-18
 
