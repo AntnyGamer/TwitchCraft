@@ -269,7 +269,7 @@ public sealed partial class BotMainHandler
             List<string> createdWaiterPlayers = new(players.Count);
             Dictionary<string, TaskCompletionSource<int?>> waiters = CreateGameTypeBatchWaiters(players, createdWaiterPlayers);
             bool refreshCompleted = false;
-            HashSet<string>? nextSpectators = null;
+            HashSet<string> nextSpectators;
             try
             {
                 if (await SendInternalProbeCommandsAsync(SpectatorGameTypeProbeCommands, () =>
@@ -328,7 +328,7 @@ public sealed partial class BotMainHandler
 
             lock (_spectatorProbeGate)
             {
-                _spectatorPlayers = nextSpectators ?? new HashSet<string>(players.Count, PlayerNameComparer);
+                _spectatorPlayers = nextSpectators;
                 if (refreshCompleted)
                 {
                     _lastSpectatorRefreshUtc = DateTime.UtcNow;

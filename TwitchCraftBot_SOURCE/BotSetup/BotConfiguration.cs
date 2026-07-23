@@ -62,7 +62,7 @@ public sealed class StartingProfile
     public bool GlobalGameCommandCooldownEnabled { get; set; }
     public double GlobalGameCommandCooldownSeconds { get; set; } = 10.0;
     public bool PassiveTokenEarningEnabled { get; set; } = true;
-    public bool NonCommandChatTellrawsEnabled { get; set; } = true;
+    public bool NonCommandChatRelayEnabled { get; set; } = true;
     public bool ModeratorsCanUseStreamerCommands { get; set; }
     public bool StatisticsEnabled { get; set; } = true;
 }

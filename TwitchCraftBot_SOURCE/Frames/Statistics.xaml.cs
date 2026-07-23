@@ -133,18 +133,11 @@ public partial class Statistics : UserControl
         long seconds = totalSeconds % 60;
 
         if (hours > 0)
-        {
-            return hours.ToString(CultureInfo.InvariantCulture) + "h " +
-                   minutes.ToString(CultureInfo.InvariantCulture) + "m " +
-                   seconds.ToString(CultureInfo.InvariantCulture) + "s";
-        }
+            return string.Create(CultureInfo.InvariantCulture, $"{hours}h {minutes}m {seconds}s");
 
         if (minutes > 0)
-        {
-            return minutes.ToString(CultureInfo.InvariantCulture) + "m " +
-                   seconds.ToString(CultureInfo.InvariantCulture) + "s";
-        }
+            return string.Create(CultureInfo.InvariantCulture, $"{minutes}m {seconds}s");
 
-        return seconds.ToString(CultureInfo.InvariantCulture) + "s";
+        return string.Create(CultureInfo.InvariantCulture, $"{seconds}s");
     }
 }

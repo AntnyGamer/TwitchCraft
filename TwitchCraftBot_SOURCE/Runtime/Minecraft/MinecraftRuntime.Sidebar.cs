@@ -132,7 +132,7 @@ public sealed partial class BotMainHandler
                 previousPlayers.Count - previousIndex != score;
 
             if (scoreChanged)
-                commands.Add("scoreboard players set " + player + " " + objective + " " + score.ToString(CultureInfo.InvariantCulture));
+                commands.Add(string.Create(CultureInfo.InvariantCulture, $"scoreboard players set {player} {objective} {score}"));
 
             score--;
         }

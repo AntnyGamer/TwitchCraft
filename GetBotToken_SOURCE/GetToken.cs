@@ -112,12 +112,12 @@ internal static class GetToken
     {
         while (true)
         {
-            Console.Write($"Please input your Redirect URL from dev.twitch.tv: ");
+            Console.Write("Please input your Redirect URL from dev.twitch.tv: ");
             string value = (Console.ReadLine() ?? string.Empty).Trim();
 
             if (!TryNormalizeRedirectUrl(value, out RedirectInfo redirect))
             {
-                ShowError("ERROR: Use http://localhost with an optional port from 1 to 65535 and no path, query, or fragment.");
+                ShowError("ERROR: Use http://localhost with an optional port from 1 to 65535. Do not add a path, query, or fragment.");
                 Console.WriteLine();
                 continue;
             }
@@ -286,9 +286,6 @@ internal static class GetToken
             {
                 listener = new(address, port);
                 listener.Server.ExclusiveAddressUse = true;
-                if (address.AddressFamily == AddressFamily.InterNetworkV6)
-                    listener.Server.DualMode = false;
-
                 listener.Start(8);
                 error = string.Empty;
                 return listener;
@@ -382,11 +379,7 @@ internal static class GetToken
             string body,
             CancellationToken cancellationToken)
         {
-            if (!TryParseForm(body, out string token, out string state, out string authError))
-            {
-                await WriteResponseAsync(stream, "400 Bad Request", "text/plain; charset=utf-8", "Malformed authorization response.", cancellationToken);
-                return;
-            }
+            ParseForm(body, out string token, out string state, out string authError);
 
             if (!string.Equals(state, _expectedState, StringComparison.Ordinal))
             {
@@ -518,7 +511,7 @@ internal static class GetToken
                 ? value.GetString() ?? string.Empty
                 : string.Empty;
 
-        private static bool TryParseForm(
+        private static void ParseForm(
             string body,
             out string token,
             out string state,
@@ -528,30 +521,21 @@ internal static class GetToken
             state = string.Empty;
             authError = string.Empty;
 
-            try
+            foreach (string part in body.Split('&', StringSplitOptions.RemoveEmptyEntries))
             {
-                foreach (string part in body.Split('&', StringSplitOptions.RemoveEmptyEntries))
+                int separator = part.IndexOf('=');
+                if (separator < 0) continue;
+
+                string name = DecodeFormValue(part[..separator]);
+                string value = DecodeFormValue(part[(separator + 1)..]);
+
+                switch (name)
                 {
-                    int separator = part.IndexOf('=');
-                    if (separator < 0) continue;
-
-                    string name = DecodeFormValue(part[..separator]);
-                    string value = DecodeFormValue(part[(separator + 1)..]);
-
-                    switch (name)
-                    {
-                        case "access_token": token = value; break;
-                        case "state": state = value; break;
-                        case "error_description": authError = value; break;
-                        case "error" when authError.Length == 0: authError = value; break;
-                    }
+                    case "access_token": token = value; break;
+                    case "state": state = value; break;
+                    case "error_description": authError = value; break;
+                    case "error" when authError.Length == 0: authError = value; break;
                 }
-
-                return true;
-            }
-            catch (UriFormatException)
-            {
-                return false;
             }
         }
 

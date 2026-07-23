@@ -21,9 +21,7 @@ public static partial class MinigameManager
             await ShowMinigameSubtitleAsync(runtime, "GUESS THE NUMBER", cancellationToken).ConfigureAwait(false);
             await SafeReplyAsync(
                 runtime,
-                "🔴 Guess The Number has started! Use !guess <number> to guess a number between " +
-                minValue.ToString(CultureInfo.InvariantCulture) + " and " +
-                maxValue.ToString(CultureInfo.InvariantCulture) + ". If you win you will get free tokens! You have 60 seconds!",
+                string.Create(CultureInfo.InvariantCulture, $"🔴 Guess The Number has started! Use !guess <number> to guess a number between {minValue} and {maxValue}. If you win you will get free tokens! You have 60 seconds!"),
                 cancellationToken).ConfigureAwait(false);
 
             DateTime endAtUtc = DateTime.UtcNow.AddSeconds(60.0);
@@ -53,8 +51,7 @@ public static partial class MinigameManager
             {
                 await SafeReplyAsync(
                     runtime,
-                    "Guess The Number is over! Nobody got it. The correct number was " +
-                    answer.ToString(CultureInfo.InvariantCulture) + ".",
+                    string.Create(CultureInfo.InvariantCulture, $"Guess The Number is over! Nobody got it. The correct number was {answer}."),
                     cancellationToken).ConfigureAwait(false);
             }
         }

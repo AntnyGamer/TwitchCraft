@@ -4,7 +4,7 @@ namespace TwitchCraftBot_V1;
 
 internal static class ApplicationVersionProvider
 {
-    internal const string UnknownVersion = "unknown";
+    internal const string UnknownVersion = "Unknown";
 
     internal static string Resolve()
         => Resolve(typeof(ApplicationVersionProvider).Assembly);

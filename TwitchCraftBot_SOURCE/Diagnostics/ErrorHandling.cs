@@ -18,7 +18,7 @@ internal static partial class ErrorHandling
     private const string DefaultTitle = "TwitchCraftBot";
     private const string LogFileName = "TwitchCraftBot.log";
     private const long MaxLogBytes = 1_000_000;
-    private const int MaxRetainedLogFiles = 4;
+    private const int MaxOldLogFiles = 4;
     private static readonly Lock LogGate = new();
     private static readonly UTF8Encoding Utf8NoBom = new(false);
     private static readonly JsonSerializerOptions LogJsonOptions = new()
@@ -180,7 +180,7 @@ internal static partial class ErrorHandling
             string directory = BotSetup.ConfigurationStore.WorkingDirectory;
             Directory.CreateDirectory(directory);
             string logPath = Path.Combine(directory, LogFileName);
-            _logWriter = new RollingJsonLogWriter(logPath, MaxLogBytes, MaxRetainedLogFiles, Utf8NoBom);
+            _logWriter = new RollingJsonLogWriter(logPath, MaxLogBytes, MaxOldLogFiles, Utf8NoBom);
         }
         catch
         {

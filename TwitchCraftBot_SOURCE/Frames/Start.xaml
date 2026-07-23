@@ -53,7 +53,7 @@
 
                 <TextBlock x:Name="MCVersion" Width="170" Text="Minecraft 26.1.2" FontFamily="Microsoft Sans Serif" FontSize="12" Foreground="#C6C6C6" HorizontalAlignment="Center" VerticalAlignment="Top" TextAlignment="Center" Margin="0,426,0,0" Height="14" />
 
-                <TextBlock x:Name="BotVersion" Text="Bot Version:" FontFamily="Microsoft Sans Serif" FontSize="12" Foreground="#C6C6C6" TextAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="693,16,0,0" />
+                <TextBlock x:Name="BotVersion" Text="Bot Version:" FontFamily="Microsoft Sans Serif" FontSize="12" Foreground="#C6C6C6" TextAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="682,16,0,0" />
 
                 <Image x:Name="Gear" Width="34" Height="34" Source="/Assets/Gear.png" Stretch="Fill" Cursor="Hand" MouseLeftButtonDown="Help_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,10,0,0" />
                 <Image x:Name="Statistics" Width="34" Height="34" Source="/Assets/Statistics.png" Stretch="Fill" Cursor="Hand" MouseLeftButtonDown="Stats_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="51,10,0,0" />

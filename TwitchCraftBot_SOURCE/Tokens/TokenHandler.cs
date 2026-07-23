@@ -281,7 +281,7 @@ internal sealed partial class TokenHandler(string path)
     {
         string[] names = new string[count];
         for (int i = 0; i < names.Length; i++)
-            names[i] = "$user" + i.ToString(CultureInfo.InvariantCulture);
+            names[i] = string.Create(CultureInfo.InvariantCulture, $"$user{i}");
 
         return names;
     }

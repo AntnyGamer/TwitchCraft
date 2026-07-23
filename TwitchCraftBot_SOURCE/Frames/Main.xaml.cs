@@ -54,7 +54,7 @@ public partial class Main : UserControl
 
         SafeInvoke(() =>
         {
-            string countText = string.Format("You have {0} viewer{1}.", viewers.Count, viewers.Count == 1 ? string.Empty : "s");
+            string countText = $"You have {viewers.Count} viewer{(viewers.Count == 1 ? string.Empty : "s")}.";
 
             if (BotViewerList.ItemsSource is not List<string> currentViewers || !SortedListHelper.EqualInOrder(currentViewers, viewers, ViewerNameComparer))
                 BotViewerList.ItemsSource = viewers;

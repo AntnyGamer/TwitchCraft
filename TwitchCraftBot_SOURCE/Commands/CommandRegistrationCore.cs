@@ -42,9 +42,9 @@ public static partial class CommandList
             await SayToChannel(sender + ", the Minecraft server is still starting. Try again in a moment.", ct).ConfigureAwait(false);
             return false;
         }
-        static string GetArg(IReadOnlyList<string>? args, int index)
+        static string GetArg(string[]? args, int index)
         {
-            if (args is null || index < 0 || index >= args.Count)
+            if (args is null || index < 0 || index >= args.Length)
                 return string.Empty;
             return args[index] ?? string.Empty;
         }
@@ -79,18 +79,6 @@ public static partial class CommandList
             };
 
             return PaidCommandTransaction.ExecuteAsync(dependencies, cost, ct);
-        }
-
-        Task<bool> TrySendPaidCommandsWithoutGameCooldown(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct, Action? onSendFailure = null)
-        {
-            return ExecutePaidCommandTransaction(
-                sender,
-                cost,
-                token => runtime.SendServerCommandsAsync(buildCommands(), token),
-                ReserveNoCooldownAsync,
-                ReleaseNoCooldown,
-                ct,
-                onSendFailure);
         }
 
         Task<bool> TrySendPaidCommandWithoutGameCooldown(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
@@ -415,13 +403,13 @@ public static partial class CommandList
             string sender,
             int baseCost,
             Func<ResolvedTarget, IEnumerable<string>> buildCommands,
-            CancellationToken ct,
             string? targetMessage,
             string? othersMessage,
             string channelMessage,
-            string color = "yellow",
-            bool bold = true,
-            string? othersColor = null)
+            string color,
+            bool bold,
+            string? othersColor,
+            CancellationToken ct)
         {
             if (await SendTargetedPricedCommand(target, sender, baseCost, buildCommands, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
                 await SayToChannel(channelMessage, ct).ConfigureAwait(false);
@@ -431,13 +419,13 @@ public static partial class CommandList
             string sender,
             int baseCost,
             string command,
-            CancellationToken ct,
             string? targetMessage,
             string? othersMessage,
             string channelMessage,
-            string color = "yellow",
-            bool bold = true,
-            string? othersColor = null)
+            string color,
+            bool bold,
+            string? othersColor,
+            CancellationToken ct)
         {
             if (await SendSingleTargetedPricedCommand(target, sender, baseCost, command, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
                 await SayToChannel(channelMessage, ct).ConfigureAwait(false);
@@ -461,13 +449,13 @@ public static partial class CommandList
                         sender,
                         definition.BaseCost,
                         definition.BuildCommands,
-                        ct,
                         definition.BuildTargetMessage(sender, target),
                         definition.OthersMessage,
                         definition.BuildChannelMessage(sender, target),
                         definition.Color,
                         definition.Bold,
-                        definition.OthersColor),
+                        definition.OthersColor,
+                        ct),
                     commandStatisticFlags: definition.StatisticFlags,
                     minimumTokenCost: definition.BaseCost);
             }

@@ -32,7 +32,6 @@ public partial class Setup : UserControl
     {
         public string ID { get; } = ID;
         public string Label { get; } = label;
-        public int RequiredJDK { get; } = requiredJDK;
         public string Group { get; } = $"JDK {requiredJDK} REQUIRED";
     }
 

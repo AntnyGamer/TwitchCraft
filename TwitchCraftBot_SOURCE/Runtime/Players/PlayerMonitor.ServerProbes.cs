@@ -221,7 +221,7 @@ public sealed partial class BotMainHandler
 
     private string RegisterServerProbeMarker(Action onProbeCompleted)
     {
-        string marker = _serverProbeMarkerSessionPrefix + Interlocked.Increment(ref _serverProbeMarkerCounter).ToString(CultureInfo.InvariantCulture);
+        string marker = string.Create(CultureInfo.InvariantCulture, $"{_serverProbeMarkerSessionPrefix}{Interlocked.Increment(ref _serverProbeMarkerCounter)}");
         lock (_serverProbeMarkerGate)
         {
             _pendingServerProbeMarkers[marker] = onProbeCompleted;

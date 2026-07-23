@@ -27,7 +27,7 @@ public sealed class RollingJsonLogWriterTests
         Assert.Equal(2, lines.Length);
         Assert.Equal(1, lines.Count(line => line == first));
         Assert.Equal(1, lines.Count(line => line == second));
-        Assert.True(File.Exists(logPath + ".1"));
+        Assert.True(File.Exists(logPath + ".old1"));
         Assert.Equal(second, Assert.Single(File.ReadAllLines(logPath)));
     }
 
@@ -45,7 +45,7 @@ public sealed class RollingJsonLogWriterTests
 
         string[] files = Directory.GetFiles(directory.Path, "TwitchCraftBot.log*");
         Assert.InRange(files.Length, 1, 4);
-        Assert.DoesNotContain(logPath + ".4", files);
+        Assert.DoesNotContain(logPath + ".old4", files);
         Assert.Contains("{\"event\":29,\"value\":\"abcdefghij\"}", ReadAllLogLines(logPath));
     }
 

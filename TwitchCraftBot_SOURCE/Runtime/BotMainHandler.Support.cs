@@ -61,7 +61,7 @@ public sealed partial class BotMainHandler
                 MinigamesEnabled = source.Settings.MinigamesEnabled,
                 MinigameCooldown = source.Settings.MinigameCooldown,
                 PassiveTokenEarningEnabled = source.Settings.PassiveTokenEarningEnabled,
-                NonCommandChatTellrawsEnabled = source.Settings.NonCommandChatTellrawsEnabled,
+                NonCommandChatRelayEnabled = source.Settings.NonCommandChatRelayEnabled,
                 ModeratorsCanUseStreamerCommands = source.Settings.ModeratorsCanUseStreamerCommands,
                 GlobalGameCommandCooldownEnabled = source.Settings.GlobalGameCommandCooldownEnabled,
                 GlobalGameCommandCooldownSeconds = source.Settings.GlobalGameCommandCooldownSeconds,

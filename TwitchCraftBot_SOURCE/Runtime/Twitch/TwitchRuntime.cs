@@ -303,7 +303,7 @@ public sealed partial class BotMainHandler
                             await NotifyIRCCommandQueueOverloadAsync(cancellationToken).ConfigureAwait(false);
                         }
                     }
-                    else if (_activeConfig?.Settings.NonCommandChatTellrawsEnabled != false)
+                    else if (_activeConfig?.Settings.NonCommandChatRelayEnabled != false)
                     {
                         _ = QueueIRCWorkCore(
                             _IRCQuickQueue,
@@ -366,9 +366,7 @@ public sealed partial class BotMainHandler
                 break;
 
             _shellWindow?.AddChatLogLine(
-                "[IRC] Reconnecting in " +
-                (reconnectDelayMs / 1000.0).ToString("0.#", CultureInfo.InvariantCulture) +
-                " second(s)...");
+                string.Create(CultureInfo.InvariantCulture, $"[IRC] Reconnecting in {reconnectDelayMs / 1000.0:0.#} second(s)..."));
 
             try
             {

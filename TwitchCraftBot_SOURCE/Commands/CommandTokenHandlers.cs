@@ -37,13 +37,13 @@ public static partial class CommandList
             risk = Math.Clamp(risk, 1, 10);
             if (runtime.IsGambleOnCooldown(who, out TimeSpan cooldownRemaining))
             {
-                await sayToChannel(string.Format(CultureInfo.InvariantCulture, "{0}, gamble is on cooldown. Try again in {1}.", who, FormatMinutesSeconds(cooldownRemaining)), ct).ConfigureAwait(false);
+                await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who}, gamble is on cooldown. Try again in {FormatMinutesSeconds(cooldownRemaining)}."), ct).ConfigureAwait(false);
                 return;
             }
             int balance = runtime.GetTokens(who);
             if (!runtime.TrySpendTokens(who, amount))
             {
-                await sayToChannel(string.Format(CultureInfo.InvariantCulture, "{0}, you must have at least {1} tokens to gamble that amount. You currently have {2}.", who, amount, balance), ct).ConfigureAwait(false);
+                await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who}, you must have at least {amount} tokens to gamble that amount. You currently have {balance}."), ct).ConfigureAwait(false);
                 return;
             }
             double winChance = 0.9 - ((risk - 1) * 0.08888888888888889);
@@ -58,20 +58,18 @@ public static partial class CommandList
                 runtime.AdjustTokens(who, amount + gain); // Gamble win payout restores bet plus profit.
                 int newBalance = runtime.GetTokens(who);
                 await sayToChannel(
-                    string.Format(
+                    string.Create(
                         CultureInfo.InvariantCulture,
-                        "{0}, you gambled {1} {2} at risk {3} and WON! You gained {4} {5} and now have {6} tokens total.",
-                        who, amount, CommandTokenWord(amount), risk, gain, CommandTokenWord(gain), newBalance),
+                        $"{who}, you gambled {amount} {CommandTokenWord(amount)} at risk {risk} and WON! You gained {gain} {CommandTokenWord(gain)} and now have {newBalance} tokens total."),
                     ct).ConfigureAwait(false);
             }
             else
             {
                 int newBalance = runtime.GetTokens(who);
                 await sayToChannel(
-                    string.Format(
+                    string.Create(
                         CultureInfo.InvariantCulture,
-                        "{0}, you gambled {1} {2} at risk {3} and LOST. You lost {4} {5} and now have {6} tokens total.",
-                        who, amount, CommandTokenWord(amount), risk, amount, CommandTokenWord(amount), newBalance),
+                        $"{who}, you gambled {amount} {CommandTokenWord(amount)} at risk {risk} and LOST. You lost {amount} {CommandTokenWord(amount)} and now have {newBalance} tokens total."),
                     ct).ConfigureAwait(false);
             }
         };
@@ -112,7 +110,7 @@ public static partial class CommandList
                     return;
                 }
                 runtime.AdjustTokens(chatters, delta);
-                await sayToChannel(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3} {4} all tracked viewers ({5}).", who, verb, amount, CommandTokenWord(amount), direction, chatters.Count), ct).ConfigureAwait(false);
+                await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {amount} {CommandTokenWord(amount)} {direction} all tracked viewers ({chatters.Count})."), ct).ConfigureAwait(false);
                 return;
             }
             if (targetToken.Equals("random", StringComparison.OrdinalIgnoreCase))
@@ -125,7 +123,7 @@ public static partial class CommandList
                 }
                 string chosen = chatters[BotMainHandler.Randomizer.Next(chatters.Count)];
                 runtime.AdjustTokens(chosen, delta);
-                await sayToChannel(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3} {4} random viewer {5}.", who, verb, amount, CommandTokenWord(amount), direction, chosen), ct).ConfigureAwait(false);
+                await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {amount} {CommandTokenWord(amount)} {direction} random viewer {chosen}."), ct).ConfigureAwait(false);
                 return;
             }
             if (!CommandUserHelper.TryNormalizeTwitchUsername(targetToken, out string targetUsername))
@@ -134,7 +132,7 @@ public static partial class CommandList
                 return;
             }
             runtime.AdjustTokens(targetUsername, delta);
-            await sayToChannel(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3} {4} {5}.", who, verb, amount, CommandTokenWord(amount), direction, targetUsername), ct).ConfigureAwait(false);
+            await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {amount} {CommandTokenWord(amount)} {direction} {targetUsername}."), ct).ConfigureAwait(false);
         }
         handlers["tokens"] = async (args, sender, ct) =>
         {
@@ -183,7 +181,7 @@ public static partial class CommandList
             int received = amount / 2;
             if (received > 0)
                 runtime.AdjustTokens(toUser, received);
-            await sayToChannel(string.Format(CultureInfo.InvariantCulture, "{0} traded {1} tokens to {2}. {2} received {3} tokens (50%).", fromUser, amount, toUser, received), ct).ConfigureAwait(false);
+            await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{fromUser} traded {amount} tokens to {toUser}. {toUser} received {received} tokens (50%)."), ct).ConfigureAwait(false);
         };
     }
 }

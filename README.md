@@ -48,7 +48,7 @@ External tutorials and short links later in this guide are supplemental mirrors.
 * Register an application for the bot on the Twitch Developer Console: https://dev.twitch.tv/console
 * Do not use your main Twitch account for the bot if possible
 * Make sure 2FA is enabled, since it is required to register an application
-* Set the OAuth Redirect URL to: `http://localhost`
+* Set the OAuth Redirect URL to: `http://localhost:3000/`
 * Add the bot as a moderator in your Twitch chat by typing `/mod` followed by your bot's name
 
 ## 3. Java / JDK Setup
@@ -79,7 +79,7 @@ For Minecraft versions **26.1–26.2.0**:
 1. Open `GetBotToken.exe`
 2. Enter your bot's Client ID
    * This can be found at: https://dev.twitch.tv/console
-3. Enter the Redirect URL: `http://localhost`
+3. Enter the Redirect URL: `http://localhost:3000/`
 4. Get a new Twitch token
 
 ## 5. Starting TwitchCraft

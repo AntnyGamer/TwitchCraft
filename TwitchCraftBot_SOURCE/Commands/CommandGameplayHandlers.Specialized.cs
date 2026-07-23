@@ -55,10 +55,13 @@ public static partial class CommandList
                     MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 400, 10),
                     MinecraftCommandBuilder.Title(target.Selector, "Wow, you suck!", color, runtime.UsesInlineTextComponentSyntax)
                 ],
-                ct,
                 sender + " insulted you!",
                 "GOT INSULTED!",
-                sender + ", you insulted " + TargetName(target) + "...");
+                sender + ", you insulted " + TargetName(target) + "...",
+                "yellow",
+                true,
+                null,
+                ct);
         }
         async Task HandleJohnny(ResolvedTarget target, string sender, CancellationToken ct)
         {
@@ -71,11 +74,13 @@ public static partial class CommandList
                 sender,
                 40,
                 _ => commands,
-                ct,
                 sender + " sent Johnny after you.",
                 "JOHNNY IS COMING!",
                 sender + ", you spawned Johnny for " + TargetName(target) + ".",
-                othersColor: "red");
+                "yellow",
+                true,
+                "red",
+                ct);
         }
         async Task HandleLightning(string[]? args, string sender, CancellationToken ct)
         {
@@ -130,10 +135,13 @@ public static partial class CommandList
                 sender,
                 5,
                 _ => commands,
-                ct,
                 sender + " gave you a pile of loot.",
                 "GOT SOME LOOT!",
-                sender + ", you gave " + TargetName(target) + " a pile of loot.");
+                sender + ", you gave " + TargetName(target) + " a pile of loot.",
+                "yellow",
+                true,
+                null,
+                ct);
         }
         async Task HandleMob(ResolvedTarget target, string sender, CancellationToken ct)
         {
@@ -144,10 +152,13 @@ public static partial class CommandList
                 sender,
                 10,
                 MinecraftCommandBuilder.SummonMob(target.Selector, mob),
-                ct,
                 sender + " summoned a " + pretty + " on you.",
                 "GOT A MOB SPAWNED ON THEM!",
-                sender + ", you summoned a " + pretty + " on " + TargetName(target) + ".");
+                sender + ", you summoned a " + pretty + " on " + TargetName(target) + ".",
+                "yellow",
+                true,
+                null,
+                ct);
         }
         async Task HandleNight(string[]? _, string sender, CancellationToken ct)
         {
@@ -249,10 +260,13 @@ public static partial class CommandList
                 sender,
                 45,
                 _ => swarmCommands,
-                ct,
-                targetMessage: null,
-                othersMessage: "GOT SWARMED!",
-                channelMessage: sender + ", you spawned " + string.Join(", ", prettyNames) + " on " + TargetName(target) + ".");
+                null,
+                "GOT SWARMED!",
+                sender + ", you spawned " + string.Join(", ", prettyNames) + " on " + TargetName(target) + ".",
+                "yellow",
+                true,
+                null,
+                ct);
         }
         async Task HandleSwitchMilk(ResolvedTarget target, string sender, CancellationToken ct)
         {
@@ -287,10 +301,13 @@ public static partial class CommandList
                 sender,
                 6,
                 _ => switchMilkCommands,
-                ct,
-                targetMessage: null,
-                othersMessage: null,
-                channelMessage: sender + ", you changed " + TargetName(target) + "'s milk bucket into " + itemName + " (if they had one).");
+                null,
+                null,
+                sender + ", you changed " + TargetName(target) + "'s milk bucket into " + itemName + " (if they had one).",
+                "yellow",
+                true,
+                null,
+                ct);
         }
         async Task HandleWeather(string[]? _, string sender, CancellationToken ct)
         {
@@ -315,29 +332,38 @@ public static partial class CommandList
                     "execute as " + target.Selector + " at @s unless dimension minecraft:the_nether run tp @s ~ ~200 ~",
                     "execute as " + target.Selector + " at @s unless dimension minecraft:the_nether run give @s minecraft:water_bucket 1"
                 ],
-                ct,
                 sender + " sent you into the sky!",
                 "GOT SENT INTO THE SKY!",
-                sender + ", you sent " + TargetName(target) + " into the sky.");
+                sender + ", you sent " + TargetName(target) + " into the sky.",
+                "yellow",
+                true,
+                null,
+                ct);
         Task HandleScared(ResolvedTarget target, string sender, CancellationToken ct)
             => SendTargetedPricedCommandAndSay(
                 target,
                 sender,
                 15,
                 _ => MinecraftCommandFeatureBuilder.BuildScaredCommands(target.Selector, BotMainHandler.Randomizer, runtime.UsesInlineTextComponentSyntax),
-                ct,
                 sender + " thinks you're a scaredy cat and spawned cats above you.",
                 "GOT BURIED IN CATS!",
-                sender + ", you spawned 20 cats on " + TargetName(target) + ".");
+                sender + ", you spawned 20 cats on " + TargetName(target) + ".",
+                "yellow",
+                true,
+                null,
+                ct);
         Task HandleSlaughter(ResolvedTarget target, string sender, CancellationToken ct)
             => SendTargetedPricedCommandAndSay(
                 target,
                 sender,
                 30,
                 _ => MinecraftCommandFeatureBuilder.BuildSlaughterCommands(target.Selector, runtime.MobLootGameRuleName),
-                ct,
                 sender + " slaughtered any nearby mobs.",
                 "GOT THEIR AREA SLAUGHTERED!",
-                sender + ", you slaughtered any nearby mobs around " + TargetName(target) + ".");
+                sender + ", you slaughtered any nearby mobs around " + TargetName(target) + ".",
+                "yellow",
+                true,
+                null,
+                ct);
     }
 }

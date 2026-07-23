@@ -108,12 +108,11 @@ internal sealed class RollingJsonLogWriter : IDisposable
         {
             string source = index == 1
                 ? _logPath
-                : _logPath + "." + (index - 1).ToString(CultureInfo.InvariantCulture);
+                : GetRetainedLogPath(index - 1);
             if (!File.Exists(source))
                 continue;
 
-            string destination = _logPath + "." + index.ToString(CultureInfo.InvariantCulture);
-            File.Move(source, destination, true);
+            File.Move(source, GetRetainedLogPath(index), true);
         }
 
         EnsureWriterCore();
@@ -128,9 +127,9 @@ internal sealed class RollingJsonLogWriter : IDisposable
                 : directory;
             string fileName = Path.GetFileName(_logPath);
 
-            foreach (string path in Directory.EnumerateFiles(searchDirectory, fileName + ".*"))
+            foreach (string path in Directory.EnumerateFiles(searchDirectory, fileName + ".old*"))
             {
-                string suffix = Path.GetFileName(path)[(fileName.Length + 1)..];
+                string suffix = Path.GetFileName(path)[(fileName.Length + 4)..];
                 if (int.TryParse(suffix, NumberStyles.None, CultureInfo.InvariantCulture, out int index) &&
                     index > _maxRetainedFiles)
                 {
@@ -148,6 +147,9 @@ internal sealed class RollingJsonLogWriter : IDisposable
         {
         }
     }
+
+    private string GetRetainedLogPath(int index) =>
+        _logPath + ".old" + index.ToString(CultureInfo.InvariantCulture);
 
     private void DisposeWriterCore()
     {

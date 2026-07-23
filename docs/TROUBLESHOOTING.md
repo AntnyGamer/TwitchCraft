@@ -8,7 +8,7 @@
    * `AppData --> Roaming --> TwitchCraftBot --> TwitchCraftBot.log`
 3. If the log file reaches 1 MB in size, previous log entries will be moved to files called:
 
-   * `TwitchCraftBot.log.1` through `TwitchCraftBot.log.5`
+   * `TwitchCraftBot.log.old1` through `TwitchCraftBot.log.old4`
 4. Only a maximum of 6 MB of log data can be stored
 5. TwitchCraft automatically removes Twitch and RCON secrets from the log file. However, you should still review the log before sharing it, as error information may contain other personal information
 

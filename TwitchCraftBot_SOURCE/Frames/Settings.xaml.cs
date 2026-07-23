@@ -137,7 +137,7 @@ public partial class Settings : UserControl
         MinigameCooldownDropdown.SelectedItem = cooldownText;
         MinigameCooldownDropdown.Text = cooldownText;
         PassiveTokensCheckbox.IsChecked = settings.PassiveTokenEarningEnabled;
-        NonCommandChatTellrawsCheckbox.IsChecked = settings.NonCommandChatTellrawsEnabled;
+        NonCommandChatRelayCheckbox.IsChecked = settings.NonCommandChatRelayEnabled;
         ModeratorCommandsCheckbox.IsChecked = settings.ModeratorsCanUseStreamerCommands;
         GlobalCooldownCheckbox.IsChecked = settings.GlobalGameCommandCooldownEnabled;
         SetGlobalCooldownSecondsDropdown(settings.GlobalGameCommandCooldownSeconds);
@@ -247,10 +247,10 @@ public partial class Settings : UserControl
             PassiveTokensCheckbox.IsChecked == true,
             static (config, enabled) => config.Settings.PassiveTokenEarningEnabled = enabled);
 
-    private async void NonCommandChatTellrawsCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void NonCommandChatRelayCheckbox_Changed(object sender, RoutedEventArgs e)
         => await UpdateBoolSettingIfReadyAsync(
-            NonCommandChatTellrawsCheckbox.IsChecked == true,
-            static (config, enabled) => config.Settings.NonCommandChatTellrawsEnabled = enabled);
+            NonCommandChatRelayCheckbox.IsChecked == true,
+            static (config, enabled) => config.Settings.NonCommandChatRelayEnabled = enabled);
 
     private async void ModeratorCommandsCheckbox_Changed(object sender, RoutedEventArgs e)
         => await UpdateBoolSettingIfReadyAsync(
@@ -421,7 +421,7 @@ public partial class Settings : UserControl
                 config.Settings.MinigamesEnabled = defaults.MinigamesEnabled;
                 config.Settings.MinigameCooldown = defaults.MinigameCooldown;
                 config.Settings.PassiveTokenEarningEnabled = defaults.PassiveTokenEarningEnabled;
-                config.Settings.NonCommandChatTellrawsEnabled = defaults.NonCommandChatTellrawsEnabled;
+                config.Settings.NonCommandChatRelayEnabled = defaults.NonCommandChatRelayEnabled;
                 config.Settings.ModeratorsCanUseStreamerCommands = defaults.ModeratorsCanUseStreamerCommands;
                 config.Settings.GlobalGameCommandCooldownEnabled = defaults.GlobalGameCommandCooldownEnabled;
                 config.Settings.GlobalGameCommandCooldownSeconds = defaults.GlobalGameCommandCooldownSeconds;
