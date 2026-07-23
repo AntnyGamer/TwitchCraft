@@ -60,7 +60,7 @@ public sealed partial class BotMainHandler
             return _pendingRespawnPositionRequests.TryGetValue(playerName, out _);
     }
 
-    private static bool TryParseGamemodeAnnouncementLine(string line, out string playerName, out int gameType)
+    internal static bool TryParseGamemodeAnnouncementLine(string line, out string playerName, out int gameType)
     {
         playerName = string.Empty;
         gameType = -1;
