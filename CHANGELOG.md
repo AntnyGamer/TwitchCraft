@@ -2,17 +2,18 @@
 
 All notable project changes should be recorded here. This project follows a Keep a Changelog-style structure; version numbers should match the application metadata and release tag.
 
-## [1.7.1.2] - 2026-07-22
+## [1.7.1.2] - 2026-07-23
 
 ### Added
 
 * Added automated tests, GitHub Actions build validation, and code coverage artifacts.
 * Added project documentation and contributor templates.
+* Added custom redirect port support and account confirmation to GetBotToken.
+* Added new helpers for commands, configuration, diagnostics, minigames, statistics, and runtime features.
 
 ### Changed
 
 * Updated and reorganized the TwitchCraft source code.
-* Updated GetBotToken to version `1.4.0.0`.
 * Updated SQLite components and improved diagnostic logging.
 
 ### Fixed
