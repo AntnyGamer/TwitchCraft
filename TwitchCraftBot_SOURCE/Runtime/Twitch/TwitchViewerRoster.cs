@@ -278,7 +278,7 @@ public sealed partial class BotMainHandler
         return ParseResolvedUserIds(JSON, botName, streamerName);
     }
 
-    private static string? ParseViewerRosterPage(string json, List<string> viewers)
+    internal static string? ParseViewerRosterPage(string json, List<string> viewers)
     {
         using StringReader textReader = new(json);
         using JsonTextReader reader = new(textReader);
@@ -337,7 +337,7 @@ public sealed partial class BotMainHandler
         return cursor;
     }
 
-    private static string[] ParseResolvedUserIds(string json, string botName, string streamerName)
+    internal static string[] ParseResolvedUserIds(string json, string botName, string streamerName)
     {
         string botID = string.Empty;
         string broadcasterID = string.Empty;

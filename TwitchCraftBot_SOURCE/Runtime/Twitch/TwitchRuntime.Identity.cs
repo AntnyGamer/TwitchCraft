@@ -126,7 +126,7 @@ public sealed partial class BotMainHandler
         return ParseValidatedBotLogin(JSON);
     }
 
-    private static string ParseValidatedBotLogin(string json)
+    internal static string ParseValidatedBotLogin(string json)
     {
         using StringReader textReader = new(json);
         using JsonTextReader reader = new(textReader);

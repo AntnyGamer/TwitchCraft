@@ -20,10 +20,6 @@ All notable project changes should be recorded here. This project follows a Keep
 * Fixed paid-command refunds, cooldown release, and statistics recording after failed dispatches.
 * Fixed application version reporting and in-session log rotation.
 
-### Security
-
-* Added automatic redaction of Twitch tokens, RCON passwords, authorization values, and Windows usernames from diagnostic logs.
-
 ## [1.7.1.1] - 2026-07-18
 
 ### Changed

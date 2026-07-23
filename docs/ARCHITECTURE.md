@@ -20,7 +20,7 @@ Command registry and handlers
 - `Application/` — application helpers, shared infrastructure, and UI-thread dispatch
 - `BotSetup/` — configuration, validation, server properties, Java discovery, world import, and datapack setup
 - `Commands/` — command parsing/building, registration, gameplay/economy handlers, targeting, refunds, and `Minigames/`
-- `Diagnostics/` — exception handling, structured rolling logs, application-version metadata, and secret redaction
+- `Diagnostics/` — exception handling, structured rolling logs, and application-version metadata
 - `Identity/` — Twitch token, Twitch username, and Minecraft username normalization
 - `Infrastructure/` — shared file, JSON export, sorted-list, and text-segment helpers
 - `Runtime/` — lifecycle and central runtime state, with `Minecraft/`, `Players/`, and `Twitch/` transport/monitoring areas
@@ -71,4 +71,4 @@ Cancellation tokens stop background loops. Local mode requests graceful server s
 
 ## Testability direction
 
-Tests cover pure builders, normalizers, parsers, secret redaction, rolling-log behavior, application-version metadata, and paid-command transaction semantics without UI automation or a Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, token store, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.
+Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, and paid-command transaction semantics without UI automation or a Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.

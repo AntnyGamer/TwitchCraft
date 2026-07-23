@@ -125,7 +125,7 @@ internal static partial class ErrorHandling
 
     public static string FormatLogMessage(string context, Exception? ex)
     {
-        return SecretRedactor.Redact(context + ": " + FormatExceptionMessage(ex));
+        return context + ": " + FormatExceptionMessage(ex);
     }
 
     public static void LogNonFatal(string context, Exception? ex)
@@ -136,10 +136,8 @@ internal static partial class ErrorHandling
 
     public static string FormatLogMessage(string context, SocketException ex)
     {
-        return SecretRedactor.Redact(context + ": " + ex.SocketErrorCode);
+        return context + ": " + ex.SocketErrorCode;
     }
-
-    internal static void RegisterSecrets(params string?[] secrets) => SecretRedactor.Register(secrets);
 
     private static void WriteLog(string level, string context, Exception? ex)
     {
@@ -149,12 +147,12 @@ internal static partial class ErrorHandling
             {
                 Timestamp = DateTimeOffset.Now.ToString("O", CultureInfo.InvariantCulture),
                 Level = level,
-                Event = SecretRedactor.Redact(context),
+                Event = context,
                 ApplicationVersion = ApplicationVersion,
                 SessionId = SessionId,
                 ExceptionType = ex?.GetType().FullName,
-                Message = SecretRedactor.Redact(ex?.Message ?? context),
-                OriginalError = ex == null ? null : SecretRedactor.Redact(ex.ToString())
+                Message = ex?.Message ?? context,
+                OriginalError = ex?.ToString()
             };
             string line = JsonSerializer.Serialize(logEvent, LogJsonOptions);
 

@@ -192,7 +192,6 @@ public sealed partial class ConfigurationStore
         config.Twitch.BotToken = TwitchCraftBot_V1.TwitchTokenHelper.NormalizeAccessToken(config.Twitch.BotToken);
         config.Twitch.ClientID = CleanText(config.Twitch.ClientID);
         config.Identity.StreamerMinecraftName = CleanText(config.Identity.StreamerMinecraftName);
-        TwitchCraftBot_V1.ErrorHandling.RegisterSecrets(config.Twitch.BotToken, config.Server.RCON.Password);
     }
 
     private static bool IsValidPort(int port) => port is >= MinPort and <= MaxPort;
