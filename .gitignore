@@ -7,10 +7,12 @@
 *.msi
 *.suo
 *.tmp
+*.trx
 *.user
 *.zip
 
 config.json
+coverage.*
 
 .vs/
 bin/
@@ -18,5 +20,3 @@ exports/
 obj/
 publish/
 TestResults/
-*.trx
-coverage.*
