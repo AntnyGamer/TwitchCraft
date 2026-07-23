@@ -47,7 +47,7 @@ Use `127.0.0.1` only when TwitchCraft and the remote-controlled server run on th
 
 - Authentication failure: check `enable-rcon`, port, password, and server restart.
 - Connection timeout: check host, routing, VPN/tunnel, firewall, and whether the port is listening.
-- Commands fail on one server version: verify the configured Minecraft version and consult the log for sanitized diagnostics.
+- Commands fail on one server version: verify the configured Minecraft version and review the diagnostic log carefully. It can contain the original error text and sensitive values.
 - Queries work intermittently: check latency, packet loss, host limits, and other RCON clients.
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) before sharing diagnostics.
