@@ -1,16 +1,22 @@
 using TwitchCraftBot.Tests.TestInfrastructure;
+using TwitchCraftBot.Tests.Tokens;
 using TwitchCraftBot_V1;
 
 namespace TwitchCraftBot.Tests.Commands;
 
+[Collection(SqliteDatabaseTestCollection.Name)]
 public sealed class MinigameHelperTests
 {
-    [Theory]
-    [InlineData(1, "1 token")]
-    [InlineData(2, "2 tokens")]
-    public void FormatTokens_UsesCorrectSingularAndPluralForms(int amount, string expected)
+    private const int Updated = (int)MinigameManager.MinigameBetUpdateResult.Updated;
+    private const int NotEnoughTokens = (int)MinigameManager.MinigameBetUpdateResult.NotEnoughTokens;
+    private const int OverMax = (int)MinigameManager.MinigameBetUpdateResult.OverMax;
+    private const int Closed = (int)MinigameManager.MinigameBetUpdateResult.Closed;
+
+    [Fact]
+    public void FormatTokens_UsesCorrectSingularAndPluralForms()
     {
-        Assert.Equal(expected, MinigameManager.FormatTokens(amount));
+        Assert.Equal("1 token", MinigameManager.FormatTokens(1));
+        Assert.Equal("2 tokens", MinigameManager.FormatTokens(2));
     }
 
     [Fact]
@@ -76,10 +82,10 @@ public sealed class MinigameHelperTests
     }
 
     [Theory]
-    [InlineData(false, 0, 1, false, 0)]
-    [InlineData(true, 0, 0, true, 0)]
-    [InlineData(true, 2, 2, true, 25)]
-    [InlineData(true, 3, 3, true, 25)]
+    [InlineData(false, Updated, NotEnoughTokens, false, 0)]
+    [InlineData(true, Updated, Updated, true, 0)]
+    [InlineData(true, OverMax, OverMax, true, 25)]
+    [InlineData(true, Closed, Closed, true, 25)]
     public void TryAddPaidBet_ChargesUpdatesAndRefundsAtomically(
         bool spendSucceeds,
         int updateResultValue,

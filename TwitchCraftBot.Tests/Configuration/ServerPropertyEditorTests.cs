@@ -1,3 +1,4 @@
+using TwitchCraftBot.Tests.TestInfrastructure;
 using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot.Tests.Configuration;
@@ -78,23 +79,4 @@ public sealed class ServerPropertyEditorTests
         Assert.Equal("Streamer World", ServerPropertyEditor.GetLevelName(config));
     }
 
-    private sealed class TemporaryDirectory : IDisposable
-    {
-        internal TemporaryDirectory()
-        {
-            Path = System.IO.Path.Combine(
-                System.IO.Path.GetTempPath(),
-                "TwitchCraftTests",
-                Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(Path);
-        }
-
-        internal string Path { get; }
-
-        public void Dispose()
-        {
-            if (Directory.Exists(Path))
-                Directory.Delete(Path, true);
-        }
-    }
 }

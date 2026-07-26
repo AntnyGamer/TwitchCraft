@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TwitchCraftBot_SOURCE\TwitchCraftBot.csproj" />
-    <ProjectReference Include="..\TwitchCraftBot.TestProcess\TwitchCraftBot.TestProcess.csproj" ReferenceOutputAssembly="false" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\TwitchCraftBot.TestProcess\TwitchCraftBot.TestProcess.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

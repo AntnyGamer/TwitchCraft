@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using TwitchCraftBot.Tests.TestInfrastructure;
 using TwitchCraftBot_V1;
 
 namespace TwitchCraftBot.Tests.Diagnostics;
@@ -88,20 +89,4 @@ public sealed class RollingJsonLogWriterTests
             .ToArray();
     }
 
-    private sealed class TemporaryDirectory : IDisposable
-    {
-        internal TemporaryDirectory()
-        {
-            Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "TwitchCraftTests", Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(Path);
-        }
-
-        internal string Path { get; }
-
-        public void Dispose()
-        {
-            if (Directory.Exists(Path))
-                Directory.Delete(Path, true);
-        }
-    }
 }

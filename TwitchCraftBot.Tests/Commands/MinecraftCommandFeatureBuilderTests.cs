@@ -16,8 +16,14 @@ public sealed class MinecraftCommandFeatureBuilderTests
             @"^execute at @s run summon minecraft:cat ~(-?[0-2])? ~[3-5] ~(-?[0-2])?$",
             RegexOptions.CultureInvariant);
 
+        Assert.Equal(
+            [
+                "title @s times 0 100 0",
+                "title @s title {\"text\":\"Scaredy Cat!\",\"color\":\"gold\",\"bold\":true}",
+                "title @s subtitle {\"text\":\"Stop being scared!\",\"color\":\"yellow\",\"bold\":false}"
+            ],
+            commands.Take(3));
         Assert.Equal(23, commands.Count);
-        Assert.Equal("title @s times 0 100 0", commands[0]);
         Assert.All(commands.Skip(3), command => Assert.Matches(summonPattern, command));
     }
 
@@ -37,39 +43,32 @@ public sealed class MinecraftCommandFeatureBuilderTests
             commands);
     }
 
-    [Fact]
-    public void BuildJohnnyCommands_UsesLegacyNameAndAttributeSyntax()
+    [Theory]
+    [InlineData(
+        false,
+        false,
+        "CustomName:'{\"text\":\"Johnny\"}'",
+        "Attributes:[{Name:\"generic.follow_range\",Base:75.0}]")]
+    [InlineData(
+        true,
+        true,
+        "CustomName:{text:'Johnny'}",
+        "attributes:[{id:'minecraft:follow_range',base:75.0}]")]
+    public void BuildJohnnyCommands_UsesVersionAppropriateNameAndAttributeSyntax(
+        bool usesInlineTextComponents,
+        bool usesModernEntityAttributeNbt,
+        string expectedName,
+        string expectedAttributes)
     {
         List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnnyCommands(
             "@s",
             new Random(12345),
-            usesInlineTextComponents: false,
-            usesModernEntityAttributeNbt: false);
+            usesInlineTextComponents,
+            usesModernEntityAttributeNbt);
 
         Assert.Equal(3, commands.Count);
-        Assert.Contains("CustomName:'{\"text\":\"Johnny\"}'", commands[0], StringComparison.Ordinal);
-        Assert.Contains(
-            "Attributes:[{Name:\"generic.follow_range\",Base:75.0}]",
-            commands[0],
-            StringComparison.Ordinal);
-        Assert.EndsWith("run tag @s remove tc_johnny_new", commands[2], StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void BuildJohnnyCommands_UsesModernInlineNameAndAttributeSyntax()
-    {
-        List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnnyCommands(
-            "@s",
-            new Random(12345),
-            usesInlineTextComponents: true,
-            usesModernEntityAttributeNbt: true);
-
-        Assert.Equal(3, commands.Count);
-        Assert.Contains("CustomName:{text:'Johnny'}", commands[0], StringComparison.Ordinal);
-        Assert.Contains(
-            "attributes:[{id:'minecraft:follow_range',base:75.0}]",
-            commands[0],
-            StringComparison.Ordinal);
+        Assert.Contains(expectedName, commands[0], StringComparison.Ordinal);
+        Assert.Contains(expectedAttributes, commands[0], StringComparison.Ordinal);
         Assert.EndsWith("run tag @s remove tc_johnny_new", commands[2], StringComparison.Ordinal);
     }
 }

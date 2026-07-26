@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using TwitchCraftBot.Tests.TestInfrastructure;
 using TwitchCraftBot_V1;
 using TwitchCraftBot_V1.BotSetup;
@@ -9,25 +10,26 @@ public sealed class JavaProcessLifecycleTests
     [Fact]
     public async Task JavaProcess_StartsWithVersionedArgumentsAndAcceptsCommands()
     {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
         BotConfig config = CreateConfig(directory.Path, "normal");
         BotMainHandler runtime = CreateRuntime(directory.Path);
 
         try
         {
-            await runtime.StartJavaServerAsync(config, CancellationToken.None);
-            await runtime.EnsureServerProcessStartedAsync(CancellationToken.None);
-            Assert.True(await runtime.SendServerCommandAsync("say integration-test", CancellationToken.None));
-            Assert.True(await runtime.SendServerCommandAsync("stop", CancellationToken.None));
-            await WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2);
+            await runtime.StartJavaServerAsync(config, cancellationToken);
+            await runtime.EnsureServerProcessStartedAsync(cancellationToken);
+            Assert.True(await runtime.SendServerCommandAsync("say integration-test", cancellationToken));
+            Assert.True(await runtime.SendServerCommandAsync("stop", cancellationToken));
+            await WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
             await runtime.SafeStopProcessAsync(waitBriefly: true);
 
             string[] arguments = await File.ReadAllLinesAsync(
                 config.Server.JarPath + ".args",
-                TestContext.Current.CancellationToken);
+                cancellationToken);
             string[] commands = await File.ReadAllLinesAsync(
                 config.Server.JarPath + ".stdin",
-                TestContext.Current.CancellationToken);
+                cancellationToken);
             Assert.Equal(
                 [
                     "-Xmx4G",
@@ -49,16 +51,18 @@ public sealed class JavaProcessLifecycleTests
     [Fact]
     public async Task EnsureServerProcessStartedAsync_DetectsImmediateJavaExit()
     {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
         BotConfig config = CreateConfig(directory.Path, "exit-immediately");
         BotMainHandler runtime = CreateRuntime(directory.Path);
 
         try
         {
-            await runtime.StartJavaServerAsync(config, CancellationToken.None);
+            await runtime.StartJavaServerAsync(config, cancellationToken);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                runtime.EnsureServerProcessStartedAsync(CancellationToken.None));
+            InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                runtime.EnsureServerProcessStartedAsync(cancellationToken));
+            Assert.Contains("exited during startup", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -69,30 +73,44 @@ public sealed class JavaProcessLifecycleTests
     [Fact]
     public async Task SafeStopProcessAsync_ForceStopsJavaThatIgnoresStop()
     {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
         BotConfig config = CreateConfig(directory.Path, "ignore-stop");
         BotMainHandler runtime = CreateRuntime(directory.Path);
 
-        await runtime.StartJavaServerAsync(config, CancellationToken.None);
-        await runtime.EnsureServerProcessStartedAsync(CancellationToken.None);
-        Assert.True(await runtime.SendServerCommandAsync("stop", CancellationToken.None));
-        await WaitForLineCountAsync(config.Server.JarPath + ".stdin", 1);
+        try
+        {
+            await runtime.StartJavaServerAsync(config, cancellationToken);
+            await runtime.EnsureServerProcessStartedAsync(cancellationToken);
+            Assert.True(await runtime.SendServerCommandAsync("stop", cancellationToken));
+            await WaitForLineCountAsync(config.Server.JarPath + ".stdin", 1, cancellationToken);
+            int processId = int.Parse(
+                await File.ReadAllTextAsync(config.Server.JarPath + ".pid", cancellationToken),
+                System.Globalization.CultureInfo.InvariantCulture);
 
-        await runtime.SafeStopProcessAsync(waitBriefly: false);
+            await runtime.SafeStopProcessAsync(waitBriefly: false);
 
-        Assert.False(await runtime.SendServerCommandAsync("say after-stop", CancellationToken.None));
+            Assert.False(await runtime.SendServerCommandAsync("say after-stop", cancellationToken));
+            await WaitForProcessExitAsync(processId, cancellationToken);
+        }
+        finally
+        {
+            await runtime.SafeStopProcessAsync(waitBriefly: false);
+        }
     }
 
     [Fact]
     public async Task StartJavaServerAsync_RejectsMissingServerJar()
     {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
         BotConfig config = CreateConfig(directory.Path, "normal");
         File.Delete(config.Server.JarPath);
         BotMainHandler runtime = CreateRuntime(directory.Path);
 
-        await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            runtime.StartJavaServerAsync(config, CancellationToken.None));
+        FileNotFoundException exception = await Assert.ThrowsAsync<FileNotFoundException>(() =>
+            runtime.StartJavaServerAsync(config, cancellationToken));
+        Assert.Equal(config.Server.JarPath, exception.FileName);
     }
 
     private static BotMainHandler CreateRuntime(string directory)
@@ -143,11 +161,48 @@ public sealed class JavaProcessLifecycleTests
         return executable;
     }
 
-    private static async Task WaitForLineCountAsync(string path, int expectedLineCount)
+    private static async Task WaitForLineCountAsync(
+        string path,
+        int expectedLineCount,
+        CancellationToken cancellationToken)
+        => await WaitUntilAsync(
+            () => File.Exists(path) && ReadAllLinesShared(path).Count >= expectedLineCount,
+            $"Expected at least {expectedLineCount} line(s) in '{path}' within three seconds.",
+            cancellationToken);
+
+    private static async Task WaitForProcessExitAsync(int processId, CancellationToken cancellationToken)
+        => await WaitUntilAsync(
+            () =>
+            {
+                try
+                {
+                    using Process process = Process.GetProcessById(processId);
+                    return process.HasExited;
+                }
+                catch (ArgumentException)
+                {
+                    return true;
+                }
+            },
+            $"Process {processId} did not exit within three seconds.",
+            cancellationToken);
+
+    private static async Task WaitUntilAsync(
+        Func<bool> condition,
+        string timeoutMessage,
+        CancellationToken cancellationToken)
     {
-        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(3));
-        while (!File.Exists(path) || ReadAllLinesShared(path).Count < expectedLineCount)
-            await Task.Delay(20, timeout.Token);
+        using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(3));
+        try
+        {
+            while (!condition())
+                await Task.Delay(20, timeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException(timeoutMessage);
+        }
     }
 
     private static List<string> ReadAllLinesShared(string path)

@@ -15,6 +15,7 @@ string mode = File.Exists(jarPath)
     ? (await File.ReadAllTextAsync(jarPath)).Trim()
     : string.Empty;
 await File.WriteAllLinesAsync(jarPath + ".args", args);
+await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString());
 
 if (string.Equals(mode, "exit-immediately", StringComparison.Ordinal))
     return 42;

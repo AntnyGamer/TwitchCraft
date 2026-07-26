@@ -39,6 +39,13 @@ public sealed class DatapackMetadataTests
             Assert.Equal(formatMajor, pack.GetProperty("pack_format").GetInt32());
         }
 
-        Assert.Equal(includesFallbackRange, pack.TryGetProperty("supported_formats", out _));
+        Assert.Equal(
+            includesFallbackRange,
+            pack.TryGetProperty("supported_formats", out JsonElement supportedFormats));
+        if (includesFallbackRange)
+        {
+            Assert.Equal(15, supportedFormats.GetProperty("min_inclusive").GetInt32());
+            Assert.Equal(61, supportedFormats.GetProperty("max_inclusive").GetInt32());
+        }
     }
 }

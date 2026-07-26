@@ -24,12 +24,16 @@ public sealed class MinecraftQueryParsingTests
     }
 
     [Fact]
-    public void ParseChallengeToken_RejectsNonnumericToken()
+    public void ParseChallengeToken_RejectsMalformedResponses()
     {
         byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes("invalid\0"));
 
         Assert.Throws<InvalidOperationException>(() =>
             MinecraftQueryClient.ParseChallengeToken(packet, 1234));
+        Assert.Throws<InvalidOperationException>(() =>
+            MinecraftQueryClient.ParseChallengeToken(BuildPacket(0x00, 1234, [0]), 1234));
+        Assert.Throws<InvalidOperationException>(() =>
+            MinecraftQueryClient.ParseChallengeToken([0x09, 0, 0, 0, 1], 1));
     }
 
     [Fact]
@@ -42,6 +46,10 @@ public sealed class MinecraftQueryParsingTests
         List<string> players = MinecraftQueryClient.ParsePlayers(packet, 1234);
 
         Assert.Equal(["Alex", "Steve"], players);
+        Assert.Throws<InvalidOperationException>(() =>
+            MinecraftQueryClient.ParsePlayers(BuildPacket(0x09, 1234, payload), 1234));
+        Assert.Throws<InvalidOperationException>(() =>
+            MinecraftQueryClient.ParsePlayers(packet, 4321));
     }
 
     private static byte[] BuildPacket(byte type, int sessionId, byte[] payload)

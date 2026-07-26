@@ -19,6 +19,7 @@ public sealed class PaidCommandTransactionTests
         Assert.Equal(1, harness.StatisticsCalls);
         Assert.Equal(0, harness.FailureNotifications);
         Assert.Empty(harness.ReleasedReservations);
+        Assert.Equal(101, harness.CurrentReservation);
     }
 
     [Fact]
@@ -83,20 +84,39 @@ public sealed class PaidCommandTransactionTests
     }
 
     [Fact]
-    public async Task SuccessfulDispatch_KeepsTheReservedGlobalCooldownActive()
+    public async Task InsufficientBalance_DoesNotDispatchAndReleasesCooldown()
     {
         TransactionHarness harness = new();
 
-        bool succeeded = await harness.ExecuteAsync(10);
+        bool succeeded = await harness.ExecuteAsync(125);
 
-        Assert.True(succeeded);
-        Assert.Equal(90, harness.Balance);
+        Assert.False(succeeded);
+        Assert.Equal(100, harness.Balance);
         Assert.Equal(1, harness.SpendCalls);
-        Assert.Equal(1, harness.DispatchCalls);
+        Assert.Equal(0, harness.DispatchCalls);
         Assert.Equal(0, harness.RefundCalls);
-        Assert.Equal(1, harness.StatisticsCalls);
+        Assert.Equal(0, harness.StatisticsCalls);
+        Assert.Equal(1, harness.InsufficientTokenReports);
+        Assert.Equal(1, harness.FailureNotifications);
+        Assert.Equal([101L], harness.ReleasedReservations);
+        Assert.Equal(0, harness.CurrentReservation);
+    }
+
+    [Fact]
+    public async Task MissingCooldownReservation_DoesNotChargeOrDispatch()
+    {
+        TransactionHarness harness = new() { NextReservation = null };
+
+        bool succeeded = await harness.ExecuteAsync(25);
+
+        Assert.False(succeeded);
+        Assert.Equal(100, harness.Balance);
+        Assert.Equal(0, harness.SpendCalls);
+        Assert.Equal(0, harness.RefundCalls);
+        Assert.Equal(0, harness.DispatchCalls);
+        Assert.Equal(0, harness.StatisticsCalls);
+        Assert.Equal(0, harness.FailureNotifications);
         Assert.Empty(harness.ReleasedReservations);
-        Assert.Equal(101, harness.CurrentReservation);
     }
 
     [Fact]
@@ -153,7 +173,7 @@ public sealed class PaidCommandTransactionTests
         internal int InsufficientTokenReports { get; private set; }
         internal int FailureNotifications { get; private set; }
         internal long CurrentReservation { get; set; }
-        internal long NextReservation { get; set; } = 101;
+        internal long? NextReservation { get; set; } = 101;
         internal bool DispatchResult { get; set; } = true;
         internal Func<CancellationToken, Task<bool>>? DispatchOverride { get; set; }
         internal List<long> ReleasedReservations { get; } = [];
@@ -165,8 +185,10 @@ public sealed class PaidCommandTransactionTests
             {
                 ReserveCooldownAsync = _ =>
                 {
-                    CurrentReservation = NextReservation;
-                    return Task.FromResult<long?>(NextReservation);
+                    if (NextReservation.HasValue)
+                        CurrentReservation = NextReservation.Value;
+
+                    return Task.FromResult(NextReservation);
                 },
                 ReleaseCooldown = reservation =>
                 {

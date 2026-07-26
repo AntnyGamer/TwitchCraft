@@ -18,7 +18,7 @@ public abstract class ObservableObject : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    protected bool SetProperty<T>(ref T field, T value, params string[] affectedProperties)
+    protected bool SetProperty<T>(ref T field, T value, string propertyName, params string[] affectedProperties)
     {
         if (EqualityComparer<T>.Default.Equals(field, value))
         {
@@ -26,7 +26,7 @@ public abstract class ObservableObject : INotifyPropertyChanged
         }
 
         field = value;
-        OnPropertyChanged();
+        OnPropertyChanged(propertyName);
 
         for (int i = 0; i < affectedProperties.Length; i++)
         {
@@ -63,7 +63,7 @@ public sealed class AppShellViewModel : ObservableObject
     public ShellPage PreviousPage
     {
         get => _previousPage;
-        private set => SetProperty(ref _previousPage, value);
+        private set => SetProperty(ref _previousPage, value, nameof(PreviousPage));
     }
 
     public ShellPage CurrentPage
@@ -71,7 +71,7 @@ public sealed class AppShellViewModel : ObservableObject
         get => _currentPage;
         private set
         {
-            SetProperty(ref _currentPage, value, CurrentPageAffectedProperties);
+            SetProperty(ref _currentPage, value, nameof(CurrentPage), CurrentPageAffectedProperties);
         }
     }
 

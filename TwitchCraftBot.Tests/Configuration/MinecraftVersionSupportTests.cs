@@ -26,17 +26,18 @@ public sealed class MinecraftVersionSupportTests
     }
 
     [Theory]
-    [InlineData("1.20.4", false, true, false, false, false)]
-    [InlineData("1.20.5", false, true, true, false, false)]
-    [InlineData("1.21.2", true, false, true, false, false)]
-    [InlineData("1.21.11", true, false, true, true, true)]
+    [InlineData("1.20.4", false, true, false, false, false, false)]
+    [InlineData("1.20.5", false, true, true, false, false, false)]
+    [InlineData("1.21.2", true, false, true, false, false, true)]
+    [InlineData("1.21.11", true, false, true, true, true, true)]
     public void VersionFeatures_ChangeAtSupportedBoundaries(
         string id,
         bool pauseWhenEmpty,
         bool legacySpawnProperties,
         bool itemComponents,
         bool inlineTextComponents,
-        bool namespacedGameRules)
+        bool namespacedGameRules,
+        bool supportsInfested)
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(id, out var version));
         Assert.Equal(pauseWhenEmpty, MinecraftVersionSupport.SupportsPauseWhenEmptySeconds(id));
@@ -44,9 +45,7 @@ public sealed class MinecraftVersionSupportTests
         Assert.Equal(itemComponents, version.UsesItemComponents);
         Assert.Equal(inlineTextComponents, version.UsesInlineTextComponents);
         Assert.Equal(namespacedGameRules, version.UsesNamespacedGameRules);
-        Assert.Equal(
-            version.DataPackFormatMajor >= 48,
-            MinecraftVersionSupport.SupportsStatusEffect(id, "infested"));
+        Assert.Equal(supportsInfested, MinecraftVersionSupport.SupportsStatusEffect(id, "infested"));
     }
 
     [Fact]
