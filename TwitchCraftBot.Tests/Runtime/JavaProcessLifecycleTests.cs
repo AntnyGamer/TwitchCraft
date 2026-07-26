@@ -152,7 +152,9 @@ public sealed class JavaProcessLifecycleTests
             : "Debug";
         string executable = System.IO.Path.Combine(
             root.FullName,
-            "TwitchCraftBot.TestProcess",
+            "TwitchCraftBot.Tests",
+            "TestInfrastructure",
+            "TestProcess",
             "bin",
             configuration,
             "net10.0",

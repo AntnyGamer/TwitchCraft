@@ -1,6 +1,6 @@
 <Solution>
   <Project Path="GetBotToken_SOURCE/GetBotToken.csproj" />
-  <Project Path="TwitchCraftBot.TestProcess/TwitchCraftBot.TestProcess.csproj" />
+  <Project Path="TwitchCraftBot.Tests/TestInfrastructure/TestProcess/TwitchCraftBot.TestProcess.csproj" />
   <Project Path="TwitchCraftBot_SOURCE/TwitchCraftBot.csproj" />
   <Project Path="TwitchCraftBot.Tests/TwitchCraftBot.Tests.csproj" />
 </Solution>
