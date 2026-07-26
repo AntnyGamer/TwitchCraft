@@ -45,7 +45,7 @@ internal static class MinecraftQueryClient
         return ParsePlayers(statResponse.Buffer, sessionId);
     }
 
-    private static int ParseChallengeToken(byte[] buffer, int sessionId)
+    internal static int ParseChallengeToken(byte[] buffer, int sessionId)
     {
         if (buffer.Length < 6 || buffer[0] != HandshakeType || ReadInt32BigEndian(buffer) != sessionId)
             throw new InvalidOperationException("Minecraft query handshake returned an invalid response.");
@@ -61,7 +61,7 @@ internal static class MinecraftQueryClient
         return token;
     }
 
-    private static List<string> ParsePlayers(byte[] buffer, int sessionId)
+    internal static List<string> ParsePlayers(byte[] buffer, int sessionId)
     {
         if (buffer.Length < 5 || buffer[0] != StatType || ReadInt32BigEndian(buffer) != sessionId)
             throw new InvalidOperationException("Minecraft query stats returned an invalid response.");

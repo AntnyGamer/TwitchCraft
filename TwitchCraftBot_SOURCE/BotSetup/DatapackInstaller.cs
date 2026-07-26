@@ -81,7 +81,7 @@ internal static class DatapackInstaller
             RewriteLocatePlayersTextCommands(destinationDirectory);
     }
 
-    private static string BuildPackMetadataJson(string? minecraftVersion)
+    internal static string BuildPackMetadataJson(string? minecraftVersion)
     {
         if (MinecraftVersionSupport.TryGetVersion(minecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo version))
         {

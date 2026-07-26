@@ -81,6 +81,11 @@ public sealed partial class BotMainHandler
     internal void AddServerLogLine(string line) => _shellWindow?.AddServerLogLine(line);
 
     public BotMainHandler(AppShellViewModel shellModel)
+        : this(shellModel, ConfigurationStore.ViewerTokensPath, initializeApplicationState: true)
+    {
+    }
+
+    internal BotMainHandler(AppShellViewModel shellModel, string tokenStorePath, bool initializeApplicationState)
     {
         ArgumentNullException.ThrowIfNull(shellModel);
 
@@ -102,7 +107,7 @@ public sealed partial class BotMainHandler
         _knownChatters = [];
         _knownPlayers = [];
         _lastSidebarPlayers = [];
-        _tokenStore = new(ConfigurationStore.ViewerTokensPath);
+        _tokenStore = new(tokenStorePath);
         _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
         _IRCCommandQueue = new(MaxQueuedIRCCommands);
         _IRCQuickQueue = new(MaxQueuedIRCQuickWork);
@@ -125,6 +130,9 @@ public sealed partial class BotMainHandler
         _cachedSupportedEffects = _effectList;
         _cachedMinecraftFeatureVersion = string.Empty;
         _cachedMinecraftFeatureInfo = null;
+
+        if (!initializeApplicationState)
+            return;
 
         // SQLite loads individual rows on demand and queries top viewers by index.
         // Load lifetime totals off the UI thread so construction does not block on disk I/O.

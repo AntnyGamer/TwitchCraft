@@ -377,8 +377,11 @@ public sealed partial class BotMainHandler
                 break;
             }
 
-            reconnectDelayMs = Math.Min(reconnectDelayMs * 2, 15000);
+            reconnectDelayMs = GetNextIRCReconnectDelayMilliseconds(reconnectDelayMs);
         }
     }
+
+    internal static int GetNextIRCReconnectDelayMilliseconds(int currentDelayMilliseconds)
+        => Math.Min(currentDelayMilliseconds * 2, 15000);
 
 }

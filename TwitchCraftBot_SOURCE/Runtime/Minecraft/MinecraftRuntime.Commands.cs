@@ -307,7 +307,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static TimeSpan GetRemoteCommandTimeout(int commandCount)
+    internal static TimeSpan GetRemoteCommandTimeout(int commandCount)
     {
         if (commandCount <= 1)
             return ManualCommandTimeout;
@@ -334,7 +334,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    private static string NormalizeSingleServerCommand(string command)
+    internal static string NormalizeSingleServerCommand(string command)
     {
         ReadOnlySpan<char> trimmed = TrimServerCommand(command.AsSpan());
         if (trimmed.IsEmpty || HasEmbeddedServerCommandLineBreak(trimmed))
@@ -378,7 +378,7 @@ public sealed partial class BotMainHandler
         return WriteEncodedServerCommandPayloadNoLockAsync(process.StandardInput.BaseStream, rented, written, cancellationToken);
     }
 
-    private static List<string> SnapshotServerCommands(IEnumerable<string> commands)
+    internal static List<string> SnapshotServerCommands(IEnumerable<string> commands)
     {
         int capacity = System.Linq.Enumerable.TryGetNonEnumeratedCount(commands, out int count) ? count : 0;
 

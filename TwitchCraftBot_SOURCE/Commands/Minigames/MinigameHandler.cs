@@ -49,7 +49,7 @@ public static partial class MinigameManager
             runtime.AdjustTokens(refunds); //Wither Battle Refund
     }
 
-    private enum MinigameBetUpdateResult
+    internal enum MinigameBetUpdateResult
     {
         Updated,
         NotEnoughTokens,
@@ -57,7 +57,7 @@ public static partial class MinigameManager
         OverMax
     }
 
-    private static MinigameBetUpdateResult TryAddPaidBet(
+    internal static MinigameBetUpdateResult TryAddPaidBet(
         BotMainHandler runtime,
         string sender,
         int additionalTokenAmount,
@@ -76,13 +76,13 @@ public static partial class MinigameManager
         return result;
     }
 
-    private static string FormatTokens(int amount)
+    internal static string FormatTokens(int amount)
         => amount.ToString(CultureInfo.InvariantCulture) + " token" + (amount == 1 ? "" : "s");
 
     private static string MaxBetMessage(string game)
         => "the max " + game + " bet is " + FormatTokens(MaxMinigameBetPerPlayer) + ".";
 
-    private static async Task<bool> TrySayBetFailureAsync(
+    internal static async Task<bool> TrySayBetFailureAsync(
         MinigameBetUpdateResult result,
         string sender,
         string game,

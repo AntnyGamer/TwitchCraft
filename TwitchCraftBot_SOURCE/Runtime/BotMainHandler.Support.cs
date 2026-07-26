@@ -137,6 +137,8 @@ public sealed partial class BotMainHandler
         return normalized.Length == 0 ? 0 : _tokenStore.GetBalance(normalized);
     }
 
+    internal void CloseTokenStoreConnection() => _tokenStore.CloseConnection();
+
     public bool TrySpendTokens(string user, int amount)
     {
         string normalized = NormalizeUser(user);

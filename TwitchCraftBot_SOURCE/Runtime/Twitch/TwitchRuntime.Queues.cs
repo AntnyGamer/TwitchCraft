@@ -142,7 +142,7 @@ public sealed partial class BotMainHandler
         state.Active = 0;
     }
 
-    private static bool IsIgnoredIRCUser(string sender, string botName, bool separateBotAccount)
+    internal static bool IsIgnoredIRCUser(string sender, string botName, bool separateBotAccount)
     {
         if (separateBotAccount &&
             string.Equals(sender, botName, StringComparison.OrdinalIgnoreCase))
@@ -159,7 +159,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    private static string StripIRCTagsForLog(string line)
+    internal static string StripIRCTagsForLog(string line)
     {
         if (line.Length == 0 || line[0] != '@')
             return line;
@@ -168,7 +168,7 @@ public sealed partial class BotMainHandler
         return firstSpace > 0 && firstSpace + 1 < line.Length ? line[(firstSpace + 1)..] : line;
     }
 
-    private static string BuildCommandQueueContext(string payload)
+    internal static string BuildCommandQueueContext(string payload)
     {
         const string Prefix = "command ";
         int commandEnd = payload.IndexOf(' ');
