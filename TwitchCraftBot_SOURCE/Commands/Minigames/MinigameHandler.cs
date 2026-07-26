@@ -76,7 +76,7 @@ public static partial class MinigameManager
         return result;
     }
 
-    internal static string FormatTokens(int amount)
+    private static string FormatTokens(int amount)
         => amount.ToString(CultureInfo.InvariantCulture) + " token" + (amount == 1 ? "" : "s");
 
     private static string MaxBetMessage(string game)

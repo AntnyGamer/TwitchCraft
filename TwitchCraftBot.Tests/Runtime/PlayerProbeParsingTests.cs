@@ -22,4 +22,27 @@ public sealed class PlayerProbeParsingTests
         Assert.Equal(expectedPlayer, player);
         Assert.Equal(expectedGameType, gameType);
     }
+
+    [Fact]
+    public void TryParseGamemodeAnnouncementLine_RejectsMalformedOrUnrelatedLines()
+    {
+        string[] lines =
+        [
+            "",
+            "Steve joined the game",
+            "Set bad-name's game mode to Survival Mode",
+            "Set Steve's game mode to Builder Mode",
+            "Set the game mode of Alex Creative Mode"
+        ];
+
+        foreach (string line in lines)
+        {
+            Assert.False(BotMainHandler.TryParseGamemodeAnnouncementLine(
+                line,
+                out string player,
+                out int gameType));
+            Assert.Equal(string.Empty, player);
+            Assert.Equal(-1, gameType);
+        }
+    }
 }

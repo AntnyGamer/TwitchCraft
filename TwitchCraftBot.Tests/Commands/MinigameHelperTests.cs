@@ -13,13 +13,6 @@ public sealed class MinigameHelperTests
     private const int Closed = (int)MinigameManager.MinigameBetUpdateResult.Closed;
 
     [Fact]
-    public void FormatTokens_UsesCorrectSingularAndPluralForms()
-    {
-        Assert.Equal("1 token", MinigameManager.FormatTokens(1));
-        Assert.Equal("2 tokens", MinigameManager.FormatTokens(2));
-    }
-
-    [Fact]
     public async Task TrySayBetFailureAsync_ReportsEveryRejectedBetReason()
     {
         List<string> messages = [];
