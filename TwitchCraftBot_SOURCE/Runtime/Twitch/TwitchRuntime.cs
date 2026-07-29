@@ -293,12 +293,10 @@ public sealed partial class BotMainHandler
                     {
                         bool isModerator = message.IsModerator;
 
-                        if (!QueueIRCWorkCore(
-                            _IRCCommandQueue,
+                        if (!QueueIRCCommandWork(
                             ct => DispatchCommandAsync(payload, sender, isModerator, ct),
                             payload,
-                            quick: false,
-                            cancellationToken: cancellationToken))
+                            cancellationToken))
                         {
                             await NotifyIRCCommandQueueOverloadAsync(cancellationToken).ConfigureAwait(false);
                         }

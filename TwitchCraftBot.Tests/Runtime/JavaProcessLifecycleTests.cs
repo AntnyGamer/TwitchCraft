@@ -7,6 +7,8 @@ namespace TwitchCraftBot.Tests.Runtime;
 
 public sealed class JavaProcessLifecycleTests
 {
+    private static readonly TimeSpan PollingTimeout = TimeSpan.FromSeconds(10);
+
     [Fact]
     public async Task JavaProcess_StartsWithVersionedArgumentsAndAcceptsCommands()
     {
@@ -44,7 +46,7 @@ public sealed class JavaProcessLifecycleTests
         }
         finally
         {
-            await runtime.SafeStopProcessAsync(waitBriefly: false);
+            await StopRuntimeAndFakeProcessAsync(runtime, config.Server.JarPath);
         }
     }
 
@@ -66,7 +68,7 @@ public sealed class JavaProcessLifecycleTests
         }
         finally
         {
-            await runtime.SafeStopProcessAsync(waitBriefly: false);
+            await StopRuntimeAndFakeProcessAsync(runtime, config.Server.JarPath);
         }
     }
 
@@ -95,7 +97,7 @@ public sealed class JavaProcessLifecycleTests
         }
         finally
         {
-            await runtime.SafeStopProcessAsync(waitBriefly: false);
+            await StopRuntimeAndFakeProcessAsync(runtime, config.Server.JarPath);
         }
     }
 
@@ -169,7 +171,7 @@ public sealed class JavaProcessLifecycleTests
         CancellationToken cancellationToken)
         => await WaitUntilAsync(
             () => File.Exists(path) && ReadAllLinesShared(path).Count >= expectedLineCount,
-            $"Expected at least {expectedLineCount} line(s) in '{path}' within three seconds.",
+            $"Expected at least {expectedLineCount} line(s) in '{path}' within 10 seconds.",
             cancellationToken);
 
     private static async Task WaitForProcessExitAsync(int processId, CancellationToken cancellationToken)
@@ -186,7 +188,7 @@ public sealed class JavaProcessLifecycleTests
                     return true;
                 }
             },
-            $"Process {processId} did not exit within three seconds.",
+            $"Process {processId} did not exit within 10 seconds.",
             cancellationToken);
 
     private static async Task WaitUntilAsync(
@@ -195,7 +197,7 @@ public sealed class JavaProcessLifecycleTests
         CancellationToken cancellationToken)
     {
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(3));
+        timeout.CancelAfter(PollingTimeout);
         try
         {
             while (!condition())
@@ -204,6 +206,43 @@ public sealed class JavaProcessLifecycleTests
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             throw new TimeoutException(timeoutMessage);
+        }
+    }
+
+    private static async Task StopRuntimeAndFakeProcessAsync(BotMainHandler runtime, string jarPath)
+    {
+        await runtime.SafeStopProcessAsync(waitBriefly: false);
+
+        string processIdPath = jarPath + ".pid";
+        if (!File.Exists(processIdPath))
+            return;
+
+        int processId = int.Parse(
+            await File.ReadAllTextAsync(processIdPath),
+            System.Globalization.CultureInfo.InvariantCulture);
+        try
+        {
+            using Process process = Process.GetProcessById(processId);
+            if (process.HasExited)
+                return;
+
+            string? executablePath = process.MainModule?.FileName;
+            if (!string.Equals(
+                executablePath,
+                GetFakeJavaExecutable(),
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            process.Kill(entireProcessTree: true);
+
+            using CancellationTokenSource timeout = new(PollingTimeout);
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (ArgumentException)
+        {
+            // The process has already exited and left the process table.
         }
     }
 

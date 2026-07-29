@@ -89,6 +89,48 @@ public sealed class MinecraftWorldImporterTests
     }
 
     [Fact]
+    public void ReplaceWorldSafely_WhenNoPreviousWorldExists_InstallsTheImportedWorld()
+    {
+        using TemporaryDirectory directory = new();
+        string source = System.IO.Path.Combine(directory.Path, "source");
+        string destination = System.IO.Path.Combine(directory.Path, "world");
+        Directory.CreateDirectory(source);
+        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
+
+        MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
+
+        MinecraftWorldImporter.ReplaceWorldSafely(plan);
+
+        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
+        Assert.True(Directory.Exists(source));
+        Assert.False(Directory.Exists(plan.StagingWorldPath));
+        Assert.False(Directory.Exists(plan.BackupWorldPath));
+    }
+
+    [Fact]
+    public void SourceIsCurrentWorld_AcceptsEquivalentWindowsPaths()
+    {
+        using TemporaryDirectory directory = new();
+        string destination = System.IO.Path.Combine(directory.Path, "world");
+        string equivalentSource = System.IO.Path.Combine(
+            directory.Path.ToUpperInvariant(),
+            ".",
+            "world");
+
+        Assert.True(CreatePlan(directory.Path, equivalentSource, destination).SourceIsCurrentWorld);
+    }
+
+    [Fact]
+    public void SourceIsCurrentWorld_RejectsDifferentWorldPaths()
+    {
+        using TemporaryDirectory directory = new();
+        string source = System.IO.Path.Combine(directory.Path, "source");
+        string destination = System.IO.Path.Combine(directory.Path, "world");
+
+        Assert.False(CreatePlan(directory.Path, source, destination).SourceIsCurrentWorld);
+    }
+
+    [Fact]
     public void ReplaceWorldSafely_WhenBackupPathIsBlocked_PreservesExistingWorld()
     {
         using TemporaryDirectory directory = new();
@@ -118,4 +160,18 @@ public sealed class MinecraftWorldImporterTests
         Assert.False(Directory.Exists(staging));
         Assert.True(File.Exists(backup));
     }
+
+    private static MinecraftWorldImportPlan CreatePlan(
+        string serverDirectory,
+        string source,
+        string destination)
+        => new()
+        {
+            SourceWorldPath = source,
+            DestinationWorldPath = destination,
+            StagingWorldPath = System.IO.Path.Combine(serverDirectory, "world.importing-test"),
+            BackupWorldPath = System.IO.Path.Combine(serverDirectory, "world.backup-test"),
+            ServerDirectory = serverDirectory,
+            LevelName = "world"
+        };
 }

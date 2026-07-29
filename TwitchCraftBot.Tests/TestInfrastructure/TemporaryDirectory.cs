@@ -15,13 +15,30 @@ internal sealed class TemporaryDirectory : IDisposable
 
     public void Dispose()
     {
-        try
+        const int MaxAttempts = 3;
+        for (int attempt = 1; attempt <= MaxAttempts; attempt++)
         {
-            Directory.Delete(Path, recursive: true);
-        }
-        catch
-        {
-            // Best-effort cleanup must not hide the test result.
+            try
+            {
+                Directory.Delete(Path, recursive: true);
+                return;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return;
+            }
+            catch (Exception ex) when (
+                attempt < MaxAttempts &&
+                ex is IOException or UnauthorizedAccessException)
+            {
+                Thread.Sleep(50 * attempt);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(
+                    $"Unable to clean up temporary test directory '{Path}': {ex.Message}");
+                return;
+            }
         }
     }
 }

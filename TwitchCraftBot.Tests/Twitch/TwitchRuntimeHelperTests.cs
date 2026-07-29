@@ -15,6 +15,10 @@ public sealed class TwitchRuntimeHelperTests
     }
 
     [Theory]
+    [InlineData("", 4, "")]
+    [InlineData("abc", 0, "")]
+    [InlineData("é", 2, "é")]
+    [InlineData("Aé", 2, "A")]
     [InlineData("abcdef", 4, "abcd")]
     [InlineData("ééé", 4, "éé")]
     [InlineData("A😀B", 5, "A😀")]

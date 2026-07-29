@@ -61,6 +61,17 @@ public sealed partial class BotMainHandler
         return true;
     }
 
+    internal bool QueueIRCCommandWork(
+        Func<CancellationToken, Task> work,
+        string context,
+        CancellationToken cancellationToken)
+        => QueueIRCWorkCore(
+            _IRCCommandQueue,
+            work,
+            context,
+            quick: false,
+            cancellationToken);
+
     private async Task ProcessIRCWorkQueueAsync(IRCWorkQueueState state, Queue<IRCQueuedWork> queue, bool quick)
     {
         try
@@ -124,7 +135,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void ResetIRCQueues()
+    internal void ResetIRCQueues()
     {
         lock (_IRCCommandQueue.Gate)
             lock (_IRCQuickQueue.Gate)
