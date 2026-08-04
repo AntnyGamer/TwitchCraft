@@ -94,7 +94,7 @@ public sealed class IrcWorkQueueTests
     }
 
     [Fact]
-    public async Task ResetIRCQueues_RejectsQueuedWorkFromTheOldGeneration()
+    public async Task ResetIRCQueues_DropsQueuedOldWorkAndSerializesNewGenerationAfterRunningWork()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -102,12 +102,18 @@ public sealed class IrcWorkQueueTests
         TaskCompletionSource<bool> oldWorkStarted = CreateSignal();
         TaskCompletionSource<bool> releaseOldWork = CreateSignal();
         TaskCompletionSource<bool> oldWorkCompleted = CreateSignal();
+        TaskCompletionSource<bool> newWorkStarted = CreateSignal();
         TaskCompletionSource<bool> newWorkCompleted = CreateSignal();
+        Lock orderGate = new();
+        List<string> order = [];
         int rejectedWorkRuns = 0;
 
         Assert.True(runtime.QueueIRCCommandWork(
             async token =>
             {
+                lock (orderGate)
+                    order.Add("old-start");
+
                 oldWorkStarted.TrySetResult(true);
                 try
                 {
@@ -115,12 +121,16 @@ public sealed class IrcWorkQueueTests
                 }
                 finally
                 {
+                    lock (orderGate)
+                        order.Add("old-end");
+
                     oldWorkCompleted.TrySetResult(true);
                 }
             },
             "!old-running",
             cancellationToken));
         await oldWorkStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+
         Assert.True(runtime.QueueIRCCommandWork(
             _ =>
             {
@@ -131,21 +141,37 @@ public sealed class IrcWorkQueueTests
             cancellationToken));
 
         runtime.ResetIRCQueues();
+
         Assert.True(runtime.QueueIRCCommandWork(
             _ =>
             {
+                lock (orderGate)
+                    order.Add("new-start");
+
+                newWorkStarted.TrySetResult(true);
+
+                lock (orderGate)
+                    order.Add("new-end");
+
                 newWorkCompleted.TrySetResult(true);
                 return Task.CompletedTask;
             },
             "!new",
             cancellationToken));
 
+        Task firstCompleted = await Task.WhenAny(
+            newWorkStarted.Task,
+            Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken));
+        bool newWorkStartedPrematurely = ReferenceEquals(firstCompleted, newWorkStarted.Task);
+
         releaseOldWork.TrySetResult(true);
         await Task.WhenAll(
             oldWorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken),
             newWorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken));
 
+        Assert.False(newWorkStartedPrematurely);
         Assert.Equal(0, Volatile.Read(ref rejectedWorkRuns));
+        Assert.Equal(["old-start", "old-end", "new-start", "new-end"], order);
     }
 
     private static BotMainHandler CreateRuntime(string directory)

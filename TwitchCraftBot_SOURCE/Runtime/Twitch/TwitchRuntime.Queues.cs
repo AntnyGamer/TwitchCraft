@@ -92,22 +92,24 @@ public sealed partial class BotMainHandler
         }
         finally
         {
-            bool restart = false;
+            Queue<IRCQueuedWork>? queueToRestart = null;
             lock (state.Gate)
             {
-                if (ReferenceEquals(queue, state.Queue))
+                state.Active = 0;
+                Queue<IRCQueuedWork> currentQueue = state.Queue;
+                if (currentQueue.Count > 0)
                 {
-                    state.Active = 0;
-                    if (queue.Count > 0)
-                    {
-                        state.Active = 1;
-                        restart = true;
-                    }
+                    state.Active = 1;
+                    queueToRestart = currentQueue;
                 }
             }
 
-            if (restart)
-                TrackSessionBackgroundTask(Task.Run(() => ProcessIRCWorkQueueAsync(state, queue, quick), CancellationToken.None));
+            if (queueToRestart != null)
+            {
+                TrackSessionBackgroundTask(Task.Run(
+                    () => ProcessIRCWorkQueueAsync(state, queueToRestart, quick),
+                    CancellationToken.None));
+            }
         }
     }
 
@@ -150,7 +152,6 @@ public sealed partial class BotMainHandler
     {
         state.Queue = new Queue<IRCQueuedWork>();
         Volatile.Write(ref state.Depth, 0);
-        state.Active = 0;
     }
 
     internal static bool IsIgnoredIRCUser(string sender, string botName, bool separateBotAccount)
