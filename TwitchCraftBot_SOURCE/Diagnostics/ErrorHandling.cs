@@ -87,12 +87,7 @@ internal static partial class ErrorHandling
         try
         {
             if (source is Window window)
-            {
-                if (window.Dispatcher.CheckAccess())
-                    return window;
-
-                return window.Dispatcher.Invoke(() => window);
-            }
+                return window;
 
             if (source is FrameworkElement element)
             {

@@ -47,7 +47,7 @@ public sealed class AppShellViewModelTests
     }
 
     [Fact]
-    public void Navigate_RaisesExactChangedPropertiesAndNoneForTheCurrentPage()
+    public void Navigate_RaisesCurrentPageOnceAndNothingForTheCurrentPage()
     {
         AppShellViewModel shell = new();
         List<string?> changed = [];
@@ -57,18 +57,7 @@ public sealed class AppShellViewModelTests
         changed.Clear();
         shell.Navigate(ShellPage.Main);
 
-        Assert.Equal(
-            [
-                nameof(AppShellViewModel.PreviousPage),
-                nameof(AppShellViewModel.CurrentPage),
-                nameof(AppShellViewModel.IsSetupVisible),
-                nameof(AppShellViewModel.IsLaunchVisible),
-                nameof(AppShellViewModel.IsConsoleVisible),
-                nameof(AppShellViewModel.IsHelpVisible),
-                nameof(AppShellViewModel.IsSettingsVisible),
-                nameof(AppShellViewModel.IsStatisticsVisible)
-            ],
-            changed);
+        Assert.Equal([nameof(AppShellViewModel.CurrentPage)], changed);
 
         changed.Clear();
         shell.Navigate(ShellPage.Main);

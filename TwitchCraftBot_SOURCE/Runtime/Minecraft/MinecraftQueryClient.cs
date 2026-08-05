@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
@@ -107,13 +108,8 @@ internal static class MinecraftQueryClient
     }
 
     private static int ReadInt32BigEndian(byte[] buffer)
-        => (buffer[1] << 24) | (buffer[2] << 16) | (buffer[3] << 8) | buffer[4];
+        => BinaryPrimitives.ReadInt32BigEndian(buffer.AsSpan(1, 4));
 
     private static void WriteInt32BigEndian(byte[] buffer, int offset, int value)
-    {
-        buffer[offset] = (byte)(value >> 24);
-        buffer[offset + 1] = (byte)(value >> 16);
-        buffer[offset + 2] = (byte)(value >> 8);
-        buffer[offset + 3] = (byte)value;
-    }
+        => BinaryPrimitives.WriteInt32BigEndian(buffer.AsSpan(offset, 4), value);
 }

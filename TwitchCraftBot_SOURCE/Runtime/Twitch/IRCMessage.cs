@@ -161,7 +161,7 @@ internal sealed class IRCMessage
         for (int i = 0; i < length; i++)
         {
             char c = line[start + i];
-            if (c < '0' || c > '9')
+            if (!char.IsAsciiDigit(c))
                 return 0;
 
             int digit = c - '0';

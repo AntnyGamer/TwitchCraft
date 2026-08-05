@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 namespace TwitchCraftBot_V1;
 
@@ -14,66 +12,16 @@ public enum ShellPage
     Statistics
 }
 
-public abstract class ObservableObject : INotifyPropertyChanged
+public sealed class AppShellViewModel : INotifyPropertyChanged
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected bool SetProperty<T>(ref T field, T value, string propertyName, params string[] affectedProperties)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value))
-        {
-            return false;
-        }
-
-        field = value;
-        OnPropertyChanged(propertyName);
-
-        for (int i = 0; i < affectedProperties.Length; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(affectedProperties[i]))
-            {
-                OnPropertyChanged(affectedProperties[i]);
-            }
-        }
-
-        return true;
-    }
-
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-}
-
-public sealed class AppShellViewModel : ObservableObject
-{
-    private static readonly string[] CurrentPageAffectedProperties =
-    [
-        nameof(IsSetupVisible),
-        nameof(IsLaunchVisible),
-        nameof(IsConsoleVisible),
-        nameof(IsHelpVisible),
-        nameof(IsSettingsVisible),
-        nameof(IsStatisticsVisible)
-    ];
-
-    private ShellPage _currentPage;
-    private ShellPage _previousPage;
     private ShellPage _pageBeforeSettings;
     private ShellPage _helpBackTarget;
 
-    public ShellPage PreviousPage
-    {
-        get => _previousPage;
-        private set => SetProperty(ref _previousPage, value, nameof(PreviousPage));
-    }
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ShellPage CurrentPage
-    {
-        get => _currentPage;
-        private set
-        {
-            SetProperty(ref _currentPage, value, nameof(CurrentPage), CurrentPageAffectedProperties);
-        }
-    }
+    public ShellPage PreviousPage { get; private set; }
+
+    public ShellPage CurrentPage { get; private set; }
 
     public bool IsSetupVisible => CurrentPage == ShellPage.Setup;
     public bool IsLaunchVisible => CurrentPage == ShellPage.Start;
@@ -111,5 +59,6 @@ public sealed class AppShellViewModel : ObservableObject
         }
 
         CurrentPage = page;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentPage)));
     }
 }

@@ -179,22 +179,8 @@ public partial class TwitchCraftBot : Window
 
     private void Shell_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (_shutdownAlreadyHandled)
-        {
-            return;
-        }
-
-        if (e == null || string.IsNullOrWhiteSpace(e.PropertyName) || e.PropertyName is
-            nameof(AppShellViewModel.CurrentPage) or
-            nameof(AppShellViewModel.IsSetupVisible) or
-            nameof(AppShellViewModel.IsLaunchVisible) or
-            nameof(AppShellViewModel.IsConsoleVisible) or
-            nameof(AppShellViewModel.IsHelpVisible) or
-            nameof(AppShellViewModel.IsSettingsVisible) or
-            nameof(AppShellViewModel.IsStatisticsVisible))
-        {
+        if (!_shutdownAlreadyHandled)
             ApplyCurrentPageToFrameState();
-        }
     }
 
     private void ApplyCurrentPageToFrameState()

@@ -38,7 +38,7 @@ public partial class Settings : UserControl
             return false;
 
         for (int i = 0; i < value.Length; i++)
-            if ((uint)(value[i] - '0') > 9u)
+            if (!char.IsAsciiDigit(value[i]))
                 return false;
 
         return true;

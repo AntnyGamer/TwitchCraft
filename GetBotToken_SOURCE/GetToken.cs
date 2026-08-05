@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.IO;
@@ -145,7 +145,7 @@ internal static class GetToken
             if (suffix[0] != ':' || portText.IsEmpty) return false;
 
             foreach (char character in portText)
-                if ((uint)(character - '0') > 9) return false;
+                if (!char.IsAsciiDigit(character)) return false;
 
             if (!int.TryParse(portText, out port) || port is < 1 or > 65535)
                 return false;
@@ -463,22 +463,24 @@ internal static class GetToken
                     return new(false, string.Empty, "Twitch did not return the token scopes.");
                 }
 
-                int scopeMask = 0;
+                bool hasChatRead = false;
+                bool hasChatEdit = false;
+                bool hasChattersScope = false;
                 foreach (JsonElement scope in scopes.EnumerateArray())
                 {
                     if (scope.ValueKind != JsonValueKind.String) continue;
-                    scopeMask |= scope.GetString() switch
+
+                    switch (scope.GetString())
                     {
-                        "chat:read" => 1,
-                        "chat:edit" => 2,
-                        "moderator:read:chatters" => 4,
-                        _ => 0
-                    };
+                        case "chat:read": hasChatRead = true; break;
+                        case "chat:edit": hasChatEdit = true; break;
+                        case "moderator:read:chatters": hasChattersScope = true; break;
+                    }
                 }
 
-                string missingScope = (scopeMask & 1) == 0 ? "chat:read"
-                    : (scopeMask & 2) == 0 ? "chat:edit"
-                    : (scopeMask & 4) == 0 ? "moderator:read:chatters"
+                string missingScope = !hasChatRead ? "chat:read"
+                    : !hasChatEdit ? "chat:edit"
+                    : !hasChattersScope ? "moderator:read:chatters"
                     : string.Empty;
 
                 return missingScope.Length == 0

@@ -31,10 +31,7 @@ internal static class DatapackInstaller
 
         string sourceDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", DatapackName);
         if (!Directory.Exists(sourceDirectory))
-        {
-            TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Locateplayers datapack source folder is missing: " + sourceDirectory, null);
-            return;
-        }
+            throw new DirectoryNotFoundException("Locateplayers datapack source folder is missing: " + sourceDirectory);
 
         string destinationDirectory = Path.Combine(ServerPropertyEditor.GetWorldDirectory(serverDirectory, levelName), "datapacks", DatapackName);
         SyncLocatePlayersDatapackFiles(sourceDirectory, destinationDirectory, minecraftVersion);
@@ -45,10 +42,7 @@ internal static class DatapackInstaller
         string functionSource = Path.Combine(sourceDirectory, "data", DatapackName, "functions");
         string tagSource = Path.Combine(sourceDirectory, "data", "minecraft", "tags", "functions");
         if (!Directory.Exists(functionSource) || !Directory.Exists(tagSource))
-        {
-            TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Locateplayers datapack source folder is incomplete: " + sourceDirectory, null);
-            return;
-        }
+            throw new InvalidDataException("Locateplayers datapack source folder is incomplete: " + sourceDirectory);
 
         Directory.CreateDirectory(destinationDirectory);
         File.WriteAllText(Path.Combine(destinationDirectory, "pack.mcmeta"), BuildPackMetadataJson(minecraftVersion), Utf8NoBom);
