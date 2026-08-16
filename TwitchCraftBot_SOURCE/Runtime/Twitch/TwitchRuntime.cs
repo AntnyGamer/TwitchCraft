@@ -293,12 +293,10 @@ public sealed partial class BotMainHandler
                     {
                         bool isModerator = message.IsModerator;
 
-                        if (!QueueIRCWorkCore(
-                            _IRCCommandQueue,
+                        if (!QueueIRCCommandWork(
                             ct => DispatchCommandAsync(payload, sender, isModerator, ct),
                             payload,
-                            quick: false,
-                            cancellationToken: cancellationToken))
+                            cancellationToken))
                         {
                             await NotifyIRCCommandQueueOverloadAsync(cancellationToken).ConfigureAwait(false);
                         }
@@ -377,8 +375,11 @@ public sealed partial class BotMainHandler
                 break;
             }
 
-            reconnectDelayMs = Math.Min(reconnectDelayMs * 2, 15000);
+            reconnectDelayMs = GetNextIRCReconnectDelayMilliseconds(reconnectDelayMs);
         }
     }
+
+    internal static int GetNextIRCReconnectDelayMilliseconds(int currentDelayMilliseconds)
+        => Math.Min(currentDelayMilliseconds * 2, 15000);
 
 }

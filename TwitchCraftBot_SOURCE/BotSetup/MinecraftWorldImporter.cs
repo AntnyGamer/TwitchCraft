@@ -48,7 +48,7 @@ internal static class MinecraftWorldImporter
         };
     }
 
-    public static void ReplaceWorldSafely(MinecraftWorldImportPlan plan)
+    public static void ReplaceWorldSafely(MinecraftWorldImportPlan plan, Action? finishImport = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
@@ -69,6 +69,7 @@ internal static class MinecraftWorldImporter
             }
 
             Directory.Move(plan.StagingWorldPath, plan.DestinationWorldPath);
+            finishImport?.Invoke();
             TwitchCraftBot_V1.FileSystemHelper.TryDeleteDirectory(plan.BackupWorldPath);
         }
         catch (Exception ex)

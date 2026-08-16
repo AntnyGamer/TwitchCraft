@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraftBot_V1.BotSetup;
@@ -81,6 +82,11 @@ public sealed partial class BotMainHandler
     internal void AddServerLogLine(string line) => _shellWindow?.AddServerLogLine(line);
 
     public BotMainHandler(AppShellViewModel shellModel)
+        : this(shellModel, ConfigurationStore.ViewerTokensPath, initializeApplicationState: true)
+    {
+    }
+
+    internal BotMainHandler(AppShellViewModel shellModel, string tokenStorePath, bool initializeApplicationState)
     {
         ArgumentNullException.ThrowIfNull(shellModel);
 
@@ -102,7 +108,7 @@ public sealed partial class BotMainHandler
         _knownChatters = [];
         _knownPlayers = [];
         _lastSidebarPlayers = [];
-        _tokenStore = new(ConfigurationStore.ViewerTokensPath);
+        _tokenStore = new(tokenStorePath);
         _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
         _IRCCommandQueue = new(MaxQueuedIRCCommands);
         _IRCQuickQueue = new(MaxQueuedIRCQuickWork);
@@ -125,6 +131,9 @@ public sealed partial class BotMainHandler
         _cachedSupportedEffects = _effectList;
         _cachedMinecraftFeatureVersion = string.Empty;
         _cachedMinecraftFeatureInfo = null;
+
+        if (!initializeApplicationState)
+            return;
 
         // SQLite loads individual rows on demand and queries top viewers by index.
         // Load lifetime totals off the UI thread so construction does not block on disk I/O.
@@ -175,6 +184,15 @@ public sealed partial class BotMainHandler
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
     }
+
+    public static int SecureRandomInt(int exclusiveMaximum) => RandomNumberGenerator.GetInt32(exclusiveMaximum);
+
+    public static int SecureRandomInt(int minimum, int exclusiveMaximum) => RandomNumberGenerator.GetInt32(minimum, exclusiveMaximum);
+
+    public static double SecureRandomDouble() => RandomNumberGenerator.GetInt32(int.MaxValue) / (double)int.MaxValue;
+
+    public static bool SecureRandomChance(double probability)
+        => probability >= 1 || (probability > 0 && RandomNumberGenerator.GetInt32(int.MaxValue) < probability * int.MaxValue);
 
     public static Random Randomizer => Random.Shared;
 

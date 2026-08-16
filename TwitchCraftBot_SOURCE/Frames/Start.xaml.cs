@@ -17,12 +17,11 @@ public partial class Start : UserControl
     private bool _worldImportInProgress;
     private bool _remoteControllerUnlocked;
     private bool? _multiplayerBeforeRemoteControl;
-    private bool _syncingRemoteRCONPassword;
 
     private static bool IsDigits(string text)
     {
         foreach (char c in text)
-            if (c is < '0' or > '9')
+            if (!char.IsAsciiDigit(c))
                 return false;
         return true;
     }
@@ -179,7 +178,7 @@ public partial class Start : UserControl
                 DatapackInstaller.SyncLocatePlayersDatapack(config);
             }
 
-            await parent.BeginLaunchAsync().ConfigureAwait(true);
+            await parent.BeginLaunchAsync();
         }
         catch (Exception ex)
         {
@@ -255,10 +254,12 @@ public partial class Start : UserControl
             {
                 await Task.Run(() =>
                 {
-                    MinecraftWorldImporter.ReplaceWorldSafely(importPlan);
-                    if (multiplayerEnabled)
-                        DatapackInstaller.SyncLocatePlayersDatapack(importPlan.ServerDirectory, config.Server.MinecraftVersion, importPlan.LevelName);
-                    ServerPropertyEditor.ApplyStartProfile(config);
+                    MinecraftWorldImporter.ReplaceWorldSafely(importPlan, () =>
+                    {
+                        if (multiplayerEnabled)
+                            DatapackInstaller.SyncLocatePlayersDatapack(importPlan.ServerDirectory, config.Server.MinecraftVersion, importPlan.LevelName);
+                        ServerPropertyEditor.ApplyStartProfile(config);
+                    });
                 });
             }
             finally
@@ -330,14 +331,8 @@ public partial class Start : UserControl
         OnlineModeCheckbox.Visibility = multiplayerEnabled ? Visibility.Visible : Visibility.Collapsed;
         OnlineModeCheckbox.IsEnabled = multiplayerEnabled;
 
-        if (!multiplayerEnabled)
-        {
+        if (!multiplayerEnabled || OnlineModeCheckbox.IsChecked == null)
             OnlineModeCheckbox.IsChecked = true;
-        }
-        else
-        {
-            OnlineModeCheckbox.IsChecked ??= true;
-        }
 
         Visibility multiplayerVisibility = remoteControlEnabled ? Visibility.Collapsed : Visibility.Visible;
         Multiplayer.Visibility = multiplayerVisibility;
@@ -487,25 +482,14 @@ public partial class Start : UserControl
 
     private void RemoteRCONPasswordShowCheckbox_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_syncingRemoteRCONPassword)
+        if (RemoteRCONPasswordShowCheckbox.IsChecked == true)
         {
-            _syncingRemoteRCONPassword = true;
-            try
-            {
-                if (RemoteRCONPasswordShowCheckbox.IsChecked == true)
-                {
-                    RemoteRCONPasswordTextbox.Text = RemoteRCONPasswordBox.Password ?? string.Empty;
-                }
-                else
-                {
-                    RemoteRCONPasswordBox.Password = RemoteRCONPasswordTextbox.Text ?? string.Empty;
-                    RemoteRCONPasswordTextbox.Clear();
-                }
-            }
-            finally
-            {
-                _syncingRemoteRCONPassword = false;
-            }
+            RemoteRCONPasswordTextbox.Text = RemoteRCONPasswordBox.Password ?? string.Empty;
+        }
+        else
+        {
+            RemoteRCONPasswordBox.Password = RemoteRCONPasswordTextbox.Text ?? string.Empty;
+            RemoteRCONPasswordTextbox.Clear();
         }
 
         SyncRemoteRCONPasswordVisibility(_remoteControllerUnlocked);

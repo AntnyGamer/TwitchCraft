@@ -275,6 +275,19 @@ Do you want to reset the Bind IP to its default?";
         ShowError(source, "Import World", "Failed to import world.\n\n" + FormatExceptionMessage(ex));
     }
 
+    public static void ShowDatapackInstallWarning(string? details)
+    {
+        ShowWarning(null, "Datapack Warning", BuildDatapackInstallWarningMessage(details));
+    }
+
+    internal static string BuildDatapackInstallWarningMessage(string? details)
+    {
+        string message = "The locateplayers support datapack could not be installed. TwitchCraft will continue, but player-location features may be unavailable.";
+        return string.IsNullOrWhiteSpace(details)
+            ? message
+            : message + Environment.NewLine + Environment.NewLine + details.Trim();
+    }
+
     public static void ShowMissingMinecraftUsername(object? source)
     {
         ShowWarning(source, "Settings", "Please enter your Minecraft username (3-16 chars, letters, numbers, or _).");

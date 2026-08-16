@@ -11,7 +11,6 @@ public partial class Setup : UserControl
         private readonly PasswordBox _hiddenBox;
         private readonly TextBox _visibleBox;
         private readonly CheckBox _toggle;
-        private bool _syncing;
 
         public SecretTextBoxController(PasswordBox hiddenBox, TextBox visibleBox, CheckBox toggle)
         {
@@ -32,8 +31,10 @@ public partial class Setup : UserControl
 
         public void Hide()
         {
-            _toggle.IsChecked = false;
-            SyncVisibility();
+            if (_toggle.IsChecked == false)
+                SyncVisibility();
+            else
+                _toggle.IsChecked = false;
         }
 
         private bool IsVisible => _toggle.IsChecked == true;
@@ -42,29 +43,18 @@ public partial class Setup : UserControl
 
         private void SyncVisibility()
         {
-            if (_syncing)
-                return;
-
-            _syncing = true;
-            try
+            if (IsVisible)
             {
-                if (IsVisible)
-                {
-                    _visibleBox.Text = _hiddenBox.Password ?? string.Empty;
-                    _hiddenBox.Visibility = Visibility.Collapsed;
-                    _visibleBox.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    _hiddenBox.Password = _visibleBox.Text ?? string.Empty;
-                    _visibleBox.Clear();
-                    _visibleBox.Visibility = Visibility.Collapsed;
-                    _hiddenBox.Visibility = Visibility.Visible;
-                }
+                _visibleBox.Text = _hiddenBox.Password ?? string.Empty;
+                _hiddenBox.Visibility = Visibility.Collapsed;
+                _visibleBox.Visibility = Visibility.Visible;
             }
-            finally
+            else
             {
-                _syncing = false;
+                _hiddenBox.Password = _visibleBox.Text ?? string.Empty;
+                _visibleBox.Clear();
+                _visibleBox.Visibility = Visibility.Collapsed;
+                _hiddenBox.Visibility = Visibility.Visible;
             }
         }
     }

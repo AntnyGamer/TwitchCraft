@@ -76,19 +76,6 @@ internal sealed class IRCMessage
         return true;
     }
 
-    public static bool TryParse(string line, out IRCMessage? message)
-    {
-        IRCMessage parsed = new();
-        if (!parsed.TryParse(line))
-        {
-            message = null;
-            return false;
-        }
-
-        message = parsed;
-        return true;
-    }
-
     private void Reset()
     {
         Bits = 0;
@@ -161,7 +148,7 @@ internal sealed class IRCMessage
         for (int i = 0; i < length; i++)
         {
             char c = line[start + i];
-            if (c < '0' || c > '9')
+            if (!char.IsAsciiDigit(c))
                 return 0;
 
             int digit = c - '0';

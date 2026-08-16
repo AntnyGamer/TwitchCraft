@@ -23,6 +23,10 @@ public sealed class MinecraftCommandBuilderTests
     [Theory]
     [InlineData(null, "")]
     [InlineData("", "")]
+    [InlineData("\"", "\\\"")]
+    [InlineData("\\", "\\\\")]
+    [InlineData("'", "'")]
+    [InlineData("Player😀", "Player😀")]
     [InlineData("plain unicode ☃", "plain unicode ☃")]
     [InlineData("A\"B\\C", "A\\\"B\\\\C")]
     public void EscapeSelectorValue_PreservesSafeTextAndEscapesSyntax(string? value, string expected)

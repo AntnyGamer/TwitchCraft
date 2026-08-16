@@ -22,7 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="TestInfrastructure\TestProcess\**\*.cs" />
     <ProjectReference Include="..\TwitchCraftBot_SOURCE\TwitchCraftBot.csproj" />
+    <ProjectReference Include="TestInfrastructure\TestProcess\TwitchCraftBot.TestProcess.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

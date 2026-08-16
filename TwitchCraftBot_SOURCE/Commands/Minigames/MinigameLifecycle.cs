@@ -179,7 +179,7 @@ public static partial class MinigameManager
                     continue;
                 }
 
-                switch (BotMainHandler.Randomizer.Next(0, 3))
+                switch (BotMainHandler.SecureRandomInt(3))
                 {
                     case 0:
                         await RunChickenRunAsync(runtime, cancellationToken).ConfigureAwait(false);

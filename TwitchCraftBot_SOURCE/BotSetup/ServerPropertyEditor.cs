@@ -105,7 +105,7 @@ public sealed class ServerPropertyEditor
         string eulaPath = Path.Combine(config.Server.ServerDirectory, "eula.txt");
         File.WriteAllText(eulaPath, "eula=true", Utf8NoBom);
 
-        ApplyStartProfile(config, forceRewriteAll: true);
+        ApplyStartProfile(config);
     }
 
     public static void CleanupUnusedServerJars(string serverDirectory, string currentJarPath)
@@ -131,9 +131,7 @@ public sealed class ServerPropertyEditor
         }
     }
 
-    public static string ApplyStartProfile(BotConfig config) => ApplyStartProfile(config, forceRewriteAll: false);
-
-    private static string ApplyStartProfile(BotConfig config, bool forceRewriteAll)
+    public static string ApplyStartProfile(BotConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
 
@@ -145,14 +143,11 @@ public sealed class ServerPropertyEditor
         if (string.IsNullOrWhiteSpace(propsPath))
             return string.Empty;
 
-        Dictionary<string, string> props = forceRewriteAll
-            ? new(StringComparer.OrdinalIgnoreCase)
-            : LoadProperties(propsPath);
+        Dictionary<string, string> props = LoadProperties(propsPath);
 
         bool multiplayer = config.Settings.MultiplayerEnabled;
         bool onlineMode = !multiplayer || config.Settings.RequireOnlineMode;
 
-        bool writingInitialProperties = forceRewriteAll || props.Count == 0;
         string serverPort = config.Server.Port.ToString(CultureInfo.InvariantCulture);
 
         props["rcon.port"] = config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture);
@@ -172,52 +167,52 @@ public sealed class ServerPropertyEditor
         props["rcon.password"] = ConfigurationStore.NormalizeRconPassword(config.Server.RCON.Password);
         props["hardcore"] = config.Settings.HardcoreEnabled ? "true" : "false";
 
-        SetDefaultProperty(props, "enable-jmx-monitoring", "false", writingInitialProperties);
-        SetDefaultProperty(props, "gamemode", "survival", writingInitialProperties);
-        SetDefaultProperty(props, "enable-command-block", "false", writingInitialProperties);
-        SetDefaultProperty(props, "generator-settings", "{}", writingInitialProperties);
-        SetDefaultProperty(props, "enforce-secure-profile", "true", writingInitialProperties);
-        SetDefaultProperty(props, "network-compression-threshold", "256", writingInitialProperties);
-        SetDefaultProperty(props, "max-tick-time", "60000", writingInitialProperties);
-        SetDefaultProperty(props, "use-native-transport", "true", writingInitialProperties);
-        SetDefaultProperty(props, "enable-status", "true", writingInitialProperties);
-        SetDefaultProperty(props, "allow-flight", "false", writingInitialProperties);
-        SetDefaultProperty(props, "broadcast-rcon-to-ops", "false", writingInitialProperties);
-        SetDefaultProperty(props, "view-distance", "12", writingInitialProperties);
-        SetDefaultProperty(props, "resource-pack-prompt", string.Empty, writingInitialProperties);
-        SetDefaultProperty(props, "allow-nether", "true", writingInitialProperties);
-        SetDefaultProperty(props, "sync-chunk-writes", "true", writingInitialProperties);
-        SetDefaultProperty(props, "op-permission-level", "4", writingInitialProperties);
-        SetDefaultProperty(props, "prevent-proxy-connections", "false", writingInitialProperties);
-        SetDefaultProperty(props, "hide-online-players", "false", writingInitialProperties);
-        SetDefaultProperty(props, "resource-pack", string.Empty, writingInitialProperties);
-        SetDefaultProperty(props, "entity-broadcast-range-percentage", "100", writingInitialProperties);
-        SetDefaultProperty(props, "simulation-distance", "10", writingInitialProperties);
-        SetDefaultProperty(props, "player-idle-timeout", "500", writingInitialProperties);
-        SetDefaultProperty(props, "force-gamemode", "true", writingInitialProperties);
-        SetDefaultProperty(props, "rate-limit", "0", writingInitialProperties);
-        SetDefaultProperty(props, "white-list", "false", writingInitialProperties);
-        SetDefaultProperty(props, "broadcast-console-to-ops", "false", writingInitialProperties);
-        SetDefaultProperty(props, "previews-chat", "false", writingInitialProperties);
-        SetDefaultProperty(props, "function-permission-level", "2", writingInitialProperties);
-        SetDefaultProperty(props, "level-type", "minecraft:normal", writingInitialProperties);
-        SetDefaultProperty(props, "text-filtering-config", string.Empty, writingInitialProperties);
-        SetDefaultProperty(props, "spawn-monsters", "true", writingInitialProperties);
-        SetDefaultProperty(props, "enforce-whitelist", "false", writingInitialProperties);
-        SetDefaultProperty(props, "spawn-protection", "0", writingInitialProperties);
-        SetDefaultProperty(props, "resource-pack-sha1", string.Empty, writingInitialProperties);
-        SetDefaultProperty(props, "max-world-size", "29999984", writingInitialProperties);
+        SetDefaultProperty(props, "enable-jmx-monitoring", "false");
+        SetDefaultProperty(props, "gamemode", "survival");
+        SetDefaultProperty(props, "enable-command-block", "false");
+        SetDefaultProperty(props, "generator-settings", "{}");
+        SetDefaultProperty(props, "enforce-secure-profile", "true");
+        SetDefaultProperty(props, "network-compression-threshold", "256");
+        SetDefaultProperty(props, "max-tick-time", "60000");
+        SetDefaultProperty(props, "use-native-transport", "true");
+        SetDefaultProperty(props, "enable-status", "true");
+        SetDefaultProperty(props, "allow-flight", "false");
+        SetDefaultProperty(props, "broadcast-rcon-to-ops", "false");
+        SetDefaultProperty(props, "view-distance", "12");
+        SetDefaultProperty(props, "resource-pack-prompt", string.Empty);
+        SetDefaultProperty(props, "allow-nether", "true");
+        SetDefaultProperty(props, "sync-chunk-writes", "true");
+        SetDefaultProperty(props, "op-permission-level", "4");
+        SetDefaultProperty(props, "prevent-proxy-connections", "false");
+        SetDefaultProperty(props, "hide-online-players", "false");
+        SetDefaultProperty(props, "resource-pack", string.Empty);
+        SetDefaultProperty(props, "entity-broadcast-range-percentage", "100");
+        SetDefaultProperty(props, "simulation-distance", "10");
+        SetDefaultProperty(props, "player-idle-timeout", "500");
+        SetDefaultProperty(props, "force-gamemode", "true");
+        SetDefaultProperty(props, "rate-limit", "0");
+        SetDefaultProperty(props, "white-list", "false");
+        SetDefaultProperty(props, "broadcast-console-to-ops", "false");
+        SetDefaultProperty(props, "previews-chat", "false");
+        SetDefaultProperty(props, "function-permission-level", "2");
+        SetDefaultProperty(props, "level-type", "minecraft:normal");
+        SetDefaultProperty(props, "text-filtering-config", string.Empty);
+        SetDefaultProperty(props, "spawn-monsters", "true");
+        SetDefaultProperty(props, "enforce-whitelist", "false");
+        SetDefaultProperty(props, "spawn-protection", "0");
+        SetDefaultProperty(props, "resource-pack-sha1", string.Empty);
+        SetDefaultProperty(props, "max-world-size", "29999984");
 
-        ApplyVersionSpecificProperties(props, config.Server.MinecraftVersion, writingInitialProperties);
+        ApplyVersionSpecificProperties(props, config.Server.MinecraftVersion);
         return SaveProperties(propsPath, props);
     }
 
-    private static void ApplyVersionSpecificProperties(Dictionary<string, string> props, string? minecraftVersion, bool forceDefaultValues)
+    private static void ApplyVersionSpecificProperties(Dictionary<string, string> props, string? minecraftVersion)
     {
         if (MinecraftVersionSupport.SupportsLegacySpawnProperties(minecraftVersion))
         {
-            SetDefaultProperty(props, "spawn-npcs", "true", forceDefaultValues);
-            SetDefaultProperty(props, "spawn-animals", "true", forceDefaultValues);
+            SetDefaultProperty(props, "spawn-npcs", "true");
+            SetDefaultProperty(props, "spawn-animals", "true");
         }
         else
         {
@@ -227,7 +222,7 @@ public sealed class ServerPropertyEditor
 
         if (MinecraftVersionSupport.SupportsPauseWhenEmptySeconds(minecraftVersion))
         {
-            SetDefaultProperty(props, "pause-when-empty-seconds", "300", forceDefaultValues);
+            SetDefaultProperty(props, "pause-when-empty-seconds", "300");
         }
         else
         {
@@ -235,11 +230,8 @@ public sealed class ServerPropertyEditor
         }
     }
 
-    private static void SetDefaultProperty(Dictionary<string, string> props, string key, string value, bool force)
-    {
-        if (force) props[key] = value;
-        else props.TryAdd(key, value);
-    }
+    private static void SetDefaultProperty(Dictionary<string, string> props, string key, string value)
+        => props.TryAdd(key, value);
 
     private static string ToMinecraftDifficulty(string? difficulty)
     {

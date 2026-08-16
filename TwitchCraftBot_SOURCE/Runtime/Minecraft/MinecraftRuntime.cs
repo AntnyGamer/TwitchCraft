@@ -62,7 +62,7 @@ public sealed partial class BotMainHandler
         QueueTrackedPlayerDeathScoreRefreshForStatistics();
     }
 
-    private async Task StartJavaServerAsync(BotConfig config, CancellationToken cancellationToken)
+    internal async Task StartJavaServerAsync(BotConfig config, CancellationToken cancellationToken)
     {
         string jarPath = string.IsNullOrWhiteSpace(config.Server.JarPath)
             ? Path.Combine(config.Server.ServerDirectory, "server.jar")

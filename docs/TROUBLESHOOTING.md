@@ -10,7 +10,7 @@
 
    * `TwitchCraftBot.log.old1` through `TwitchCraftBot.log.old4`
 4. Only a maximum of 6 MB of log data can be stored
-5. TwitchCraft automatically removes Twitch and RCON secrets from the log file. However, you should still review the log before sharing it, as error information may contain other personal information
+5. Review the log before sharing it, as error information may contain private or personal information
 
 ## INVALID TOKEN OR LONG ERROR ON STARTUP
 

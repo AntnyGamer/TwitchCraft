@@ -61,6 +61,17 @@ public sealed partial class BotMainHandler
         return true;
     }
 
+    internal bool QueueIRCCommandWork(
+        Func<CancellationToken, Task> work,
+        string context,
+        CancellationToken cancellationToken)
+        => QueueIRCWorkCore(
+            _IRCCommandQueue,
+            work,
+            context,
+            quick: false,
+            cancellationToken);
+
     private async Task ProcessIRCWorkQueueAsync(IRCWorkQueueState state, Queue<IRCQueuedWork> queue, bool quick)
     {
         try
@@ -81,22 +92,24 @@ public sealed partial class BotMainHandler
         }
         finally
         {
-            bool restart = false;
+            Queue<IRCQueuedWork>? queueToRestart = null;
             lock (state.Gate)
             {
-                if (ReferenceEquals(queue, state.Queue))
+                state.Active = 0;
+                Queue<IRCQueuedWork> currentQueue = state.Queue;
+                if (currentQueue.Count > 0)
                 {
-                    state.Active = 0;
-                    if (queue.Count > 0)
-                    {
-                        state.Active = 1;
-                        restart = true;
-                    }
+                    state.Active = 1;
+                    queueToRestart = currentQueue;
                 }
             }
 
-            if (restart)
-                TrackSessionBackgroundTask(Task.Run(() => ProcessIRCWorkQueueAsync(state, queue, quick), CancellationToken.None));
+            if (queueToRestart != null)
+            {
+                TrackSessionBackgroundTask(Task.Run(
+                    () => ProcessIRCWorkQueueAsync(state, queueToRestart, quick),
+                    CancellationToken.None));
+            }
         }
     }
 
@@ -124,7 +137,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void ResetIRCQueues()
+    internal void ResetIRCQueues()
     {
         lock (_IRCCommandQueue.Gate)
             lock (_IRCQuickQueue.Gate)
@@ -139,10 +152,9 @@ public sealed partial class BotMainHandler
     {
         state.Queue = new Queue<IRCQueuedWork>();
         Volatile.Write(ref state.Depth, 0);
-        state.Active = 0;
     }
 
-    private static bool IsIgnoredIRCUser(string sender, string botName, bool separateBotAccount)
+    internal static bool IsIgnoredIRCUser(string sender, string botName, bool separateBotAccount)
     {
         if (separateBotAccount &&
             string.Equals(sender, botName, StringComparison.OrdinalIgnoreCase))
@@ -159,7 +171,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    private static string StripIRCTagsForLog(string line)
+    internal static string StripIRCTagsForLog(string line)
     {
         if (line.Length == 0 || line[0] != '@')
             return line;
@@ -168,7 +180,7 @@ public sealed partial class BotMainHandler
         return firstSpace > 0 && firstSpace + 1 < line.Length ? line[(firstSpace + 1)..] : line;
     }
 
-    private static string BuildCommandQueueContext(string payload)
+    internal static string BuildCommandQueueContext(string payload)
     {
         const string Prefix = "command ";
         int commandEnd = payload.IndexOf(' ');

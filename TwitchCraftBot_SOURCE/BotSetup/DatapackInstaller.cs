@@ -9,6 +9,7 @@ internal static class DatapackInstaller
     private static readonly UTF8Encoding Utf8NoBom = new(false);
     private const string DatapackName = "locateplayers";
     private const string DatapackDescription = "Locate players command for TwitchCraft";
+    private const string DatapackWarningContext = "Locateplayers datapack installation failed; TwitchCraft will continue without it";
     private const int MinLegacyPackFormat = 15;
     private const int MaxLegacyPackFormat = 61;
 
@@ -18,38 +19,55 @@ internal static class DatapackInstaller
     private const string LegacyPrintTellraw = "tellraw @a[tag=lp_requester] [{\"selector\":\"@s\",\"color\":\"aqua\"},{\"text\":\": \",\"color\":\"gray\"},{\"text\":\"X=\",\"color\":\"gold\"},{\"score\":{\"name\":\"$x\",\"objective\":\"lp_math\"}},{\"text\":\" Y=\",\"color\":\"gold\"},{\"score\":{\"name\":\"$y\",\"objective\":\"lp_math\"}},{\"text\":\" Z=\",\"color\":\"gold\"},{\"score\":{\"name\":\"$z\",\"objective\":\"lp_math\"}}]";
     private const string InlinePrintTellraw = "tellraw @a[tag=lp_requester,limit=1] [{selector:'@s',color:'aqua'},{text:': ',color:'gray'},{text:'X=',color:'gold'},{score:{name:'$x',objective:'lp_math'}},{text:' Y=',color:'gold'},{score:{name:'$y',objective:'lp_math'}},{text:' Z=',color:'gold'},{score:{name:'$z',objective:'lp_math'}}]";
 
-    public static void SyncLocatePlayersDatapack(BotConfig config)
+    public static bool SyncLocatePlayersDatapack(BotConfig config)
     {
-        if (config.Settings.MultiplayerEnabled)
+        return !config.Settings.MultiplayerEnabled ||
             SyncLocatePlayersDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, ServerPropertyEditor.GetLevelName(config));
     }
 
-    public static void SyncLocatePlayersDatapack(string serverDirectory, string? minecraftVersion = null, string? levelName = null)
+    public static bool SyncLocatePlayersDatapack(string serverDirectory, string? minecraftVersion = null, string? levelName = null)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory))
-            return;
+            return true;
 
         string sourceDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", DatapackName);
-        if (!Directory.Exists(sourceDirectory))
-        {
-            TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Locateplayers datapack source folder is missing: " + sourceDirectory, null);
-            return;
-        }
-
         string destinationDirectory = Path.Combine(ServerPropertyEditor.GetWorldDirectory(serverDirectory, levelName), "datapacks", DatapackName);
-        SyncLocatePlayersDatapackFiles(sourceDirectory, destinationDirectory, minecraftVersion);
+        return TrySyncLocatePlayersDatapack(sourceDirectory, destinationDirectory, minecraftVersion, ReportDatapackWarning);
     }
 
-    private static void SyncLocatePlayersDatapackFiles(string sourceDirectory, string destinationDirectory, string? minecraftVersion)
+    internal static bool TrySyncLocatePlayersDatapack(
+        string sourceDirectory,
+        string destinationDirectory,
+        string? minecraftVersion,
+        Action<string, Exception> reportWarning)
     {
+        ArgumentNullException.ThrowIfNull(reportWarning);
+
+        if (!Directory.Exists(sourceDirectory))
+            return ReportDatapackFailure(new DirectoryNotFoundException("Locateplayers datapack source folder is missing: " + sourceDirectory), reportWarning);
+
         string functionSource = Path.Combine(sourceDirectory, "data", DatapackName, "functions");
         string tagSource = Path.Combine(sourceDirectory, "data", "minecraft", "tags", "functions");
         if (!Directory.Exists(functionSource) || !Directory.Exists(tagSource))
-        {
-            TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Locateplayers datapack source folder is incomplete: " + sourceDirectory, null);
-            return;
-        }
+            return ReportDatapackFailure(new InvalidDataException("Locateplayers datapack source folder is incomplete: " + sourceDirectory), reportWarning);
 
+        try
+        {
+            SyncLocatePlayersDatapackFiles(functionSource, tagSource, destinationDirectory, minecraftVersion);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return ReportDatapackFailure(ex, reportWarning);
+        }
+    }
+
+    private static void SyncLocatePlayersDatapackFiles(
+        string functionSource,
+        string tagSource,
+        string destinationDirectory,
+        string? minecraftVersion)
+    {
         Directory.CreateDirectory(destinationDirectory);
         File.WriteAllText(Path.Combine(destinationDirectory, "pack.mcmeta"), BuildPackMetadataJson(minecraftVersion), Utf8NoBom);
 
@@ -81,7 +99,26 @@ internal static class DatapackInstaller
             RewriteLocatePlayersTextCommands(destinationDirectory);
     }
 
-    private static string BuildPackMetadataJson(string? minecraftVersion)
+    private static bool ReportDatapackFailure(Exception exception, Action<string, Exception> reportWarning)
+    {
+        reportWarning(DatapackWarningContext, exception);
+        return false;
+    }
+
+    private static void ReportDatapackWarning(string context, Exception exception)
+    {
+        TwitchCraftBot_V1.ErrorHandling.LogNonFatal(context, exception);
+        try
+        {
+            TwitchCraftBot_V1.ErrorHandling.ShowDatapackInstallWarning(exception.Message);
+        }
+        catch (Exception popupException)
+        {
+            TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to show the locateplayers datapack warning", popupException);
+        }
+    }
+
+    internal static string BuildPackMetadataJson(string? minecraftVersion)
     {
         if (MinecraftVersionSupport.TryGetVersion(minecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo version))
         {

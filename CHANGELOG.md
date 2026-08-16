@@ -1,6 +1,29 @@
 # Changelog
 
-All notable project changes should be recorded here. This project follows a Keep a Changelog-style structure; version numbers should match the application metadata and release tag.
+All notable changes to this project are documented here. This project follows a Keep a Changelog-style structure, and version numbers should match the application metadata and release tags.
+
+## [1.7.1.3] - 2026-08-16
+
+### Added
+
+* Expanded the high-value automated test suite to 200 tests.
+
+### Changed
+
+* Kept cryptographic randomness for chance-based token transfers and minigame outcomes while using ordinary randomness for cosmetic gameplay behavior and passive reward scheduling.
+* Preserved existing custom and unmanaged `server.properties` values during server setup.
+* Updated `Microsoft.Data.Sqlite` to 10.0.11 and `SQLitePCLRaw.bundle_e_sqlite3` to 3.0.5.
+
+### Fixed
+
+* Missing or incomplete bundled `locateplayers` datapack files now produce a logged warning and warning popup without aborting startup or world import.
+* Prevented one canceled caller from canceling or removing a shared player probe still in use by other callers.
+* Serialized IRC queue generations during resets to prevent old and new queue workers from overlapping.
+* Improved world-import rollback so setup failures do not leave the imported world in a partially configured state.
+
+### Security
+
+* Restricted Windows Restart Manager DLL resolution to `System32`.
 
 ## [1.7.1.2] - 2026-07-23
 

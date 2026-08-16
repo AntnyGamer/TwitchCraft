@@ -7,7 +7,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private static string NormalizeOutgoingChannelMessage(string message)
+    internal static string NormalizeOutgoingChannelMessage(string message)
     {
         if (string.IsNullOrEmpty(message))
             return string.Empty;
@@ -47,7 +47,7 @@ public sealed partial class BotMainHandler
         });
     }
 
-    private static string TruncateUtf8ToByteCount(string message, int maxBytes)
+    internal static string TruncateUtf8ToByteCount(string message, int maxBytes)
     {
         if (maxBytes <= 0 || message.Length == 0)
             return string.Empty;

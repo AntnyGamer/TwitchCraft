@@ -59,10 +59,8 @@ internal static class CommandUserHelper
         for (int i = 0; i < normalized.Length; i++)
         {
             char c = normalized[i];
-            bool okay =
-                (c >= 'a' && c <= 'z') ||
-                (c >= '0' && c <= '9') ||
-                c == '_';
+            bool okay = char.IsAsciiLetterLower(c) ||
+                char.IsAsciiDigit(c) || c == '_';
 
             if (!okay)
             {

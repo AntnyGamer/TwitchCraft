@@ -1,3 +1,4 @@
+using TwitchCraftBot.Tests.TestInfrastructure;
 using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot.Tests.Configuration;
@@ -7,8 +8,16 @@ public sealed class ServerPropertyEditorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(".")]
     [InlineData("..")]
     [InlineData("../outside")]
+    [InlineData("folder/name")]
+    [InlineData("folder\\name")]
+    [InlineData("name:stream")]
+    [InlineData("C:\\world")]
+    [InlineData("/world")]
+    [InlineData("world*")]
     public void NormalizeLevelName_ReplacesUnsafeOrEmptyValues(string? value)
     {
         Assert.Equal("world", ServerPropertyEditor.NormalizeLevelName(value));
@@ -21,18 +30,21 @@ public sealed class ServerPropertyEditorTests
     }
 
     [Fact]
-    public void ApplyStartProfile_PreservesUnmanagedPropertiesAndUpdatesManagedValues()
+    public void WriteInitialFiles_PreservesUnmanagedPropertiesAndUpdatesManagedValues()
     {
         using TemporaryDirectory directory = new();
         string propertiesPath = Path.Combine(directory.Path, "server.properties");
         File.WriteAllText(
             propertiesPath,
             """
+            z-custom=last
             custom-setting=keep=this
             view-distance=6
             level-name=Streamer World
             server-port=12345
             online-mode=true
+            escaped-value=hello\=world\\path
+            a-custom=first
             """);
 
         BotConfig config = new()
@@ -60,9 +72,13 @@ public sealed class ServerPropertyEditorTests
             }
         };
 
-        string content = ServerPropertyEditor.ApplyStartProfile(config);
+        ServerPropertyEditor.WriteInitialFiles(config);
+        string content = File.ReadAllText(propertiesPath);
 
+        Assert.Contains("a-custom=first", content);
         Assert.Contains(@"custom-setting=keep\=this", content);
+        Assert.Contains(@"escaped-value=hello\=world\\path", content);
+        Assert.Contains("z-custom=last", content);
         Assert.Contains("view-distance=6", content);
         Assert.Contains("level-name=Streamer World", content);
         Assert.Contains("server-port=25570", content);
@@ -74,27 +90,12 @@ public sealed class ServerPropertyEditorTests
         Assert.Contains("difficulty=hard", content);
         Assert.Contains("hardcore=false", content);
         Assert.DoesNotContain("server-port=12345", content);
-        Assert.Equal(content, File.ReadAllText(propertiesPath));
+        Assert.Contains("# THESE PROPERTIES CAN BE CHANGED", content);
+        Assert.Contains("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT", content);
+        Assert.True(content.IndexOf("a-custom=first", StringComparison.Ordinal) < content.IndexOf("z-custom=last", StringComparison.Ordinal));
+        Assert.True(content.IndexOf("rcon.port=", StringComparison.Ordinal) < content.IndexOf("enable-query=", StringComparison.Ordinal));
+        Assert.Equal("eula=true", File.ReadAllText(Path.Combine(directory.Path, "eula.txt")));
         Assert.Equal("Streamer World", ServerPropertyEditor.GetLevelName(config));
     }
 
-    private sealed class TemporaryDirectory : IDisposable
-    {
-        internal TemporaryDirectory()
-        {
-            Path = System.IO.Path.Combine(
-                System.IO.Path.GetTempPath(),
-                "TwitchCraftTests",
-                Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(Path);
-        }
-
-        internal string Path { get; }
-
-        public void Dispose()
-        {
-            if (Directory.Exists(Path))
-                Directory.Delete(Path, true);
-        }
-    }
 }

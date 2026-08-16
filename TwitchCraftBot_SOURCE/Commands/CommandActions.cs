@@ -23,7 +23,7 @@ public sealed partial class BotMainHandler
             return baseCost;
         }
 
-        return (int)(((long)baseCost * (playerCount + 1L)) / 2L);
+        return (int)((baseCost * (playerCount + 1L)) / 2L);
     }
 
     public bool TryBeginFireworksRepeat() => Interlocked.Exchange(ref _fireworksRepeatActive, 1) == 0;

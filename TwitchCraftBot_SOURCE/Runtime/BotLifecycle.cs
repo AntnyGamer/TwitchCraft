@@ -371,7 +371,7 @@ public sealed partial class BotMainHandler
         BotStatisticsStore.CloseConnection();
     }
 
-    private async Task EnsureServerProcessStartedAsync(CancellationToken cancellationToken)
+    internal async Task EnsureServerProcessStartedAsync(CancellationToken cancellationToken)
     {
         Process process = _javaServerProcess
             ?? throw new InvalidOperationException("Minecraft server process could not be started.");

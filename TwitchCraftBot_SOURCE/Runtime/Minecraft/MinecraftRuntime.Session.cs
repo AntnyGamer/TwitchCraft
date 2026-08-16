@@ -173,7 +173,7 @@ public sealed partial class BotMainHandler
         SafeDisposeProcess(process);
     }
 
-    private async Task SafeStopProcessAsync(bool waitBriefly)
+    internal async Task SafeStopProcessAsync(bool waitBriefly)
     {
         Process? process = _javaServerProcess;
         _javaServerProcess = null;

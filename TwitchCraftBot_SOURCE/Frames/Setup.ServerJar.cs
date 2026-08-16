@@ -132,7 +132,7 @@ public partial class Setup : UserControl
         for (int i = 0; i < expectedSha.Length; i++)
         {
             char c = expectedSha[i];
-            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+            if (!char.IsAsciiHexDigit(c))
                 return false;
         }
 

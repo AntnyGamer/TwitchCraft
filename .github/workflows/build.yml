@@ -1,8 +1,11 @@
 name: Build and Test
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
+      - "agent/**"
   pull_request:
     branches: [main]
 
@@ -12,6 +15,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository

@@ -84,7 +84,7 @@ public static partial class MinigameManager
 
             state.Active = true;
             state.LastGuessAtUtc.Clear();
-            state.TargetNumber = BotMainHandler.Randomizer.Next(minValue, maxValue + 1);
+            state.TargetNumber = BotMainHandler.SecureRandomInt(minValue, maxValue + 1);
             state.RoundID++;
             roundID = state.RoundID;
             return true;

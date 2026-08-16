@@ -217,21 +217,6 @@ public sealed partial class BotMainHandler
             token: token);
     }
 
-    private static async Task<TResult> AwaitProbeResultAsync<TResult>(
-        TaskCompletionSource<TResult> waiter,
-        bool createdWaiter,
-        Func<CancellationToken, Task<bool>> sendProbe,
-        CancellationToken cancellationToken)
-    {
-        if (createdWaiter && !await sendProbe(cancellationToken).ConfigureAwait(false))
-        {
-            waiter.TrySetResult(default!);
-            return default!;
-        }
-
-        return await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
-    }
-
     private async Task<bool> RefreshOnlinePlayerSnapshotNowAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
