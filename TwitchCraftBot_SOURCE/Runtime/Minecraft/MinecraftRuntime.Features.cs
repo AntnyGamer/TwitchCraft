@@ -69,12 +69,12 @@ public sealed partial class BotMainHandler
             availableEffects = _cachedSupportedEffects;
         }
 
-        return availableEffects[Random.Shared.Next(availableEffects.Count)];
+        return availableEffects[SecureRandomInt(availableEffects.Count)];
     }
 
-    public string GetRandomLootTable() => _lootList[Random.Shared.Next(_lootList.Count)];
+    public string GetRandomLootTable() => _lootList[SecureRandomInt(_lootList.Count)];
 
-    public string GetRandomMob() => _mobList[Random.Shared.Next(_mobList.Count)];
+    public string GetRandomMob() => _mobList[SecureRandomInt(_mobList.Count)];
 
     public string CurrentMinecraftVersion => _currentMinecraftVersion;
 

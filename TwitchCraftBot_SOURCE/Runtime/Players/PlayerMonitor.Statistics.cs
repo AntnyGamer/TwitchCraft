@@ -43,7 +43,7 @@ public sealed partial class BotMainHandler
                     playerName,
                     _spectatorProbeGate,
                     _pendingGameTypeRequests,
-                    (waiter, ct) => SendInternalProbeCommandAsync($"data get entity {playerName} playerGameType", () => waiter.TrySetResult(default), ct),
+                    (complete, ct) => SendInternalProbeCommandAsync($"data get entity {playerName} playerGameType", complete, ct),
                     t).ConfigureAwait(false);
             },
             () => Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 0),

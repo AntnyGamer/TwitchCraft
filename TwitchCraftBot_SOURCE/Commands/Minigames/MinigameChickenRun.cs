@@ -21,8 +21,8 @@ public static partial class MinigameManager
 
             lock (MinigameGate)
             {
-                int span = BotMainHandler.Randomizer.Next(100, 121);
-                int min = BotMainHandler.Randomizer.Next(5, 601 - span);
+                int span = BotMainHandler.SecureRandomInt(100, 121);
+                int min = BotMainHandler.SecureRandomInt(5, 601 - span);
 
                 state.BettingOpen = true;
                 state.Running = false;
@@ -78,7 +78,7 @@ public static partial class MinigameManager
                 state = GetChickenRunStateNoLock(runtime);
                 state.BettingOpen = false;
                 state.Running = true;
-                state.KillAtSeconds = BotMainHandler.Randomizer.Next(state.MinSeconds, state.MaxSeconds + 1);
+                state.KillAtSeconds = BotMainHandler.SecureRandomInt(state.MinSeconds, state.MaxSeconds + 1);
                 killAtSeconds = state.KillAtSeconds;
             }
 

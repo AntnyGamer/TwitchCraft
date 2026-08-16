@@ -76,19 +76,6 @@ internal sealed class IRCMessage
         return true;
     }
 
-    public static bool TryParse(string line, out IRCMessage? message)
-    {
-        IRCMessage parsed = new();
-        if (!parsed.TryParse(line))
-        {
-            message = null;
-            return false;
-        }
-
-        message = parsed;
-        return true;
-    }
-
     private void Reset()
     {
         Bits = 0;

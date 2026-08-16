@@ -9,10 +9,10 @@ public sealed class IrcMessageTests
     {
         const string line = "@badges=moderator/1;color=#fff;mod=1;bits=250 :SomeUser!someuser@host PRIVMSG #channel :!Heal Player";
 
-        bool result = IRCMessage.TryParse(line, out IRCMessage? message);
+        IRCMessage message = new();
+        bool result = message.TryParse(line);
 
         Assert.True(result);
-        Assert.NotNull(message);
         Assert.Equal("PRIVMSG", message.Command);
         Assert.Equal("someuser", message.SenderLogin);
         Assert.Equal("!Heal Player", message.Trailing);
@@ -23,10 +23,10 @@ public sealed class IrcMessageTests
     [Fact]
     public void TryParse_HandlesPingWithoutSender()
     {
-        bool result = IRCMessage.TryParse("PING :tmi.twitch.tv", out IRCMessage? message);
+        IRCMessage message = new();
+        bool result = message.TryParse("PING :tmi.twitch.tv");
 
         Assert.True(result);
-        Assert.NotNull(message);
         Assert.Equal("PING", message.Command);
         Assert.Equal(string.Empty, message.SenderLogin);
         Assert.Equal("tmi.twitch.tv", message.Trailing);
@@ -39,6 +39,8 @@ public sealed class IrcMessageTests
     [InlineData(":missing-command-prefix")]
     public void TryParse_RejectsMalformedLines(string line)
     {
-        Assert.False(IRCMessage.TryParse(line, out _));
+        IRCMessage message = new();
+
+        Assert.False(message.TryParse(line));
     }
 }

@@ -4,13 +4,6 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    internal void RecordServerLineForStatistics(string line)
-    {
-        bool hasDeathScoreObjective = !string.IsNullOrEmpty(line) &&
-            line.Contains(DeathScoreObjective, StringComparison.OrdinalIgnoreCase);
-        RecordServerLineForStatistics(line, hasDeathScoreObjective);
-    }
-
     private void RecordServerLineForStatistics(string line, bool hasDeathScoreObjective)
     {
         if (!StatisticsEnabled || string.IsNullOrEmpty(line))

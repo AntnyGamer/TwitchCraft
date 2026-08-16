@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraftBot_V1.BotSetup;
@@ -184,7 +185,14 @@ public sealed partial class BotMainHandler
             TaskScheduler.Default);
     }
 
-    public static Random Randomizer => Random.Shared;
+    public static int SecureRandomInt(int exclusiveMaximum) => RandomNumberGenerator.GetInt32(exclusiveMaximum);
+
+    public static int SecureRandomInt(int minimum, int exclusiveMaximum) => RandomNumberGenerator.GetInt32(minimum, exclusiveMaximum);
+
+    public static double SecureRandomDouble() => RandomNumberGenerator.GetInt32(int.MaxValue) / (double)int.MaxValue;
+
+    public static bool SecureRandomChance(double probability)
+        => probability >= 1 || (probability > 0 && RandomNumberGenerator.GetInt32(int.MaxValue) < probability * int.MaxValue);
 
     public bool MultiplayerEnabled => _activeConfig != null && _activeConfig.Settings.MultiplayerEnabled;
 

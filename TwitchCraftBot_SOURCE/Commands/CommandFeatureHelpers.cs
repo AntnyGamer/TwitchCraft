@@ -330,10 +330,8 @@ internal static class MinecraftItemRenameHelper
 
 internal static class MinecraftCommandFeatureBuilder
 {
-    public static List<string> BuildScaredCommands(string selector, Random random, bool usesInlineTextComponents)
+    public static List<string> BuildScaredCommands(string selector, bool usesInlineTextComponents)
     {
-        ArgumentNullException.ThrowIfNull(random);
-
         List<string> commands = new(23)
         {
             MinecraftCommandBuilder.TitleTimes(selector, 0, 100, 0),
@@ -343,9 +341,9 @@ internal static class MinecraftCommandFeatureBuilder
 
         for (int i = 0; i < 20; i++)
         {
-            int offsetX = random.Next(-2, 3);
-            int offsetZ = random.Next(-2, 3);
-            int offsetY = random.Next(3, 6);
+            int offsetX = BotMainHandler.SecureRandomInt(-2, 3);
+            int offsetZ = BotMainHandler.SecureRandomInt(-2, 3);
+            int offsetY = BotMainHandler.SecureRandomInt(3, 6);
             commands.Add(
                 "execute at " + selector +
                 " run summon minecraft:cat ~" + FormatCoord(offsetX) +
@@ -363,11 +361,9 @@ internal static class MinecraftCommandFeatureBuilder
         "gamerule " + mobLootGameRuleName + " true"
     ];
 
-    public static List<string> BuildJohnnyCommands(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+    public static List<string> BuildJohnnyCommands(string selector, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
     {
-        ArgumentNullException.ThrowIfNull(random);
-
-        (int offsetX, int offsetZ) = random.Next(4) switch
+        (int offsetX, int offsetZ) = BotMainHandler.SecureRandomInt(4) switch
         {
             0 => (15, 0),
             1 => (-15, 0),

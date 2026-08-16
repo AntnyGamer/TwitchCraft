@@ -10,7 +10,6 @@ public sealed class MinecraftCommandFeatureBuilderTests
     {
         List<string> commands = MinecraftCommandFeatureBuilder.BuildScaredCommands(
             "@s",
-            new Random(12345),
             usesInlineTextComponents: false);
         Regex summonPattern = new(
             @"^execute at @s run summon minecraft:cat ~(-?[0-2])? ~[3-5] ~(-?[0-2])?$",
@@ -62,7 +61,6 @@ public sealed class MinecraftCommandFeatureBuilderTests
     {
         List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnnyCommands(
             "@s",
-            new Random(12345),
             usesInlineTextComponents,
             usesModernEntityAttributeNbt);
 

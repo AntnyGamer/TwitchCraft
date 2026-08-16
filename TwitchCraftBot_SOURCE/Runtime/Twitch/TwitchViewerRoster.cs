@@ -55,11 +55,11 @@ public sealed partial class BotMainHandler
 
                     if (!_viewerRewardSchedule.TryGetValue(chatter, out long nextAt))
                     {
-                        _viewerRewardSchedule[chatter] = now + Random.Shared.Next(30, 61);
+                        _viewerRewardSchedule[chatter] = now + BotMainHandler.SecureRandomInt(30, 61);
                     }
                     else if (nextAt <= now)
                     {
-                        _viewerRewardSchedule[chatter] = now + Random.Shared.Next(30, 61);
+                        _viewerRewardSchedule[chatter] = now + BotMainHandler.SecureRandomInt(30, 61);
                         (rewarded ??= []).Add(chatter);
                     }
                 }

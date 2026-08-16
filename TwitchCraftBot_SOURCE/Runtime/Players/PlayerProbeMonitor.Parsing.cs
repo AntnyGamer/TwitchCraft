@@ -136,8 +136,6 @@ public sealed partial class BotMainHandler
 
     private void HandlePlayerGamemodeResult(string playerName, int gameType)
     {
-        TaskCompletionSource<int?>? waiter;
-
         lock (_spectatorProbeGate)
         {
             if (gameType == 3)
@@ -145,35 +143,29 @@ public sealed partial class BotMainHandler
             else
                 _spectatorPlayers.Remove(playerName);
 
-            _pendingGameTypeRequests.Remove(playerName, out waiter);
+            _pendingGameTypeRequests.Remove(playerName, out TaskCompletionSource<int?>? waiter);
+            waiter?.TrySetResult(gameType);
         }
 
         RecordTrackedPlayerGamemodeForStatistics(playerName, gameType);
-        waiter?.TrySetResult(gameType);
     }
 
     private void HandlePlayerRespawnPositionResult(string playerName)
     {
-        TaskCompletionSource<bool>? waiter;
-
         lock (_respawnPositionProbeGate)
         {
-            _pendingRespawnPositionRequests.Remove(playerName, out waiter);
+            _pendingRespawnPositionRequests.Remove(playerName, out TaskCompletionSource<bool>? waiter);
+            waiter?.TrySetResult(true);
         }
-
-        waiter?.TrySetResult(true);
     }
 
     private void HandleSelectedItemResult(string playerName, string itemData)
     {
-        TaskCompletionSource<string?>? waiter;
-
         lock (_selectedItemProbeGate)
         {
-            _pendingSelectedItemRequests.Remove(playerName, out waiter);
+            _pendingSelectedItemRequests.Remove(playerName, out TaskCompletionSource<string?>? waiter);
+            waiter?.TrySetResult(itemData);
         }
-
-        waiter?.TrySetResult(itemData);
     }
 
     private void HandleEntityDataLine(string line)

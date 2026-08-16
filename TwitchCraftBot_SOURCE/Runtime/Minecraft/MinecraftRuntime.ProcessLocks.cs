@@ -189,9 +189,11 @@ public sealed partial class BotMainHandler
         public int bRestartable;
     }
 
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("rstrtmgr.dll", EntryPoint = "RmStartSession")]
     private static unsafe partial int RMStartSession(out uint sessionHandle, int sessionFlags, char* sessionKey);
 
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("rstrtmgr.dll", EntryPoint = "RmRegisterResources")]
     private static unsafe partial int RMRegisterResources(
         uint sessionHandle,
@@ -202,6 +204,7 @@ public sealed partial class BotMainHandler
         uint serviceCount,
         char** serviceNames);
 
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("rstrtmgr.dll", EntryPoint = "RmGetList")]
     private static unsafe partial int RMGetList(
         uint sessionHandle,
@@ -210,6 +213,7 @@ public sealed partial class BotMainHandler
         RM_PROCESS_INFO* processInfo,
         ref uint rebootReasons);
 
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("rstrtmgr.dll", EntryPoint = "RmEndSession")]
     private static partial int RMEndSession(uint sessionHandle);
 

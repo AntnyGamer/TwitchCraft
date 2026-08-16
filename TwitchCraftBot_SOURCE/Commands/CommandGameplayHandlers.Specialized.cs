@@ -45,7 +45,7 @@ public static partial class CommandList
         }
         async Task HandleInsult(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string color = InsultTitleColors[BotMainHandler.Randomizer.Next(InsultTitleColors.Length)];
+            string color = InsultTitleColors[BotMainHandler.SecureRandomInt(InsultTitleColors.Length)];
             await SendTargetedPricedCommandAndSay(
                 target,
                 sender,
@@ -65,7 +65,7 @@ public static partial class CommandList
         }
         async Task HandleJohnny(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnnyCommands(target.Selector, BotMainHandler.Randomizer, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
+            List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnnyCommands(target.Selector, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
             commands.Add(MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 100, 10));
             commands.Add(MinecraftCommandBuilder.Title(target.Selector, " ", "white", runtime.UsesInlineTextComponentSyntax));
             commands.Add(MinecraftCommandBuilder.Subtitle(target.Selector, "Johnny is coming!", "red", runtime.UsesInlineTextComponentSyntax));
@@ -122,12 +122,12 @@ public static partial class CommandList
         }
         async Task HandleLoot(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            int times = BotMainHandler.Randomizer.Next(3, 5);
+            int times = BotMainHandler.SecureRandomInt(3, 5);
             var commands = new List<string>(times);
             for (int i = 0; i < times; i++)
             {
-                double offsetX = (BotMainHandler.Randomizer.NextDouble() * 2.0) - 1.0;
-                double offsetZ = (BotMainHandler.Randomizer.NextDouble() * 2.0) - 1.0;
+                double offsetX = (BotMainHandler.SecureRandomDouble() * 2.0) - 1.0;
+                double offsetZ = (BotMainHandler.SecureRandomDouble() * 2.0) - 1.0;
                 commands.Add(MinecraftCommandBuilder.Loot(target.Selector, runtime.GetRandomLootTable(), offsetX, offsetZ));
             }
             await SendTargetedPricedCommandAndSay(
@@ -270,7 +270,7 @@ public static partial class CommandList
         }
         async Task HandleSwitchMilk(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            (string itemID, string itemName) = BotMainHandler.Randomizer.Next(100) switch
+            (string itemID, string itemName) = BotMainHandler.SecureRandomInt(100) switch
             {
                 < 50 => ("minecraft:bucket", "an empty bucket"),
                 < 75 => ("minecraft:water_bucket", "a water bucket"),
@@ -311,7 +311,7 @@ public static partial class CommandList
         }
         async Task HandleWeather(string[]? _, string sender, CancellationToken ct)
         {
-            bool thunder = BotMainHandler.Randomizer.Next(2) == 0;
+            bool thunder = BotMainHandler.SecureRandomInt(2) == 0;
             string weatherCommand = thunder ? "weather thunder" : "weather rain";
             if (!await TrySendPricedCommand(sender, 10, weatherCommand, ct).ConfigureAwait(false))
                 return;
@@ -344,7 +344,7 @@ public static partial class CommandList
                 target,
                 sender,
                 15,
-                _ => MinecraftCommandFeatureBuilder.BuildScaredCommands(target.Selector, BotMainHandler.Randomizer, runtime.UsesInlineTextComponentSyntax),
+                _ => MinecraftCommandFeatureBuilder.BuildScaredCommands(target.Selector, runtime.UsesInlineTextComponentSyntax),
                 sender + " thinks you're a scaredy cat and spawned cats above you.",
                 "GOT BURIED IN CATS!",
                 sender + ", you spawned 20 cats on " + TargetName(target) + ".",

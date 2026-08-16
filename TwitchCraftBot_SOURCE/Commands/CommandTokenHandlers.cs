@@ -49,7 +49,7 @@ public static partial class CommandList
             double winChance = 0.9 - ((risk - 1) * 0.08888888888888889);
             double payoutMul = 1.05 + ((risk - 1) * 0.21666666666666667);
             runtime.StartGambleCooldown(who, GambleTokenCooldown);
-            bool win = BotMainHandler.Randomizer.NextDouble() < winChance;
+            bool win = BotMainHandler.SecureRandomChance(winChance);
             if (win)
             {
                 int gain = (int)Math.Round(amount * (payoutMul - 1.0));
@@ -121,7 +121,7 @@ public static partial class CommandList
                     await sayToChannel(who + ", there are no known viewers to choose from right now.", ct).ConfigureAwait(false);
                     return;
                 }
-                string chosen = chatters[BotMainHandler.Randomizer.Next(chatters.Count)];
+                string chosen = chatters[BotMainHandler.SecureRandomInt(chatters.Count)];
                 runtime.AdjustTokens(chosen, delta);
                 await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {amount} {CommandTokenWord(amount)} {direction} random viewer {chosen}."), ct).ConfigureAwait(false);
                 return;
