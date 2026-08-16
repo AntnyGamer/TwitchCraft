@@ -238,7 +238,7 @@ public static partial class CommandList
                         await SayToChannel(sender + ", no players are online to target right now.", ct).ConfigureAwait(false);
                         return null;
                     }
-                    string chosen = players[BotMainHandler.SecureRandomInt(players.Count)];
+                    string chosen = players[BotMainHandler.Randomizer.Next(players.Count)];
                     ResolvedTarget? randomTarget = new()
                     {
                         Selector = MinecraftCommandBuilder.PlayerSelector(chosen),

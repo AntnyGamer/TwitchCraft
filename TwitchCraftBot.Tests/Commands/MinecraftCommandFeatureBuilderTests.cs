@@ -10,6 +10,7 @@ public sealed class MinecraftCommandFeatureBuilderTests
     {
         List<string> commands = MinecraftCommandFeatureBuilder.BuildScaredCommands(
             "@s",
+            new Random(12345),
             usesInlineTextComponents: false);
         Regex summonPattern = new(
             @"^execute at @s run summon minecraft:cat ~(-?[0-2])? ~[3-5] ~(-?[0-2])?$",
@@ -61,6 +62,7 @@ public sealed class MinecraftCommandFeatureBuilderTests
     {
         List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnnyCommands(
             "@s",
+            new Random(12345),
             usesInlineTextComponents,
             usesModernEntityAttributeNbt);
 
@@ -68,5 +70,23 @@ public sealed class MinecraftCommandFeatureBuilderTests
         Assert.Contains(expectedName, commands[0], StringComparison.Ordinal);
         Assert.Contains(expectedAttributes, commands[0], StringComparison.Ordinal);
         Assert.EndsWith("run tag @s remove tc_johnny_new", commands[2], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildScaredCommands_WithTheSameSeedProducesTheSameCommands()
+    {
+        List<string> first = MinecraftCommandFeatureBuilder.BuildScaredCommands("@s", new Random(8675309), false);
+        List<string> second = MinecraftCommandFeatureBuilder.BuildScaredCommands("@s", new Random(8675309), false);
+
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public void BuildJohnnyCommands_WithTheSameSeedProducesTheSameCommands()
+    {
+        List<string> first = MinecraftCommandFeatureBuilder.BuildJohnnyCommands("@s", new Random(8675309), false, false);
+        List<string> second = MinecraftCommandFeatureBuilder.BuildJohnnyCommands("@s", new Random(8675309), false, false);
+
+        Assert.Equal(first, second);
     }
 }

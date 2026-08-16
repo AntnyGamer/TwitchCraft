@@ -108,6 +108,35 @@ public sealed class MinecraftWorldImporterTests
     }
 
     [Fact]
+    public void ReplaceWorldSafely_WhenOptionalDatapackIsMissing_CommitsTheWorldAndReportsWarning()
+    {
+        using TemporaryDirectory directory = new();
+        string source = System.IO.Path.Combine(directory.Path, "source");
+        string destination = System.IO.Path.Combine(directory.Path, "world");
+        Directory.CreateDirectory(source);
+        Directory.CreateDirectory(destination);
+        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
+        File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
+        MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
+        List<(string Context, Exception Exception)> warnings = [];
+
+        MinecraftWorldImporter.ReplaceWorldSafely(plan, () =>
+        {
+            bool installed = DatapackInstaller.TrySyncLocatePlayersDatapack(
+                System.IO.Path.Combine(directory.Path, "missing-datapack-source"),
+                System.IO.Path.Combine(destination, "datapacks", "locateplayers"),
+                "1.21.11",
+                (context, exception) => warnings.Add((context, exception)));
+            Assert.False(installed);
+        });
+
+        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
+        Assert.False(Directory.Exists(plan.StagingWorldPath));
+        Assert.False(Directory.Exists(plan.BackupWorldPath));
+        Assert.IsType<DirectoryNotFoundException>(Assert.Single(warnings).Exception);
+    }
+
+    [Fact]
     public void SourceIsCurrentWorld_AcceptsEquivalentWindowsPaths()
     {
         using TemporaryDirectory directory = new();

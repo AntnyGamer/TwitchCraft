@@ -123,8 +123,8 @@ public static partial class CommandList
             for (int i = 0; i < count; i++)
             {
                 EffectDefinition effect = runtime.GetRandomEffect();
-                int amplifier = BotMainHandler.SecureRandomInt(effect.MinAmplifier, effect.MaxAmplifier + 1);
-                int seconds = BotMainHandler.SecureRandomInt(effect.MinSeconds, effect.MaxSeconds + 1);
+                int amplifier = BotMainHandler.Randomizer.Next(effect.MinAmplifier, effect.MaxAmplifier + 1);
+                int seconds = BotMainHandler.Randomizer.Next(effect.MinSeconds, effect.MaxSeconds + 1);
                 string level = EffectLevels[Math.Clamp(amplifier, 0, 4)];
                 string effectPretty = PrettyMinecraftName(effect.ID) + " " + level +
                                       (seconds == 1 ? string.Empty : " for " + seconds.ToString(CultureInfo.InvariantCulture) + " seconds");

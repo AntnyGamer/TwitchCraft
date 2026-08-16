@@ -2,6 +2,25 @@
 
 All notable project changes should be recorded here. This project follows a Keep a Changelog-style structure; version numbers should match the application metadata and release tag.
 
+## [Unreleased]
+
+### Added
+
+* Expanded the high-value automated test suite to 200 tests.
+
+### Changed
+
+* Kept cryptographic randomness for fairness- and economy-sensitive outcomes while restoring ordinary, injectable randomness for cosmetic gameplay behavior.
+
+### Fixed
+
+* Missing or incomplete bundled `locateplayers` datapack files now produce a logged warning and warning popup without aborting startup or world import.
+* Preserved shared player probes when one caller cancels, serialized IRC queue generations during reset, retained custom server properties during setup, and kept safer world-import rollback behavior.
+
+### Security
+
+* Restricted Restart Manager DLL resolution to `System32` and retained cryptographic randomness for token and minigame outcomes.
+
 ## [1.7.1.2] - 2026-07-23
 
 ### Added

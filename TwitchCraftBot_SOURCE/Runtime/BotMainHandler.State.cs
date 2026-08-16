@@ -194,6 +194,8 @@ public sealed partial class BotMainHandler
     public static bool SecureRandomChance(double probability)
         => probability >= 1 || (probability > 0 && RandomNumberGenerator.GetInt32(int.MaxValue) < probability * int.MaxValue);
 
+    public static Random Randomizer => Random.Shared;
+
     public bool MultiplayerEnabled => _activeConfig != null && _activeConfig.Settings.MultiplayerEnabled;
 
     public bool RemoteControlEnabled => _activeConfig != null && _activeConfig.Settings.RemoteControlEnabled;

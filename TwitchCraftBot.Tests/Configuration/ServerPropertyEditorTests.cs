@@ -8,8 +8,16 @@ public sealed class ServerPropertyEditorTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(".")]
     [InlineData("..")]
     [InlineData("../outside")]
+    [InlineData("folder/name")]
+    [InlineData("folder\\name")]
+    [InlineData("name:stream")]
+    [InlineData("C:\\world")]
+    [InlineData("/world")]
+    [InlineData("world*")]
     public void NormalizeLevelName_ReplacesUnsafeOrEmptyValues(string? value)
     {
         Assert.Equal("world", ServerPropertyEditor.NormalizeLevelName(value));

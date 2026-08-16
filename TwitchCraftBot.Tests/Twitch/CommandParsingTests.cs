@@ -15,6 +15,9 @@ public sealed class CommandParsingTests
 
     [Theory]
     [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("\t!heal")]
+    [InlineData("?heal")]
     [InlineData("hello")]
     [InlineData("!")]
     [InlineData("!   ")]

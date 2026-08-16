@@ -17,11 +17,16 @@ public sealed class TwitchRuntimeHelperTests
     [Theory]
     [InlineData("", 4, "")]
     [InlineData("abc", 0, "")]
+    [InlineData("é", 1, "")]
     [InlineData("é", 2, "é")]
+    [InlineData("😀", 3, "")]
+    [InlineData("😀", 4, "😀")]
     [InlineData("Aé", 2, "A")]
     [InlineData("abcdef", 4, "abcd")]
     [InlineData("ééé", 4, "éé")]
+    [InlineData("A😀B", 4, "A")]
     [InlineData("A😀B", 5, "A😀")]
+    [InlineData("A😀B", 6, "A😀B")]
     public void TruncateUtf8ToByteCount_RespectsByteLimitsWithoutSplittingUnicode(
         string message,
         int maxBytes,

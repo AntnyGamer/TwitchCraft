@@ -19,6 +19,19 @@ public sealed class SecurityRegressionTests
         Assert.True(BotMainHandler.SecureRandomChance(1));
     }
 
+    [Theory]
+    [InlineData(double.NegativeInfinity, false)]
+    [InlineData(-1, false)]
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    [InlineData(2, true)]
+    [InlineData(double.PositiveInfinity, true)]
+    [InlineData(double.NaN, false)]
+    public void SecureRandomChance_HandlesBoundaryProbabilities(double probability, bool expected)
+    {
+        Assert.Equal(expected, BotMainHandler.SecureRandomChance(probability));
+    }
+
     [Fact]
     public void RestartManagerImports_AreRestrictedToSystem32()
     {
