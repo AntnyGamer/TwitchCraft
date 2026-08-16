@@ -56,7 +56,7 @@ External tutorials and short links later in this guide are supplemental mirrors.
 For Minecraft versions **1.20.0–1.20.4**:
 
 * You will need Java SE 17 (JDK 17)
-* Download: https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html
+* Download: https://www.oracle.com/java/technologies/downloads/#java17-windows
 * Use the Windows x64 Installer version
 * Any JDK 17.x version should work
 
@@ -125,7 +125,7 @@ These steps work for most routers, but menu names and settings may vary:
    3. Type: `ipconfig`
    4. Find:
       * `"IPv4 Address"`
-      * The number-only `"Default Gateway"` (example: `192.168.1.1`)
+      * the number-only `"Default Gateway"` (example: `192.168.1.1`)
 3. Open your router login page
    * Type your Default Gateway into a browser
 4. Log in to your router
@@ -268,7 +268,7 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 * Statistics can be enabled or disabled in Settings
 * Existing saved stats are still shown when statistics are disabled, but new stats are not counted
 * Reset Statistics clears all of the saved statistics
-* Editing the exported statistics JSON files will not affect TwitchCraft
+* Editing the exported statistics JSON files will NOT affect TwitchCraft
 * Do not edit `statistics.db` while TwitchCraft is active
 * If you manually adjust statistics, edit `statistics.db` with a SQLite editor while TwitchCraft is shut down
 
@@ -286,15 +286,16 @@ AppData --> Roaming --> TwitchCraftBot --> exports --> statistics_viewers.json
 
 ## 12. Troubleshooting
 
-Use the canonical [repository troubleshooting guide](docs/TROUBLESHOOTING.md) for current instructions.
+Troubleshooting has moved to a document for long-term use and dynamic updating.
 
+* [Repository troubleshooting guide](docs/TROUBLESHOOTING.md)
 * Supplemental troubleshooting mirror: https://bit.ly/twitchcraft-troubleshooting
 
 ## 13. Changing The Bot Account Or Application
 
 * If you change the account or application used by your bot on the Twitch Developer Console, you must delete or update `config.json`
 * Changing the bot account does not delete `viewer_tokens.db` or `statistics.db`
-* If you delete `config.json`, you must setup TwitchCraft again
+* If you delete `config.json`, you must set up TwitchCraft again
 * After doing this, restart TwitchCraft
 * If you have a saved world on the TwitchCraft Minecraft server, it may be affected
 
@@ -311,3 +312,9 @@ Use the canonical [repository troubleshooting guide](docs/TROUBLESHOOTING.md) fo
 * Never share your Twitch bot token publicly. Anyone with the token may be able to control your bot account until the token is reset
 * TwitchCraft creates backup `.bak` config files. These are for reference and are not normally used by TwitchCraft
 * Special thanks to Lil_KleinStein, whose Minecraft streams inspired TwitchCraft's theme and creation!
+
+---
+
+TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft.
+
+**README version 1.7.1.3 — August 16, 2026**
