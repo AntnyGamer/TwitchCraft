@@ -4,13 +4,15 @@ All notable project changes should be recorded here. This project follows a Keep
 
 ## [Unreleased]
 
+## [1.7.1.3] - 2026-08-16
+
 ### Added
 
 * Expanded the high-value automated test suite to 200 tests.
 
 ### Changed
 
-* Kept cryptographic randomness for fairness- and economy-sensitive outcomes while restoring ordinary, injectable randomness for cosmetic gameplay behavior.
+* Kept cryptographic randomness for chance-based token transfers and minigame outcomes while restoring ordinary randomness for cosmetic gameplay behavior and passive reward scheduling.
 
 ### Fixed
 
