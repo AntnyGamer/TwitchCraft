@@ -2,6 +2,60 @@
 
 All notable changes to this project are documented here. This project follows a Keep a Changelog-style structure, and version numbers should match the application metadata and release tags.
 
+## [Unreleased]
+
+### Changed
+
+* Added regression coverage for complete live-roster token awards, command-registry consistency, and isolation of applied nested settings.
+* Pre-sized copied and normalized command-customization dictionaries to avoid unnecessary internal growth while applying settings.
+
+## [1.8.0.0] - 2026-08-28
+
+### Added
+
+* Added categorized General, Commands, Custom Commands, Economy, Gameplay, Chat & Display, Performance, Minecraft Server, and Dangerous settings pages.
+* Added a generated Custom Commands page for enabling/disabling every registered command and replacing its built-in cooldown with a per-viewer cooldown.
+* Added per-viewer command rate limits, a configurable recent-chat eligibility window, and automatic local config/token-database backups with configurable retention.
+* Added performance controls for a low-resource preset, minimized UI updates, separate Twitch/Minecraft log limits, viewer-roster refresh timing, relay throughput, gameplay queue depth, RCON timeouts, and SQLite optimization timing.
+* Added managed Minecraft view distance, simulation distance, entity broadcast range, network compression threshold, and empty-server pause-delay settings.
+* Added configurable primary/secondary command prefixes, viewer mentions, cooldown detail, unknown-command replies, viewer-command pausing, passive payout amount/timing/activity requirements, maximum balances, channel-wide command limits, all/random targeting controls, relay timestamps/colors, and live connection-health indicators.
+* Added saved Economy settings for bot-response verbosity, command-cost multiplier, automatic follow rewards and reward amount, and automatic Bit rewards.
+* Added `!enchant [target]`, which forces a random enchantment at a random valid level onto any held item, permits incompatible/conflicting combinations, and still charges for an empty hand.
+* Added automatic 100-token rewards for new Twitch followers, paid once per Twitch account with persistent duplicate protection.
+* Added Twitch bot-token authorization directly inside the Setup and Settings screens.
+* Added `!turnaround`, `!chargedcreeper`, `!kick`, `!whitelistadd`, and `!whitelistremove` commands.
+* Added Twitch-only `!tokenleaderboard`, `!followreward`, and `!commandstats` commands.
+* Added `!tokenrank [twitch-user]` to show an exact token-leaderboard position and balance.
+* Added `!tiny [target]` and `!giant [target]`, with version-aware scale attribute syntax and guarded 30-second restoration for every supported Minecraft version.
+
+### Changed
+
+* Passive payout amount, follower reward amount, maximum balance, per-viewer rate limit, and channel-wide rate limit now keep preset dropdowns while accepting validated custom values.
+* Passive payout timing now uses editable minimum/maximum dropdowns from 10 to 900 seconds and chooses a fresh random delay inside the configured range for every payout.
+* Automatic backups now default to enabled, run periodically and during clean shutdown, and retain a selectable 1, 3, 5, 10, or 20 complete backup sets (three by default).
+* Graceful Minecraft shutdown now has a selectable 3–60 second timeout.
+* Bit rewards remain an exact one token per Bit when enabled.
+* Supported Minecraft versions now start at 1.20.5.
+* Long viewer names in the Statistics screen now scale down to fit instead of being cut off.
+* The bot-token authorization scope now includes follower access for Twitch EventSub follow rewards.
+* Twitch authorization now uses Twitch's device flow, requires no specific localhost redirect, stores renewable credentials, and automatically renews expired access when possible.
+* Setup now keeps **Start** disabled until all required values and the current Client ID authorization are valid.
+* `!chargedcreeper` now behaves like `!johnny`: it sends a persistent glowing pursuer from a distance and displays a red warning title.
+* `!enchant` now uses the standard yellow in-game command notification color.
+* `!tiny` and `!giant` now each have a five-minute global cooldown and show a small red warning three seconds before restoring normal size.
+
+### Removed
+
+* Removed the standalone `GetBotToken.exe`; Twitch authorization now happens entirely inside TwitchCraft.
+* Removed the bot-token textbox from Setup; authorization credentials are handled internally.
+
+### Fixed
+
+* `!givetokens all` now verifies bulk updates against the complete live viewer roster and reports any unchanged balances.
+* Leaving and reopening Settings now cancels any pending Twitch authorization and restores the Dangerous-section button label immediately.
+* Hid the known four-line JOML `sun.misc.Unsafe` deprecation notice from the displayed Minecraft stderr log without suppressing other warnings.
+* Fixed the 1.8.0.0 source package so it builds cleanly with the Twitch command-customization type in scope.
+
 ## [1.7.1.3] - 2026-08-16
 
 ### Added

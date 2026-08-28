@@ -22,9 +22,13 @@ public sealed class ServerPropertyEditor
         "level-name",
         "max-players",
         "motd",
+        "network-compression-threshold",
         "online-mode",
         "pvp",
         "query.port",
+        "view-distance",
+        "simulation-distance",
+        "entity-broadcast-range-percentage",
         "server-ip",
         "server-port"
     ];
@@ -166,19 +170,21 @@ public sealed class ServerPropertyEditor
         props["enable-rcon"] = "true";
         props["rcon.password"] = ConfigurationStore.NormalizeRconPassword(config.Server.RCON.Password);
         props["hardcore"] = config.Settings.HardcoreEnabled ? "true" : "false";
+        props["view-distance"] = config.Settings.ViewDistance.ToString(CultureInfo.InvariantCulture);
+        props["simulation-distance"] = config.Settings.SimulationDistance.ToString(CultureInfo.InvariantCulture);
+        props["entity-broadcast-range-percentage"] = config.Settings.EntityBroadcastRangePercentage.ToString(CultureInfo.InvariantCulture);
+        props["network-compression-threshold"] = config.Settings.NetworkCompressionThreshold.ToString(CultureInfo.InvariantCulture);
 
         SetDefaultProperty(props, "enable-jmx-monitoring", "false");
         SetDefaultProperty(props, "gamemode", "survival");
         SetDefaultProperty(props, "enable-command-block", "false");
         SetDefaultProperty(props, "generator-settings", "{}");
         SetDefaultProperty(props, "enforce-secure-profile", "true");
-        SetDefaultProperty(props, "network-compression-threshold", "256");
         SetDefaultProperty(props, "max-tick-time", "60000");
         SetDefaultProperty(props, "use-native-transport", "true");
         SetDefaultProperty(props, "enable-status", "true");
         SetDefaultProperty(props, "allow-flight", "false");
         SetDefaultProperty(props, "broadcast-rcon-to-ops", "false");
-        SetDefaultProperty(props, "view-distance", "12");
         SetDefaultProperty(props, "resource-pack-prompt", string.Empty);
         SetDefaultProperty(props, "allow-nether", "true");
         SetDefaultProperty(props, "sync-chunk-writes", "true");
@@ -186,8 +192,6 @@ public sealed class ServerPropertyEditor
         SetDefaultProperty(props, "prevent-proxy-connections", "false");
         SetDefaultProperty(props, "hide-online-players", "false");
         SetDefaultProperty(props, "resource-pack", string.Empty);
-        SetDefaultProperty(props, "entity-broadcast-range-percentage", "100");
-        SetDefaultProperty(props, "simulation-distance", "10");
         SetDefaultProperty(props, "player-idle-timeout", "500");
         SetDefaultProperty(props, "force-gamemode", "true");
         SetDefaultProperty(props, "rate-limit", "0");
@@ -207,7 +211,7 @@ public sealed class ServerPropertyEditor
         return SaveProperties(propsPath, props);
     }
 
-    private static void ApplyVersionSpecificProperties(Dictionary<string, string> props, string? minecraftVersion)
+    private static void ApplyVersionSpecificProperties(Dictionary<string, string> props, string minecraftVersion)
     {
         if (MinecraftVersionSupport.SupportsLegacySpawnProperties(minecraftVersion))
         {

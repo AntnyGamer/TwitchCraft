@@ -13,7 +13,8 @@ public static partial class MinigameManager
     public static void AddMinigameHandlers(
         BotMainHandler runtime,
         Dictionary<string, ChatCommandHandler> handlers,
-        Func<string, CancellationToken, Task> sayToChannel)
+        Func<string, CancellationToken, Task> sayToChannel,
+        Func<string, CancellationToken, Task> saySuccessfulToChannel)
     {
         handlers["chickenbet"] = async delegate (string[] args, string sender, CancellationToken ct)
         {
@@ -134,14 +135,14 @@ public static partial class MinigameManager
 
             if (addedToExistingBet)
             {
-                await sayToChannel(
+                await saySuccessfulToChannel(
                     sender + ", added " + FormatTokens(tokenAmount) + " to your Chicken Run bet. Your total is " +
                     FormatTokens(finalTokenAmount) + " for " + finalBetSeconds.ToString(CultureInfo.InvariantCulture) + " seconds.",
                     ct).ConfigureAwait(false);
                 return;
             }
 
-            await sayToChannel(
+            await saySuccessfulToChannel(
                 sender + ", your Chicken Run bet is set for " + finalBetSeconds.ToString(CultureInfo.InvariantCulture) +
                 " seconds with " + FormatTokens(finalTokenAmount) + ".",
                 ct).ConfigureAwait(false);
@@ -210,12 +211,12 @@ public static partial class MinigameManager
 
             if (!correct)
             {
-                await sayToChannel(sender + ", wrong guess.", ct).ConfigureAwait(false);
+                await saySuccessfulToChannel(sender + ", wrong guess.", ct).ConfigureAwait(false);
                 return;
             }
 
-            runtime.AdjustTokens(sender, 10); //Guess Number Win
-            await sayToChannel(sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + " and won 10 tokens!", ct).ConfigureAwait(false);
+            runtime.AwardTokens(sender, 10); //Guess Number Win
+            await saySuccessfulToChannel(sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + " and won 10 tokens!", ct).ConfigureAwait(false);
         };
 
         handlers["damagewither"] = async delegate (string[] args, string sender, CancellationToken ct)
@@ -313,14 +314,14 @@ public static partial class MinigameManager
 
             if (addedToExistingBet)
             {
-                await sayToChannel(
+                await saySuccessfulToChannel(
                     sender + ", added " + FormatTokens(tokenAmount) + " to your Wither Battle damage. Your total is " +
                     FormatTokens(finalTokenAmount) + ". Wither HP left: " + remainingHealth.ToString(CultureInfo.InvariantCulture) + ".",
                     ct).ConfigureAwait(false);
                 return;
             }
 
-            await sayToChannel(
+            await saySuccessfulToChannel(
                 sender + ", your Wither Battle damage is set to " + FormatTokens(finalTokenAmount) +
                 ". Wither HP left: " + remainingHealth.ToString(CultureInfo.InvariantCulture) + ".",
                 ct).ConfigureAwait(false);

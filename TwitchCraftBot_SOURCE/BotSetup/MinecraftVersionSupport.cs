@@ -25,11 +25,6 @@ internal static class MinecraftVersionSupport
 
     private static readonly MinecraftVersionInfo[] Versions =
     [
-        new("1.20", ["1.20.0"], 17, 15, 0, false, false, false, false, false, [], []),
-        new("1.20.1", [], 17, 15, 0, false, false, false, false, false, [], []),
-        new("1.20.2", [], 17, 18, 0, false, false, false, false, false, [], []),
-        new("1.20.3", [], 17, 26, 0, false, false, false, false, false, [], []),
-        new("1.20.4", [], 17, 26, 0, false, false, false, false, false, [], []),
         new("1.20.5", [], 21, 41, 0, false, true, false, false, false, ["armadillo"], []),
         new("1.20.6", [], 21, 41, 0, false, true, false, false, false, ["armadillo"], []),
         new("1.21.0", [], 21, 48, 0, true, true, false, false, false, ["armadillo", "bogged", "breeze"], TrialChamberLootTables),
@@ -65,40 +60,33 @@ internal static class MinecraftVersionSupport
         return VersionMap.TryGetValue(versionID.Trim(), out version!);
     }
 
-    public static IReadOnlyList<string> GetAdditionalMobIDs(string? versionID)
+    public static MinecraftVersionInfo GetVersion(string? versionID)
     {
-        return TryGetVersion(versionID, out MinecraftVersionInfo version)
-            ? version.AdditionalMobIDs
-            : [];
+        if (TryGetVersion(versionID, out MinecraftVersionInfo version))
+            return version;
+
+        string display = string.IsNullOrWhiteSpace(versionID) ? "(not specified)" : versionID.Trim();
+        throw new NotSupportedException("Minecraft version '" + display + "' is not supported by this TwitchCraft build.");
     }
 
-    public static IReadOnlyList<string> GetAdditionalLootTableIDs(string? versionID)
-    {
-        return TryGetVersion(versionID, out MinecraftVersionInfo version)
-            ? version.AdditionalLootTableIDs
-            : [];
-    }
+    public static IReadOnlyList<string> GetAdditionalMobIDs(string versionID)
+        => GetVersion(versionID).AdditionalMobIDs;
 
-    public static bool SupportsPauseWhenEmptySeconds(string? versionID)
-    {
-        return TryGetVersion(versionID, out MinecraftVersionInfo version)
-            && version.DataPackFormatMajor >= 57;
-    }
+    public static IReadOnlyList<string> GetAdditionalLootTableIDs(string versionID)
+        => GetVersion(versionID).AdditionalLootTableIDs;
 
-    public static bool SupportsLegacySpawnProperties(string? versionID)
-    {
-        return !TryGetVersion(versionID, out MinecraftVersionInfo version)
-            || version.DataPackFormatMajor < 57;
-    }
+    public static bool SupportsPauseWhenEmptySeconds(string versionID)
+        => GetVersion(versionID).DataPackFormatMajor >= 57;
 
-    public static bool SupportsStatusEffect(string? versionID, string? effectID)
+    public static bool SupportsLegacySpawnProperties(string versionID)
+        => GetVersion(versionID).DataPackFormatMajor < 57;
+
+    public static bool SupportsStatusEffect(string versionID, string? effectID)
     {
         if (string.IsNullOrWhiteSpace(effectID))
             return false;
 
-        if (!TryGetVersion(versionID, out MinecraftVersionInfo version))
-            return true;
-
+        MinecraftVersionInfo version = GetVersion(versionID);
         return effectID.Trim() switch
         {
             "infested" or "trial_omen" => version.DataPackFormatMajor >= 48,

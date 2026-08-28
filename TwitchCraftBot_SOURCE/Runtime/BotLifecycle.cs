@@ -114,6 +114,9 @@ public sealed partial class BotMainHandler
         {
             await StopSessionAsync().ConfigureAwait(false);
             await MinigameManager.StopMinigameLoopsAsync(this).ConfigureAwait(false);
+
+            CreateShutdownBackupIfEnabled();
+
             CloseDataStoreConnections();
             return true;
         }
@@ -200,6 +203,7 @@ public sealed partial class BotMainHandler
 
             _runtimeState = RuntimeState.Starting;
             BotConfig config = CloneConfig(_activeConfig ?? ConfigurationStore.Load());
+            config = await EnsureTwitchAuthorizationReadyAsync(config, CancellationToken.None).ConfigureAwait(false);
 
             bool shouldBeOnline = !config.Settings.MultiplayerEnabled || config.Settings.RequireOnlineMode;
             if (config.Settings.RequireOnlineMode != shouldBeOnline)
@@ -247,6 +251,9 @@ public sealed partial class BotMainHandler
             TrackSessionBackgroundTask(Task.Run(() => RunViewerRosterLoopAsync(token), token));
             TrackSessionBackgroundTask(Task.Run(() => RunPlayerRosterLoopAsync(token), token));
             TrackSessionBackgroundTask(Task.Run(() => RunPassiveRewardLoopAsync(token), token));
+            TrackSessionBackgroundTask(Task.Run(() => RunFollowRewardLoopAsync(token), token));
+            TrackSessionBackgroundTask(Task.Run(() => RunDataMaintenanceLoopAsync(token), token));
+            TrackSessionBackgroundTask(Task.Run(() => RunEmptyServerShutdownLoopAsync(token), token));
 
             if (!config.Settings.RemoteControlEnabled)
                 TrackSessionBackgroundTask(Task.Run(() => WatchServerProcessExitAsync(token), token));
@@ -313,6 +320,7 @@ public sealed partial class BotMainHandler
             {
                 sessionCts.Cancel();
             }
+            await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
 
             SafeCloseIRCSocket();
             if (!RemoteControlEnabled)

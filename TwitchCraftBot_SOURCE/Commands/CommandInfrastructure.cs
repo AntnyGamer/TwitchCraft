@@ -48,6 +48,7 @@ public sealed class ChatCommandRegistry(
 {
     private readonly Dictionary<string, ChatCommandHandler> _handlers = handlers ?? new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ChatCommandStatisticFlags> _statisticFlags = statisticFlags ?? new(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyList<string>? _commandNames;
 
     public bool TryResolve(string? name, out ChatCommandHandler handler)
         => _handlers.TryGetValue(name ?? string.Empty, out handler!);
@@ -56,6 +57,19 @@ public sealed class ChatCommandRegistry(
         => _statisticFlags.TryGetValue(name ?? string.Empty, out ChatCommandStatisticFlags flags)
             ? flags
             : ChatCommandStatisticFlags.None;
+
+    public IReadOnlyList<string> CommandNames
+    {
+        get
+        {
+            if (_commandNames != null)
+                return _commandNames;
+
+            string[] names = [.. _handlers.Keys];
+            Array.Sort(names, StringComparer.OrdinalIgnoreCase);
+            return _commandNames = Array.AsReadOnly(names);
+        }
+    }
 
     public static ChatCommandRegistry CreateDefault(BotMainHandler runtime)
     {
@@ -124,6 +138,16 @@ public static class MinecraftCommandBuilder
     public static string Lightning(string selector)
         => $"execute at {selector} run summon minecraft:lightning_bolt ~ ~ ~";
 
+    public static string TurnAround(string selector)
+        => $"execute as {selector} at @s run tp @s ~ ~ ~ ~180 ~";
+
+    public static string SetScale(string selector, double scale, bool usesModernAttributeIds)
+    {
+        string attribute = usesModernAttributeIds ? "minecraft:scale" : "minecraft:generic.scale";
+        return "execute as " + selector + " run attribute @s " + attribute + " base set " +
+            scale.ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
     public static string BanPlayer(string playerName, string reason)
     {
         reason = CleanCommandArgumentText(reason);
@@ -132,6 +156,18 @@ public static class MinecraftCommandBuilder
 
     public static string UnbanPlayer(string playerName)
         => $"pardon {playerName}";
+
+    public static string KickPlayer(string playerName, string reason)
+    {
+        reason = CleanCommandArgumentText(reason);
+        return reason.Length == 0 ? $"kick {playerName}" : $"kick {playerName} {reason}";
+    }
+
+    public static string WhitelistAdd(string playerName)
+        => $"whitelist add {playerName}";
+
+    public static string WhitelistRemove(string playerName)
+        => $"whitelist remove {playerName}";
 
     private static string CleanCommandArgumentText(string? value)
     {

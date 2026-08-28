@@ -6,16 +6,14 @@ namespace TwitchCraftBot.Tests.Configuration;
 public sealed class DatapackMetadataTests
 {
     [Theory]
-    [InlineData(null, false, 15, 0, true)]
-    [InlineData("1.20.4", false, 26, 0, false)]
-    [InlineData("1.21.11", true, 94, 1, false)]
-    [InlineData("26.1.0", true, 101, 1, false)]
+    [InlineData("1.20.5", false, 41, 0)]
+    [InlineData("1.21.11", true, 94, 1)]
+    [InlineData("26.1.0", true, 101, 1)]
     public void BuildPackMetadataJson_UsesTheVersionAppropriateSchema(
-        string? version,
+        string version,
         bool modern,
         int formatMajor,
-        int formatMinor,
-        bool includesFallbackRange)
+        int formatMinor)
     {
         using JsonDocument document = JsonDocument.Parse(
             DatapackInstaller.BuildPackMetadataJson(version));
@@ -39,13 +37,6 @@ public sealed class DatapackMetadataTests
             Assert.Equal(formatMajor, pack.GetProperty("pack_format").GetInt32());
         }
 
-        Assert.Equal(
-            includesFallbackRange,
-            pack.TryGetProperty("supported_formats", out JsonElement supportedFormats));
-        if (includesFallbackRange)
-        {
-            Assert.Equal(15, supportedFormats.GetProperty("min_inclusive").GetInt32());
-            Assert.Equal(61, supportedFormats.GetProperty("max_inclusive").GetInt32());
-        }
+        Assert.False(pack.TryGetProperty("supported_formats", out _));
     }
 }

@@ -12,7 +12,7 @@ public sealed class ApplicationVersionProviderTests
 
         string version = ApplicationVersionProvider.Resolve(applicationAssembly);
 
-        Assert.Equal("1.7.1.3", version);
+        Assert.Equal("1.8.0.0", version);
         Assert.Equal(version, ApplicationVersionProvider.Resolve());
         Assert.NotEqual(applicationAssembly.GetName().Version?.ToString(), version);
     }

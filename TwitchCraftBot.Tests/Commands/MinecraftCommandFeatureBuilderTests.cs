@@ -89,4 +89,30 @@ public sealed class MinecraftCommandFeatureBuilderTests
 
         Assert.Equal(first, second);
     }
+
+    [Theory]
+    [InlineData(false, false, "CustomName:'{\"text\":\"Charged Creeper\"}'", "Attributes:[{Name:\"generic.follow_range\",Base:75.0}]")]
+    [InlineData(true, true, "CustomName:{text:'Charged Creeper'}", "attributes:[{id:'minecraft:follow_range',base:75.0}]")]
+    public void BuildChargedCreeperCommands_MatchesJohnnyPursuerBehavior(
+        bool usesInlineTextComponents,
+        bool usesModernEntityAttributeNbt,
+        string expectedName,
+        string expectedAttributes)
+    {
+        List<string> commands = MinecraftCommandFeatureBuilder.BuildChargedCreeperCommands(
+            "@s",
+            new Random(12345),
+            usesInlineTextComponents,
+            usesModernEntityAttributeNbt);
+
+        Assert.Equal(3, commands.Count);
+        Assert.Contains("summon minecraft:creeper", commands[0], StringComparison.Ordinal);
+        Assert.Contains("~100", commands[0], StringComparison.Ordinal);
+        Assert.Contains("powered:1b", commands[0], StringComparison.Ordinal);
+        Assert.Contains("Invulnerable:1b", commands[0], StringComparison.Ordinal);
+        Assert.Contains("PersistenceRequired:1b", commands[0], StringComparison.Ordinal);
+        Assert.Contains(expectedName, commands[0], StringComparison.Ordinal);
+        Assert.Contains(expectedAttributes, commands[0], StringComparison.Ordinal);
+        Assert.EndsWith("run tag @s remove tc_charged_creeper_new", commands[2], StringComparison.Ordinal);
+    }
 }

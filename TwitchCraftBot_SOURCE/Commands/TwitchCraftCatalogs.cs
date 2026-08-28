@@ -122,8 +122,12 @@ internal static class TwitchCraftCatalogs
     }
 
     public static List<string> BuildLootList(string? minecraftVersion = null)
-        => [.. BaseLootTables, .. MinecraftVersionSupport.GetAdditionalLootTableIDs(minecraftVersion)];
+        => string.IsNullOrWhiteSpace(minecraftVersion)
+            ? [.. BaseLootTables]
+            : [.. BaseLootTables, .. MinecraftVersionSupport.GetAdditionalLootTableIDs(minecraftVersion)];
 
     public static List<string> BuildMobList(string? minecraftVersion = null)
-        => [.. BaseMobs, .. MinecraftVersionSupport.GetAdditionalMobIDs(minecraftVersion)];
+        => string.IsNullOrWhiteSpace(minecraftVersion)
+            ? [.. BaseMobs]
+            : [.. BaseMobs, .. MinecraftVersionSupport.GetAdditionalMobIDs(minecraftVersion)];
 }

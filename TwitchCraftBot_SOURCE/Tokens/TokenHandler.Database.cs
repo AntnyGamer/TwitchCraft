@@ -9,6 +9,85 @@ namespace TwitchCraftBot_V1.BotSetup;
 
 internal sealed partial class TokenHandler
 {
+    public IReadOnlyList<KeyValuePair<string, int>> GetTopBalances(int limit)
+    {
+        if (limit <= 0)
+            return [];
+
+        limit = Math.Min(limit, 100);
+        lock (_gate)
+        {
+            try
+            {
+                SqliteConnection connection = GetConnectionNoLock();
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = "SELECT Username, Balance FROM TokenBalances WHERE Balance > 0 ORDER BY Balance DESC, Username COLLATE NOCASE ASC LIMIT $limit;";
+                command.Parameters.AddWithValue("$limit", limit);
+
+                List<KeyValuePair<string, int>> result = new(limit);
+                using SqliteDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    string username = Normalize(reader.GetString(0));
+                    int balance = ClampTokenBalance(reader.GetInt64(1));
+                    if (username.Length > 0 && balance > 0)
+                        result.Add(new KeyValuePair<string, int>(username, balance));
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to load token leaderboard", ex);
+                return [];
+            }
+        }
+    }
+
+    public TokenRankResult? GetRank(string user)
+    {
+        string normalized = Normalize(user);
+        if (normalized.Length == 0)
+            return null;
+
+        lock (_gate)
+        {
+            try
+            {
+                SqliteConnection connection = GetConnectionNoLock();
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = """
+                    SELECT Username, Balance, Position
+                    FROM (
+                        SELECT Username,
+                               Balance,
+                               ROW_NUMBER() OVER (ORDER BY Balance DESC, Username COLLATE NOCASE ASC) AS Position
+                        FROM TokenBalances
+                        WHERE Balance > 0
+                    )
+                    WHERE Username = $username COLLATE NOCASE;
+                    """;
+                command.Parameters.AddWithValue("$username", normalized);
+
+                using SqliteDataReader reader = command.ExecuteReader();
+                if (!reader.Read())
+                    return null;
+
+                string username = Normalize(reader.GetString(0));
+                int balance = ClampTokenBalance(reader.GetInt64(1));
+                long rank = reader.GetInt64(2);
+                return username.Length == 0 || balance <= 0 || rank <= 0
+                    ? null
+                    : new TokenRankResult(username, balance, rank > int.MaxValue ? int.MaxValue : (int)rank);
+            }
+            catch (Exception ex)
+            {
+                TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to load token rank", ex);
+                return null;
+            }
+        }
+    }
+
     private bool EnsureViewerLoadedNoLock(string normalized)
     {
         if (_loadedUsers.Contains(normalized))
@@ -158,6 +237,45 @@ internal sealed partial class TokenHandler
             TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to save viewer token balance", ex);
             return false;
         }
+    }
+
+    private int SaveChangedBalancesIndividuallyNoLock(
+        Dictionary<string, int> changedUsers,
+        Dictionary<string, int> originalBalances)
+    {
+        int savedCount = 0;
+        SqliteConnection connection;
+        try
+        {
+            connection = GetConnectionNoLock();
+        }
+        catch (Exception ex)
+        {
+            TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to retry viewer token balances individually", ex);
+            return 0;
+        }
+
+        foreach (KeyValuePair<string, int> pair in changedUsers)
+        {
+            try
+            {
+                SaveSingleBalanceNoLock(connection, pair.Key, pair.Value);
+                SetCachedBalanceNoLock(pair.Key, pair.Value);
+                savedCount++;
+            }
+            catch (Exception ex)
+            {
+                if (originalBalances.TryGetValue(pair.Key, out int originalBalance))
+                    SetCachedBalanceNoLock(pair.Key, originalBalance);
+
+                // Recreate prepared commands after a failed statement before
+                // continuing with the rest of the roster.
+                DisposePreparedCommandsNoLock();
+                TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to retry a viewer token balance", ex);
+            }
+        }
+
+        return savedCount;
     }
 
     private void SaveSingleBalanceNoLock(SqliteConnection connection, string normalized, int balance)
@@ -339,6 +457,12 @@ internal sealed partial class TokenHandler
                     Balance INTEGER NOT NULL CHECK (Balance >= 0)
                 );
                 CREATE INDEX IF NOT EXISTS IX_TokenBalances_Balance ON TokenBalances (Balance DESC, Username COLLATE NOCASE ASC);
+                CREATE TABLE IF NOT EXISTS RewardedFollows (
+                    TwitchUserID TEXT PRIMARY KEY,
+                    Username TEXT NOT NULL COLLATE NOCASE,
+                    FollowedAtUtc TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS IX_RewardedFollows_Username ON RewardedFollows (Username COLLATE NOCASE ASC);
                 """;
             command.ExecuteNonQuery();
             _schemaInitialized = true;

@@ -37,4 +37,13 @@ public sealed class CommandParsingTests
         Assert.Equal("title", command.Name);
         Assert.Equal(["こんにちは", "世界"], command.ArgumentArray);
     }
+
+    [Fact]
+    public void Parse_AcceptsConfiguredMultiCharacterPrefix()
+    {
+        ParsedCommand command = ParsedCommand.Parse("tc:HeAl Player", "tc:");
+
+        Assert.Equal("heal", command.Name);
+        Assert.Equal(["Player"], command.ArgumentArray);
+    }
 }

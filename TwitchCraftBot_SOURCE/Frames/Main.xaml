@@ -46,6 +46,13 @@
 
             <TextBlock Text="Twitch Log:" FontFamily="Segoe UI Variable Display Semibold" FontSize="18" TextAlignment="Center" Margin="102,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
+            <Border x:Name="ConnectionHealthPanel" Width="180" Height="44" Background="Transparent" BorderBrush="#FF545454" BorderThickness="1" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="422,84,0,0">
+                <StackPanel Margin="4,3,4,3">
+                    <TextBlock x:Name="TwitchConnectionHealth" Text="Twitch: Connecting" FontFamily="Segoe UI Variable Display Semibold" FontSize="12" TextAlignment="Center" />
+                    <TextBlock x:Name="MinecraftConnectionHealth" Text="Minecraft: Starting" FontFamily="Segoe UI Variable Display Semibold" FontSize="12" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
+
             <Border Width="268" Height="155" BorderBrush="#FF545454" BorderThickness="2" Margin="14,79,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
 
                 <TextBox x:Name="TwitchLogs" BorderThickness="0" Background="#F0F0F0" Foreground="Black" IsReadOnly="True" IsUndoEnabled="False" UndoLimit="0" FontFamily="Consolas" FontSize="8" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />

@@ -28,6 +28,14 @@ public sealed class MinecraftRuntimeCommandTests
     }
 
     [Fact]
+    public void CalculateRemoteCommandTimeout_UsesConfiguredBaseTimeout()
+    {
+        Assert.Equal(
+            TimeSpan.FromSeconds(17),
+            BotMainHandler.CalculateRemoteCommandTimeout(11, TimeSpan.FromSeconds(15)));
+    }
+
+    [Fact]
     public void SnapshotServerCommands_NormalizesValidCommandsAndRejectsUnsafeEntries()
     {
         List<string> result = BotMainHandler.SnapshotServerCommands(

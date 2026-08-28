@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1;
 
@@ -42,7 +43,8 @@ public sealed partial class BotMainHandler
                 return false;
 
             int depth = Interlocked.Increment(ref state.Depth);
-            if (depth > state.MaxDepth)
+            int maxDepth = ReferenceEquals(state, _IRCCommandQueue) ? MaxGameplayCommandQueue : state.MaxDepth;
+            if (depth > maxDepth)
             {
                 Interlocked.Decrement(ref state.Depth);
                 return false;
@@ -189,29 +191,96 @@ public sealed partial class BotMainHandler
             : Prefix + payload;
     }
 
-    private async Task DispatchCommandAsync(string payload, string sender, bool isModerator, CancellationToken cancellationToken)
+    private async Task DispatchCommandAsync(string payload, string prefix, string sender, bool isModerator, CancellationToken cancellationToken)
     {
-        ParsedCommand parsed = ParsedCommand.Parse(payload);
+        ParsedCommand parsed = ParsedCommand.Parse(payload, prefix);
         if (parsed.Name.Length == 0)
             return;
 
-        if (!_commandRegistry.TryResolve(parsed.Name, out ChatCommandHandler handler))
-            return;
-
-        SetCurrentCommandSenderModeratorState(isModerator);
-        SetCurrentStatisticCommandName(parsed.Name);
+        CustomCommandCooldownReservation customCooldownReservation = default;
+        _currentCommandSender.Value = sender;
         try
         {
+            if (!_commandRegistry.TryResolve(parsed.Name, out ChatCommandHandler handler))
+            {
+                if (_activeConfig?.Settings.RespondToUnknownCommands == true)
+                {
+                    await SendBotResponseAsync(
+                        sender + ", unknown command " + prefix + parsed.Name + ".",
+                        BotResponseKind.Essential,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                return;
+            }
+
+            if (IsViewerCommandsPausedForNormalizedSender(sender))
+            {
+                await SendBotResponseAsync(
+                    sender + ", viewer commands are currently paused.",
+                    BotResponseKind.Essential,
+                    cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            CommandCustomization? customization = TryGetCommandCustomization(parsed.Name, out CommandCustomization resolvedCustomization)
+                ? resolvedCustomization
+                : null;
+            if (customization?.Enabled == false)
+            {
+                await SendBotResponseAsync(
+                    sender + ", " + prefix + parsed.Name + " is disabled.",
+                    BotResponseKind.Essential,
+                    cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            if (!TryConsumeNormalizedViewerCommandSlot(sender))
+            {
+                if (ShouldNotifyViewerCommandLimit(sender))
+                    await SendBotResponseAsync(sender + ", you have reached your command limit. Try again shortly.", BotResponseKind.Essential, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            if (!TryConsumeChannelCommandSlot())
+            {
+                if (ShouldNotifyChannelCommandLimit())
+                {
+                    await SendBotResponseAsync(
+                        sender + ", the channel command limit has been reached. Try again shortly.",
+                        BotResponseKind.Essential,
+                        cancellationToken).ConfigureAwait(false);
+                }
+                return;
+            }
+
+            if (!TryReserveCustomCommandCooldown(
+                    parsed.Name,
+                    sender,
+                    customization,
+                    out TimeSpan customCooldownRemaining,
+                    out customCooldownReservation))
+            {
+                await SendBotResponseAsync(
+                    sender + ", " + prefix + parsed.Name + " is on cooldown. Try again in " + FormatCooldownRemaining(customCooldownRemaining) + ".",
+                    BotResponseKind.Essential,
+                    cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            BeginCurrentCommandExecution();
+            SetCurrentCommandSenderModeratorState(isModerator);
+            SetCurrentStatisticCommandName(parsed.Name);
             await handler(parsed.ArgumentArray, sender, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Command error in !" + parsed.Name, ex));
+            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Command error in " + prefix + parsed.Name, ex));
         }
         finally
         {
+            FinishCustomCommandCooldown(customCooldownReservation, CurrentCommandSucceeded);
+            EndCurrentCommandExecution();
             SetCurrentStatisticCommandName(null);
             SetCurrentCommandSenderModeratorState(false);
+            _currentCommandSender.Value = null;
         }
     }
 

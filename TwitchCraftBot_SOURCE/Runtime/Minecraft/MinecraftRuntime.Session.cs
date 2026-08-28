@@ -21,6 +21,9 @@ public sealed partial class BotMainHandler
         config.Twitch ??= new TwitchConfig();
         config.Settings ??= new StartingProfile();
 
+        if (!MinecraftVersionSupport.TryGetVersion(config.Server.MinecraftVersion, out _))
+            throw new InvalidOperationException("Minecraft version '" + (config.Server.MinecraftVersion ?? string.Empty).Trim() + "' is not supported by this TwitchCraft build.");
+
         bool remoteController = config.Settings.RemoteControlEnabled;
 
         if (remoteController)
@@ -92,11 +95,22 @@ public sealed partial class BotMainHandler
     private void ResetSessionState()
     {
         ResetIRCQueues();
+        _timedPlayerScaleController.ClearTracking();
 
         lock (_viewerGate)
         {
             _knownChatters = [];
             _viewerRewardSchedule = new(PlayerNameComparer);
+            _viewerLastChatActivity.Clear();
+        }
+
+        lock (_cooldownGate)
+        {
+            _channelCommandTimestamps.Clear();
+            _viewerCommandTimestamps.Clear();
+            _viewerCommandLimitNotices.Clear();
+            _customCommandLastUsedTicks.Clear();
+            _relayMessageTimestamps.Clear();
         }
 
         lock (_playerGate)
@@ -132,6 +146,7 @@ public sealed partial class BotMainHandler
         }
 
         ClearLightningCooldown();
+        ClearTimedScaleCommandCooldowns();
         ClearGlobalGameCommandCooldown();
 
         Interlocked.Exchange(ref _playerSidebarRefreshQueued, 0);
@@ -183,7 +198,7 @@ public sealed partial class BotMainHandler
         try
         {
             if (waitBriefly)
-                await WaitForProcessExitAsync(process, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                await WaitForProcessExitAsync(process, GracefulShutdownTimeout).ConfigureAwait(false);
         }
         catch
         {

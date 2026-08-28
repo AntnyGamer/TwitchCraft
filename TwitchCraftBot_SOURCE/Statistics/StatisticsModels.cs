@@ -7,6 +7,8 @@ public sealed class BotStatisticsSnapshot
 {
     public bool StatisticsEnabled { get; set; } = true;
     public long SessionGameCommandsRun { get; set; }
+    public long SessionDangerousCommandsRun { get; set; }
+    public long SessionNiceCommandsRun { get; set; }
     public string SessionMostUsedCommand { get; set; } = string.Empty;
     public long SessionTokensSpent { get; set; }
     public long SessionEffectsGiven { get; set; }

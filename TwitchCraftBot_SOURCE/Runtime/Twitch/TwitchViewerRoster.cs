@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1;
 
@@ -19,6 +20,7 @@ public sealed partial class BotMainHandler
         {
             _knownChatters = emptyChatters;
             _viewerRewardSchedule.Clear();
+            _viewerLastChatActivity.Clear();
         }
 
         _shellWindow?.DisplayNormalizedViewerList(emptyChatters);
@@ -53,13 +55,19 @@ public sealed partial class BotMainHandler
                     if (string.IsNullOrWhiteSpace(chatter))
                         continue;
 
+                    if (!IsViewerPassiveRewardEligibleNoLock(chatter, now))
+                    {
+                        _viewerRewardSchedule.Remove(chatter);
+                        continue;
+                    }
+
                     if (!_viewerRewardSchedule.TryGetValue(chatter, out long nextAt))
                     {
-                        _viewerRewardSchedule[chatter] = now + Random.Shared.Next(30, 61);
+                        _viewerRewardSchedule[chatter] = now + GetNextPassivePayoutDelaySeconds();
                     }
                     else if (nextAt <= now)
                     {
-                        _viewerRewardSchedule[chatter] = now + Random.Shared.Next(30, 61);
+                        _viewerRewardSchedule[chatter] = now + GetNextPassivePayoutDelaySeconds();
                         (rewarded ??= []).Add(chatter);
                     }
                 }
@@ -67,7 +75,7 @@ public sealed partial class BotMainHandler
 
             if (rewarded is { Count: > 0 })
             {
-                _tokenStore.AdjustBalances(rewarded, 1);
+                AwardTokens(rewarded, PassiveTokensPerPayout);
             }
 
             try
@@ -89,10 +97,8 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        string botToken = NormalizeTwitchToken(_activeConfig.Twitch.BotToken);
-        string bearerHeader = TwitchTokenHelper.BuildBearerHeader(botToken);
         if (string.IsNullOrWhiteSpace(_activeConfig.Twitch.ClientID) ||
-            string.IsNullOrWhiteSpace(botToken) ||
+            string.IsNullOrWhiteSpace(_activeConfig.Twitch.BotToken) ||
             string.IsNullOrWhiteSpace(_activeConfig.Twitch.StreamerName))
         {
             ClearViewerRoster();
@@ -105,10 +111,27 @@ public sealed partial class BotMainHandler
             bool shouldResolveUserIds = true;
             string moderatorId = string.Empty;
             string broadcasterID = string.Empty;
-            TimeSpan refreshDelay = TimeSpan.FromSeconds(30);
+            TimeSpan refreshDelay = TimeSpan.FromSeconds(ViewerRosterRefreshIntervalSeconds);
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                TwitchConfig? currentTwitch = _activeConfig?.Twitch;
+                if (currentTwitch == null)
+                {
+                    ClearViewerRoster();
+                    return;
+                }
+
+                string clientId = (currentTwitch.ClientID ?? string.Empty).Trim();
+                string streamerName = (currentTwitch.StreamerName ?? string.Empty).Trim();
+                string botToken = NormalizeTwitchToken(currentTwitch.BotToken);
+                string bearerHeader = TwitchTokenHelper.BuildBearerHeader(botToken);
+                if (clientId.Length == 0 || streamerName.Length == 0 || botToken.Length == 0)
+                {
+                    ClearViewerRoster();
+                    return;
+                }
+
                 try
                 {
                     if (shouldResolveUserIds)
@@ -123,8 +146,8 @@ public sealed partial class BotMainHandler
 
                         string[] userIDs = await ResolveTwitchUserIdsAsync(
                             botName,
-                            _activeConfig.Twitch.StreamerName,
-                            _activeConfig.Twitch.ClientID,
+                            streamerName,
+                            clientId,
                             botToken,
                             cancellationToken).ConfigureAwait(false);
 
@@ -154,7 +177,7 @@ public sealed partial class BotMainHandler
 
                         using HttpRequestMessage request = new(HttpMethod.Get, URL);
                         request.Headers.TryAddWithoutValidation("Authorization", bearerHeader);
-                        request.Headers.TryAddWithoutValidation("Client-Id", _activeConfig.Twitch.ClientID);
+                        request.Headers.TryAddWithoutValidation("Client-Id", clientId);
 
                         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                         if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
@@ -201,7 +224,7 @@ public sealed partial class BotMainHandler
                     }
 
                     consecutiveFailures = 0;
-                    refreshDelay = TimeSpan.FromSeconds(30);
+                    refreshDelay = TimeSpan.FromSeconds(ViewerRosterRefreshIntervalSeconds);
                     if (viewerList != null)
                         _shellWindow?.DisplayNormalizedViewerList(viewerList);
                 }
@@ -214,7 +237,15 @@ public sealed partial class BotMainHandler
                     consecutiveFailures++;
                     shouldResolveUserIds = true;
                     ClearViewerRoster();
-                    _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Viewer roster authorization failed", ex));
+                    if (await TryRefreshTwitchCredentialsAsync(botToken, cancellationToken).ConfigureAwait(false))
+                    {
+                        consecutiveFailures = 0;
+                        refreshDelay = TimeSpan.FromSeconds(1);
+                    }
+                    else
+                    {
+                        _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Viewer roster authorization failed", ex));
+                    }
                 }
                 catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
                 {

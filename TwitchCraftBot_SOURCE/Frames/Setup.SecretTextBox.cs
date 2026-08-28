@@ -27,7 +27,19 @@ public partial class Setup : UserControl
             _toggle.Unchecked += VisibilityToggle_Changed;
         }
 
-        public string Text => IsVisible ? _visibleBox.Text ?? string.Empty : _hiddenBox.Password ?? string.Empty;
+        public string Text
+        {
+            get => IsVisible ? _visibleBox.Text ?? string.Empty : _hiddenBox.Password ?? string.Empty;
+            set
+            {
+                string safeValue = value ?? string.Empty;
+                _hiddenBox.Password = safeValue;
+                if (IsVisible)
+                    _visibleBox.Text = safeValue;
+                else
+                    _visibleBox.Clear();
+            }
+        }
 
         public void Hide()
         {

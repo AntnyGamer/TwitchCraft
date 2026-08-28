@@ -68,7 +68,11 @@ public sealed class ServerPropertyEditorTests
                 MultiplayerPVPEnabled = true,
                 RequireOnlineMode = false,
                 HardcoreEnabled = false,
-                Difficulty = "Hard"
+                Difficulty = "Hard",
+                ViewDistance = 6,
+                SimulationDistance = 8,
+                EntityBroadcastRangePercentage = 75,
+                NetworkCompressionThreshold = 128
             }
         };
 
@@ -80,6 +84,9 @@ public sealed class ServerPropertyEditorTests
         Assert.Contains(@"escaped-value=hello\=world\\path", content);
         Assert.Contains("z-custom=last", content);
         Assert.Contains("view-distance=6", content);
+        Assert.Contains("simulation-distance=8", content);
+        Assert.Contains("entity-broadcast-range-percentage=75", content);
+        Assert.Contains("network-compression-threshold=128", content);
         Assert.Contains("level-name=Streamer World", content);
         Assert.Contains("server-port=25570", content);
         Assert.Contains("rcon.port=25580", content);

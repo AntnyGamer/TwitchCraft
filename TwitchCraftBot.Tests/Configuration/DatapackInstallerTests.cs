@@ -62,11 +62,10 @@ public sealed class DatapackInstallerTests
     }
 
     [Theory]
-    [InlineData(null, true, true, false)]
-    [InlineData("1.20.4", true, false, false)]
+    [InlineData("1.20.5", true, false, false)]
     [InlineData("1.21.11", false, true, true)]
     public void TrySyncLocatePlayersDatapack_InstallsTheVersionAppropriateLayout(
-        string? minecraftVersion,
+        string minecraftVersion,
         bool expectsPluralLayout,
         bool expectsSingularLayout,
         bool expectsInlineText)

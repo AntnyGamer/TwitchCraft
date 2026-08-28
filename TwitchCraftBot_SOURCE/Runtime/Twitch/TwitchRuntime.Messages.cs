@@ -107,7 +107,7 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        string safeMessage = NormalizeOutgoingChannelMessage(message);
+        string safeMessage = NormalizeOutgoingChannelMessage(ApplyConfiguredNormalizedCommandPrefix(message, CommandPrefix));
         safeMessage = TruncateUtf8ToByteCount(safeMessage, maxMessageBytes);
 
         if (safeMessage.Length == 0)
@@ -128,5 +128,18 @@ public sealed partial class BotMainHandler
             _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("IRC write failed", ex));
         }
     }
+
+    internal Task SendBotResponseAsync(
+        string message,
+        BotResponseKind kind,
+        CancellationToken cancellationToken)
+        => BotResponseVerbositySettings.ShouldSendNormalized(BotResponseVerbosity, kind)
+            ? SendToChannelAsync(
+                FormatBotReplyForNormalizedViewer(
+                    message,
+                    _currentCommandSender.Value ?? string.Empty,
+                    _activeConfig?.Settings.MentionViewersInBotReplies == true),
+                cancellationToken)
+            : Task.CompletedTask;
 
 }

@@ -100,7 +100,7 @@ public static partial class MinigameManager
                     payouts.Add(new(bet.Viewer, payout));
             }
 
-            runtime.AdjustTokens(payouts);
+            runtime.AwardTokens(payouts);
             payoutApplied = true;
 
             if (witherDefeated)

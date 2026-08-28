@@ -6,7 +6,6 @@ namespace TwitchCraftBot.Tests.Configuration;
 public sealed class MinecraftVersionSupportTests
 {
     [Theory]
-    [InlineData(" 1.20.0 ", "1.20", "1.20.0", 17, 15)]
     [InlineData("1.20.5", "1.20.5", "1.20.5", 21, 41)]
     [InlineData("1.21.0", "1.21.0", "1.21.0", 21, 48)]
     [InlineData("1.21.11", "1.21.11", "1.21.11", 21, 94)]
@@ -26,7 +25,6 @@ public sealed class MinecraftVersionSupportTests
     }
 
     [Theory]
-    [InlineData("1.20.4", false, true, false, false, false, false)]
     [InlineData("1.20.5", false, true, true, false, false, false)]
     [InlineData("1.21.2", true, false, true, false, false, true)]
     [InlineData("1.21.11", true, false, true, true, true, true)]
@@ -48,18 +46,31 @@ public sealed class MinecraftVersionSupportTests
         Assert.Equal(supportsInfested, MinecraftVersionSupport.SupportsStatusEffect(id, "infested"));
     }
 
+    [Theory]
+    [InlineData("1.20")]
+    [InlineData("1.20.0")]
+    [InlineData("1.20.1")]
+    [InlineData("1.20.2")]
+    [InlineData("1.20.3")]
+    [InlineData("1.20.4")]
+    public void TryGetVersion_RejectsVersionsBefore1205(string id)
+    {
+        Assert.False(MinecraftVersionSupport.TryGetVersion(id, out _));
+    }
+
     [Fact]
     public void CatalogBuilders_ReturnIndependentListsWithVersionSpecificEntries()
     {
         List<EffectDefinition> firstEffects = TwitchCraftCatalogs.BuildEffectList();
         List<EffectDefinition> secondEffects = TwitchCraftCatalogs.BuildEffectList();
-        List<string> oldMobs = TwitchCraftCatalogs.BuildMobList("1.20.4");
+        List<string> minimumVersionMobs = TwitchCraftCatalogs.BuildMobList("1.20.5");
         List<string> newMobs = TwitchCraftCatalogs.BuildMobList("1.21.11");
         List<string> newLoot = TwitchCraftCatalogs.BuildLootList("1.21.0");
 
         Assert.NotSame(firstEffects, secondEffects);
         Assert.NotSame(firstEffects[0], secondEffects[0]);
-        Assert.DoesNotContain("armadillo", oldMobs);
+        Assert.Contains("armadillo", minimumVersionMobs);
+        Assert.DoesNotContain("bogged", minimumVersionMobs);
         Assert.Contains("nautilus", newMobs);
         Assert.Contains("chests/trial_chambers/reward_ominous", newLoot);
     }

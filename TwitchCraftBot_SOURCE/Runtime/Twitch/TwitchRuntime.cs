@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1;
 
@@ -122,8 +125,7 @@ public sealed partial class BotMainHandler
         if (_activeConfig?.Twitch == null)
             return;
 
-        string botToken = NormalizeTwitchToken(_activeConfig.Twitch.BotToken);
-        if (string.IsNullOrWhiteSpace(botToken) ||
+        if (string.IsNullOrWhiteSpace(_activeConfig.Twitch.BotToken) ||
             string.IsNullOrWhiteSpace(_activeConfig.Twitch.StreamerName))
         {
             return;
@@ -134,6 +136,10 @@ public sealed partial class BotMainHandler
 
         while (!cancellationToken.IsCancellationRequested)
         {
+            string botToken = NormalizeTwitchToken(_activeConfig?.Twitch.BotToken);
+            if (botToken.Length == 0)
+                return;
+
             StreamReader? reader = null;
             StreamWriter? writer = null;
             TcpClient? socket = null;
@@ -186,6 +192,7 @@ public sealed partial class BotMainHandler
                     ],
                     cancellationToken).ConfigureAwait(false);
 
+                SetTwitchChatConnected(true);
                 _shellWindow?.AddChatLogLine("[IRC] Connected to #" + channelLogin + ".");
                 reconnectDelayMs = 1000;
                 bool separateBotAccount = !string.Equals(botName, channelLogin, StringComparison.OrdinalIgnoreCase);
@@ -281,20 +288,27 @@ public sealed partial class BotMainHandler
                     if (sender.Length == 0 || IsIgnoredIRCUser(sender, botName, separateBotAccount) || payload.Length == 0)
                         continue;
 
+                    RecordNormalizedViewerChatActivity(sender, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+
                     if (message.Bits > 0)
                     {
-                        AdjustTokens(sender, message.Bits);
+                        int bitReward = CalculateBitTokenReward(
+                            _activeConfig?.Settings.AutomaticBitRewardsEnabled ?? true,
+                            message.Bits);
+                        int awardedBits = bitReward > 0 ? AwardTokens(sender, bitReward) : 0;
                         string bitsText = message.Bits.ToString(CultureInfo.InvariantCulture);
-                        _shellWindow?.AddChatLogLine(
-                            "[Bits] " + sender + " cheered " + bitsText + " " + (message.Bits == 1 ? "Bit" : "Bits") + " and received " + bitsText + " " + (message.Bits == 1 ? "token" : "tokens") + ".");
+                        string rewardResult = bitReward > 0
+                            ? " and received " + awardedBits.ToString(CultureInfo.InvariantCulture) + " " + (awardedBits == 1 ? "token" : "tokens") + "."
+                            : "; automatic Bit rewards are disabled.";
+                        _shellWindow?.AddChatLogLine("[Bits] " + sender + " cheered " + bitsText + " " + (message.Bits == 1 ? "Bit" : "Bits") + rewardResult);
                     }
 
-                    if (payload[0] == '!')
+                    if (TryMatchNormalizedCommandPrefix(payload, CommandPrefix, SecondaryCommandPrefix, out string matchedPrefix))
                     {
                         bool isModerator = message.IsModerator;
 
                         if (!QueueIRCCommandWork(
-                            ct => DispatchCommandAsync(payload, sender, isModerator, ct),
+                            ct => DispatchCommandAsync(payload, matchedPrefix, sender, isModerator, ct),
                             payload,
                             cancellationToken))
                         {
@@ -303,14 +317,28 @@ public sealed partial class BotMainHandler
                     }
                     else if (_activeConfig?.Settings.NonCommandChatRelayEnabled != false)
                     {
+                        if (!TryConsumeMinecraftRelaySlot())
+                            continue;
+                        bool includeTimestamp = _activeConfig?.Settings.IncludeRelayTimestamps == true;
+                        string relayColor = MinecraftRelayTextColor;
+                        string relayMessage = FormatMinecraftRelayMessage(
+                            sender,
+                            payload,
+                            includeTimestamp,
+                            includeTimestamp ? DateTime.Now : default);
                         _ = QueueIRCWorkCore(
                             _IRCQuickQueue,
-                            ct => SendTellrawAsync("@a", sender + ": " + payload, "white", false, ct),
+                            ct => SendTellrawAsync("@a", relayMessage, relayColor, false, ct),
                             "chat relay",
                             quick: true,
                             cancellationToken: cancellationToken);
                     }
                 }
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            {
+                if (!await TryRefreshTwitchCredentialsAsync(botToken, cancellationToken).ConfigureAwait(false))
+                    _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("IRC authorization failed", ex));
             }
             catch (SocketException ex)
             {
@@ -330,6 +358,7 @@ public sealed partial class BotMainHandler
             }
             finally
             {
+                SetTwitchChatConnected(false);
                 try
                 {
                     tokenRegistration.Dispose();
@@ -378,6 +407,9 @@ public sealed partial class BotMainHandler
             reconnectDelayMs = GetNextIRCReconnectDelayMilliseconds(reconnectDelayMs);
         }
     }
+
+    internal static int CalculateBitTokenReward(bool enabled, int bits)
+        => enabled && bits > 0 ? bits : 0;
 
     internal static int GetNextIRCReconnectDelayMilliseconds(int currentDelayMilliseconds)
         => Math.Min(currentDelayMilliseconds * 2, 15000);

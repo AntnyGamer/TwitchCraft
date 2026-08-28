@@ -70,4 +70,76 @@ public sealed class TwitchRuntimeHelperTests
             expected,
             BotMainHandler.GetNextIRCReconnectDelayMilliseconds(currentDelay));
     }
+
+    [Theory]
+    [InlineData(true, 1, 1)]
+    [InlineData(true, 250, 250)]
+    [InlineData(false, 250, 0)]
+    [InlineData(true, 0, 0)]
+    public void CalculateBitTokenReward_PreservesOneBitPerToken(bool enabled, int bits, int expected)
+    {
+        Assert.Equal(expected, BotMainHandler.CalculateBitTokenReward(enabled, bits));
+    }
+
+    [Theory]
+    [InlineData(5, 0.5, 3)]
+    [InlineData(10, 1.0, 10)]
+    [InlineData(10, 1.5, 15)]
+    [InlineData(10, double.NaN, 10)]
+    public void CalculateCommandCost_AppliesMultiplierAndRoundsUp(long cost, double multiplier, int expected)
+    {
+        Assert.Equal(expected, BotMainHandler.CalculateCommandCost(cost, multiplier));
+    }
+
+    [Fact]
+    public void BotResponseVerbosity_FiltersOnlyTheRequestedResponseKinds()
+    {
+        Assert.True(BotResponseVerbositySettings.ShouldSend("Normal", BotResponseKind.Confirmation));
+        Assert.False(BotResponseVerbositySettings.ShouldSend("Reduced", BotResponseKind.Confirmation));
+        Assert.True(BotResponseVerbositySettings.ShouldSend("Reduced", BotResponseKind.Announcement));
+        Assert.True(BotResponseVerbositySettings.ShouldSend("Essential Only", BotResponseKind.Essential));
+        Assert.False(BotResponseVerbositySettings.ShouldSend("Essential Only", BotResponseKind.Announcement));
+    }
+
+    [Theory]
+    [InlineData("!heal", "!", "?", "!")]
+    [InlineData("??heal", "?", "??", "??")]
+    [InlineData("?heal", "!", "?", "?")]
+    public void TryMatchCommandPrefix_UsesConfiguredPrefixesAndPrefersTheLongest(
+        string payload,
+        string primary,
+        string secondary,
+        string expected)
+    {
+        Assert.True(BotMainHandler.TryMatchCommandPrefix(payload, primary, secondary, out string actual));
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void BotReplyMention_ReplacesAnExistingLeadingUsernameWithoutDuplicatingIt()
+    {
+        Assert.Equal(
+            "@viewer, you need more tokens.",
+            BotMainHandler.FormatBotReplyForViewer("viewer, you need more tokens.", "Viewer", mentionViewer: true));
+        Assert.Equal(
+            "@viewer Unknown command.",
+            BotMainHandler.FormatBotReplyForViewer("Unknown command.", "viewer", mentionViewer: true));
+    }
+
+    [Fact]
+    public void MinecraftRelayMessage_AddsOptionalLocalTimestamp()
+    {
+        DateTime time = new(2026, 8, 27, 13, 5, 0);
+
+        Assert.Equal("viewer: hello", BotMainHandler.FormatMinecraftRelayMessage("viewer", "hello", false, time));
+        Assert.Equal("[13:05] viewer: hello", BotMainHandler.FormatMinecraftRelayMessage("viewer", "hello", true, time));
+    }
+
+    [Fact]
+    public void ConfiguredPrefix_RewritesCommandExamplesWithoutChangingExclamations()
+    {
+        Assert.Equal(
+            "Use ?heal or ?tokens. Great! You are ready!",
+            BotMainHandler.ApplyConfiguredCommandPrefix("Use !heal or !tokens. Great! You are ready!", "?"));
+    }
 }

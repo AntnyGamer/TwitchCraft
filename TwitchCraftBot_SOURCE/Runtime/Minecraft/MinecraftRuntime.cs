@@ -43,7 +43,7 @@ public sealed partial class BotMainHandler
     private async Task EnsureRemoteControllerConnectedAsync(BotConfig config, CancellationToken cancellationToken)
     {
         using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(ManualCommandTimeout);
+        timeoutCts.CancelAfter(RCONTimeout);
 
         string host = GetRemoteControllerHost(config);
         _ = await MinecraftRCONClient.ExecuteQueryAsync(
@@ -185,9 +185,7 @@ public sealed partial class BotMainHandler
 
     private static void AddJavaArguments(ProcessStartInfo startInfo, BotConfig config, string jarPath)
     {
-        bool enableNativeAccess =
-            MinecraftVersionSupport.TryGetVersion(config.Server.MinecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo version)
-            && version.RequiredJDK >= 25;
+        bool enableNativeAccess = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion).RequiredJDK >= 25;
 
         startInfo.ArgumentList.Add("-Xmx" + config.Server.MemoryMaxGB.ToString(CultureInfo.InvariantCulture) + "G");
         startInfo.ArgumentList.Add("-Xms" + config.Server.MemoryMinGB.ToString(CultureInfo.InvariantCulture) + "G");

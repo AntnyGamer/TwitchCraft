@@ -18,11 +18,15 @@ internal readonly struct ParsedCommand
     }
 
     public static ParsedCommand Parse(string payload)
+        => Parse(payload, "!");
+
+    public static ParsedCommand Parse(string payload, string prefix)
     {
-        if (string.IsNullOrEmpty(payload) || payload[0] != '!')
+        if (string.IsNullOrEmpty(payload) || string.IsNullOrEmpty(prefix) ||
+            !payload.StartsWith(prefix, StringComparison.Ordinal))
             return default;
 
-        int start = 1;
+        int start = prefix.Length;
         int end = payload.Length - 1;
         while (start <= end && char.IsWhiteSpace(payload[start]))
             start++;

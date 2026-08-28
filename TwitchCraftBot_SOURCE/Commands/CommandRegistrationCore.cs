@@ -26,7 +26,19 @@ public static partial class CommandList
         static List<string> NormalizePlayerTargets(List<string>? players)
             => SortedListHelper.NormalizeMinecraftPlayerNames(players, StringComparer.OrdinalIgnoreCase);
         Task SayToChannel(string? msg, CancellationToken ct)
-            => string.IsNullOrWhiteSpace(msg) ? Task.CompletedTask : runtime.SendToChannelAsync(msg, ct);
+            => SendResponseToChannel(msg, BotResponseKind.Essential, ct);
+        Task SayConfirmationToChannel(string? msg, CancellationToken ct)
+        {
+            runtime.MarkCurrentCommandSuccessful();
+            return SendResponseToChannel(msg, BotResponseKind.Confirmation, ct);
+        }
+        Task SaySuccessfulToChannel(string? msg, CancellationToken ct)
+        {
+            runtime.MarkCurrentCommandSuccessful();
+            return SendResponseToChannel(msg, BotResponseKind.Essential, ct);
+        }
+        Task SendResponseToChannel(string? msg, BotResponseKind kind, CancellationToken ct)
+            => string.IsNullOrWhiteSpace(msg) ? Task.CompletedTask : runtime.SendBotResponseAsync(msg, kind, ct);
         Task SayInsufficientTokens(string sender, int cost, CancellationToken ct)
             => SayToChannel(sender + ", you need at least " + cost.ToString(CultureInfo.InvariantCulture) + " tokens for this command.", ct);
         async Task<bool> RequireLocalMultiplayerAdminCommandReady(string sender, string commandName, CancellationToken ct)
@@ -50,8 +62,9 @@ public static partial class CommandList
         }
         async Task<bool> RequireTokenBalance(string sender, int cost, CancellationToken ct)
         {
-            if (cost <= 0 || runtime.GetTokens(sender) >= cost) return true;
-            await SayInsufficientTokens(sender, cost, ct).ConfigureAwait(false);
+            int scaledCost = runtime.ScaleCost(cost, 1);
+            if (scaledCost <= 0 || runtime.GetTokens(sender) >= scaledCost) return true;
+            await SayInsufficientTokens(sender, scaledCost, ct).ConfigureAwait(false);
             return false;
         }
         Task<bool> ExecutePaidCommandTransaction(
@@ -70,7 +83,11 @@ public static partial class CommandList
                 TrySpendTokens = amount => runtime.TrySpendTokens(sender, amount),
                 RefundTokens = amount => runtime.AdjustTokens(sender, amount),
                 DispatchAsync = dispatchAsync,
-                RecordStatistics = amount => runtime.RecordCurrentGameAffectingCommandForStatistics(sender, amount),
+                RecordStatistics = amount =>
+                {
+                    runtime.MarkCurrentCommandSuccessful();
+                    runtime.RecordCurrentGameAffectingCommandForStatistics(sender, amount);
+                },
                 ReportInsufficientTokensAsync = (amount, token) => SayInsufficientTokens(sender, amount, token),
                 ReportDispatchFailureAsync = token => SayToChannel(
                     sender + ", the Minecraft command could not be sent, so your tokens were refunded.",
@@ -225,6 +242,12 @@ public static partial class CommandList
                 string first = (args[startIndex] ?? string.Empty).Trim();
                 if (first.Equals("random", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (!runtime.AllowRandomPlayerTarget)
+                    {
+                        await SayToChannel(sender + ", random player targeting is disabled.", ct).ConfigureAwait(false);
+                        return null;
+                    }
+
                     List<string> players = NormalizePlayerTargets(await runtime.GetOnlinePlayersAsync(ct).ConfigureAwait(false));
                     string defaultPlayer = runtime.DefaultMinecraftPlayerName;
                     if (players.Count == 0 &&
@@ -358,9 +381,8 @@ public static partial class CommandList
                 return false;
             if (!runtime.GlobalGameCommandCooldownEnabled || !runtime.TryGetGlobalGameCommandCooldownRemaining(out TimeSpan remaining))
                 return true;
-            int seconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds));
             await SayToChannel(
-                sender + ", game commands are on global cooldown. Try again in " + seconds.ToString(CultureInfo.InvariantCulture) + "s.",
+                sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldownRemaining(remaining) + ".",
                 ct).ConfigureAwait(false);
             return false;
         }
@@ -370,13 +392,12 @@ public static partial class CommandList
                 return null;
             if (runtime.TryReserveGlobalGameCommandCooldown(out TimeSpan remaining, out long reservationTicks))
                 return reservationTicks;
-            int seconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds));
             await SayToChannel(
-                sender + ", game commands are on global cooldown. Try again in " + seconds.ToString(CultureInfo.InvariantCulture) + "s.",
+                sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldownRemaining(remaining) + ".",
                 ct).ConfigureAwait(false);
             return null;
         }
-        async Task<bool> SendTargetedPricedCommand(ResolvedTarget target, string sender, int baseCost, Func<ResolvedTarget, IEnumerable<string>> buildCommands, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = "yellow", bool bold = true, string? othersColor = null)
+        async Task<bool> SendTargetedPricedCommand(ResolvedTarget target, string sender, int baseCost, Func<ResolvedTarget, IEnumerable<string>> buildCommands, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
         {
             int cost = runtime.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedCommands(sender, cost, () => buildCommands(target), ct).ConfigureAwait(false))
@@ -387,7 +408,7 @@ public static partial class CommandList
                 await TellOthers(target, othersMessage, othersColor ?? color, bold, ct).ConfigureAwait(false);
             return true;
         }
-        async Task<bool> SendSingleTargetedPricedCommand(ResolvedTarget target, string sender, int baseCost, string command, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = "yellow", bool bold = true, string? othersColor = null)
+        async Task<bool> SendSingleTargetedPricedCommand(ResolvedTarget target, string sender, int baseCost, string command, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
         {
             int cost = runtime.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedCommand(sender, cost, command, ct).ConfigureAwait(false))
@@ -412,7 +433,7 @@ public static partial class CommandList
             CancellationToken ct)
         {
             if (await SendTargetedPricedCommand(target, sender, baseCost, buildCommands, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
-                await SayToChannel(channelMessage, ct).ConfigureAwait(false);
+                await SayConfirmationToChannel(channelMessage, ct).ConfigureAwait(false);
         }
         async Task SendSingleTargetedPricedCommandAndSay(
             ResolvedTarget target,
@@ -428,7 +449,7 @@ public static partial class CommandList
             CancellationToken ct)
         {
             if (await SendSingleTargetedPricedCommand(target, sender, baseCost, command, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
-                await SayToChannel(channelMessage, ct).ConfigureAwait(false);
+                await SayConfirmationToChannel(channelMessage, ct).ConfigureAwait(false);
         }
         void AddTargetedCommand(string commandName, Func<ResolvedTarget, string, CancellationToken, Task> execute, ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None, bool checkGameCooldown = true, int minimumTokenCost = 0)
         {

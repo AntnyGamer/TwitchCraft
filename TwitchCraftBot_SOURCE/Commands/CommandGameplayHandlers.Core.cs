@@ -34,24 +34,81 @@ public static partial class CommandList
                 await SayToChannel(sender + ", the ban command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
                 return;
             }
-            await SayToChannel(sender + ", banned " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
+            await SayConfirmationToChannel(sender + ", banned " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
+        }
+        async Task HandleCommandStats(string[]? _, string sender, CancellationToken ct)
+        {
+            BotStatisticsSnapshot stats = runtime.GetStatisticsSnapshot(ct);
+            if (!stats.StatisticsEnabled)
+            {
+                await SayToChannel(sender + ", statistics are disabled in TwitchCraft settings.", ct).ConfigureAwait(false);
+                return;
+            }
+
+            string mostUsed = stats.SessionMostUsedCommand.Length == 0 ? "none yet" : stats.SessionMostUsedCommand;
+            await SaySuccessfulToChannel(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{sender}, this session: {stats.SessionGameCommandsRun} game commands, {stats.SessionDangerousCommandsRun} dangerous, {stats.SessionNiceCommandsRun} nice, and {stats.SessionTokensSpent} tokens spent. Most used: {mostUsed}."),
+                ct).ConfigureAwait(false);
+        }
+        async Task HandleFollowReward(string[]? _, string sender, CancellationToken ct)
+        {
+            if (!runtime.AutomaticFollowRewardsEnabled)
+            {
+                await SayToChannel(sender + ", automatic follow rewards are currently disabled.", ct).ConfigureAwait(false);
+                return;
+            }
+
+            await SaySuccessfulToChannel(
+                sender + ", following this channel automatically awards " +
+                runtime.FollowRewardAmount.ToString(CultureInfo.InvariantCulture) +
+                " tokens once per Twitch account. Unfollowing and following again does not award more.",
+                ct).ConfigureAwait(false);
         }
         async Task HandleHelp(string[]? _, string sender, CancellationToken ct)
         {
             string details = runtime.MultiTargetingEnabled
                 ? "Most commands support targeting: !command player|all|random ... Full list: https://rentry.co/bot-commands"
                 : "Use your tokens with these commands: https://rentry.co/bot-commands";
-            await SayToChannel(sender + ". Welcome! Earn tokens by watching the stream. " + details, ct).ConfigureAwait(false);
+            await SaySuccessfulToChannel(sender + ". Welcome! Earn tokens by watching the stream. " + details, ct).ConfigureAwait(false);
         }
         async Task HandlePlayerList(string[]? _, string sender, CancellationToken ct)
         {
             List<string> players = await runtime.GetOnlinePlayersAsync(ct).ConfigureAwait(false);
             if (players.Count == 0)
             {
-                await SayToChannel(sender + ", there are no players online right now.", ct).ConfigureAwait(false);
+                await SaySuccessfulToChannel(sender + ", there are no players online right now.", ct).ConfigureAwait(false);
                 return;
             }
-            await SayToChannel(sender + ", active players (" + players.Count.ToString(CultureInfo.InvariantCulture) + "): " + string.Join(", ", players) + ".", ct).ConfigureAwait(false);
+            await SaySuccessfulToChannel(sender + ", active players (" + players.Count.ToString(CultureInfo.InvariantCulture) + "): " + string.Join(", ", players) + ".", ct).ConfigureAwait(false);
+        }
+        async Task HandleKick(string[]? args, string sender, CancellationToken ct)
+        {
+            const string commandName = "kick";
+            if (!await RequireAllowed(sender, commandName, ct).ConfigureAwait(false))
+                return;
+            if (!await RequireLocalMultiplayerAdminCommandReady(sender, commandName, ct).ConfigureAwait(false))
+                return;
+            if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
+            {
+                await SayToChannel(sender + ", please provide a valid Minecraft username to kick.", ct).ConfigureAwait(false);
+                return;
+            }
+            if (string.Equals(playerName, runtime.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
+            {
+                await SayToChannel(sender + ", the streamer account cannot be kicked.", ct).ConfigureAwait(false);
+                return;
+            }
+            string reason = args is { Length: > 1 }
+                ? string.Join(" ", args, 1, args.Length - 1)
+                : string.Empty;
+            if (!await runtime.SendServerCommandAsync(MinecraftCommandBuilder.KickPlayer(playerName, reason), ct).ConfigureAwait(false))
+            {
+                await SayToChannel(sender + ", the kick command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
+                return;
+            }
+            await SayConfirmationToChannel(sender + ", kicked " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
         }
         async Task HandleUnban(string[]? args, string sender, CancellationToken ct)
         {
@@ -70,7 +127,44 @@ public static partial class CommandList
                 await SayToChannel(sender + ", the unban command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
                 return;
             }
-            await SayToChannel(sender + ", unbanned " + playerName + ".", ct).ConfigureAwait(false);
+            await SayConfirmationToChannel(sender + ", unbanned " + playerName + ".", ct).ConfigureAwait(false);
+        }
+        Task HandleWhitelistAdd(string[]? args, string sender, CancellationToken ct)
+            => HandleWhitelistChange(args, sender, add: true, ct);
+
+        Task HandleWhitelistRemove(string[]? args, string sender, CancellationToken ct)
+            => HandleWhitelistChange(args, sender, add: false, ct);
+
+        async Task HandleWhitelistChange(string[]? args, string sender, bool add, CancellationToken ct)
+        {
+            string commandName = add ? "whitelistadd" : "whitelistremove";
+            string action = add ? "add" : "remove";
+            if (!await RequireAllowed(sender, commandName, ct).ConfigureAwait(false))
+                return;
+            if (!await RequireLocalMultiplayerAdminCommandReady(sender, commandName, ct).ConfigureAwait(false))
+                return;
+            if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
+            {
+                await SayToChannel(sender + ", please provide a valid Minecraft username to " + action + " to the whitelist.", ct).ConfigureAwait(false);
+                return;
+            }
+            if (!add && string.Equals(playerName, runtime.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
+            {
+                await SayToChannel(sender + ", the streamer account cannot be removed from the whitelist.", ct).ConfigureAwait(false);
+                return;
+            }
+
+            string serverCommand = add
+                ? MinecraftCommandBuilder.WhitelistAdd(playerName)
+                : MinecraftCommandBuilder.WhitelistRemove(playerName);
+            if (!await runtime.SendServerCommandAsync(serverCommand, ct).ConfigureAwait(false))
+            {
+                await SayToChannel(sender + ", the whitelist command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
+                return;
+            }
+
+            string result = add ? "added " + playerName + " to" : "removed " + playerName + " from";
+            await SayConfirmationToChannel(sender + ", " + result + " the whitelist.", ct).ConfigureAwait(false);
         }
         async Task HandleEffect(string[]? args, string sender, CancellationToken ct)
         {
@@ -139,10 +233,10 @@ public static partial class CommandList
             {
                 await runtime.SendTellrawAsync(target.Selector, sender + " gave you " + effectPretty + ".", "yellow", true, ct).ConfigureAwait(false);
                 if (count == 1)
-                    await SayToChannel(sender + ", you gave " + effectPretty + " to " + channelTargetName + ".", ct).ConfigureAwait(false);
+                    await SayConfirmationToChannel(sender + ", you gave " + effectPretty + " to " + channelTargetName + ".", ct).ConfigureAwait(false);
             }
             if (count > 1)
-                await SayToChannel(sender + ", you gave " + count.ToString(CultureInfo.InvariantCulture) + " effects to " + channelTargetName + ".", ct).ConfigureAwait(false);
+                await SayConfirmationToChannel(sender + ", you gave " + count.ToString(CultureInfo.InvariantCulture) + " effects to " + channelTargetName + ".", ct).ConfigureAwait(false);
         }
     }
 }

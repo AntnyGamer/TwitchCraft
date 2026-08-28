@@ -59,6 +59,33 @@ public sealed class MinecraftCommandBuilderTests
     }
 
     [Fact]
+    public void KickPlayer_ReplacesControlCharactersInReason()
+    {
+        string result = MinecraftCommandBuilder.KickPlayer("Player", " rude\r\nreason\t ");
+
+        Assert.Equal("kick Player rude  reason", result);
+    }
+
+    [Fact]
+    public void NewGameplayAndWhitelistCommands_UseModernJavaSyntax()
+    {
+        Assert.Equal("execute as @a at @s run tp @s ~ ~ ~ ~180 ~", MinecraftCommandBuilder.TurnAround("@a"));
+        Assert.Equal("whitelist add Player", MinecraftCommandBuilder.WhitelistAdd("Player"));
+        Assert.Equal("whitelist remove Player", MinecraftCommandBuilder.WhitelistRemove("Player"));
+    }
+
+    [Fact]
+    public void SetScale_UsesTheAttributeNameForTheSelectedMinecraftVersion()
+    {
+        Assert.Equal(
+            "execute as @a run attribute @s minecraft:generic.scale base set 0.5",
+            MinecraftCommandBuilder.SetScale("@a", 0.5, usesModernAttributeIds: false));
+        Assert.Equal(
+            "execute as @s run attribute @s minecraft:scale base set 2",
+            MinecraftCommandBuilder.SetScale("@s", 2.0, usesModernAttributeIds: true));
+    }
+
+    [Fact]
     public void Loot_FormatsOffsetsWithInvariantCompactDecimals()
     {
         string result = MinecraftCommandBuilder.Loot("@s", "chests/simple_dungeon", 1.25, -2.5);

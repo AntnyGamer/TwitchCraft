@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -11,6 +12,108 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
+    private async Task<BotConfig> EnsureTwitchAuthorizationReadyAsync(
+        BotConfig config,
+        CancellationToken cancellationToken)
+    {
+        string token = NormalizeTwitchToken(config.Twitch.BotToken);
+        if (token.Length == 0)
+            return config;
+
+        try
+        {
+            string login = await GetValidatedBotNameAsync(token, cancellationToken).ConfigureAwait(false);
+            if (login.Length > 0)
+                config.Twitch.BotName = login;
+            return config;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            TwitchOAuthResult refreshed = await TwitchOAuthAuthorizer.RefreshAsync(
+                config.Twitch.ClientID,
+                config.Twitch.RefreshToken,
+                cancellationToken).ConfigureAwait(false);
+            if (!refreshed.IsSuccess)
+            {
+                throw new InvalidOperationException(
+                    "Twitch authorization expired and could not be renewed. Open Settings → Dangerous → Authorize Twitch. " +
+                    refreshed.Error,
+                    ex);
+            }
+
+            config.Twitch.BotToken = refreshed.Token;
+            config.Twitch.RefreshToken = refreshed.RefreshToken;
+            config.Twitch.BotName = refreshed.Login;
+            PersistRenewedTwitchAuthorization(config.Twitch.ClientID, refreshed);
+            return config;
+        }
+    }
+
+    private async Task<bool> TryRefreshTwitchCredentialsAsync(
+        string rejectedToken,
+        CancellationToken cancellationToken)
+    {
+        string normalizedRejectedToken = NormalizeTwitchToken(rejectedToken);
+        await _twitchTokenRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            TwitchConfig? twitch = _activeConfig?.Twitch;
+            if (twitch == null)
+                return false;
+
+            string currentToken = NormalizeTwitchToken(twitch.BotToken);
+            if (currentToken.Length > 0 &&
+                !string.Equals(currentToken, normalizedRejectedToken, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            TwitchOAuthResult refreshed = await TwitchOAuthAuthorizer.RefreshAsync(
+                twitch.ClientID,
+                twitch.RefreshToken,
+                cancellationToken).ConfigureAwait(false);
+            if (!refreshed.IsSuccess)
+            {
+                _shellWindow?.AddChatLogLine("Twitch authorization could not be renewed automatically: " + refreshed.Error);
+                return false;
+            }
+
+            PersistRenewedTwitchAuthorization(twitch.ClientID, refreshed);
+            _shellWindow?.AddChatLogLine("Twitch authorization renewed automatically.");
+            return true;
+        }
+        finally
+        {
+            _twitchTokenRefreshGate.Release();
+        }
+    }
+
+    private void PersistRenewedTwitchAuthorization(string clientId, TwitchOAuthResult refreshed)
+    {
+        lock (_configPersistenceGate)
+        {
+            ConfigurationStore.Update(config =>
+            {
+                if (!string.Equals(config.Twitch.ClientID, clientId, StringComparison.Ordinal))
+                    return;
+
+                config.Twitch.BotToken = refreshed.Token;
+                config.Twitch.RefreshToken = refreshed.RefreshToken;
+                config.Twitch.BotName = refreshed.Login;
+            });
+
+            if (_activeConfig != null &&
+                string.Equals(_activeConfig.Twitch.ClientID, clientId, StringComparison.Ordinal))
+            {
+                BotConfig active = CloneConfig(_activeConfig);
+                active.Twitch.BotToken = refreshed.Token;
+                active.Twitch.RefreshToken = refreshed.RefreshToken;
+                active.Twitch.BotName = refreshed.Login;
+                SetActiveConfig(active);
+            }
+        }
+    }
+
     private async Task<string> ResolveAndPersistBotNameAsync(string token, CancellationToken cancellationToken)
     {
         string normalizedToken = NormalizeTwitchToken(token);
@@ -53,11 +156,9 @@ public sealed partial class BotMainHandler
             {
                 _botIdentityResolveGate.Release();
             }
-        }
 
-        if (resolvedBotName.Length == 0)
-        {
-            return resolvedBotName;
+            if (resolvedBotName.Length == 0)
+                return string.Empty;
         }
 
         bool configAlreadyCurrent = _activeConfig?.Twitch != null

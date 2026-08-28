@@ -45,22 +45,14 @@ internal static partial class ErrorHandling
         ShowWarning(source, "Settings", "Failed to load settings.\n\n" + FormatExceptionMessage(ex));
     }
 
-    public static void ShowGetBotTokenNotFound(object? source, string expectedPath)
-    {
-        ShowWarning(
-            source,
-            "File Not Found",
-            $"Could not find GetBotToken.exe in the same folder as TwitchCraft.exe. Expected path:\n\n{expectedPath}");
-    }
-
-    public static void ShowOpenGetBotTokenFailed(object? source, Exception ex)
-    {
-        ShowError(source, "Error", "Failed to open GetBotToken.exe\n\n" + FormatExceptionMessage(ex));
-    }
-
     public static bool ConfirmResetDefaults(object? source)
     {
         return ShowQuestion(source, "Reset Defaults", "Reset all settings back to their default values?") == MessageBoxResult.Yes;
+    }
+
+    public static bool ConfirmResetCategory(object? source, string categoryName)
+    {
+        return ShowQuestion(source, "Reset Category", $"Reset {categoryName} settings back to their default values?") == MessageBoxResult.Yes;
     }
 
     public static bool ConfirmResetStatistics(object? source)
@@ -95,12 +87,26 @@ internal static partial class ErrorHandling
             "Min RAM cannot be higher than Max RAM. The current RAM values will not save unless you fix them.");
     }
 
-    public static void ShowBotTokenHelp(object? source)
+    public static void ShowTwitchClientIdRequired(object? source)
     {
-        ShowInfo(
-            source,
-            "Bot Token Help",
-            "You can get your bot token through GetBotToken.exe (in the same folder as this .exe).");
+        ShowWarning(source, "Twitch Authorization", "Enter your Twitch Client ID before authorizing TwitchCraft.");
+    }
+
+    public static void ShowTwitchAuthorizationFailed(object? source, string? details)
+    {
+        string message = "Twitch authorization did not complete.";
+        if (!string.IsNullOrWhiteSpace(details))
+            message += "\n\n" + details.Trim();
+
+        ShowWarning(source, "Twitch Authorization", message);
+    }
+
+    public static void ShowTwitchAuthorizationSucceeded(object? source, string login, bool savedToConfig)
+    {
+        string action = savedToConfig
+            ? "The renewable authorization was saved automatically. It will be used the next time the bot starts."
+            : "The renewable authorization and bot name were filled in automatically. You can continue setup.";
+        ShowInfo(source, "Twitch Authorization", "Authorized Twitch account: " + login + "\n\n" + action);
     }
 
     public static void ShowLocalManifestNotFound(object? source, string path)
@@ -125,7 +131,7 @@ internal static partial class ErrorHandling
         ShowWarning(
             source,
             "Setup",
-            "Minecraft version, server address, bot token, Twitch username, and client ID are all required.");
+            "Complete every setup field and authorize Twitch with the current Client ID before starting.");
     }
 
     public static void ShowInvalidBindIP(object? source, string bindIP)

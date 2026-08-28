@@ -26,7 +26,7 @@ public sealed partial class BotMainHandler
 
         try
         {
-            using CancellationTokenSource timeoutCts = new(ManualCommandTimeout);
+            using CancellationTokenSource timeoutCts = new(RemoteControlEnabled ? RCONTimeout : ManualCommandTimeout);
             bool sent = await SendServerCommandAsync(
                 command,
                 timeoutCts.Token,
@@ -164,7 +164,7 @@ public sealed partial class BotMainHandler
         if (applyTimeout)
         {
             timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(ManualCommandTimeout);
+            timeoutCts.CancelAfter(RCONTimeout);
             commandToken = timeoutCts.Token;
         }
 
@@ -200,7 +200,7 @@ public sealed partial class BotMainHandler
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(GetRemoteCommandTimeout(commands.Count));
+            timeoutCts.CancelAfter(GetConfiguredRemoteCommandTimeout(commands.Count));
             return await MinecraftRCONClient.ExecuteCommandsAsync(
                 GetRemoteControllerHost(config),
                 config.Server.RCON.Port,
@@ -238,7 +238,7 @@ public sealed partial class BotMainHandler
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(ManualCommandTimeout);
+            timeoutCts.CancelAfter(RCONTimeout);
             return await MinecraftRCONClient.ExecuteQueryAsync(
                 GetRemoteControllerHost(config),
                 config.Server.RCON.Port,
@@ -262,7 +262,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private async Task<List<string?>?> ExecuteRemoteServerQueriesAsync(IReadOnlyList<string> commands, CancellationToken cancellationToken)
+    private async Task<List<string?>?> ExecuteRemoteServerQueriesAsync(List<string> commands, CancellationToken cancellationToken)
     {
         BotConfig? config = _activeConfig;
         if (config?.Settings.RemoteControlEnabled != true || commands.Count == 0)
@@ -283,7 +283,7 @@ public sealed partial class BotMainHandler
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(GetRemoteCommandTimeout(commandTexts.Count));
+            timeoutCts.CancelAfter(GetConfiguredRemoteCommandTimeout(commandTexts.Count));
             return await MinecraftRCONClient.ExecuteQueriesAsync(
                 GetRemoteControllerHost(config),
                 config.Server.RCON.Port,
@@ -307,13 +307,19 @@ public sealed partial class BotMainHandler
         }
     }
 
+    private TimeSpan GetConfiguredRemoteCommandTimeout(int commandCount)
+        => CalculateRemoteCommandTimeout(commandCount, RCONTimeout);
+
     internal static TimeSpan GetRemoteCommandTimeout(int commandCount)
+        => CalculateRemoteCommandTimeout(commandCount, ManualCommandTimeout);
+
+    internal static TimeSpan CalculateRemoteCommandTimeout(int commandCount, TimeSpan baseTimeout)
     {
         if (commandCount <= 1)
-            return ManualCommandTimeout;
+            return baseTimeout;
 
-        double milliseconds = ManualCommandTimeout.TotalMilliseconds + Math.Min(commandCount - 1, 50) * 200.0;
-        return TimeSpan.FromMilliseconds(Math.Min(milliseconds, 15000.0));
+        double milliseconds = baseTimeout.TotalMilliseconds + Math.Min(commandCount - 1, 50) * 200.0;
+        return TimeSpan.FromMilliseconds(Math.Min(milliseconds, baseTimeout.TotalMilliseconds + 10000.0));
     }
 
     private static bool TryGetSingleServerCommand(IEnumerable<string> commands, out string command)

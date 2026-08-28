@@ -8,6 +8,21 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
+    internal Task<bool> ApplyTimedPlayerScaleAsync(
+        IReadOnlyList<string> playerNames,
+        double scale,
+        TimeSpan duration,
+        Func<IReadOnlyList<string>, CancellationToken, Task<bool>> dispatchInitialCommands,
+        CancellationToken cancellationToken)
+        => _timedPlayerScaleController.ApplyAsync(
+            playerNames,
+            scale,
+            UsesModernAttributeIds,
+            UsesInlineTextComponentSyntax,
+            duration,
+            dispatchInitialCommands,
+            cancellationToken);
+
     public Task SendTellrawAsync(string selector, string message, string color, bool bold, CancellationToken cancellationToken)
         => SendServerCommandAsync(
             MinecraftCommandBuilder.Tellraw(string.IsNullOrWhiteSpace(selector) ? "@a" : selector, message, color, bold, UsesInlineTextComponentSyntax),
@@ -78,60 +93,36 @@ public sealed partial class BotMainHandler
 
     public string CurrentMinecraftVersion => _currentMinecraftVersion;
 
-    private bool TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo versionInfo)
+    private MinecraftVersionSupport.MinecraftVersionInfo GetCurrentMinecraftVersionInfo()
     {
         string version = CurrentMinecraftVersion;
         if (!string.Equals(_cachedMinecraftFeatureVersion, version, StringComparison.OrdinalIgnoreCase))
         {
-            _cachedMinecraftFeatureInfo = MinecraftVersionSupport.TryGetVersion(version, out MinecraftVersionSupport.MinecraftVersionInfo resolved)
-                ? resolved
-                : null;
+            _cachedMinecraftFeatureInfo = MinecraftVersionSupport.GetVersion(version);
             _cachedMinecraftFeatureVersion = version;
         }
 
-        if (_cachedMinecraftFeatureInfo != null)
-        {
-            versionInfo = _cachedMinecraftFeatureInfo;
-            return true;
-        }
-
-        versionInfo = null!;
-        return false;
+        return _cachedMinecraftFeatureInfo
+            ?? throw new InvalidOperationException("Minecraft version information is unavailable.");
     }
 
-    public bool UsesItemComponentsSyntax
-    {
-        get
-        {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.UsesItemComponents;
-        }
-    }
+    public bool UsesItemComponentsSyntax => GetCurrentMinecraftVersionInfo().UsesItemComponents;
 
-    public bool UsesInlineTextComponentSyntax
-    {
-        get
-        {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.UsesInlineTextComponents;
-        }
-    }
+    public bool UsesInlineTextComponentSyntax => GetCurrentMinecraftVersionInfo().UsesInlineTextComponents;
 
-    public bool UsesModernEntityAttributeNbt
-    {
-        get
-        {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.DataPackFormatMajor >= 48;
-        }
-    }
+    public bool UsesModernEntityAttributeNbt => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 48;
+
+    public bool UsesModernAttributeIds => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 57;
+
+    public bool SupportsMaceEnchantments => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 48;
+
+    public bool UsesFlattenedEnchantmentsComponent => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 71;
 
     public bool UsesNamespacedGameRules
     {
         get
         {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.UsesNamespacedGameRules;
+            return GetCurrentMinecraftVersionInfo().UsesNamespacedGameRules;
         }
     }
 

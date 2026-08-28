@@ -41,24 +41,17 @@ External tutorials and short links later in this guide are supplemental mirrors.
 
 * Windows 10/11 (64-bit)
 * Install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
-* Use Minecraft Java Edition version 1.20.0–1.21.11 or 26.1–26.2.0
+* Use Minecraft Java Edition version 1.20.5–1.21.11 or 26.1–26.2.0
 
 ## 2. Bot Account Setup
 
 * Register an application for the bot on the Twitch Developer Console: https://dev.twitch.tv/console
 * Do not use your main Twitch account for the bot if possible
 * Make sure 2FA is enabled, since it is required to register an application
-* Set the OAuth Redirect URL to: `http://localhost:3000/`
+* Set the OAuth Redirect URL to `http://localhost:3000` (recommended). Another valid localhost URL is also fine; TwitchCraft uses Twitch's device authorization flow and does not depend on the exact localhost address
 * Add the bot as a moderator in your Twitch chat by typing `/mod` followed by your bot's name
 
 ## 3. Java / JDK Setup
-
-For Minecraft versions **1.20.0–1.20.4**:
-
-* You will need Java SE 17 (JDK 17)
-* Download: https://www.oracle.com/java/technologies/downloads/#java17-windows
-* Use the Windows x64 Installer version
-* Any JDK 17.x version should work
 
 For Minecraft versions **1.20.5–1.21.11**:
 
@@ -74,13 +67,15 @@ For Minecraft versions **26.1–26.2.0**:
 * Use the Windows x64 Installer version
 * Any JDK 25.x version should work
 
-## 4. Getting A Bot Token
+## 4. Authorizing Twitch
 
-1. Open `GetBotToken.exe`
-2. Enter your bot's Client ID
+1. Open `TwitchCraft.exe`
+2. Enter your bot application's Client ID on the Setup screen
    * This can be found at: https://dev.twitch.tv/console
-3. Enter the Redirect URL: `http://localhost:3000/`
-4. Get a new Twitch token
+3. Click **Authorize Twitch** above **Start**
+4. Approve the displayed device authorization in your browser; TwitchCraft fills in the bot account automatically and keeps the hidden authorization renewable
+
+No bot-token textbox, redirect URL, client secret, or separate token program is required. Existing users can replace an old authorization from **Settings → Dangerous → Authorize Twitch** without deleting their configuration.
 
 ## 5. Starting TwitchCraft
 
@@ -91,11 +86,10 @@ For Minecraft versions **26.1–26.2.0**:
    * Minecraft version
    * Server Bind IP (optional, advanced users only)
    * Twitch Client ID
-   * Twitch bot token
    * Twitch channel / streamer name
-   * Twitch bot name
+   * Authorized Twitch bot account (filled automatically)
    * Minecraft username
-5. Make sure all values are correct
+5. Select **Authorize Twitch**. The Setup **Start** button unlocks only after every required setup value is valid and authorization completes
 6. If you want to use an existing world, import it before starting
 7. Click **Start**
 
@@ -247,6 +241,8 @@ While TwitchCraft is active, you can use these Twitch chat commands:
 **Token earning:**
 
 * All viewers who have your stream open in a browser or the Twitch app earn 1 token every 30–60 seconds
+* A new follower automatically receives 100 tokens once per Twitch account
+* Unfollowing and following again does not grant another follow reward
 
 ## 11. Statistics
 

@@ -140,6 +140,11 @@ public sealed partial class BotMainHandler
         if (process == null)
             return;
 
+        MinecraftStderrFilter filter = new();
+        Exception? readerFailure = null;
+
+        void ShowStderrLine(string line) => _shellWindow?.AddServerLogLine("[stderr] " + line);
+
         try
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -148,7 +153,7 @@ public sealed partial class BotMainHandler
                 if (line == null)
                     break;
 
-                _shellWindow?.AddServerLogLine("[stderr] " + line);
+                filter.ProcessLine(line, ShowStderrLine);
             }
         }
         catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
@@ -156,8 +161,12 @@ public sealed partial class BotMainHandler
         }
         catch (Exception ex)
         {
-            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLogMessage("Server error reader failed", ex));
+            readerFailure = ex;
         }
+
+        filter.Flush(ShowStderrLine);
+        if (readerFailure != null)
+            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLogMessage("Server error reader failed", readerFailure));
     }
 
     private async Task RunPlayerRosterLoopAsync(CancellationToken cancellationToken)

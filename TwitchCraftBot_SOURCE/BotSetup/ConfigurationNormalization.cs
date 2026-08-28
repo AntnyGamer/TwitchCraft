@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 
@@ -154,9 +155,13 @@ public sealed partial class ConfigurationStore
 
         if (config.Server.MemoryMinGB <= 0)
             config.Server.MemoryMinGB = DefaultMemoryGB;
+        else if (config.Server.MemoryMinGB > 256)
+            config.Server.MemoryMinGB = 256;
 
         if (config.Server.MemoryMaxGB <= 0)
             config.Server.MemoryMaxGB = DefaultMemoryGB;
+        else if (config.Server.MemoryMaxGB > 256)
+            config.Server.MemoryMaxGB = 256;
 
         if (config.Server.MemoryMinGB > config.Server.MemoryMaxGB)
             config.Server.MemoryMinGB = config.Server.MemoryMaxGB;
@@ -176,12 +181,59 @@ public sealed partial class ConfigurationStore
             config.Settings.GlobalGameCommandCooldownSeconds = DefaultGlobalGameCommandCooldownSeconds;
         }
 
+        if (config.Settings.FollowRewardAmount < 1 || config.Settings.FollowRewardAmount > 1_000_000)
+            config.Settings.FollowRewardAmount = DefaultFollowRewardAmount;
+
+        if (!double.IsFinite(config.Settings.CommandCostMultiplier) ||
+            config.Settings.CommandCostMultiplier < 0.0 ||
+            config.Settings.CommandCostMultiplier > 5.0)
+        {
+            config.Settings.CommandCostMultiplier = DefaultCommandCostMultiplier;
+        }
+
+        config.Settings.BotResponseVerbosity = NormalizeBotResponseVerbosity(config.Settings.BotResponseVerbosity);
+
+        config.Settings.CommandPrefix = NormalizeCommandPrefix(config.Settings.CommandPrefix, "!");
+        config.Settings.SecondaryCommandPrefix = NormalizeCommandPrefix(config.Settings.SecondaryCommandPrefix, string.Empty);
+        if (string.Equals(config.Settings.CommandPrefix, config.Settings.SecondaryCommandPrefix, StringComparison.Ordinal))
+            config.Settings.SecondaryCommandPrefix = string.Empty;
+
+        if (config.Settings.PassiveTokensPerPayout < 1 || config.Settings.PassiveTokensPerPayout > 1_000_000)
+            config.Settings.PassiveTokensPerPayout = DefaultPassiveTokensPerPayout;
+        NormalizePassivePayoutRange(config.Settings);
+        if (config.Settings.MaximumTokenBalance < 0)
+            config.Settings.MaximumTokenBalance = 0;
+        if (config.Settings.ChannelCommandLimitPerMinute < 0 || config.Settings.ChannelCommandLimitPerMinute > 1000)
+            config.Settings.ChannelCommandLimitPerMinute = 0;
+        if (config.Settings.ViewerCommandLimitPerMinute < 0 || config.Settings.ViewerCommandLimitPerMinute > 1000)
+            config.Settings.ViewerCommandLimitPerMinute = 0;
+        config.Settings.PassiveRecentChatWindowMinutes = Math.Clamp(config.Settings.PassiveRecentChatWindowMinutes, 1, 120);
+        config.Settings.AutomaticBackupIntervalHours = NormalizeChoice(config.Settings.AutomaticBackupIntervalHours, 24, 1, 6, 12, 24, 48, 168);
+        config.Settings.AutomaticBackupRetentionCount = NormalizeChoice(config.Settings.AutomaticBackupRetentionCount, StartingProfile.DefaultAutomaticBackupRetentionCount, 1, 3, 5, 10, 20);
+        config.Settings.MaxVisibleTwitchLogLines = NormalizeRange(config.Settings.MaxVisibleTwitchLogLines, 250, 50, 5000);
+        config.Settings.MaxVisibleMinecraftLogLines = NormalizeRange(config.Settings.MaxVisibleMinecraftLogLines, 250, 50, 5000);
+        config.Settings.ViewerRosterRefreshIntervalSeconds = NormalizeChoice(config.Settings.ViewerRosterRefreshIntervalSeconds, 30, 15, 30, 60, 120, 300);
+        config.Settings.MinecraftRelayMessagesPerSecond = NormalizeRange(config.Settings.MinecraftRelayMessagesPerSecond, 0, 0, 100);
+        config.Settings.MaxGameplayCommandQueue = NormalizeRange(config.Settings.MaxGameplayCommandQueue, 75, 10, 1000);
+        config.Settings.RCONTimeoutSeconds = NormalizeRange(config.Settings.RCONTimeoutSeconds, 5, 1, 60);
+        config.Settings.GracefulShutdownTimeoutSeconds = NormalizeChoice(config.Settings.GracefulShutdownTimeoutSeconds, 5, 3, 5, 10, 15, 30, 60);
+        config.Settings.SQLiteOptimizeIntervalHours = NormalizeChoice(config.Settings.SQLiteOptimizeIntervalHours, 0, 0, 1, 6, 12, 24, 168);
+        config.Settings.ViewDistance = NormalizeRange(config.Settings.ViewDistance, 12, 2, 32);
+        config.Settings.SimulationDistance = NormalizeRange(config.Settings.SimulationDistance, 10, 2, 32);
+        config.Settings.EntityBroadcastRangePercentage = NormalizeRange(config.Settings.EntityBroadcastRangePercentage, 100, 10, 1000);
+        config.Settings.NetworkCompressionThreshold = NormalizeRange(config.Settings.NetworkCompressionThreshold, 256, -1, 4096);
+        config.Settings.EmptyServerShutdownDelayMinutes = NormalizeChoice(config.Settings.EmptyServerShutdownDelayMinutes, 0, 0, 5, 10, 15, 30, 60, 120);
+        NormalizeCommandCustomizations(config.Settings);
+        config.Settings.MinecraftRelayTextColor = NormalizeMinecraftChatColor(config.Settings.MinecraftRelayTextColor);
+
         config.Settings.Difficulty = NormalizeDifficulty(config.Settings.Difficulty);
 
         config.Server.Java.ExecutablePath = CleanText(config.Server.Java.ExecutablePath);
         config.Server.Java.HomeDirectory = CleanText(config.Server.Java.HomeDirectory);
         config.Server.RCON.Password = NormalizeRconPassword(config.Server.RCON.Password);
         config.Server.MinecraftVersion = CleanText(config.Server.MinecraftVersion);
+        if (MinecraftVersionSupport.TryGetVersion(config.Server.MinecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo normalizedVersion))
+            config.Server.MinecraftVersion = normalizedVersion.ID;
         config.Server.ServerDirectory = CleanText(config.Server.ServerDirectory);
         config.Server.PreviousBindIP = NormalizeBindIP(config.Server.PreviousBindIP);
         if (config.Server.PreviousBindIP.Length > 0 && !IsValidBindIP(config.Server.PreviousBindIP))
@@ -190,6 +242,7 @@ public sealed partial class ConfigurationStore
         config.Twitch.StreamerName = CleanText(config.Twitch.StreamerName);
         config.Twitch.BotName = CleanText(config.Twitch.BotName);
         config.Twitch.BotToken = TwitchCraftBot_V1.TwitchTokenHelper.NormalizeAccessToken(config.Twitch.BotToken);
+        config.Twitch.RefreshToken = CleanText(config.Twitch.RefreshToken);
         config.Twitch.ClientID = CleanText(config.Twitch.ClientID);
         config.Identity.StreamerMinecraftName = CleanText(config.Identity.StreamerMinecraftName);
     }
@@ -234,7 +287,108 @@ public sealed partial class ConfigurationStore
             : "Medium";
     }
 
+    internal static string NormalizeBotResponseVerbosity(string? verbosity)
+    {
+        string value = (verbosity ?? string.Empty).Trim();
+        return value.Equals(BotResponseVerbositySettings.Reduced, StringComparison.OrdinalIgnoreCase)
+            ? BotResponseVerbositySettings.Reduced
+            : value.Equals(BotResponseVerbositySettings.EssentialOnly, StringComparison.OrdinalIgnoreCase)
+                ? BotResponseVerbositySettings.EssentialOnly
+                : BotResponseVerbositySettings.Normal;
+    }
+
+    internal static string NormalizeCommandPrefix(string? prefix, string fallback)
+    {
+        string value = (prefix ?? string.Empty).Trim();
+        if (value.Length == 0)
+            return fallback;
+        if (value.Length > 2)
+            return fallback;
+
+        for (int i = 0; i < value.Length; i++)
+            if (char.IsWhiteSpace(value[i]) || char.IsControl(value[i]))
+                return fallback;
+
+        return value;
+    }
+
+    internal static string NormalizeMinecraftChatColor(string? color)
+    {
+        string value = (color ?? string.Empty).Trim().ToLowerInvariant();
+        return value is "black" or "dark_blue" or "dark_green" or "dark_aqua" or "dark_red" or
+            "dark_purple" or "gold" or "gray" or "dark_gray" or "blue" or "green" or "aqua" or
+            "red" or "light_purple" or "yellow" or "white"
+            ? value
+            : "white";
+    }
+
     private static string CleanText(string? value) => (value ?? string.Empty).Trim();
+
+    private static int NormalizeRange(int value, int fallback, int minimum, int maximum)
+        => value < minimum || value > maximum ? fallback : value;
+
+    private static int NormalizeChoice(
+        int value,
+        int fallback,
+        int choice1,
+        int choice2,
+        int choice3,
+        int choice4,
+        int choice5,
+        int? choice6 = null,
+        int? choice7 = null)
+        => value == choice1 || value == choice2 || value == choice3 || value == choice4 || value == choice5 ||
+           value == choice6 || value == choice7
+            ? value
+            : fallback;
+
+    private static void NormalizeCommandCustomizations(StartingProfile settings)
+    {
+        Dictionary<string, CommandCustomization> normalized = new(
+            settings.CommandCustomizations?.Count ?? 0,
+            StringComparer.OrdinalIgnoreCase);
+        if (settings.CommandCustomizations != null)
+        {
+            foreach ((string rawName, CommandCustomization? value) in settings.CommandCustomizations)
+            {
+                string name = (rawName ?? string.Empty).Trim().ToLowerInvariant();
+                if (name.Length is < 1 or > 32 || value == null || !IsSimpleCommandName(name))
+                    continue;
+
+                int? cooldown = value.CooldownSeconds;
+                if (cooldown is < 0 or > 86400)
+                    cooldown = null;
+                if (!value.Enabled || cooldown.HasValue)
+                    normalized[name] = new CommandCustomization { Enabled = value.Enabled, CooldownSeconds = cooldown };
+            }
+        }
+
+        settings.CommandCustomizations = normalized;
+    }
+
+    private static void NormalizePassivePayoutRange(StartingProfile settings)
+    {
+        const int DefaultMinimum = 30;
+        const int DefaultMaximum = 60;
+        const int MinimumAllowed = 10;
+        const int MaximumAllowed = 15 * 60;
+
+        if (settings.PassiveTokenPayoutMinimumSeconds is < MinimumAllowed or > MaximumAllowed)
+            settings.PassiveTokenPayoutMinimumSeconds = DefaultMinimum;
+        if (settings.PassiveTokenPayoutMaximumSeconds is < MinimumAllowed or > MaximumAllowed)
+            settings.PassiveTokenPayoutMaximumSeconds = DefaultMaximum;
+        if (settings.PassiveTokenPayoutMinimumSeconds > settings.PassiveTokenPayoutMaximumSeconds)
+            (settings.PassiveTokenPayoutMinimumSeconds, settings.PassiveTokenPayoutMaximumSeconds) =
+                (settings.PassiveTokenPayoutMaximumSeconds, settings.PassiveTokenPayoutMinimumSeconds);
+    }
+
+    private static bool IsSimpleCommandName(string value)
+    {
+        foreach (char c in value)
+            if (!char.IsAsciiLetterOrDigit(c) && c != '_')
+                return false;
+        return true;
+    }
 
     public static string NormalizeRconPassword(string? value) => CleanText(value);
 

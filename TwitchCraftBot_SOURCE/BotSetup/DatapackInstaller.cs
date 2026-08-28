@@ -10,8 +10,6 @@ internal static class DatapackInstaller
     private const string DatapackName = "locateplayers";
     private const string DatapackDescription = "Locate players command for TwitchCraft";
     private const string DatapackWarningContext = "Locateplayers datapack installation failed; TwitchCraft will continue without it";
-    private const int MinLegacyPackFormat = 15;
-    private const int MaxLegacyPackFormat = 61;
 
     private const string LegacyRunTellraw = "tellraw @s {\"text\":\"Players online:\",\"color\":\"yellow\",\"bold\":true}";
     private const string InlineRunTellraw = "tellraw @s {text:'Players online:',color:'yellow',bold:true}";
@@ -25,7 +23,7 @@ internal static class DatapackInstaller
             SyncLocatePlayersDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, ServerPropertyEditor.GetLevelName(config));
     }
 
-    public static bool SyncLocatePlayersDatapack(string serverDirectory, string? minecraftVersion = null, string? levelName = null)
+    public static bool SyncLocatePlayersDatapack(string serverDirectory, string minecraftVersion, string? levelName = null)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory))
             return true;
@@ -38,7 +36,7 @@ internal static class DatapackInstaller
     internal static bool TrySyncLocatePlayersDatapack(
         string sourceDirectory,
         string destinationDirectory,
-        string? minecraftVersion,
+        string minecraftVersion,
         Action<string, Exception> reportWarning)
     {
         ArgumentNullException.ThrowIfNull(reportWarning);
@@ -66,7 +64,7 @@ internal static class DatapackInstaller
         string functionSource,
         string tagSource,
         string destinationDirectory,
-        string? minecraftVersion)
+        string minecraftVersion)
     {
         Directory.CreateDirectory(destinationDirectory);
         File.WriteAllText(Path.Combine(destinationDirectory, "pack.mcmeta"), BuildPackMetadataJson(minecraftVersion), Utf8NoBom);
@@ -79,23 +77,13 @@ internal static class DatapackInstaller
         ResetDirectory(Path.Combine(minecraftTagsDirectory, "functions"));
         ResetDirectory(Path.Combine(minecraftTagsDirectory, "function"));
 
-        bool versionKnown = MinecraftVersionSupport.TryGetVersion(minecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo version);
-        bool installLegacyLayout = !versionKnown || !version.UsesSingularFunctionDirectories;
-        bool installNewLayout = !versionKnown || version.UsesSingularFunctionDirectories;
+        MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(minecraftVersion);
+        string functionDirectoryName = version.UsesSingularFunctionDirectories ? "function" : "functions";
 
-        if (installLegacyLayout)
-        {
-            TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(functionSource, Path.Combine(namespaceDirectory, "functions"), skipReparsePoints: true);
-            TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(tagSource, Path.Combine(minecraftTagsDirectory, "functions"), skipReparsePoints: true);
-        }
+        TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(functionSource, Path.Combine(namespaceDirectory, functionDirectoryName), skipReparsePoints: true);
+        TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(tagSource, Path.Combine(minecraftTagsDirectory, functionDirectoryName), skipReparsePoints: true);
 
-        if (installNewLayout)
-        {
-            TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(functionSource, Path.Combine(namespaceDirectory, "function"), skipReparsePoints: true);
-            TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(tagSource, Path.Combine(minecraftTagsDirectory, "function"), skipReparsePoints: true);
-        }
-
-        if (versionKnown && version.UsesInlineTextComponents)
+        if (version.UsesInlineTextComponents)
             RewriteLocatePlayersTextCommands(destinationDirectory);
     }
 
@@ -118,25 +106,16 @@ internal static class DatapackInstaller
         }
     }
 
-    internal static string BuildPackMetadataJson(string? minecraftVersion)
+    internal static string BuildPackMetadataJson(string minecraftVersion)
     {
-        if (MinecraftVersionSupport.TryGetVersion(minecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo version))
+        MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(minecraftVersion);
+        if (version.UsesModernPackMetadata)
         {
-            if (version.UsesModernPackMetadata)
-            {
-                string exact = version.GetExactPackFormatJsonValue();
-                return "{\n"
-                     + "  \"pack\": {\n"
-                     + "    \"min_format\": " + exact + ",\n"
-                     + "    \"max_format\": " + exact + ",\n"
-                     + "    \"description\": \"" + DatapackDescription + "\"\n"
-                     + "  }\n"
-                     + "}";
-            }
-
+            string exact = version.GetExactPackFormatJsonValue();
             return "{\n"
                  + "  \"pack\": {\n"
-                 + "    \"pack_format\": " + version.DataPackFormatMajor + ",\n"
+                 + "    \"min_format\": " + exact + ",\n"
+                 + "    \"max_format\": " + exact + ",\n"
                  + "    \"description\": \"" + DatapackDescription + "\"\n"
                  + "  }\n"
                  + "}";
@@ -144,11 +123,7 @@ internal static class DatapackInstaller
 
         return "{\n"
              + "  \"pack\": {\n"
-             + "    \"pack_format\": " + MinLegacyPackFormat + ",\n"
-             + "    \"supported_formats\": {\n"
-             + "      \"min_inclusive\": " + MinLegacyPackFormat + ",\n"
-             + "      \"max_inclusive\": " + MaxLegacyPackFormat + "\n"
-             + "    },\n"
+             + "    \"pack_format\": " + version.DataPackFormatMajor + ",\n"
              + "    \"description\": \"" + DatapackDescription + "\"\n"
              + "  }\n"
              + "}";

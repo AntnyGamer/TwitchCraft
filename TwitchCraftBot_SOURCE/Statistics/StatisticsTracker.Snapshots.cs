@@ -73,6 +73,8 @@ public sealed partial class BotMainHandler
         {
             StatisticsEnabled = StatisticsEnabled,
             SessionGameCommandsRun = _sessionStatistics.GameCommandsRun,
+            SessionDangerousCommandsRun = GetCommandCountByFlag(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Dangerous),
+            SessionNiceCommandsRun = GetCommandCountByFlag(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Nice),
             SessionMostUsedCommand = _cachedSessionMostUsedCommand,
             SessionTokensSpent = _sessionStatistics.TokensSpent,
             SessionEffectsGiven = _sessionStatistics.EffectsGiven,
@@ -92,6 +94,18 @@ public sealed partial class BotMainHandler
             ShortestTimeSurvived = SecondsToDuration(_totalStatistics.ShortestSurvivalSeconds),
             SessionsStarted = _totalStatistics.SessionsStarted
         };
+    }
+
+    private long GetCommandCountByFlag(Dictionary<string, long> commandUseCounts, ChatCommandStatisticFlags flag)
+    {
+        long count = 0;
+        foreach (KeyValuePair<string, long> pair in commandUseCounts)
+        {
+            if (pair.Value > 0 && (_commandRegistry.GetStatisticFlags(pair.Key) & flag) != 0)
+                count += pair.Value;
+        }
+
+        return count;
     }
 
     private void MarkStatisticsLeaderboardDirtyNoLock()

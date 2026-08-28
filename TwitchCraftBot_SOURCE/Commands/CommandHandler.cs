@@ -8,6 +8,7 @@ public static partial class CommandList
     private static readonly string[] InsultTitleColors = ["red", "gold", "yellow", "green", "aqua", "blue", "light_purple", "white"];
     private static readonly string[] EffectLevels = ["I", "II", "III", "IV", "V"];
     private static readonly TimeSpan GambleTokenCooldown = TimeSpan.FromMinutes(5);
+    private const string DefaultCommandTextColor = "yellow";
 
     public static Dictionary<string, ChatCommandHandler> BuildCommandHandlers(
         BotMainHandler runtime,
@@ -40,10 +41,15 @@ public static partial class CommandList
         internal Dictionary<string, ChatCommandHandler> Build()
         {
             AddCommand("ban", HandleBan);
-            AddTokenHandlers(runtime, handlers, SayToChannel, RequireAllowed);
+            AddTokenHandlers(runtime, handlers, SayToChannel, SaySuccessfulToChannel, SayConfirmationToChannel, RequireAllowed);
+            AddCommand("commandstats", HandleCommandStats);
+            AddCommand("followreward", HandleFollowReward);
             AddCommand("help", HandleHelp);
+            AddCommand("kick", HandleKick);
             AddCommand("playerlist", HandlePlayerList);
             AddCommand("unban", HandleUnban);
+            AddCommand("whitelistadd", HandleWhitelistAdd);
+            AddCommand("whitelistremove", HandleWhitelistRemove);
             AddSimpleTargetedCommands(
                 new("anvil", 5, target =>
                 [
@@ -76,12 +82,16 @@ public static partial class CommandList
                     "execute as " + target.Selector + " at @s if dimension minecraft:the_nether run spreadplayers ~ ~ 0 2000 under 127 false @s",
                     "execute as " + target.Selector + " at @s unless dimension minecraft:the_nether run spreadplayers ~ ~ 0 2000 false @s"
                 ], (sender, _) => sender + " teleported you to a random location.", "GOT RANDOMLY TELEPORTED!", (sender, target) => sender + ", you teleported " + TargetName(target) + " to a random location.", StatisticFlags: DangerousCommand),
+                new("turnaround", 5, target => [MinecraftCommandBuilder.TurnAround(target.Selector)], (sender, _) => sender + " turned you around.", "GOT TURNED AROUND!", (sender, target) => sender + ", you turned " + TargetName(target) + " around.", StatisticFlags: DangerousCommand),
                 new("totem", 100, target => [$"item replace entity {target.Selector} weapon.offhand with minecraft:totem_of_undying"], (sender, _) => sender + " gave you a Totem of Undying!", "GOT A TOTEM!", (sender, target) => sender + ", you gave " + TargetName(target) + " a Totem of Undying.", StatisticFlags: NiceCommand),
                 new("troll", 5, target => [$"execute as {target.Selector} at @s run playsound minecraft:entity.creeper.primed master @s ~ ~ ~ 1 1"], (_, _) => null, null, (sender, target) => sender + ", you played a creeper noise on " + TargetName(target) + ".", StatisticFlags: DangerousCommand),
                 new("water", 15, target => [$"execute at {target.Selector} run setblock ~ ~3 ~ minecraft:water"], (sender, _) => sender + " released water above you.", "GOT WATER RELEASED ON THEM!", (sender, target) => $"{sender}, you released water above {TargetName(target)}.", StatisticFlags: GameCommand),
                 new("xp", 5, target => [$"experience add {target.Selector} -1 levels"], (sender, _) => sender + " took away 1 of your XP levels.", "LOST 1 XP LEVEL!", (sender, target) => sender + ", you removed 1 XP level from " + TargetName(target) + ".", StatisticFlags: DangerousCommand));
             AddCommand("effect", HandleEffect, GameCommand);
+            AddCommand("enchant", HandleEnchant, NiceCommand);
+            AddTargetedCommand("chargedcreeper", HandleChargedCreeper, DangerousCommand, minimumTokenCost: 45);
             AddTargetedCommand("fireworks", HandleFireworks, GameCommand, minimumTokenCost: 10);
+            AddTargetedCommand("giant", (target, sender, ct) => HandleTimedScale(target, sender, "giant", 2.0, "giant-sized", "BECAME GIANT-SIZED!", ct), DangerousCommand, minimumTokenCost: 20);
             AddTargetedCommand("insult", HandleInsult, DangerousCommand, minimumTokenCost: 5);
             AddTargetedCommand("johnny", HandleJohnny, DangerousCommand, minimumTokenCost: 40);
             AddCommand("lightning", HandleLightning, DangerousCommand);
@@ -94,8 +104,9 @@ public static partial class CommandList
             AddTargetedCommand("slaughter", HandleSlaughter, DangerousCommand, minimumTokenCost: 30);
             AddTargetedCommand("swarm", HandleSwarm, DangerousCommand, minimumTokenCost: 45);
             AddTargetedCommand("switchmilk", HandleSwitchMilk, DangerousCommand, minimumTokenCost: 6);
+            AddTargetedCommand("tiny", (target, sender, ct) => HandleTimedScale(target, sender, "tiny", 0.5, "tiny", "BECAME TINY!", ct), DangerousCommand, minimumTokenCost: 20);
             AddCommand("weather", HandleWeather, DangerousCommand);
-            MinigameManager.AddMinigameHandlers(runtime, handlers, SayToChannel);
+            MinigameManager.AddMinigameHandlers(runtime, handlers, SayToChannel, SaySuccessfulToChannel);
 
             Dictionary<string, ChatCommandHandler> result = handlers;
             handlers = null!;
@@ -120,13 +131,4 @@ public static partial class CommandList
     private static string CommandTokenWord(int amount) => amount == 1 ? "token" : "tokens";
     private static string PrettyMinecraftName(string id)
         => CultureInfo.InvariantCulture.TextInfo.ToTitleCase((id ?? string.Empty).Replace('_', ' '));
-    private static string FormatMinutesSeconds(TimeSpan remaining)
-    {
-        int seconds = (int)Math.Ceiling(remaining.TotalSeconds);
-        int minutes = seconds / 60;
-        int leftover = seconds % 60;
-        return minutes > 0
-            ? minutes.ToString(CultureInfo.InvariantCulture) + "m " + leftover.ToString(CultureInfo.InvariantCulture) + "s"
-            : seconds.ToString(CultureInfo.InvariantCulture) + "s";
-    }
 }

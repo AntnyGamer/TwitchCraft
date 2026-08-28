@@ -14,7 +14,7 @@ namespace TwitchCraftBot_V1;
 public sealed partial class BotMainHandler
 {
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
-    private static readonly TimeSpan LightningCooldown = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan FiveMinuteCommandCooldown = TimeSpan.FromMinutes(5);
 
     private readonly AppShellViewModel _shellModel;
     private readonly ChatCommandRegistry _commandRegistry;
@@ -22,6 +22,7 @@ public sealed partial class BotMainHandler
     private readonly SemaphoreSlim _serverWriteGate;
     private readonly SemaphoreSlim _IRCWriteGate;
     private readonly SemaphoreSlim _botIdentityResolveGate;
+    private readonly SemaphoreSlim _twitchTokenRefreshGate;
     private const int MaxQueuedIRCCommands = 75;
     private const int MaxQueuedIRCQuickWork = 500;
 
@@ -32,6 +33,7 @@ public sealed partial class BotMainHandler
     private readonly Lock _configPersistenceGate;
     private readonly Lock _backgroundTasksGate;
     private readonly Lock _effectCacheGate;
+    private readonly TimedPlayerScaleController _timedPlayerScaleController;
 
     private TwitchCraftBot? _shellWindow;
     private Process? _javaServerProcess;
@@ -47,6 +49,7 @@ public sealed partial class BotMainHandler
     private bool _playerSidebarInitialized;
     private DateTime _lastOnlinePlayersSnapshotUtc;
     private DateTime _lastLightningUtc;
+    private readonly Dictionary<string, DateTime> _timedScaleCommandCooldowns;
     private readonly Dictionary<string, DateTime> _gambleCooldowns;
     private TcpClient? _IRCSocket;
     private StreamWriter? _IRCWriter;
@@ -60,6 +63,10 @@ public sealed partial class BotMainHandler
     private string _cachedBotName;
     private string _currentStreamerName;
     private string _currentBotName;
+    private string _currentCommandPrefix;
+    private string _currentSecondaryCommandPrefix;
+    private string _currentMinecraftRelayTextColor;
+    private string _currentBotResponseVerbosity;
     private string _ircChannelPrefix;
     private int _ircChannelMessageMaxBytes;
     private string _currentDefaultMinecraftPlayer;
@@ -96,6 +103,7 @@ public sealed partial class BotMainHandler
         _serverWriteGate = new(1, 1);
         _IRCWriteGate = new(1, 1);
         _botIdentityResolveGate = new(1, 1);
+        _twitchTokenRefreshGate = new(1, 1);
         _botIdentityCacheGate = new();
         _viewerGate = new();
         _playerGate = new();
@@ -103,12 +111,17 @@ public sealed partial class BotMainHandler
         _configPersistenceGate = new();
         _backgroundTasksGate = new();
         _effectCacheGate = new();
+        _timedPlayerScaleController = new(
+            (command, token) => SendServerCommandAsync(command, token),
+            TrackSessionBackgroundTask,
+            AddServerLogLine);
         _backgroundTasks = [];
         _viewerRewardSchedule = new(StringComparer.OrdinalIgnoreCase);
         _knownChatters = [];
         _knownPlayers = [];
         _lastSidebarPlayers = [];
         _tokenStore = new(tokenStorePath);
+        _timedScaleCommandCooldowns = new(StringComparer.OrdinalIgnoreCase);
         _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
         _IRCCommandQueue = new(MaxQueuedIRCCommands);
         _IRCQuickQueue = new(MaxQueuedIRCQuickWork);
@@ -116,6 +129,10 @@ public sealed partial class BotMainHandler
         _cachedBotName = string.Empty;
         _currentStreamerName = string.Empty;
         _currentBotName = string.Empty;
+        _currentCommandPrefix = "!";
+        _currentSecondaryCommandPrefix = string.Empty;
+        _currentMinecraftRelayTextColor = "white";
+        _currentBotResponseVerbosity = BotResponseVerbositySettings.Normal;
         _ircChannelPrefix = string.Empty;
         _ircChannelMessageMaxBytes = 0;
         _currentDefaultMinecraftPlayer = string.Empty;
@@ -196,15 +213,15 @@ public sealed partial class BotMainHandler
 
     public static Random Randomizer => Random.Shared;
 
-    public bool MultiplayerEnabled => _activeConfig != null && _activeConfig.Settings.MultiplayerEnabled;
+    public bool MultiplayerEnabled => _activeConfig?.Settings.MultiplayerEnabled == true;
 
-    public bool RemoteControlEnabled => _activeConfig != null && _activeConfig.Settings.RemoteControlEnabled;
+    public bool RemoteControlEnabled => _activeConfig?.Settings.RemoteControlEnabled == true;
 
     public bool RequireOnlineMode => _activeConfig == null || _activeConfig.Settings.RequireOnlineMode;
 
     public bool MultiTargetingEnabled => MultiplayerEnabled || RemoteControlEnabled;
 
-    public bool MinigamesEnabled => _activeConfig != null && _activeConfig.Settings.MinigamesEnabled;
+    public bool MinigamesEnabled => _activeConfig?.Settings.MinigamesEnabled == true;
 
     public int MinigameCooldown
     {
@@ -225,6 +242,12 @@ public sealed partial class BotMainHandler
         _activeConfig = config;
         _currentStreamerName = NormalizeUser(config.Twitch.StreamerName);
         _currentBotName = NormalizeUser(config.Twitch.BotName);
+        _currentCommandPrefix = ConfigurationStore.NormalizeCommandPrefix(config.Settings.CommandPrefix, "!");
+        _currentSecondaryCommandPrefix = ConfigurationStore.NormalizeCommandPrefix(config.Settings.SecondaryCommandPrefix, string.Empty);
+        if (string.Equals(_currentCommandPrefix, _currentSecondaryCommandPrefix, StringComparison.Ordinal))
+            _currentSecondaryCommandPrefix = string.Empty;
+        _currentMinecraftRelayTextColor = ConfigurationStore.NormalizeMinecraftChatColor(config.Settings.MinecraftRelayTextColor);
+        _currentBotResponseVerbosity = ConfigurationStore.NormalizeBotResponseVerbosity(config.Settings.BotResponseVerbosity);
         _ircChannelPrefix = _currentStreamerName.Length == 0 ? string.Empty : "PRIVMSG #" + _currentStreamerName + " :";
         _ircChannelMessageMaxBytes = _ircChannelPrefix.Length == 0 ? 0 : 510 - IRCUtf8NoBom.GetByteCount(_ircChannelPrefix);
         string configuredMinecraftPlayer = config.Identity.StreamerMinecraftName.Trim();
@@ -234,7 +257,7 @@ public sealed partial class BotMainHandler
         _currentDefaultMinecraftPlayerName = MinecraftNameHelper.TryNormalizePlayerName(_currentDefaultMinecraftPlayer, out string normalizedDefaultMinecraftPlayer)
             ? normalizedDefaultMinecraftPlayer
             : string.Empty;
-        _currentStreamerMinecraftName = MinecraftNameHelper.TryNormalizePlayerName(config.Identity.StreamerMinecraftName, out string normalizedMinecraftPlayer)
+        _currentStreamerMinecraftName = MinecraftNameHelper.TryNormalizePlayerName(configuredMinecraftPlayer, out string normalizedMinecraftPlayer)
             ? normalizedMinecraftPlayer
             : string.Empty;
         _currentMinecraftVersion = (config.Server.MinecraftVersion ?? string.Empty).Trim();

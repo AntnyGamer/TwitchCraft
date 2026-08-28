@@ -117,7 +117,7 @@ public partial class Start : UserControl
 
             BotConfig config = ConfigurationStore.Load();
             string minecraftVersion = string.IsNullOrWhiteSpace(config.Server.MinecraftVersion)
-                ? "(unknown version)"
+                ? "(not configured)"
                 : config.Server.MinecraftVersion.Trim();
 
             MCVersion.Text = "Minecraft " + minecraftVersion;

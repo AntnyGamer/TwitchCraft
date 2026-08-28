@@ -22,14 +22,48 @@ public sealed class ConfigurationStoreTests
             Twitch = new TwitchConfig
             {
                 StreamerName = "  Streamer  ",
-                BotToken = " OAuth: token-value "
+                BotToken = " OAuth: token-value ",
+                RefreshToken = " refresh-value "
             },
             Identity = new BotIdentityConfig { StreamerMinecraftName = "  Player  " },
             Settings = new StartingProfile
             {
                 Difficulty = "unsupported",
                 MinigameCooldown = 1,
-                GlobalGameCommandCooldownSeconds = 0
+                GlobalGameCommandCooldownSeconds = 0,
+                FollowRewardAmount = 0,
+                CommandCostMultiplier = double.NaN,
+                BotResponseVerbosity = "unsupported",
+                CommandPrefix = "   ",
+                SecondaryCommandPrefix = "!",
+                PassiveTokensPerPayout = 0,
+                PassiveTokenPayoutMinimumSeconds = 1,
+                PassiveTokenPayoutMaximumSeconds = 901,
+                MaximumTokenBalance = -1,
+                ChannelCommandLimitPerMinute = 1001,
+                ViewerCommandLimitPerMinute = -1,
+                PassiveRecentChatWindowMinutes = 500,
+                AutomaticBackupIntervalHours = 2,
+                AutomaticBackupRetentionCount = 2,
+                MaxVisibleTwitchLogLines = 1,
+                MaxVisibleMinecraftLogLines = 99999,
+                ViewerRosterRefreshIntervalSeconds = 31,
+                MaxGameplayCommandQueue = 1,
+                RCONTimeoutSeconds = 0,
+                GracefulShutdownTimeoutSeconds = 2,
+                SQLiteOptimizeIntervalHours = 2,
+                ViewDistance = 100,
+                SimulationDistance = 1,
+                EntityBroadcastRangePercentage = 0,
+                NetworkCompressionThreshold = 5000,
+                EmptyServerShutdownDelayMinutes = 7,
+                MinecraftRelayTextColor = "ultraviolet",
+                CommandCustomizations = new Dictionary<string, CommandCustomization>(StringComparer.OrdinalIgnoreCase)
+                {
+                    [" Heal "] = new() { Enabled = false, CooldownSeconds = 5 },
+                    ["bad command"] = new() { Enabled = false },
+                    ["lightning"] = new() { CooldownSeconds = 100000 }
+                }
             }
         };
 
@@ -45,10 +79,80 @@ public sealed class ConfigurationStoreTests
         Assert.Equal("secret", config.Server.RCON.Password);
         Assert.Equal("Streamer", config.Twitch.StreamerName);
         Assert.Equal("token-value", config.Twitch.BotToken);
+        Assert.Equal("refresh-value", config.Twitch.RefreshToken);
         Assert.Equal("Player", config.Identity.StreamerMinecraftName);
         Assert.Equal("Medium", config.Settings.Difficulty);
         Assert.Equal(15, config.Settings.MinigameCooldown);
         Assert.Equal(10.0, config.Settings.GlobalGameCommandCooldownSeconds);
+        Assert.Equal(100, config.Settings.FollowRewardAmount);
+        Assert.Equal(1.0, config.Settings.CommandCostMultiplier);
+        Assert.Equal("Normal", config.Settings.BotResponseVerbosity);
+        Assert.Equal("!", config.Settings.CommandPrefix);
+        Assert.Equal(string.Empty, config.Settings.SecondaryCommandPrefix);
+        Assert.Equal(1, config.Settings.PassiveTokensPerPayout);
+        Assert.Equal(30, config.Settings.PassiveTokenPayoutMinimumSeconds);
+        Assert.Equal(60, config.Settings.PassiveTokenPayoutMaximumSeconds);
+        Assert.Equal(0, config.Settings.MaximumTokenBalance);
+        Assert.Equal(0, config.Settings.ChannelCommandLimitPerMinute);
+        Assert.Equal(0, config.Settings.ViewerCommandLimitPerMinute);
+        Assert.Equal(120, config.Settings.PassiveRecentChatWindowMinutes);
+        Assert.Equal(24, config.Settings.AutomaticBackupIntervalHours);
+        Assert.Equal(StartingProfile.DefaultAutomaticBackupRetentionCount, config.Settings.AutomaticBackupRetentionCount);
+        Assert.Equal(250, config.Settings.MaxVisibleTwitchLogLines);
+        Assert.Equal(250, config.Settings.MaxVisibleMinecraftLogLines);
+        Assert.Equal(30, config.Settings.ViewerRosterRefreshIntervalSeconds);
+        Assert.Equal(75, config.Settings.MaxGameplayCommandQueue);
+        Assert.Equal(5, config.Settings.RCONTimeoutSeconds);
+        Assert.Equal(5, config.Settings.GracefulShutdownTimeoutSeconds);
+        Assert.Equal(0, config.Settings.SQLiteOptimizeIntervalHours);
+        Assert.Equal(12, config.Settings.ViewDistance);
+        Assert.Equal(10, config.Settings.SimulationDistance);
+        Assert.Equal(100, config.Settings.EntityBroadcastRangePercentage);
+        Assert.Equal(256, config.Settings.NetworkCompressionThreshold);
+        Assert.Equal(0, config.Settings.EmptyServerShutdownDelayMinutes);
+        Assert.Equal("white", config.Settings.MinecraftRelayTextColor);
+        CommandCustomization heal = Assert.Single(config.Settings.CommandCustomizations).Value;
+        Assert.False(heal.Enabled);
+        Assert.Equal(5, heal.CooldownSeconds);
+        Assert.True(config.Settings.CommandCustomizations.ContainsKey("heal"));
+    }
+
+    [Fact]
+    public void NormalizeForRuntime_OrdersAndPreservesCustomPassivePayoutRange()
+    {
+        BotConfig config = new();
+        config.Settings.PassiveTokenPayoutMinimumSeconds = 487;
+        config.Settings.PassiveTokenPayoutMaximumSeconds = 123;
+
+        ConfigurationStore.NormalizeForRuntime(config);
+
+        Assert.Equal(123, config.Settings.PassiveTokenPayoutMinimumSeconds);
+        Assert.Equal(487, config.Settings.PassiveTokenPayoutMaximumSeconds);
+    }
+
+    [Fact]
+    public void NormalizeForRuntime_PreservesValidCustomEconomyCommandAndMaintenanceValues()
+    {
+        BotConfig config = new();
+        config.Settings.PassiveTokensPerPayout = 654_321;
+        config.Settings.FollowRewardAmount = 123_456;
+        config.Settings.MaximumTokenBalance = 987_654_321;
+        config.Settings.ViewerCommandLimitPerMinute = 777;
+        config.Settings.ChannelCommandLimitPerMinute = 888;
+        config.Settings.CommandCostMultiplier = 0.0;
+        config.Settings.AutomaticBackupRetentionCount = 20;
+        config.Settings.GracefulShutdownTimeoutSeconds = 60;
+
+        ConfigurationStore.NormalizeForRuntime(config);
+
+        Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout);
+        Assert.Equal(123_456, config.Settings.FollowRewardAmount);
+        Assert.Equal(987_654_321, config.Settings.MaximumTokenBalance);
+        Assert.Equal(777, config.Settings.ViewerCommandLimitPerMinute);
+        Assert.Equal(888, config.Settings.ChannelCommandLimitPerMinute);
+        Assert.Equal(0.0, config.Settings.CommandCostMultiplier);
+        Assert.Equal(20, config.Settings.AutomaticBackupRetentionCount);
+        Assert.Equal(60, config.Settings.GracefulShutdownTimeoutSeconds);
     }
 
     [Theory]

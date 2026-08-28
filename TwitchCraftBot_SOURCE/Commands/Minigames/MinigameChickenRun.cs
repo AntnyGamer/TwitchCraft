@@ -120,7 +120,7 @@ public static partial class MinigameManager
             }
 
             if (payouts.Count > 0)
-                runtime.AdjustTokens(payouts);
+                runtime.AwardTokens(payouts);
 
             await SafeReplyAsync(
                 runtime,

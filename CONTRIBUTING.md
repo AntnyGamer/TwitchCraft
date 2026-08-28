@@ -7,7 +7,7 @@ Thank you for helping improve TwitchCraft. Changes should preserve existing comm
 - Windows 10 or 11, 64-bit
 - .NET 10 SDK
 - Git
-- Java 17, 21, and/or 25 when manually validating the matching Minecraft versions
+- Java 21 and/or 25 when manually validating the matching Minecraft versions
 
 ## Setup and validation
 
@@ -19,7 +19,7 @@ dotnet build TwitchCraft.slnx -c Release --no-restore
 dotnet test TwitchCraft.slnx -c Release --no-build
 ```
 
-The root solution is the canonical validation entry point. Its Release build compiles TwitchCraft, `TwitchCraftBot.Tests`, and the distributed `GetBotToken` helper. The Release build and all tests must pass before a pull request is ready for review.
+The root solution is the canonical validation entry point. Its Release build compiles TwitchCraft and `TwitchCraftBot.Tests`. The Release build and all tests must pass before a pull request is ready for review.
 
 CI also collects an XPlat Code Coverage report and publishes `coverage.cobertura.xml` as the `code-coverage` workflow artifact. To reproduce that collection locally:
 
@@ -33,7 +33,6 @@ No coverage percentage gate is enforced until a stable baseline is measured and 
 
 - `TwitchCraftBot_SOURCE/` — WPF application, runtime, commands, persistence, and assets
 - `TwitchCraftBot.Tests/` — non-UI regression tests
-- `GetBotToken_SOURCE/` — Twitch token helper application
 - `docs/` — canonical user and maintainer documentation
 - `.github/` — CI and contribution templates
 

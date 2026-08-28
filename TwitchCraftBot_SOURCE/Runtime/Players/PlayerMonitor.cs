@@ -19,7 +19,6 @@ public sealed partial class BotMainHandler
     private static readonly TimeSpan OnlinePlayersRefreshInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan ServerProbeMarkerFallbackTimeout = TimeSpan.FromSeconds(1.5);
     private static readonly TimeSpan MinecraftQueryTimeout = TimeSpan.FromMilliseconds(750);
-    private static readonly TimeSpan RemoteRCONPlayerListTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan MinecraftQueryFailureBackoff = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan PlayerSidebarRefreshErrorLogInterval = TimeSpan.FromMinutes(1);
 
@@ -244,7 +243,7 @@ public sealed partial class BotMainHandler
         try
         {
             using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(RemoteRCONPlayerListTimeout);
+            timeout.CancelAfter(RCONTimeout);
             string? response = await MinecraftRCONClient.ExecuteQueryAsync(
                 GetRemoteControllerHost(config),
                 config.Server.RCON.Port,

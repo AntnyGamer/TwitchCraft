@@ -59,7 +59,8 @@ Local mode owns Java process startup, output/error readers, server preparation, 
 
 ## Persistence
 
-- `config.json` uses normalized models, temporary-file writes, replacement fallback, and a backup.
+- `config.json` uses normalized models, temporary-file writes, and replacement fallback.
+- Automatic timestamped backups pair `config.json` with a consistent SQLite copy of `viewer_tokens.db` and prune complete sets according to configured retention.
 - Viewer balances use SQLite with a readable JSON export.
 - Statistics use SQLite with aggregate/viewer JSON exports.
 - Database operations use synchronization and parameterized statements.
@@ -67,7 +68,7 @@ Local mode owns Java process startup, output/error readers, server preparation, 
 
 ## Shutdown and recovery
 
-Cancellation tokens stop background loops. Local mode requests graceful server shutdown before forceful process cleanup. RCON and network clients disconnect, background tasks are observed, stores are flushed/disposed, and the diagnostic writer closes on application exit. Unexpected exceptions are captured for diagnostics while user-facing dialogs remain concise.
+Cancellation tokens stop background loops. Local mode requests graceful server shutdown using the configured timeout before forceful process cleanup. RCON and network clients disconnect, background tasks are observed, stores are flushed/disposed, and the diagnostic writer closes on application exit. Unexpected exceptions are captured for diagnostics while user-facing dialogs remain concise.
 
 ## Testability direction
 

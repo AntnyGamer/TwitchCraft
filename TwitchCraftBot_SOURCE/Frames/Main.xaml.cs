@@ -6,26 +6,119 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace TwitchCraftBot_V1.Frames;
 
 public partial class Main : UserControl
 {
-    private const int MaxLogLines = 250;
+    private const int DefaultMaxLogLines = 250;
+    private const string TwitchConnectedText = "Twitch: Connected";
+    private const string TwitchDisconnectedText = "Twitch: Disconnected";
+    private const string MinecraftConnectedText = "Minecraft: Connected";
+    private const string MinecraftDisconnectedText = "Minecraft: Disconnected";
     private static readonly StringComparer ViewerNameComparer = StringComparer.OrdinalIgnoreCase;
     private readonly Queue<string> _minecraftLogLines = [];
     private readonly Queue<string> _twitchLogLines = [];
     private readonly Queue<string> _pendingMinecraftLogLines = [];
     private readonly Queue<string> _pendingTwitchLogLines = [];
     private readonly Lock _logGate = new();
+    private readonly DispatcherTimer _connectionHealthTimer;
     private bool _minecraftFlushQueued;
     private bool _twitchFlushQueued;
     private int _serverActionRunning;
+    private Window? _parentWindow;
+    private BotMainHandler? _runtime;
+    private int _windowMinimized;
+    private int _mainVisible;
+    private List<string>? _deferredViewerList;
 
     public Main()
     {
         InitializeComponent();
+        _connectionHealthTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+        _connectionHealthTimer.Tick += ConnectionHealthTimer_Tick;
+        IsVisibleChanged += Main_IsVisibleChanged;
+        Loaded += (_, _) =>
+        {
+            _parentWindow = Window.GetWindow(this);
+            _runtime = AppHelpers.GetParentBot(this)?.Runtime;
+            Volatile.Write(ref _mainVisible, IsVisible ? 1 : 0);
+            if (_parentWindow != null)
+            {
+                _parentWindow.StateChanged += ParentWindow_StateChanged;
+                Volatile.Write(ref _windowMinimized, _parentWindow.WindowState == WindowState.Minimized ? 1 : 0);
+            }
+            if (IsVisible)
+                FlushDeferredUIUpdates();
+            RefreshConnectionHealthTimer();
+        };
+        Unloaded += (_, _) =>
+        {
+            _connectionHealthTimer.Stop();
+            _parentWindow?.StateChanged -= ParentWindow_StateChanged;
+            _parentWindow = null;
+            Volatile.Write(ref _windowMinimized, 0);
+            Volatile.Write(ref _mainVisible, 0);
+        };
+    }
+
+    private void ParentWindow_StateChanged(object? sender, EventArgs e)
+    {
+        Volatile.Write(ref _windowMinimized, _parentWindow?.WindowState == WindowState.Minimized ? 1 : 0);
+        if (ShouldPauseUIUpdates())
+            return;
+
+        FlushDeferredUIUpdates();
+    }
+
+    private void Main_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        Volatile.Write(ref _mainVisible, IsVisible ? 1 : 0);
+        if (IsVisible)
+            FlushDeferredUIUpdates();
+        RefreshConnectionHealthTimer();
+    }
+
+    private void ConnectionHealthTimer_Tick(object? sender, EventArgs e) => UpdateConnectionHealth();
+
+    private void RefreshConnectionHealthTimer()
+    {
+        UpdateConnectionHealth();
+        if (IsVisible && _runtime?.ShowConnectionHealth == true)
+            _connectionHealthTimer.Start();
+        else
+            _connectionHealthTimer.Stop();
+    }
+
+    private void UpdateConnectionHealth()
+    {
+        BotMainHandler? runtime = _runtime;
+        TimeSpan desiredInterval = runtime?.LowResourceModeEnabled == true ? TimeSpan.FromSeconds(3) : TimeSpan.FromSeconds(1);
+        if (_connectionHealthTimer.Interval != desiredInterval)
+            _connectionHealthTimer.Interval = desiredInterval;
+        bool visible = runtime?.ShowConnectionHealth ?? false;
+        Visibility desiredVisibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if (ConnectionHealthPanel.Visibility != desiredVisibility)
+            ConnectionHealthPanel.Visibility = desiredVisibility;
+
+        if (!visible || runtime == null)
+            return;
+
+        SetConnectionHealth(TwitchConnectionHealth, runtime.TwitchChatConnected, TwitchConnectedText, TwitchDisconnectedText);
+        SetConnectionHealth(MinecraftConnectionHealth, runtime.MinecraftServerReady, MinecraftConnectedText, MinecraftDisconnectedText);
+    }
+
+    private static void SetConnectionHealth(TextBlock label, bool connected, string connectedText, string disconnectedText)
+    {
+        string text = connected ? connectedText : disconnectedText;
+        if (!string.Equals(label.Text, text, StringComparison.Ordinal))
+            label.Text = text;
+
+        Brush foreground = connected ? Brushes.LightGreen : Brushes.IndianRed;
+        if (!ReferenceEquals(label.Foreground, foreground))
+            label.Foreground = foreground;
     }
 
     public void AddServerLogLine(string line)
@@ -52,6 +145,13 @@ public partial class Main : UserControl
     {
         viewers ??= [];
 
+        if (ShouldPauseUIUpdates())
+        {
+            lock (_logGate)
+                _deferredViewerList = [.. viewers];
+            return;
+        }
+
         SafeInvoke(() =>
         {
             string countText = $"You have {viewers.Count} viewer{(viewers.Count == 1 ? string.Empty : "s")}.";
@@ -71,12 +171,13 @@ public partial class Main : UserControl
         lock (_logGate)
         {
             pendingLines.Enqueue(line ?? string.Empty);
-            while (pendingLines.Count > MaxLogLines)
+            int maxLines = GetMaxLogLines(isMinecraftLog);
+            while (pendingLines.Count > maxLines)
             {
                 pendingLines.Dequeue();
             }
 
-            shouldSchedule = TryQueueFlush(isMinecraftLog);
+            shouldSchedule = !ShouldPauseUIUpdates() && TryQueueFlush(isMinecraftLog);
         }
 
         if (shouldSchedule)
@@ -87,51 +188,74 @@ public partial class Main : UserControl
 
     private void FlushLogQueue(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
     {
-        List<string> batch;
+        if (ShouldPauseUIUpdates())
+        {
+            lock (_logGate)
+                ClearQueuedFlush(isMinecraftLog);
+            return;
+        }
+
+        int batchCount;
+        string? singleLine = null;
+        List<string>? batch = null;
 
         lock (_logGate)
         {
-            batch = new(pendingLines.Count);
-            while (pendingLines.Count > 0)
+            batchCount = pendingLines.Count;
+            if (batchCount == 1)
             {
-                batch.Add(pendingLines.Dequeue());
+                singleLine = pendingLines.Dequeue();
+            }
+            else if (batchCount > 1)
+            {
+                batch = new(batchCount);
+                while (pendingLines.Count > 0)
+                    batch.Add(pendingLines.Dequeue());
             }
 
             ClearQueuedFlush(isMinecraftLog);
         }
 
-        if (batch.Count == 0)
-        {
+        if (batchCount == 0)
             return;
-        }
 
-        bool rebuild = lines.Count + batch.Count > MaxLogLines;
+        int maxLines = GetMaxLogLines(isMinecraftLog);
+        bool rebuild = lines.Count + batchCount > maxLines;
         string newLine = Environment.NewLine;
-        StringBuilder? appended = rebuild || batch.Count == 1 ? null : new StringBuilder(Math.Min(batch.Count * 64, 8192));
 
-        foreach (string entry in batch)
+        if (batchCount == 1)
         {
-            if (lines.Count >= MaxLogLines)
+            while (lines.Count >= maxLines)
             {
                 lines.Dequeue();
                 rebuild = true;
             }
 
-            lines.Enqueue(entry);
-            appended?.Append(entry).Append(newLine);
+            lines.Enqueue(singleLine!);
+            if (rebuild)
+                box.Text = string.Join(newLine, lines) + newLine;
+            else
+                box.AppendText(singleLine + newLine);
         }
+        else
+        {
+            StringBuilder? appended = rebuild ? null : new StringBuilder(Math.Min(batchCount * 64, 8192));
+            foreach (string entry in batch!)
+            {
+                while (lines.Count >= maxLines)
+                {
+                    lines.Dequeue();
+                    rebuild = true;
+                }
 
-        if (rebuild)
-        {
-            box.Text = string.Join(newLine, lines) + newLine;
-        }
-        else if (batch.Count == 1)
-        {
-            box.AppendText(batch[0] + newLine);
-        }
-        else if (appended is { Length: > 0 })
-        {
-            box.AppendText(appended.ToString());
+                lines.Enqueue(entry);
+                appended?.Append(entry).Append(newLine);
+            }
+
+            if (rebuild)
+                box.Text = string.Join(newLine, lines) + newLine;
+            else if (appended is { Length: > 0 })
+                box.AppendText(appended.ToString());
         }
 
         box.ScrollToEnd();
@@ -140,15 +264,11 @@ public partial class Main : UserControl
         lock (_logGate)
         {
             if (pendingLines.Count > 0)
-            {
                 shouldSchedule = TryQueueFlush(isMinecraftLog);
-            }
         }
 
         if (shouldSchedule)
-        {
             SafeInvoke(() => FlushLogQueue(box, lines, pendingLines, isMinecraftLog));
-        }
     }
 
     private void ClearLog(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
@@ -183,6 +303,40 @@ public partial class Main : UserControl
             _minecraftFlushQueued = false;
         else
             _twitchFlushQueued = false;
+    }
+
+    private int GetMaxLogLines(bool isMinecraftLog)
+    {
+        int configured = isMinecraftLog
+            ? _runtime?.MaxVisibleMinecraftLogLines ?? DefaultMaxLogLines
+            : _runtime?.MaxVisibleTwitchLogLines ?? DefaultMaxLogLines;
+        return Math.Clamp(configured, 50, 5000);
+    }
+
+    private bool ShouldPauseUIUpdates()
+        => Volatile.Read(ref _mainVisible) == 0 ||
+            (_runtime?.PauseUIUpdatesWhenMinimized == true && Volatile.Read(ref _windowMinimized) != 0);
+
+    private void FlushDeferredUIUpdates()
+    {
+        List<string>? viewers;
+        bool flushMinecraft;
+        bool flushTwitch;
+        lock (_logGate)
+        {
+            viewers = _deferredViewerList;
+            _deferredViewerList = null;
+            flushMinecraft = _pendingMinecraftLogLines.Count > 0 && TryQueueFlush(isMinecraftLog: true);
+            flushTwitch = _pendingTwitchLogLines.Count > 0 && TryQueueFlush(isMinecraftLog: false);
+        }
+
+        if (viewers != null)
+            DisplayNormalizedViewerList(viewers);
+        if (flushMinecraft)
+            SafeInvoke(() => FlushLogQueue(MinecraftLogs, _minecraftLogLines, _pendingMinecraftLogLines, isMinecraftLog: true));
+        if (flushTwitch)
+            SafeInvoke(() => FlushLogQueue(TwitchLogs, _twitchLogLines, _pendingTwitchLogLines, isMinecraftLog: false));
+        UpdateConnectionHealth();
     }
 
     private void SafeInvoke(Action action)
