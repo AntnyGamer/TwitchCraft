@@ -51,19 +51,14 @@ public sealed class MinecraftCommandBuilderTests
     }
 
     [Fact]
-    public void BanPlayer_ReplacesControlCharactersInReason()
+    public void BanAndKickPlayer_ReplaceControlCharactersInReasons()
     {
-        string result = MinecraftCommandBuilder.BanPlayer("Player", " rude\r\nreason\t ");
-
-        Assert.Equal("ban Player rude  reason", result);
-    }
-
-    [Fact]
-    public void KickPlayer_ReplacesControlCharactersInReason()
-    {
-        string result = MinecraftCommandBuilder.KickPlayer("Player", " rude\r\nreason\t ");
-
-        Assert.Equal("kick Player rude  reason", result);
+        Assert.Equal(
+            "ban Player rude  reason",
+            MinecraftCommandBuilder.BanPlayer("Player", " rude\r\nreason\t "));
+        Assert.Equal(
+            "kick Player rude  reason",
+            MinecraftCommandBuilder.KickPlayer("Player", " rude\r\nreason\t "));
     }
 
     [Fact]

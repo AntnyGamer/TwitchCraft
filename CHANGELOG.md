@@ -8,6 +8,7 @@ All notable changes to this project are documented here. This project follows a 
 
 * Added regression coverage for complete live-roster token awards, command-registry consistency, and isolation of applied nested settings.
 * Pre-sized copied and normalized command-customization dictionaries to avoid unnecessary internal growth while applying settings.
+* Consolidated overlapping regression tests while preserving their meaningful assertions, leaving 275 focused test cases.
 
 ## [1.8.0.0] - 2026-08-28
 

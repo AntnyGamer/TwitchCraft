@@ -13,19 +13,12 @@ public sealed class MinecraftWorldImporterTests
     }
 
     [Fact]
-    public void IsMinecraftWorldFolder_RejectsDirectoryWithoutLevelDat()
+    public void IsMinecraftWorldFolder_RequiresLevelDat()
     {
         using TemporaryDirectory directory = new();
 
         Assert.False(MinecraftWorldImporter.IsMinecraftWorldFolder(directory.Path));
-    }
-
-    [Fact]
-    public void IsMinecraftWorldFolder_AcceptsDirectoryWithLevelDat()
-    {
-        using TemporaryDirectory directory = new();
         File.WriteAllText(System.IO.Path.Combine(directory.Path, "level.dat"), "world");
-
         Assert.True(MinecraftWorldImporter.IsMinecraftWorldFolder(directory.Path));
     }
 
@@ -137,7 +130,7 @@ public sealed class MinecraftWorldImporterTests
     }
 
     [Fact]
-    public void SourceIsCurrentWorld_AcceptsEquivalentWindowsPaths()
+    public void SourceIsCurrentWorld_DistinguishesEquivalentAndDifferentPaths()
     {
         using TemporaryDirectory directory = new();
         string destination = System.IO.Path.Combine(directory.Path, "world");
@@ -147,15 +140,7 @@ public sealed class MinecraftWorldImporterTests
             "world");
 
         Assert.True(CreatePlan(directory.Path, equivalentSource, destination).SourceIsCurrentWorld);
-    }
-
-    [Fact]
-    public void SourceIsCurrentWorld_RejectsDifferentWorldPaths()
-    {
-        using TemporaryDirectory directory = new();
         string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
-
         Assert.False(CreatePlan(directory.Path, source, destination).SourceIsCurrentWorld);
     }
 

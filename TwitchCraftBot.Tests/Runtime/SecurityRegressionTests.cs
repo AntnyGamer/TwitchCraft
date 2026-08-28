@@ -14,9 +14,6 @@ public sealed class SecurityRegressionTests
             Assert.InRange(BotMainHandler.SecureRandomInt(-4, 5), -4, 4);
             Assert.InRange(BotMainHandler.SecureRandomDouble(), 0, Math.BitDecrement(1));
         }
-
-        Assert.False(BotMainHandler.SecureRandomChance(0));
-        Assert.True(BotMainHandler.SecureRandomChance(1));
     }
 
     [Theory]

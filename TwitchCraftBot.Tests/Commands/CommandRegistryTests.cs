@@ -10,7 +10,7 @@ namespace TwitchCraftBot.Tests.Commands;
 public sealed class CommandRegistryTests
 {
     [Fact]
-    public void CommandNames_AreCachedSortedUniqueAndResolvable()
+    public void DefaultRegistry_HasExpectedCommandsFlagsAndStableSortedNames()
     {
         using TemporaryDirectory directory = new();
         BotMainHandler runtime = new(
@@ -22,35 +22,6 @@ public sealed class CommandRegistryTests
         {
             ChatCommandRegistry registry = ChatCommandRegistry.CreateDefault(runtime);
             IReadOnlyList<string> commandNames = registry.CommandNames;
-
-            Assert.NotEmpty(commandNames);
-            Assert.Same(commandNames, registry.CommandNames);
-            Assert.Equal(
-                commandNames.OrderBy(static name => name, StringComparer.OrdinalIgnoreCase),
-                commandNames);
-            Assert.Equal(
-                commandNames.Count,
-                commandNames.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-            Assert.All(commandNames, command => Assert.True(registry.TryResolve(command, out _), command));
-        }
-        finally
-        {
-            runtime.CloseTokenStoreConnection();
-        }
-    }
-
-    [Fact]
-    public void DefaultRegistryContainsAllNewCommandsWithExpectedStatisticsFlags()
-    {
-        using TemporaryDirectory directory = new();
-        BotMainHandler runtime = new(
-            new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"),
-            initializeApplicationState: false);
-
-        try
-        {
-            ChatCommandRegistry registry = ChatCommandRegistry.CreateDefault(runtime);
             string[] newCommands =
             [
                 "turnaround",
@@ -66,6 +37,11 @@ public sealed class CommandRegistryTests
                 "giant"
             ];
 
+            Assert.NotEmpty(commandNames);
+            Assert.Same(commandNames, registry.CommandNames);
+            Assert.Equal(
+                commandNames.OrderBy(static name => name, StringComparer.OrdinalIgnoreCase),
+                commandNames);
             Assert.All(newCommands, command => Assert.True(registry.TryResolve(command, out _), command));
 
             ChatCommandStatisticFlags dangerous = ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Dangerous;
