@@ -7,7 +7,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private void QueueTrackedPlayerGamemodeRefreshForStatistics()
+    private void QueueGamemode()
     {
         if (!StatisticsEnabled)
             return;
@@ -18,32 +18,32 @@ public sealed partial class BotMainHandler
 
         lock (_playerGate)
         {
-            if (!ContainsPlayer(_knownPlayers, playerName))
+            if (!HasPlayer(_knownPlayers, playerName))
                 return;
         }
 
-        QueueTrackedPlayerGamemodeRefreshForStatistics(playerName);
+        QueueGamemode(playerName);
     }
 
-    private void QueueTrackedPlayerGamemodeRefreshForStatistics(string playerName)
+    private void QueueGamemode(string playerName)
     {
         if (!StatisticsEnabled ||
-            !IsTrackingSurvivalPlayer(playerName) ||
-            !TryGetQueuedSessionToken(requireMultiplayer: false, out CancellationToken token) ||
+            !ShouldTrackPlayer(playerName) ||
+            !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
             Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 1) != 0)
         {
             return;
         }
 
-        RunQueuedSessionWork(
+        RunSessionWork(
             async t =>
             {
                 await Task.Delay(250, t).ConfigureAwait(false);
-                _ = await QueryPlayerProbeAsync<int?>(
+                _ = await QueryPlayerAsync<int?>(
                     playerName,
                     _spectatorProbeGate,
                     _pendingGameTypeRequests,
-                    (complete, ct) => SendInternalProbeCommandAsync($"data get entity {playerName} playerGameType", complete, ct),
+                    (complete, ct) => SendProbeAsync($"data get entity {playerName} playerGameType", complete, ct),
                     t).ConfigureAwait(false);
             },
             () => Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 0),
@@ -51,45 +51,45 @@ public sealed partial class BotMainHandler
             token: token);
     }
 
-    private void QueueTrackedPlayerRespawnPositionRefreshForStatistics(string playerName)
+    private void QueueRespawn(string playerName)
     {
-        if (!ShouldRefreshTrackedPlayerRespawnPositionForStatistics(playerName) ||
-            !TryGetQueuedSessionToken(requireMultiplayer: false, out CancellationToken token) ||
+        if (!NeedsRespawnRefresh(playerName) ||
+            !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
             Interlocked.Exchange(ref _trackedPlayerRespawnPositionRefreshQueued, 1) != 0)
         {
             return;
         }
 
-        RunQueuedSessionWork(
+        RunSessionWork(
             async t =>
             {
                 await Task.Delay(250, t).ConfigureAwait(false);
-                if (await QueryPlayerRespawnPositionAsync(playerName, t).ConfigureAwait(false))
-                    RecordTrackedPlayerRespawnPositionForStatistics(playerName);
+                if (await QueryRespawnAsync(playerName, t).ConfigureAwait(false))
+                    RecordRespawn(playerName);
             },
             () => Interlocked.Exchange(ref _trackedPlayerRespawnPositionRefreshQueued, 0),
             "Tracked player respawn position refresh failed",
             token: token);
     }
 
-    private void QueueDeathScoreObjectiveInitialization()
+    private void QueueDeathSetup()
     {
         if (!StatisticsEnabled ||
             Volatile.Read(ref _deathScoreObjectiveReady) != 0 ||
-            !TryGetQueuedSessionToken(requireMultiplayer: false, out CancellationToken token) ||
+            !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
             Interlocked.Exchange(ref _deathScoreObjectiveQueued, 1) != 0)
         {
             return;
         }
 
-        RunQueuedSessionWork(
-            EnsureDeathScoreObjectiveReadyAsync,
+        RunSessionWork(
+            EnsureDeathScoreAsync,
             () => Interlocked.Exchange(ref _deathScoreObjectiveQueued, 0),
             "Death score objective initialization failed",
             token: token);
     }
 
-    private async Task<bool> EnsureDeathScoreObjectiveReadyAsync(CancellationToken cancellationToken)
+    private async Task<bool> EnsureDeathScoreAsync(CancellationToken cancellationToken)
     {
         if (!StatisticsEnabled)
             return false;
@@ -104,7 +104,7 @@ public sealed partial class BotMainHandler
                 return true;
 
             TaskCompletionSource<bool> waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            bool sent = await SendInternalProbeCommandsAsync(
+            bool sent = await SendProbesAsync(
                 [
                     "scoreboard objectives add " + DeathScoreObjective + " deathCount"
                 ],
@@ -115,7 +115,7 @@ public sealed partial class BotMainHandler
                 return false;
 
             await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
-            ResetDeathScoreBaselineForStatistics();
+            ResetDeathBaseline();
             Volatile.Write(ref _deathScoreObjectiveReady, 1);
             return true;
         }
@@ -125,7 +125,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void QueueTrackedPlayerDeathScoreRefreshForStatistics()
+    private void QueueDeathScore()
     {
         if (!StatisticsEnabled)
             return;
@@ -134,15 +134,15 @@ public sealed partial class BotMainHandler
         if (playerName.Length == 0)
             return;
 
-        QueueTrackedPlayerDeathScoreRefreshForStatistics(playerName);
+        QueueDeathScore(playerName);
     }
 
-    private void QueueTrackedPlayerDeathScoreRefreshForStatistics(string playerName)
+    private void QueueDeathScore(string playerName)
     {
         if (!StatisticsEnabled ||
             !MinecraftNameHelper.TryNormalizePlayerName(playerName, out string normalizedPlayerName) ||
-            !IsTrackingSurvivalPlayer(normalizedPlayerName) ||
-            !TryGetQueuedSessionToken(requireMultiplayer: false, out CancellationToken token))
+            !ShouldTrackPlayer(normalizedPlayerName) ||
+            !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
         {
             return;
         }
@@ -150,17 +150,17 @@ public sealed partial class BotMainHandler
         if (Interlocked.Exchange(ref _trackedPlayerDeathScoreRefreshQueued, 1) != 0)
             return;
 
-        RunQueuedSessionWork(
+        RunSessionWork(
             async t =>
             {
-                if (await EnsureDeathScoreObjectiveReadyAsync(t).ConfigureAwait(false))
+                if (await EnsureDeathScoreAsync(t).ConfigureAwait(false))
                 {
                     string command = "scoreboard players get " + normalizedPlayerName + " " + DeathScoreObjective;
                     if (RemoteControlEnabled)
                     {
-                        string? response = await ExecuteRemoteServerQueryAsync(command, t).ConfigureAwait(false);
+                        string? response = await ExecuteRconQueryAsync(command, t).ConfigureAwait(false);
                         if (!string.IsNullOrWhiteSpace(response))
-                            HandleRemoteQueryResponse(response);
+                            HandleRconResponse(response);
                     }
                     else
                     {
@@ -173,7 +173,7 @@ public sealed partial class BotMainHandler
             token: token);
     }
 
-    private void RecordPlayerSidebarRefreshFailure(Exception ex)
+    private void LogSidebarError(Exception ex)
     {
         DateTime now = DateTime.UtcNow;
         lock (_playerGate)
@@ -184,10 +184,10 @@ public sealed partial class BotMainHandler
             _lastPlayerSidebarRefreshErrorUtc = now;
         }
 
-        _shellWindow?.AddServerLogLine(ErrorHandling.FormatLogMessage("Player sidebar refresh failed", ex));
+        _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Player sidebar refresh failed", ex));
     }
 
-    private void RecordPlayerRosterChanges(List<string> previousPlayers, List<string> currentPlayers)
+    private void RecordRoster(List<string> previousPlayers, List<string> currentPlayers)
     {
         int previousIndex = 0;
         int currentIndex = 0;
@@ -206,28 +206,28 @@ public sealed partial class BotMainHandler
 
             if (comparison < 0)
             {
-                RemoveSpectatorPlayer(previous);
-                RecordPlayerLeaveForStatistics(previous);
+                RemoveSpectator(previous);
+                RecordPlayerLeave(previous);
                 previousIndex++;
                 continue;
             }
 
-            RecordPlayerJoinForStatistics(current);
+            RecordPlayerJoin(current);
             currentIndex++;
         }
 
         for (; previousIndex < previousPlayers.Count; previousIndex++)
         {
             string previous = previousPlayers[previousIndex];
-            RemoveSpectatorPlayer(previous);
-            RecordPlayerLeaveForStatistics(previous);
+            RemoveSpectator(previous);
+            RecordPlayerLeave(previous);
         }
 
         for (; currentIndex < currentPlayers.Count; currentIndex++)
-            RecordPlayerJoinForStatistics(currentPlayers[currentIndex]);
+            RecordPlayerJoin(currentPlayers[currentIndex]);
     }
 
-    private static List<string> ParseOnlinePlayers(ReadOnlySpan<char> remainder)
+    private static List<string> ParsePlayers(ReadOnlySpan<char> remainder)
     {
         List<string> players = [];
         if (remainder.IsEmpty)
@@ -249,7 +249,7 @@ public sealed partial class BotMainHandler
         return players;
     }
 
-    private static bool TryParsePlayerListResponse(string response, bool allowFallbackColon, out List<string> players)
+    private static bool TryParseList(string response, bool allowFallbackColon, out List<string> players)
     {
         players = [];
         ReadOnlySpan<char> text = (response ?? string.Empty).AsSpan().Trim();
@@ -265,11 +265,11 @@ public sealed partial class BotMainHandler
             int colon = text[marker..].IndexOf(':');
             if (colon >= 0)
             {
-                players = ParseOnlinePlayers(text[(marker + colon + 1)..]);
+                players = ParsePlayers(text[(marker + colon + 1)..]);
                 return true;
             }
 
-            return TryParseFirstInt(text[..marker], out int count) && count == 0;
+            return TryParseInt(text[..marker], out int count) && count == 0;
         }
 
         if (!allowFallbackColon)
@@ -279,11 +279,11 @@ public sealed partial class BotMainHandler
         if (fallbackColon < 0)
             return false;
 
-        players = ParseOnlinePlayers(text[(fallbackColon + 1)..]);
+        players = ParsePlayers(text[(fallbackColon + 1)..]);
         return true;
     }
 
-    private static bool TryParseFirstInt(ReadOnlySpan<char> text, out int value)
+    private static bool TryParseInt(ReadOnlySpan<char> text, out int value)
     {
         value = 0;
         for (int i = 0; i < text.Length; i++)
@@ -301,15 +301,15 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    private static string ExtractPlayerEventName(string line, int markerIndex)
+    private static string GetPlayerName(string line, int markerIndex)
     {
         if (string.IsNullOrEmpty(line) || markerIndex <= 0)
             return string.Empty;
 
-        return TrimPrefixAfterLastColon(line, markerIndex);
+        return AfterLastColon(line, markerIndex);
     }
 
-    private static string TrimPrefixAfterLastColon(string value, int length)
+    private static string AfterLastColon(string value, int length)
     {
         string segment = TextSegmentHelper.TrimSegment(value, 0, length);
         if (segment.Length == 0)

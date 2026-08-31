@@ -18,14 +18,14 @@ internal static class FileSystemHelper
         return Path.Combine(directory, fileName + "." + Guid.NewGuid().ToString("N") + ".tmp");
     }
 
-    public static void EnsureDirectoryForFile(string path)
+    public static void EnsureParentDir(string path)
     {
         string? directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory))
             Directory.CreateDirectory(directory);
     }
 
-    public static FileReplaceMode ReplaceOrMoveWithFallback(string tempPath, string targetPath, string? backupPath, string logMessage)
+    public static FileReplaceMode ReplaceFile(string tempPath, string targetPath, string? backupPath, string logMessage)
     {
         try
         {
@@ -59,14 +59,14 @@ internal static class FileSystemHelper
             {
                 ErrorHandling.LogNonFatal("Failed to move file", moveEx);
                 File.Copy(tempPath, targetPath, true);
-                TryDeleteFile(tempPath);
+                DeleteFileSafe(tempPath);
             }
 
             return FileReplaceMode.Fallback;
         }
     }
 
-    public static void TryDeleteFile(string path)
+    public static void DeleteFileSafe(string path)
     {
         try
         {
@@ -100,7 +100,7 @@ internal static class FileSystemHelper
         }
     }
 
-    public static void TryDeleteDirectory(string path)
+    public static void DeleteDirectorySafe(string path)
     {
         try
         {

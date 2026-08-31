@@ -19,12 +19,12 @@ public sealed partial class BotMainHandler
     private const int MaxEventSubMessageBytes = 256 * 1024;
     private static readonly Uri EventSubWebSocketUri = new("wss://eventsub.wss.twitch.tv/ws");
 
-    private async Task RunFollowRewardLoopAsync(CancellationToken cancellationToken)
+    private async Task RunFollowRewardsAsync(CancellationToken cancellationToken)
     {
         try
         {
             while (!cancellationToken.IsCancellationRequested && !AutomaticFollowRewardsEnabled)
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -36,21 +36,24 @@ public sealed partial class BotMainHandler
             return;
 
         string clientId = (twitch.ClientID ?? string.Empty).Trim();
-        string botToken = NormalizeTwitchToken(twitch.BotToken);
+        string botToken;
         string streamerName = NormalizeUser(twitch.StreamerName);
-        if (clientId.Length == 0 || botToken.Length == 0 || streamerName.Length == 0)
+        if (clientId.Length == 0 || streamerName.Length == 0)
             return;
 
         try
         {
-            string botName = await ResolveAndPersistBotNameAsync(botToken, cancellationToken).ConfigureAwait(false);
+        ResolveFollowUsers:
+            botToken = NormalizeToken(_activeConfig?.Twitch.BotToken);
+            if (botToken.Length == 0) return;
+            string botName = await ResolveBotAsync(botToken, cancellationToken).ConfigureAwait(false);
             if (botName.Length == 0)
             {
                 _shellWindow?.AddChatLogLine("Follow rewards could not start because the bot Twitch account was not resolved.");
                 return;
             }
 
-            string[] userIds = await ResolveTwitchUserIdsAsync(
+            string[] userIds = await ResolveUsersAsync(
                 botName,
                 streamerName,
                 clientId,
@@ -63,27 +66,69 @@ public sealed partial class BotMainHandler
                 return;
             }
 
-            Uri endpoint = EventSubWebSocketUri;
-            bool subscribeOnWelcome = true;
             while (!cancellationToken.IsCancellationRequested)
             {
-                botToken = NormalizeTwitchToken(_activeConfig?.Twitch.BotToken);
-                if (botToken.Length == 0)
-                    return;
+                if (!string.Equals(botToken, NormalizeToken(_activeConfig?.Twitch.BotToken), StringComparison.Ordinal)) goto ResolveFollowUsers;
 
                 FollowSocketOutcome outcome;
+                ClientWebSocket socket = new();
                 try
                 {
-                    using ClientWebSocket socket = new();
-                    await socket.ConnectAsync(endpoint, cancellationToken).ConfigureAwait(false);
-                    outcome = await ProcessFollowSocketAsync(
+                    await socket.ConnectAsync(EventSubWebSocketUri, cancellationToken).ConfigureAwait(false);
+                    outcome = await RunFollowSocketAsync(
                         socket,
-                        subscribeOnWelcome,
+                        true,
                         clientId,
                         botToken,
                         userIds[1],
                         userIds[0],
                         cancellationToken).ConfigureAwait(false);
+
+                    while (outcome.ReconnectUri is Uri reconnectUri)
+                    {
+                        using CancellationTokenSource handoff = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        Task drain = DrainFollowNotificationsAsync(socket, handoff.Token);
+                        ClientWebSocket replacement = new();
+                        try
+                        {
+                            await replacement.ConnectAsync(reconnectUri, cancellationToken).ConfigureAwait(false);
+                            TaskCompletionSource<bool> welcomed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                            Task<FollowSocketOutcome> replacementListener = RunFollowSocketAsync(
+                                replacement,
+                                false,
+                                clientId,
+                                botToken,
+                                userIds[1],
+                                userIds[0],
+                                cancellationToken,
+                                welcomed);
+                            await Task.WhenAny(welcomed.Task, replacementListener).ConfigureAwait(false);
+                            if (!welcomed.Task.IsCompleted)
+                            {
+                                outcome = await replacementListener.ConfigureAwait(false);
+                                if (outcome == default) throw new WebSocketException();
+                                replacement.Dispose();
+                                break;
+                            }
+
+                            handoff.Cancel();
+                            await drain.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                            socket.Dispose();
+                            socket = replacement;
+                            outcome = await replacementListener.ConfigureAwait(false);
+                        }
+                        catch (Exception) when (!cancellationToken.IsCancellationRequested && socket.State == WebSocketState.Open)
+                        {
+                            replacement.Dispose();
+                            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
+                            continue;
+                        }
+                        finally
+                        {
+                            handoff.Cancel();
+                            await drain.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                        }
+                    }
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -91,33 +136,27 @@ public sealed partial class BotMainHandler
                 }
                 catch (Exception ex)
                 {
-                    _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Twitch follow listener disconnected", ex));
+                    _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Twitch follow listener disconnected", ex));
                     outcome = default;
                 }
+                finally
+                {
+                    socket.Dispose();
+                }
+
+                if (outcome.Stop)
+                    return;
 
                 if (outcome.AuthorizationRejected)
                 {
-                    if (await TryRefreshTwitchCredentialsAsync(botToken, cancellationToken).ConfigureAwait(false))
-                    {
-                        endpoint = EventSubWebSocketUri;
-                        subscribeOnWelcome = true;
+                    if (await TryRefreshAuthAsync(botToken, cancellationToken).ConfigureAwait(false))
                         continue;
-                    }
 
                     _shellWindow?.AddChatLogLine(
                         "Follow rewards are off because Twitch authorization could not be renewed or lacks follower permission. Open Settings → Dangerous → Authorize Twitch once to update it.");
                     return;
                 }
 
-                if (outcome.ReconnectUri != null)
-                {
-                    endpoint = outcome.ReconnectUri;
-                    subscribeOnWelcome = false;
-                    continue;
-                }
-
-                endpoint = EventSubWebSocketUri;
-                subscribeOnWelcome = true;
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
             }
         }
@@ -126,24 +165,25 @@ public sealed partial class BotMainHandler
         }
         catch (Exception ex)
         {
-            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Follow rewards could not start", ex));
+            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Follow rewards could not start", ex));
         }
     }
 
-    private async Task<FollowSocketOutcome> ProcessFollowSocketAsync(
+    private async Task<FollowSocketOutcome> RunFollowSocketAsync(
         ClientWebSocket socket,
         bool subscribeOnWelcome,
         string clientId,
         string botToken,
         string broadcasterId,
         string moderatorId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        TaskCompletionSource<bool>? welcomeSignal = null)
     {
         bool welcomeReceived = false;
         TimeSpan messageTimeout = TimeSpan.FromSeconds(15);
         while (socket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
         {
-            string? message = await ReceiveEventSubMessageAsync(socket, messageTimeout, cancellationToken).ConfigureAwait(false);
+            string? message = await ReceiveEventAsync(socket, messageTimeout, cancellationToken).ConfigureAwait(false);
             if (message == null)
                 return default;
 
@@ -166,6 +206,7 @@ public sealed partial class BotMainHandler
                         continue;
 
                     welcomeReceived = true;
+                    welcomeSignal?.TrySetResult(true);
                     int keepaliveSeconds = (int?)root["payload"]?["session"]?["keepalive_timeout_seconds"] ?? 10;
                     messageTimeout = TimeSpan.FromSeconds(Math.Clamp(keepaliveSeconds, 10, 600) + 10);
                     if (subscribeOnWelcome)
@@ -174,7 +215,7 @@ public sealed partial class BotMainHandler
                         if (sessionId.Length == 0)
                             return default;
 
-                        HttpStatusCode status = await CreateFollowSubscriptionAsync(
+                        HttpStatusCode status = await SubscribeToFollowsAsync(
                             sessionId,
                             broadcasterId,
                             moderatorId,
@@ -188,33 +229,57 @@ public sealed partial class BotMainHandler
                     break;
 
                 case "notification":
-                    if (TryParseFollowNotification(root, out FollowNotification notification))
-                        await ApplyFollowRewardAsync(notification, cancellationToken).ConfigureAwait(false);
+                    if (TryParseFollow(root, out FollowNotification notification))
+                        await RewardFollowerAsync(notification, cancellationToken).ConfigureAwait(false);
                     break;
 
                 case "session_reconnect":
                     string reconnectUrl = (string?)root["payload"]?["session"]?["reconnect_url"] ?? string.Empty;
-                    return TryCreateSafeReconnectUri(reconnectUrl, out Uri? reconnectUri)
+                    return TryGetReconnectUri(reconnectUrl, out Uri? reconnectUri)
                         ? new(reconnectUri, AuthorizationRejected: false)
                         : default;
 
                 case "revocation":
                     string reason = (string?)root["payload"]?["subscription"]?["status"] ?? "unknown reason";
-                    _shellWindow?.AddChatLogLine("Twitch disabled follow rewards: " + reason + ".");
-                    return default;
+                    _shellWindow?.AddChatLogLine("Twitch revoked the follow subscription: " + reason + ".");
+                    return new(null, AuthorizationRejected: reason == "authorization_revoked", Stop: reason != "authorization_revoked");
             }
         }
 
         return default;
     }
 
-    private async Task ApplyFollowRewardAsync(FollowNotification notification, CancellationToken cancellationToken)
+    private async Task DrainFollowNotificationsAsync(ClientWebSocket socket, CancellationToken cancellationToken)
+    {
+        while (socket.State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
+        {
+            string? message = await ReceiveEventAsync(socket, TimeSpan.FromSeconds(40), cancellationToken).ConfigureAwait(false);
+            if (message == null)
+                return;
+
+            try
+            {
+                JObject root = JObject.Parse(message);
+                if ((string?)root["metadata"]?["message_type"] == "notification" &&
+                    TryParseFollow(root, out FollowNotification notification))
+                {
+                    await RewardFollowerAsync(notification, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            catch (JsonException ex)
+            {
+                ErrorHandling.LogNonFatal("Twitch EventSub returned invalid JSON during reconnect", ex);
+            }
+        }
+    }
+
+    private async Task RewardFollowerAsync(FollowNotification notification, CancellationToken cancellationToken)
     {
         if (!AutomaticFollowRewardsEnabled)
             return;
 
         int rewardAmount = FollowRewardAmount;
-        FollowRewardResult result = _tokenStore.TryRewardFollowerOnce(
+        FollowRewardResult result = _tokenStore.TryRewardFollower(
             notification.UserId,
             notification.UserLogin,
             notification.FollowedAt,
@@ -229,7 +294,7 @@ public sealed partial class BotMainHandler
             ? " received " + awardedAmount.ToString(CultureInfo.InvariantCulture) + " tokens."
             : " was already at the maximum token balance.";
         _shellWindow?.AddChatLogLine(notification.UserLogin + " followed and" + rewardText);
-        await SendBotResponseAsync(
+        await SendReplyAsync(
             "@" + notification.UserLogin + " thanks for following!" +
                 (awardedAmount > 0
                     ? " You received " + awardedAmount.ToString(CultureInfo.InvariantCulture) + " tokens!"
@@ -250,7 +315,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static async Task<HttpStatusCode> CreateFollowSubscriptionAsync(
+    private static async Task<HttpStatusCode> SubscribeToFollowsAsync(
         string sessionId,
         string broadcasterId,
         string moderatorId,
@@ -287,7 +352,7 @@ public sealed partial class BotMainHandler
         return response.StatusCode;
     }
 
-    private static async Task<string?> ReceiveEventSubMessageAsync(
+    private static async Task<string?> ReceiveEventAsync(
         ClientWebSocket socket,
         TimeSpan timeout,
         CancellationToken cancellationToken)
@@ -325,7 +390,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal static bool TryParseFollowNotification(JObject root, out FollowNotification notification)
+    internal static bool TryParseFollow(JObject root, out FollowNotification notification)
     {
         notification = default;
         string subscriptionType = (string?)root["metadata"]?["subscription_type"]
@@ -338,7 +403,7 @@ public sealed partial class BotMainHandler
         string userId = ((string?)eventData?["user_id"] ?? string.Empty).Trim();
         string userLogin = NormalizeUser((string?)eventData?["user_login"]);
         JToken? followedAtToken = eventData?["followed_at"];
-        if (userId.Length == 0 || userLogin.Length == 0 || !TryReadFollowedAt(followedAtToken, out DateTimeOffset followedAt))
+        if (userId.Length == 0 || userLogin.Length == 0 || !TryReadFollowTime(followedAtToken, out DateTimeOffset followedAt))
         {
             return false;
         }
@@ -347,7 +412,7 @@ public sealed partial class BotMainHandler
         return true;
     }
 
-    private static bool TryReadFollowedAt(JToken? token, out DateTimeOffset followedAt)
+    private static bool TryReadFollowTime(JToken? token, out DateTimeOffset followedAt)
     {
         followedAt = default;
         if (token?.Type == JTokenType.Date)
@@ -373,7 +438,7 @@ public sealed partial class BotMainHandler
             out followedAt);
     }
 
-    private static bool TryCreateSafeReconnectUri(string value, out Uri? reconnectUri)
+    private static bool TryGetReconnectUri(string value, out Uri? reconnectUri)
     {
         reconnectUri = null;
         if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? parsed) ||
@@ -388,5 +453,5 @@ public sealed partial class BotMainHandler
     }
 
     internal readonly record struct FollowNotification(string UserId, string UserLogin, DateTimeOffset FollowedAt);
-    private readonly record struct FollowSocketOutcome(Uri? ReconnectUri, bool AuthorizationRejected);
+    private readonly record struct FollowSocketOutcome(Uri? ReconnectUri, bool AuthorizationRejected, bool Stop = false);
 }

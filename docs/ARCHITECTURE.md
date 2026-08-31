@@ -3,7 +3,7 @@
 TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI.
 
 ```text
-Twitch IRC over TLS
+Twitch OAuth, Helix, EventSub, and IRC
         ↓
 TwitchRuntime: connection, queues, parsing, identity
         ↓
@@ -39,7 +39,7 @@ The supplied source is already split into focused partial files. Future work sho
 3. The user selects local or remote mode and a starting profile.
 4. The bot runtime initializes token/statistics stores and Twitch identity.
 5. Local mode prepares the server directory, locates Java, and starts the Java process; remote mode verifies RCON.
-6. Twitch IRC connects over TLS, authenticates, joins the configured channel, and starts bounded processing queues.
+6. TwitchCraft renews its locally stored device authorization when needed, then Twitch IRC connects over TLS, joins the configured channel, and starts bounded processing queues. Helix and EventSub provide viewer-roster and follow data.
 7. Player monitoring and optional minigame/statistics loops start after Minecraft readiness.
 
 ## Command execution
@@ -72,4 +72,4 @@ Cancellation tokens stop background loops. Local mode requests graceful server s
 
 ## Testability direction
 
-Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, and paid-command transaction semantics without UI automation or a Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.
+Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.

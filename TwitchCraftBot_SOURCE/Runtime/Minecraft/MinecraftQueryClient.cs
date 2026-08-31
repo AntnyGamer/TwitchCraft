@@ -18,7 +18,7 @@ internal static class MinecraftQueryClient
     private const byte StatType = 0x00;
     private static readonly byte[] PlayerSectionMarker = Encoding.ASCII.GetBytes("player_\0\0");
 
-    public static async Task<List<string>> GetOnlinePlayerNamesAsync(string host, int port, CancellationToken cancellationToken)
+    public static async Task<List<string>> GetPlayersAsync(string host, int port, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(host) || port is < 1 or > 65535)
             return [];
@@ -32,23 +32,23 @@ internal static class MinecraftQueryClient
         queryPacket[0] = MagicOne;
         queryPacket[1] = MagicTwo;
         queryPacket[2] = HandshakeType;
-        WriteInt32BigEndian(queryPacket, 3, sessionId);
+        WriteInt32BE(queryPacket, 3, sessionId);
 
         await client.SendAsync(queryPacket, 7, host, port).WaitAsync(cancellationToken).ConfigureAwait(false);
         UdpReceiveResult challengeResponse = await client.ReceiveAsync(cancellationToken).ConfigureAwait(false);
-        int challengeToken = ParseChallengeToken(challengeResponse.Buffer, sessionId);
+        int challengeToken = ParseChallenge(challengeResponse.Buffer, sessionId);
 
         queryPacket[2] = StatType;
-        WriteInt32BigEndian(queryPacket, 7, challengeToken);
+        WriteInt32BE(queryPacket, 7, challengeToken);
 
         await client.SendAsync(queryPacket, queryPacket.Length, host, port).WaitAsync(cancellationToken).ConfigureAwait(false);
         UdpReceiveResult statResponse = await client.ReceiveAsync(cancellationToken).ConfigureAwait(false);
         return ParsePlayers(statResponse.Buffer, sessionId);
     }
 
-    internal static int ParseChallengeToken(byte[] buffer, int sessionId)
+    internal static int ParseChallenge(byte[] buffer, int sessionId)
     {
-        if (buffer.Length < 6 || buffer[0] != HandshakeType || ReadInt32BigEndian(buffer) != sessionId)
+        if (buffer.Length < 6 || buffer[0] != HandshakeType || ReadInt32BE(buffer) != sessionId)
             throw new InvalidOperationException("Minecraft query handshake returned an invalid response.");
 
         int end = 5;
@@ -64,7 +64,7 @@ internal static class MinecraftQueryClient
 
     internal static List<string> ParsePlayers(byte[] buffer, int sessionId)
     {
-        if (buffer.Length < 5 || buffer[0] != StatType || ReadInt32BigEndian(buffer) != sessionId)
+        if (buffer.Length < 5 || buffer[0] != StatType || ReadInt32BE(buffer) != sessionId)
             throw new InvalidOperationException("Minecraft query stats returned an invalid response.");
 
         int playerSection = IndexOf(buffer, PlayerSectionMarker, 5);
@@ -107,9 +107,9 @@ internal static class MinecraftQueryClient
         return index < 0 ? -1 : offset + index;
     }
 
-    private static int ReadInt32BigEndian(byte[] buffer)
+    private static int ReadInt32BE(byte[] buffer)
         => BinaryPrimitives.ReadInt32BigEndian(buffer.AsSpan(1, 4));
 
-    private static void WriteInt32BigEndian(byte[] buffer, int offset, int value)
+    private static void WriteInt32BE(byte[] buffer, int offset, int value)
         => BinaryPrimitives.WriteInt32BigEndian(buffer.AsSpan(offset, 4), value);
 }

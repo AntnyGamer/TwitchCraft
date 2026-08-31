@@ -19,7 +19,7 @@ internal static class MinecraftItemRenameHelper
         command = string.Empty;
         prettyItemName = string.Empty;
 
-        if (!TryParseOuterCompound(selectedItemData, out List<string> topEntries))
+        if (!TryParseCompound(selectedItemData, out List<string> topEntries))
             return false;
 
         if (!TryGetField(topEntries, "id", out string rawItemId, out _))
@@ -29,22 +29,20 @@ internal static class MinecraftItemRenameHelper
         if (string.IsNullOrWhiteSpace(itemID) || string.Equals(itemID, "minecraft:air", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        prettyItemName = GetPrettyItemName(itemID);
+        prettyItemName = GetItemName(itemID);
         string displayName = redeemerName + "'s " + prettyItemName;
         int count = ReadCount(topEntries);
 
         if (usesItemComponents)
         {
             List<string> componentEntries = [];
-            if (TryGetField(topEntries, "components", out string componentsValue, out _))
-            {
-                if (!TryParseOuterCompound(componentsValue, out componentEntries))
-                    return false;
-            }
+            if (TryGetField(topEntries, "components", out string componentsValue, out _) &&
+                !TryParseCompound(componentsValue, out componentEntries))
+                return false;
 
             RemoveField(componentEntries, "minecraft:custom_name");
             if (usesInlineTextComponents)
-                componentEntries.Add("\"minecraft:custom_name\":{text:'" + MinecraftCommandBuilder.EscapeSnbtString(displayName) + "'}");
+                componentEntries.Add("\"minecraft:custom_name\":{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'}");
             else
                 componentEntries.Add("\"minecraft:custom_name\":\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
 
@@ -54,18 +52,16 @@ internal static class MinecraftItemRenameHelper
         }
 
         List<string> tagEntries = [];
-        if (TryGetField(topEntries, "tag", out string tagValue, out _))
-        {
-            if (!TryParseOuterCompound(tagValue, out tagEntries))
-                return false;
-        }
+        if (TryGetField(topEntries, "tag", out string tagValue, out _) &&
+            !TryParseCompound(tagValue, out tagEntries))
+            return false;
 
         int displayIndex = FindFieldIndex(tagEntries, "display");
         List<string> displayEntries = [];
         if (displayIndex >= 0)
         {
             string displayValue = GetFieldValue(tagEntries[displayIndex]);
-            if (!TryParseOuterCompound(displayValue, out displayEntries))
+            if (!TryParseCompound(displayValue, out displayEntries))
                 return false;
         }
 
@@ -83,7 +79,7 @@ internal static class MinecraftItemRenameHelper
         return true;
     }
 
-    internal static bool TryBuildForcedEnchantCommand(
+    internal static bool TryBuildEnchantCommand(
         string selector,
         string selectedItemData,
         string enchantID,
@@ -96,7 +92,7 @@ internal static class MinecraftItemRenameHelper
         prettyItemName = string.Empty;
 
         if (string.IsNullOrWhiteSpace(selector) || string.IsNullOrWhiteSpace(enchantID) || level <= 0 ||
-            !TryParseOuterCompound(selectedItemData, out List<string> topEntries) ||
+            !TryParseCompound(selectedItemData, out List<string> topEntries) ||
             !TryGetField(topEntries, "id", out string rawItemId, out _))
         {
             return false;
@@ -108,7 +104,7 @@ internal static class MinecraftItemRenameHelper
 
         List<string> componentEntries = [];
         if (TryGetField(topEntries, "components", out string componentsValue, out _) &&
-            !TryParseOuterCompound(componentsValue, out componentEntries))
+            !TryParseCompound(componentsValue, out componentEntries))
         {
             return false;
         }
@@ -125,7 +121,7 @@ internal static class MinecraftItemRenameHelper
         if (enchantmentsIndex >= 0)
         {
             string existingEnchantments = GetFieldValue(componentEntries[enchantmentsIndex]);
-            if (!TryParseOuterCompound(existingEnchantments, out enchantmentComponentEntries))
+            if (!TryParseCompound(existingEnchantments, out enchantmentComponentEntries))
                 return false;
         }
 
@@ -138,11 +134,9 @@ internal static class MinecraftItemRenameHelper
         {
             int levelsIndex = FindFieldIndex(enchantmentComponentEntries, "levels");
             List<string> levelEntries = [];
-            if (levelsIndex >= 0)
-            {
-                if (!TryParseOuterCompound(GetFieldValue(enchantmentComponentEntries[levelsIndex]), out levelEntries))
-                    return false;
-            }
+            if (levelsIndex >= 0 &&
+                !TryParseCompound(GetFieldValue(enchantmentComponentEntries[levelsIndex]), out levelEntries))
+                return false;
 
             RemoveField(levelEntries, namespacedEnchantID);
             levelEntries.Add("\"" + namespacedEnchantID + "\":" + level.ToString(CultureInfo.InvariantCulture));
@@ -160,13 +154,13 @@ internal static class MinecraftItemRenameHelper
             componentEntries.Add(enchantmentsEntry);
 
         int count = ReadCount(topEntries);
-        prettyItemName = GetPrettyItemName(itemID);
+        prettyItemName = GetItemName(itemID);
         command = "item replace entity " + selector + " weapon.mainhand with " + itemID +
             BuildComponentSuffix(componentEntries) + " " + count.ToString(CultureInfo.InvariantCulture);
         return true;
     }
 
-    internal static string GetPrettyItemName(string itemID)
+    internal static string GetItemName(string itemID)
     {
         string normalized = itemID.Trim();
         int colonIndex = normalized.IndexOf(':');
@@ -176,7 +170,7 @@ internal static class MinecraftItemRenameHelper
         return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.Replace('_', ' '));
     }
 
-    private static bool TryParseOuterCompound(string value, out List<string> entries)
+    private static bool TryParseCompound(string value, out List<string> entries)
     {
         entries = [];
 
@@ -204,7 +198,7 @@ internal static class MinecraftItemRenameHelper
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
-            if (UpdateNestedState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
+            if (UpdateState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
                 continue;
 
             if (c == ',' && braceDepth == 0 && bracketDepth == 0 && parenDepth == 0)
@@ -241,7 +235,7 @@ internal static class MinecraftItemRenameHelper
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
-            if (UpdateNestedState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
+            if (UpdateState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
                 continue;
 
             if (c == ':' && braceDepth == 0 && bracketDepth == 0 && parenDepth == 0)
@@ -251,7 +245,7 @@ internal static class MinecraftItemRenameHelper
         return -1;
     }
 
-    private static bool UpdateNestedState(
+    private static bool UpdateState(
         char c,
         ref int braceDepth,
         ref int bracketDepth,
@@ -330,7 +324,7 @@ internal static class MinecraftItemRenameHelper
     {
         for (int i = 0; i < entries.Count; i++)
         {
-            if (FieldNameMatches(entries[i], fieldName))
+            if (NameMatches(entries[i], fieldName))
                 return i;
         }
 
@@ -344,7 +338,7 @@ internal static class MinecraftItemRenameHelper
             entries.RemoveAt(index);
     }
 
-    private static bool FieldNameMatches(string entry, string fieldName)
+    private static bool NameMatches(string entry, string fieldName)
     {
         int colonIndex = FindTopLevelColon(entry);
         if (colonIndex <= 0)
@@ -360,7 +354,7 @@ internal static class MinecraftItemRenameHelper
         return colonIndex >= 0 ? entry[(colonIndex + 1)..].Trim() : string.Empty;
     }
 
-    private static string ConvertComponentEntryToItemSyntax(string entry)
+    private static string ToItemSyntax(string entry)
     {
         int colonIndex = FindTopLevelColon(entry);
         if (colonIndex <= 0)
@@ -380,7 +374,7 @@ internal static class MinecraftItemRenameHelper
             if (i > 0)
                 builder.Append(',');
 
-            builder.Append(ConvertComponentEntryToItemSyntax(componentEntries[i]));
+            builder.Append(ToItemSyntax(componentEntries[i]));
         }
 
         builder.Append(']');
@@ -413,7 +407,7 @@ internal static class MinecraftItemRenameHelper
 
 internal static class MinecraftCommandFeatureBuilder
 {
-    public static List<string> BuildScaredCommands(string selector, Random random, bool usesInlineTextComponents)
+    public static List<string> BuildScared(string selector, Random random, bool usesInlineTextComponents)
     {
         ArgumentNullException.ThrowIfNull(random);
 
@@ -439,15 +433,15 @@ internal static class MinecraftCommandFeatureBuilder
         return commands;
     }
 
-    public static List<string> BuildSlaughterCommands(string selector, string mobLootGameRuleName) =>
+    public static List<string> BuildSlaughter(string selector, string mobLootGameRuleName) =>
     [
         "gamerule " + mobLootGameRuleName + " false",
         "execute at " + selector + " run kill @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:item,type=!minecraft:experience_orb,distance=..30]",
         "gamerule " + mobLootGameRuleName + " true"
     ];
 
-    public static List<string> BuildJohnnyCommands(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
-        => BuildPursuerCommands(
+    public static List<string> BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+        => BuildPursuer(
             selector,
             random,
             usesInlineTextComponents,
@@ -457,8 +451,8 @@ internal static class MinecraftCommandFeatureBuilder
             "tc_johnny",
             string.Empty);
 
-    public static List<string> BuildChargedCreeperCommands(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
-        => BuildPursuerCommands(
+    public static List<string> BuildChargedCreeper(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+        => BuildPursuer(
             selector,
             random,
             usesInlineTextComponents,
@@ -468,7 +462,7 @@ internal static class MinecraftCommandFeatureBuilder
             "tc_charged_creeper",
             "powered:1b,");
 
-    private static List<string> BuildPursuerCommands(
+    private static List<string> BuildPursuer(
         string selector,
         Random random,
         bool usesInlineTextComponents,
@@ -493,7 +487,7 @@ internal static class MinecraftCommandFeatureBuilder
             ? "attributes:[{id:'minecraft:follow_range',base:75.0}]"
             : "Attributes:[{Name:\"generic.follow_range\",Base:75.0}]";
         string summonData = usesInlineTextComponents
-            ? "{CustomName:{text:'" + MinecraftCommandBuilder.EscapeSnbtString(displayName) + "'},CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:['" + entityTag + "','" + newEntityTag + "']," + followRangeData + "}"
+            ? "{CustomName:{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'},CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:['" + entityTag + "','" + newEntityTag + "']," + followRangeData + "}"
             : "{CustomName:'{\"text\":\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\"}',CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:[\"" + entityTag + "\",\"" + newEntityTag + "\"]," + followRangeData + "}";
 
         return

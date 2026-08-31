@@ -12,7 +12,7 @@ namespace TwitchCraftBot_V1.Frames;
 
 public partial class Setup : UserControl
 {
-    private static async Task<JObject> LoadVersionDetailAsync(string versionID, Uri detailUri, CancellationToken cancellationToken)
+    private static async Task<JObject> LoadVersionAsync(string versionID, Uri detailUri, CancellationToken cancellationToken)
     {
         string localPath = Environment.ExpandEnvironmentVariables($@"%APPDATA%\.minecraft\versions\{versionID}\{versionID}.json");
         if (File.Exists(localPath))
@@ -39,7 +39,7 @@ public partial class Setup : UserControl
         return JObject.Parse(await SetupHttpClient.GetStringAsync(detailUri, cancellationToken));
     }
 
-    private static async Task CheckServerJarAsync(HttpClient http, string serverUrl, string jarPath, string expectedSha, long? expectedSize, CancellationToken cancellationToken)
+    private static async Task EnsureServerJarAsync(HttpClient http, string serverUrl, string jarPath, string expectedSha, long? expectedSize, CancellationToken cancellationToken)
     {
         if (!IsValidSHA1Hex(expectedSha))
             throw new InvalidOperationException("The selected Minecraft server checksum was missing or invalid.");
@@ -48,7 +48,7 @@ public partial class Setup : UserControl
 
         if (File.Exists(jarPath))
         {
-            bool existingJarValid = await Task.Run(() => VerifyServerJarMatches(jarPath, expectedSha, expectedSize), cancellationToken).ConfigureAwait(false);
+            bool existingJarValid = await Task.Run(() => ServerJarMatches(jarPath, expectedSha, expectedSize), cancellationToken).ConfigureAwait(false);
             if (existingJarValid)
                 return;
         }
@@ -58,9 +58,9 @@ public partial class Setup : UserControl
 
         try
         {
-            await DownloadServerJarAsync(http, downloadUri, tempPath, cancellationToken).ConfigureAwait(false);
+            await DownloadJarAsync(http, downloadUri, tempPath, cancellationToken).ConfigureAwait(false);
             await Task.Run(() => VerifyServerJar(tempPath, expectedSha, expectedSize), cancellationToken).ConfigureAwait(false);
-            FileReplaceMode replaceMode = FileSystemHelper.ReplaceOrMoveWithFallback(tempPath, jarPath, backupPath, "Atomic server jar replace failed; falling back to copy");
+            FileReplaceMode replaceMode = FileSystemHelper.ReplaceFile(tempPath, jarPath, backupPath, "Atomic server jar replace failed; falling back to copy");
             if (replaceMode == FileReplaceMode.Fallback)
                 await Task.Run(() => VerifyServerJar(jarPath, expectedSha, expectedSize), cancellationToken).ConfigureAwait(false);
         }
@@ -72,11 +72,11 @@ public partial class Setup : UserControl
         }
         finally
         {
-            FileSystemHelper.TryDeleteFile(tempPath);
+            FileSystemHelper.DeleteFileSafe(tempPath);
         }
     }
 
-    private static async Task DownloadServerJarAsync(HttpClient http, Uri downloadUri, string outputPath, CancellationToken cancellationToken)
+    private static async Task DownloadJarAsync(HttpClient http, Uri downloadUri, string outputPath, CancellationToken cancellationToken)
     {
         using HttpResponseMessage response = await http.GetAsync(downloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
@@ -87,10 +87,10 @@ public partial class Setup : UserControl
 
         using Stream input = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         await using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, DownloadBufferSize, FileOptions.SequentialScan);
-        await CopyToAsyncWithLimit(input, output, MaxServerJarDownloadBytes, cancellationToken).ConfigureAwait(false);
+        await CopyLimitedAsync(input, output, MaxServerJarDownloadBytes, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task CopyToAsyncWithLimit(Stream input, Stream output, long maxBytes, CancellationToken cancellationToken)
+    private static async Task CopyLimitedAsync(Stream input, Stream output, long maxBytes, CancellationToken cancellationToken)
     {
         byte[] buffer = ArrayPool<byte>.Shared.Rent(DownloadBufferSize);
         long totalBytes = 0;
@@ -139,7 +139,7 @@ public partial class Setup : UserControl
         return true;
     }
 
-    private static bool VerifyServerJarMatches(string filePath, string expectedSha, long? expectedSize = null)
+    private static bool ServerJarMatches(string filePath, string expectedSha, long? expectedSize = null)
     {
         try
         {
@@ -159,7 +159,7 @@ public partial class Setup : UserControl
 
     private static void VerifyServerJar(string filePath, string expectedSha, long? expectedSize = null)
     {
-        if (!VerifyServerJarMatches(filePath, expectedSha, expectedSize))
+        if (!ServerJarMatches(filePath, expectedSha, expectedSize))
             throw new InvalidOperationException("The downloaded server jar did not match the expected size or SHA-1 checksum.");
     }
 

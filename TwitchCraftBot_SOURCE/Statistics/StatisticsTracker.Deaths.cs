@@ -4,7 +4,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private void RecordServerLineForStatistics(string line, bool hasDeathScoreObjective)
+    private void RecordLine(string line, bool hasDeathScoreObjective)
     {
         if (!StatisticsEnabled || string.IsNullOrEmpty(line))
         {
@@ -18,38 +18,31 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        string message = ExtractMinecraftServerMessage(line);
+        string message = ExtractMessage(line);
         if (message.Length == 0)
         {
             return;
         }
 
-        if (hasDeathScoreObjective && TryExtractDeathScoreFromMessage(message, out string scorePlayerName, out int deathScore))
+        if (hasDeathScoreObjective && TryExtractDeathScore(message, out string scorePlayerName, out int deathScore))
         {
-            RecordDeathScoreForStatistics(scorePlayerName, deathScore);
+            RecordDeathScore(scorePlayerName, deathScore);
             return;
         }
 
-        if (TryExtractDeathPlayerFromMessage(message, out string deathMessagePlayerName) &&
-            ShouldTrackSurvivalPlayer(deathMessagePlayerName))
+        if (TryExtractPlayer(message, out string deathMessagePlayerName) &&
+            ShouldTrackPlayer(deathMessagePlayerName))
         {
-            QueueTrackedPlayerDeathScoreRefreshForStatistics(deathMessagePlayerName);
+            QueueDeathScore(deathMessagePlayerName);
         }
     }
 
-    internal void RecordDeathScoreForStatistics(string playerName, int deathScore)
+    internal void RecordDeathScore(string playerName, int deathScore)
     {
-        if (!StatisticsEnabled)
-        {
+        if (!StatisticsEnabled || deathScore < 0 || !ShouldTrackPlayer(playerName))
             return;
-        }
 
-        if (deathScore < 0 || !ShouldTrackSurvivalPlayer(playerName))
-        {
-            return;
-        }
-
-        EnsureStatisticsLoaded();
+        EnsureLoaded();
 
         DateTime now = DateTime.UtcNow;
         long survivedSeconds = 0;
@@ -73,7 +66,7 @@ public sealed partial class BotMainHandler
                     }
                     else
                     {
-                        survivedSeconds = GetCurrentLifeSurvivalSeconds(_sessionStatistics, now);
+                        survivedSeconds = GetLifeSeconds(_sessionStatistics, now);
                         processDeathScore = true;
                     }
                 }
@@ -81,7 +74,7 @@ public sealed partial class BotMainHandler
 
             if (saveBaselineOnly)
             {
-                if (!BotStatisticsStore.SaveDeathScoreBaseline(deathScore))
+                if (!BotStatisticsStore.SaveDeathBaseline(deathScore))
                 {
                     return;
                 }

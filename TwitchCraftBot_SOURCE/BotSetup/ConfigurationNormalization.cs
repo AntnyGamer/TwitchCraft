@@ -38,7 +38,7 @@ public sealed partial class ConfigurationStore
                 return false;
         }
 
-        if (!TryRemoveOptionalRemotePort(host, out string hostOnly))
+        if (!TryStripRemotePort(host, out string hostOnly))
             return false;
 
         if (hostOnly.EndsWith('.'))
@@ -82,7 +82,7 @@ public sealed partial class ConfigurationStore
         return true;
     }
 
-    private static bool TryRemoveOptionalRemotePort(string host, out string hostOnly)
+    private static bool TryStripRemotePort(string host, out string hostOnly)
     {
         hostOnly = host;
 
@@ -94,11 +94,9 @@ public sealed partial class ConfigurationStore
 
             string address = host[1..bracketEnd];
             string remainder = host[(bracketEnd + 1)..];
-            if (remainder.Length > 0)
-            {
-                if (!remainder.StartsWith(':') || !IsValidPortText(remainder.AsSpan(1)))
-                    return false;
-            }
+            if (remainder.Length > 0 &&
+                (!remainder.StartsWith(':') || !IsValidPortText(remainder.AsSpan(1))))
+                return false;
 
             hostOnly = address;
             return IPAddress.TryParse(hostOnly, out _);
@@ -118,7 +116,7 @@ public sealed partial class ConfigurationStore
     private static bool IsValidPortText(ReadOnlySpan<char> portText)
         => int.TryParse(portText, NumberStyles.None, CultureInfo.InvariantCulture, out int port) && IsValidPort(port);
 
-    public static bool ShouldShowAdvancedBindIPWarning(string? value)
+    public static bool ShouldWarnAboutBindIP(string? value)
     {
         if (!IPAddress.TryParse(CleanText(value), out IPAddress? IP))
             return true;
@@ -127,7 +125,7 @@ public sealed partial class ConfigurationStore
         return bytes.Length != 4 || bytes[0] == 25 || bytes[0] == 26 || (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127);
     }
 
-    private static void ResetTransientStartMode(BotConfig config)
+    private static void ResetStartMode(BotConfig config)
     {
         config.Settings.MultiplayerEnabled = false;
         config.Settings.RemoteControlEnabled = false;
@@ -169,7 +167,7 @@ public sealed partial class ConfigurationStore
         if (!IsValidPort(config.Server.RCON.Port))
             config.Server.RCON.Port = DefaultRCONPort;
 
-        NormalizeRemoteHostAndPort(config.Server);
+        NormalizeEndpoint(config.Server);
 
         if (config.Settings.MinigameCooldown < 2 || config.Settings.MinigameCooldown > 30)
             config.Settings.MinigameCooldown = DefaultMinigameCooldown;
@@ -191,7 +189,7 @@ public sealed partial class ConfigurationStore
             config.Settings.CommandCostMultiplier = DefaultCommandCostMultiplier;
         }
 
-        config.Settings.BotResponseVerbosity = NormalizeBotResponseVerbosity(config.Settings.BotResponseVerbosity);
+        config.Settings.BotResponseVerbosity = NormalizeVerbosity(config.Settings.BotResponseVerbosity);
 
         config.Settings.CommandPrefix = NormalizeCommandPrefix(config.Settings.CommandPrefix, "!");
         config.Settings.SecondaryCommandPrefix = NormalizeCommandPrefix(config.Settings.SecondaryCommandPrefix, string.Empty);
@@ -200,7 +198,7 @@ public sealed partial class ConfigurationStore
 
         if (config.Settings.PassiveTokensPerPayout < 1 || config.Settings.PassiveTokensPerPayout > 1_000_000)
             config.Settings.PassiveTokensPerPayout = DefaultPassiveTokensPerPayout;
-        NormalizePassivePayoutRange(config.Settings);
+        NormalizePayout(config.Settings);
         if (config.Settings.MaximumTokenBalance < 0)
             config.Settings.MaximumTokenBalance = 0;
         if (config.Settings.ChannelCommandLimitPerMinute < 0 || config.Settings.ChannelCommandLimitPerMinute > 1000)
@@ -223,8 +221,8 @@ public sealed partial class ConfigurationStore
         config.Settings.EntityBroadcastRangePercentage = NormalizeRange(config.Settings.EntityBroadcastRangePercentage, 100, 10, 1000);
         config.Settings.NetworkCompressionThreshold = NormalizeRange(config.Settings.NetworkCompressionThreshold, 256, -1, 4096);
         config.Settings.EmptyServerShutdownDelayMinutes = NormalizeChoice(config.Settings.EmptyServerShutdownDelayMinutes, 0, 0, 5, 10, 15, 30, 60, 120);
-        NormalizeCommandCustomizations(config.Settings);
-        config.Settings.MinecraftRelayTextColor = NormalizeMinecraftChatColor(config.Settings.MinecraftRelayTextColor);
+        NormalizeCommands(config.Settings);
+        config.Settings.MinecraftRelayTextColor = NormalizeColor(config.Settings.MinecraftRelayTextColor);
 
         config.Settings.Difficulty = NormalizeDifficulty(config.Settings.Difficulty);
 
@@ -249,7 +247,7 @@ public sealed partial class ConfigurationStore
 
     private static bool IsValidPort(int port) => port is >= MinPort and <= MaxPort;
 
-    private static void NormalizeRemoteHostAndPort(ServerConfig server)
+    private static void NormalizeEndpoint(ServerConfig server)
     {
         string host = CleanText(server.RemoteHost);
         int bracketPortIndex = host.IndexOf("]:", StringComparison.Ordinal);
@@ -287,7 +285,7 @@ public sealed partial class ConfigurationStore
             : "Medium";
     }
 
-    internal static string NormalizeBotResponseVerbosity(string? verbosity)
+    internal static string NormalizeVerbosity(string? verbosity)
     {
         string value = (verbosity ?? string.Empty).Trim();
         return value.Equals(BotResponseVerbositySettings.Reduced, StringComparison.OrdinalIgnoreCase)
@@ -312,7 +310,7 @@ public sealed partial class ConfigurationStore
         return value;
     }
 
-    internal static string NormalizeMinecraftChatColor(string? color)
+    internal static string NormalizeColor(string? color)
     {
         string value = (color ?? string.Empty).Trim().ToLowerInvariant();
         return value is "black" or "dark_blue" or "dark_green" or "dark_aqua" or "dark_red" or
@@ -342,7 +340,7 @@ public sealed partial class ConfigurationStore
             ? value
             : fallback;
 
-    private static void NormalizeCommandCustomizations(StartingProfile settings)
+    private static void NormalizeCommands(StartingProfile settings)
     {
         Dictionary<string, CommandCustomization> normalized = new(
             settings.CommandCustomizations?.Count ?? 0,
@@ -358,15 +356,27 @@ public sealed partial class ConfigurationStore
                 int? cooldown = value.CooldownSeconds;
                 if (cooldown is < 0 or > 86400)
                     cooldown = null;
-                if (!value.Enabled || cooldown.HasValue)
-                    normalized[name] = new CommandCustomization { Enabled = value.Enabled, CooldownSeconds = cooldown };
+
+                double? globalCooldown = value.GlobalCooldownSeconds;
+                if (globalCooldown.HasValue && (!double.IsFinite(globalCooldown.Value) || globalCooldown.Value < 0.0 || globalCooldown.Value > 86400.0))
+                    globalCooldown = null;
+
+                if (!value.Enabled || cooldown.HasValue || globalCooldown.HasValue)
+                {
+                    normalized[name] = new CommandCustomization
+                    {
+                        Enabled = value.Enabled,
+                        CooldownSeconds = cooldown,
+                        GlobalCooldownSeconds = globalCooldown
+                    };
+                }
             }
         }
 
         settings.CommandCustomizations = normalized;
     }
 
-    private static void NormalizePassivePayoutRange(StartingProfile settings)
+    private static void NormalizePayout(StartingProfile settings)
     {
         const int DefaultMinimum = 30;
         const int DefaultMaximum = 60;

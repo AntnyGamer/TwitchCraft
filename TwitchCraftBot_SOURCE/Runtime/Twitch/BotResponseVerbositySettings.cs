@@ -13,10 +13,7 @@ internal static class BotResponseVerbositySettings
     internal const string Reduced = "Reduced";
     internal const string EssentialOnly = "Essential Only";
 
-    internal static bool ShouldSend(string? verbosity, BotResponseKind kind)
-        => ShouldSendNormalized(BotSetup.ConfigurationStore.NormalizeBotResponseVerbosity(verbosity), kind);
-
-    internal static bool ShouldSendNormalized(string verbosity, BotResponseKind kind)
+    internal static bool ShouldSend(string verbosity, BotResponseKind kind)
         => verbosity switch
         {
             Reduced => kind != BotResponseKind.Confirmation,

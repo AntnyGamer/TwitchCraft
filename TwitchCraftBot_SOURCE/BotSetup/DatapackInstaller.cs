@@ -17,23 +17,23 @@ internal static class DatapackInstaller
     private const string LegacyPrintTellraw = "tellraw @a[tag=lp_requester] [{\"selector\":\"@s\",\"color\":\"aqua\"},{\"text\":\": \",\"color\":\"gray\"},{\"text\":\"X=\",\"color\":\"gold\"},{\"score\":{\"name\":\"$x\",\"objective\":\"lp_math\"}},{\"text\":\" Y=\",\"color\":\"gold\"},{\"score\":{\"name\":\"$y\",\"objective\":\"lp_math\"}},{\"text\":\" Z=\",\"color\":\"gold\"},{\"score\":{\"name\":\"$z\",\"objective\":\"lp_math\"}}]";
     private const string InlinePrintTellraw = "tellraw @a[tag=lp_requester,limit=1] [{selector:'@s',color:'aqua'},{text:': ',color:'gray'},{text:'X=',color:'gold'},{score:{name:'$x',objective:'lp_math'}},{text:' Y=',color:'gold'},{score:{name:'$y',objective:'lp_math'}},{text:' Z=',color:'gold'},{score:{name:'$z',objective:'lp_math'}}]";
 
-    public static bool SyncLocatePlayersDatapack(BotConfig config)
+    public static bool SyncLocateDatapack(BotConfig config)
     {
         return !config.Settings.MultiplayerEnabled ||
-            SyncLocatePlayersDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, ServerPropertyEditor.GetLevelName(config));
+            SyncLocateDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, ServerPropertyEditor.GetLevelName(config));
     }
 
-    public static bool SyncLocatePlayersDatapack(string serverDirectory, string minecraftVersion, string? levelName = null)
+    public static bool SyncLocateDatapack(string serverDirectory, string minecraftVersion, string? levelName = null)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory))
             return true;
 
         string sourceDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", DatapackName);
         string destinationDirectory = Path.Combine(ServerPropertyEditor.GetWorldDirectory(serverDirectory, levelName), "datapacks", DatapackName);
-        return TrySyncLocatePlayersDatapack(sourceDirectory, destinationDirectory, minecraftVersion, ReportDatapackWarning);
+        return TrySyncDatapack(sourceDirectory, destinationDirectory, minecraftVersion, ReportWarning);
     }
 
-    internal static bool TrySyncLocatePlayersDatapack(
+    internal static bool TrySyncDatapack(
         string sourceDirectory,
         string destinationDirectory,
         string minecraftVersion,
@@ -42,32 +42,32 @@ internal static class DatapackInstaller
         ArgumentNullException.ThrowIfNull(reportWarning);
 
         if (!Directory.Exists(sourceDirectory))
-            return ReportDatapackFailure(new DirectoryNotFoundException("Locateplayers datapack source folder is missing: " + sourceDirectory), reportWarning);
+            return ReportFailure(new DirectoryNotFoundException("Locateplayers datapack source folder is missing: " + sourceDirectory), reportWarning);
 
         string functionSource = Path.Combine(sourceDirectory, "data", DatapackName, "functions");
         string tagSource = Path.Combine(sourceDirectory, "data", "minecraft", "tags", "functions");
         if (!Directory.Exists(functionSource) || !Directory.Exists(tagSource))
-            return ReportDatapackFailure(new InvalidDataException("Locateplayers datapack source folder is incomplete: " + sourceDirectory), reportWarning);
+            return ReportFailure(new InvalidDataException("Locateplayers datapack source folder is incomplete: " + sourceDirectory), reportWarning);
 
         try
         {
-            SyncLocatePlayersDatapackFiles(functionSource, tagSource, destinationDirectory, minecraftVersion);
+            SyncFiles(functionSource, tagSource, destinationDirectory, minecraftVersion);
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
-            return ReportDatapackFailure(ex, reportWarning);
+            return ReportFailure(ex, reportWarning);
         }
     }
 
-    private static void SyncLocatePlayersDatapackFiles(
+    private static void SyncFiles(
         string functionSource,
         string tagSource,
         string destinationDirectory,
         string minecraftVersion)
     {
         Directory.CreateDirectory(destinationDirectory);
-        File.WriteAllText(Path.Combine(destinationDirectory, "pack.mcmeta"), BuildPackMetadataJson(minecraftVersion), Utf8NoBom);
+        File.WriteAllText(Path.Combine(destinationDirectory, "pack.mcmeta"), BuildPackMetadata(minecraftVersion), Utf8NoBom);
 
         string namespaceDirectory = Path.Combine(destinationDirectory, "data", DatapackName);
         string minecraftTagsDirectory = Path.Combine(destinationDirectory, "data", "minecraft", "tags");
@@ -84,21 +84,21 @@ internal static class DatapackInstaller
         TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(tagSource, Path.Combine(minecraftTagsDirectory, functionDirectoryName), skipReparsePoints: true);
 
         if (version.UsesInlineTextComponents)
-            RewriteLocatePlayersTextCommands(destinationDirectory);
+            RewriteCommands(destinationDirectory);
     }
 
-    private static bool ReportDatapackFailure(Exception exception, Action<string, Exception> reportWarning)
+    private static bool ReportFailure(Exception exception, Action<string, Exception> reportWarning)
     {
         reportWarning(DatapackWarningContext, exception);
         return false;
     }
 
-    private static void ReportDatapackWarning(string context, Exception exception)
+    private static void ReportWarning(string context, Exception exception)
     {
         TwitchCraftBot_V1.ErrorHandling.LogNonFatal(context, exception);
         try
         {
-            TwitchCraftBot_V1.ErrorHandling.ShowDatapackInstallWarning(exception.Message);
+            TwitchCraftBot_V1.ErrorHandling.ShowDatapackWarning(exception.Message);
         }
         catch (Exception popupException)
         {
@@ -106,12 +106,12 @@ internal static class DatapackInstaller
         }
     }
 
-    internal static string BuildPackMetadataJson(string minecraftVersion)
+    internal static string BuildPackMetadata(string minecraftVersion)
     {
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(minecraftVersion);
         if (version.UsesModernPackMetadata)
         {
-            string exact = version.GetExactPackFormatJsonValue();
+            string exact = version.GetPackFormatJson();
             return "{\n"
                  + "  \"pack\": {\n"
                  + "    \"min_format\": " + exact + ",\n"
@@ -129,7 +129,7 @@ internal static class DatapackInstaller
              + "}";
     }
 
-    private static void RewriteLocatePlayersTextCommands(string destinationDirectory)
+    private static void RewriteCommands(string destinationDirectory)
     {
         foreach (string filePath in Directory.EnumerateFiles(destinationDirectory, "*.mcfunction", SearchOption.AllDirectories))
         {
@@ -156,7 +156,7 @@ internal static class DatapackInstaller
 
         try
         {
-            ClearReadOnlyAttributes(path);
+            ClearReadOnlyTree(path);
             Directory.Delete(path, true);
         }
         catch (Exception ex)
@@ -165,18 +165,18 @@ internal static class DatapackInstaller
         }
     }
 
-    private static void ClearReadOnlyAttributes(string path)
+    private static void ClearReadOnlyTree(string path)
     {
         DirectoryInfo root = new(path);
-        ClearReadOnlyAttribute(root);
+        ClearReadOnly(root);
 
         foreach (FileSystemInfo item in root.EnumerateFileSystemInfos("*", SearchOption.AllDirectories))
         {
-            ClearReadOnlyAttribute(item);
+            ClearReadOnly(item);
         }
     }
 
-    private static void ClearReadOnlyAttribute(FileSystemInfo item)
+    private static void ClearReadOnly(FileSystemInfo item)
     {
         FileAttributes attributes = item.Attributes;
         if ((attributes & FileAttributes.ReadOnly) == 0)

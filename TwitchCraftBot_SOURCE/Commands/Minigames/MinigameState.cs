@@ -7,7 +7,6 @@ namespace TwitchCraftBot_V1;
 
 public static partial class MinigameManager
 {
-
     private const int MaxMinigameBetPerPlayer = 200;
     private static readonly TimeSpan OneSecondMinigameDelay = TimeSpan.FromSeconds(1.0);
     private static readonly TimeSpan ChickenRunBettingDelay = TimeSpan.FromMinutes(1.0);
@@ -84,15 +83,15 @@ public static partial class MinigameManager
 
     // ===== State access helpers =====
 
-    private static ChickenRunState GetChickenRunState(BotMainHandler runtime)
+    private static ChickenRunState GetChickenState(BotMainHandler runtime)
     {
         lock (MinigameGate)
         {
-            return GetChickenRunStateNoLock(runtime);
+            return GetChickenStateNoLock(runtime);
         }
     }
 
-    private static ChickenRunState GetChickenRunStateNoLock(BotMainHandler runtime)
+    private static ChickenRunState GetChickenStateNoLock(BotMainHandler runtime)
     {
         if (!ChickenRunStates.TryGetValue(runtime, out ChickenRunState? state))
         {
@@ -103,7 +102,7 @@ public static partial class MinigameManager
         return state;
     }
 
-    private static GuessNumberState GetGuessNumberStateNoLock(BotMainHandler runtime)
+    private static GuessNumberState GetGuessStateNoLock(BotMainHandler runtime)
     {
         if (!GuessNumberStates.TryGetValue(runtime, out GuessNumberState? state))
         {
@@ -114,15 +113,15 @@ public static partial class MinigameManager
         return state;
     }
 
-    private static WitherBattleState GetWitherBattleState(BotMainHandler runtime)
+    private static WitherBattleState GetWitherState(BotMainHandler runtime)
     {
         lock (MinigameGate)
         {
-            return GetWitherBattleStateNoLock(runtime);
+            return GetWitherStateNoLock(runtime);
         }
     }
 
-    private static WitherBattleState GetWitherBattleStateNoLock(BotMainHandler runtime)
+    private static WitherBattleState GetWitherStateNoLock(BotMainHandler runtime)
     {
         if (!WitherBattleStates.TryGetValue(runtime, out WitherBattleState? state))
         {
@@ -133,7 +132,7 @@ public static partial class MinigameManager
         return state;
     }
 
-    private static ActiveMinigameState GetActiveMinigameStateNoLock(BotMainHandler runtime)
+    private static ActiveMinigameState GetActiveStateNoLock(BotMainHandler runtime)
     {
         if (!ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? state))
         {
@@ -182,48 +181,4 @@ public static partial class MinigameManager
 
         return refunds;
     }
-
-    // ===== Loop lifecycle and scheduling =====
-
-    private static DateTime TakeNextMinigameTimeNoLock(BotMainHandler runtime)
-    {
-        if (PreservedNextMinigameAtUtc?.Remove(runtime, out DateTime nextAtUtc) == true)
-        {
-            ClearEmptyPreservedScheduleNoLock();
-            return nextAtUtc;
-        }
-
-        return DateTime.UtcNow.AddMinutes(runtime.MinigameCooldown);
-    }
-
-    private static void ClearEmptyPreservedScheduleNoLock()
-    {
-        if (PreservedNextMinigameAtUtc?.Count == 0)
-            PreservedNextMinigameAtUtc = null;
-    }
-
-    private static void SetNextMinigameTime(BotMainHandler runtime, double minutesFromNow)
-    {
-        lock (MinigameGate)
-        {
-            if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? loop))
-                loop.NextAtUtc = DateTime.UtcNow.AddMinutes(minutesFromNow);
-        }
-    }
-
-    private static async Task WaitForMinigameDelayAsync(BotMainHandler runtime, MinigameLoopState expectedLoop, CancellationToken cancellationToken)
-    {
-        TimeSpan delay;
-        lock (MinigameGate)
-        {
-            if (!MinigameLoops.TryGetValue(runtime, out MinigameLoopState? loop) || !ReferenceEquals(loop, expectedLoop))
-                return;
-
-            delay = loop.NextAtUtc - DateTime.UtcNow;
-        }
-
-        if (delay > TimeSpan.Zero)
-            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
-    }
-
 }

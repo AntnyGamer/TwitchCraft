@@ -9,7 +9,7 @@
 3. If the log file reaches 1 MB in size, previous log entries will be moved to files called:
 
    * `TwitchCraftBot.log.old1` through `TwitchCraftBot.log.old4`
-4. Only a maximum of 6 MB of log data can be stored
+4. Up to five log files are retained: the current file and four older files, each limited to about 1 MB
 5. Review the log before sharing it, as error information may contain private or personal information
 
 ## INVALID TOKEN OR LONG ERROR ON STARTUP
@@ -17,7 +17,8 @@
 1. Open **Settings → Dangerous → Authorize Twitch**
 2. Approve Twitch device authorization again in the browser
 3. Do not paste a token into `config.json`; TwitchCraft saves and renews its hidden authorization automatically
-4. If authorization still fails, confirm the Client ID belongs to the Twitch Developer application you intend to use and try again
+4. TwitchCraft uses its built-in public Twitch application; do not create a developer application or add a Client ID, Client Secret, or localhost redirect
+5. If the error says this build is missing TwitchCraft's public Client ID, reinstall a complete official build
 
 ## JAVA OR SERVER JAR ERROR
 
@@ -39,7 +40,7 @@
 On the Setup screen:
 
 1. Hover over the disabled **Start** button and read the tooltip
-2. Select a Minecraft version and enter a valid bind IP, Client ID, and Twitch channel name
+2. Select a Minecraft version and enter a valid bind IP and Twitch channel name
 3. Select **Authorize Twitch** and wait for the authorized bot account to appear
 
 On the Start screen, make sure:
@@ -197,7 +198,7 @@ On the Start screen, make sure:
 
    * `AppData --> Roaming --> TwitchCraftBot --> config.json`
 3. Check for missing commas, missing quotes, or extra brackets
-4. If you are not sure what changed, restore `config.json` and `viewer_tokens.db` from the same timestamped folder under `TwitchCraftBot\Backups`
+4. If you are not sure what changed, restore `config.json` and `viewer_tokens.db` from the same timestamped folder under `TwitchCraftBot\backups`
 5. If there is no complete automatic backup, run Setup again to recreate the config file
 
 ## TWITCHCRAFT OR MINECRAFT SERVER IS LAGGING OR LOW FPS

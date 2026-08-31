@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -37,10 +38,10 @@ internal static partial class ErrorHandling
         if (_initialized || application == null)
             return;
 
-        application.DispatcherUnhandledException += Application_DispatcherUnhandledException;
-        application.Exit += Application_Exit;
-        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-        TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+        application.DispatcherUnhandledException += OnDispatcherException;
+        application.Exit += OnExit;
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnTaskException;
         _initialized = true;
     }
 
@@ -113,23 +114,23 @@ internal static partial class ErrorHandling
         }
     }
 
-    private static string FormatExceptionMessage(Exception? ex)
+    private static string FormatException(Exception? ex)
     {
         return ex?.Message ?? "An unexpected error occurred.";
     }
 
-    public static string FormatLogMessage(string context, Exception? ex)
+    public static string FormatLog(string context, Exception? ex)
     {
-        return context + ": " + FormatExceptionMessage(ex);
+        return context + ": " + FormatException(ex);
     }
 
     public static void LogNonFatal(string context, Exception? ex)
     {
-        Trace.TraceWarning(FormatLogMessage(context, ex));
+        Trace.TraceWarning(FormatLog(context, ex));
         WriteLog("WARN", context, ex);
     }
 
-    public static string FormatLogMessage(string context, SocketException ex)
+    public static string FormatLog(string context, SocketException ex)
     {
         return context + ": " + ex.SocketErrorCode;
     }
@@ -154,7 +155,7 @@ internal static partial class ErrorHandling
             RollingJsonLogWriter? writer;
             lock (LogGate)
             {
-                EnsureLogInitializedNoLock();
+                EnsureLogNoLock();
                 writer = _logWriter;
             }
 
@@ -165,7 +166,7 @@ internal static partial class ErrorHandling
         }
     }
 
-    private static void EnsureLogInitializedNoLock()
+    private static void EnsureLogNoLock()
     {
         if (_logInitialized)
             return;
@@ -203,7 +204,7 @@ internal static partial class ErrorHandling
         }
     }
 
-    private static void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    private static void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Exception? ex = e.Exception;
         WriteLog("ERROR", "Unhandled UI exception", ex);
@@ -212,24 +213,24 @@ internal static partial class ErrorHandling
         if (ex == null)
             message = "An unexpected error occurred.";
         else
-            message = "An unexpected error occurred.\n\n" + FormatExceptionMessage(ex);
+            message = "An unexpected error occurred.\n\n" + FormatException(ex);
 
         ShowError(null, "Unexpected Error", message);
         e.Handled = true;
     }
 
-    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         WriteLog("ERROR", "Unhandled application exception", e.ExceptionObject as Exception);
     }
 
-    private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    private static void OnTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         WriteLog("ERROR", "Unobserved task exception", e.Exception);
         e.SetObserved();
     }
 
-    private static void Application_Exit(object sender, ExitEventArgs e)
+    private static void OnExit(object sender, ExitEventArgs e)
     {
         CloseLog();
     }
@@ -245,5 +246,29 @@ internal static partial class ErrorHandling
         public string? Message { get; init; }
         [JsonPropertyName("details")]
         public string? OriginalError { get; init; }
+    }
+}
+
+internal static class ApplicationVersionProvider
+{
+    internal const string UnknownVersion = "Unknown";
+
+    internal static string Resolve()
+        => Resolve(typeof(ApplicationVersionProvider).Assembly);
+
+    internal static string Resolve(Assembly? assembly)
+    {
+        if (assembly == null)
+            return UnknownVersion;
+
+        try
+        {
+            string? fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
+            return string.IsNullOrWhiteSpace(fileVersion) ? UnknownVersion : fileVersion;
+        }
+        catch
+        {
+            return UnknownVersion;
+        }
     }
 }

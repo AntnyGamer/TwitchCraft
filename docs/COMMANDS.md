@@ -1,6 +1,6 @@
 # Twitch chat commands
 
-This file documents the command registry in the current source. Commands are case-insensitive.
+This file documents the command registry in the current source. Commands are case-insensitive. The tables use the default `!` prefix; the primary and optional secondary prefixes can be changed in Settings.
 
 ## Targeting, pricing, and refunds
 
@@ -12,11 +12,11 @@ In singleplayer, targeted commands use the configured streamer Minecraft account
 !heal random
 ```
 
-For paid targeted commands, one target pays the listed base cost. Multiple targets use the existing reduced scaling formula `base cost × (player count + 1) ÷ 2`, rounded down to a whole token. Invalid, offline, protected, or unavailable targets are rejected before dispatch where applicable. Spectators may be filtered from gameplay targeting.
+For paid targeted commands, one target pays the listed base cost. Multiple targets use the existing reduced scaling formula `base cost × (player count + 1) ÷ 2`, rounded down to a whole token. The command-cost multiplier is then applied and rounded up. Invalid, offline, protected, or unavailable targets are rejected before dispatch where applicable. Spectators may be filtered from gameplay targeting.
 
 Paid gameplay commands refund the charged tokens when TwitchCraft cannot dispatch the Minecraft command. A successfully dispatched command is not refunded merely because its effect was not visible in game.
 
-The optional global gameplay-command cooldown applies to normal gameplay commands. `!lightning`, `!tiny`, and `!giant` each use an independent five-minute global cooldown. `!gambletokens` uses a five-minute per-viewer cooldown.
+The optional global gameplay-command cooldown applies to normal gameplay commands. By default, `!lightning`, `!tiny`, and `!giant` each use an independent five-minute cooldown shared by all viewers, while `!gambletokens` uses a five-minute per-viewer cooldown. Per-command cooldown settings can override these defaults.
 
 ## Utility and economy
 
@@ -27,7 +27,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!tokens` | `!tokens [twitch-user]` | Free | Twitch user | Everyone | Shows your balance or another viewer's balance. |
 | `!tokenrank` | `!tokenrank [twitch-user]` | Free | Twitch user | Everyone | Shows your exact token-leaderboard position and balance, or checks another viewer. |
 | `!tokenleaderboard` | `!tokenleaderboard` | Free | Twitch viewers | Everyone | Shows the five viewers with the highest token balances. |
-| `!followreward` | `!followreward` | Free | None | Everyone | Explains the automatic one-time 100-token follow reward. |
+| `!followreward` | `!followreward` | Free | None | Everyone | Explains the automatic one-time follow reward and its configured token amount (100 by default). |
 | `!commandstats` | `!commandstats` | Free | Current session | Everyone | Shows session game-command, dangerous-command, nice-command, token-spend, and most-used-command statistics. |
 | `!tradetokens` | `!tradetokens <twitch-user> <amount>` | Entered amount | Twitch user | Everyone | Spends the sender's tokens and gives the recipient 50% of the amount. |
 | `!gambletokens` | `!gambletokens <amount> [risk 1-10]` | 5–150 token bet | Self | Everyone | Gambles tokens; risk defaults to 5 and is clamped to 1–10. Five-minute cooldown. |

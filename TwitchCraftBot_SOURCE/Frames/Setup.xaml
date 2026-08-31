@@ -19,14 +19,9 @@
         <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
                 <TextBlock x:Name="Title" Text="TwitchCraft Bot Setup" FontFamily="Cascadia Mono" FontSize="27.75" Foreground="Red" TextAlignment="Center" Margin="0,31,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" />
-
-                <TextBlock x:Name="JavaRequirementText" Width="90" Text="JDK 17 REQUIRED" FontFamily="Segoe UI Variable Display Semibold" FontSize="10" Foreground="#FFD6D6D6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,125,0,0" />
-
-                <TextBlock x:Name="MCVersion" Text="Minecraft Version:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,140,0,0" />
-
-                <TextBlock x:Name="InfoText" Text="Make sure all information is entered correctly." FontFamily="Segoe UI Variable Display Semibold" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="582,426,0,0" />
-
-                <ComboBox x:Name="MCVersionDropdown" Width="200" Height="33" FontFamily="Arial Rounded MT Bold" FontSize="16" SelectionChanged="MCVersionDropdown_SelectionChanged" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,133,0,0">
+                <TextBlock x:Name="JavaRequirementText" Width="90" Text="JDK 25 REQUIRED" FontFamily="Segoe UI Variable Display Semibold" FontSize="10" Foreground="#FFD6D6D6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,111,0,0" />
+                <TextBlock x:Name="MCVersion" Text="Minecraft Version:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,126,0,0" />
+                <ComboBox x:Name="MCVersionDropdown" Width="200" Height="33" FontFamily="Arial Rounded MT Bold" FontSize="16" SelectionChanged="Version_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,119,0,0">
                     <ComboBox.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
@@ -37,33 +32,19 @@
                         </GroupStyle>
                     </ComboBox.GroupStyle>
                 </ComboBox>
+                <TextBlock x:Name="MCBindIP" FontFamily="Segoe UI Variable Display Semibold" HorizontalAlignment="Left" VerticalAlignment="Top" Width="170" Margin="175,160,0,0"><Run Text="Minecraft Bind IP:" FontSize="14" Foreground="White" /><Run Text=" "/><Run Text=" (advanced) " FontSize="10" Foreground="#FFD6D6D6" /></TextBlock>
+                <TextBox x:Name="MCBindIPTextbox" Width="200" Height="30" Text="127.0.0.1" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,155,0,0" />
+                <TextBlock x:Name="TwitchUser" Text="Twitch Channel Name:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,192,0,0" />
+                <TextBox x:Name="TwitchUserTextbox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,187,0,0" />
+                <TextBlock x:Name="BotUser" Text="Authorized Bot Account:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,224,0,0" />
+                <TextBox x:Name="BotUserTextbox" Width="200" Height="30" IsReadOnly="True" IsTabStop="False" ToolTip="Filled automatically after Twitch authorization." FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,219,0,0" />
+                <TextBlock Width="620" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,258,0,0" FontFamily="Segoe UI Variable Display Semibold" FontSize="10.5" FontWeight="Bold" Foreground="Red" Text="IMPORTANT: Authorize with the Twitch account you want TwitchCraft to use as your bot account." />
 
-                <TextBlock x:Name="MCBindIP" FontFamily="Segoe UI Variable Display Semibold" HorizontalAlignment="Left" VerticalAlignment="Top" Width="170" Margin="175,174,0,0">
-                <Run Text="Minecraft Bind IP:" FontSize="14" Foreground="White" />
-                <Run Text=" (advanced) " FontSize="10" Foreground="#FFD6D6D6" />
-                </TextBlock>
+                <Button x:Name="AuthorizeTwitchButton" Width="156" Height="32" Content="Authorize Twitch" IsEnabled="True" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,292,0,0" />
 
-                <TextBox x:Name="MCBindIPTextbox" Width="200" Height="30" Text="127.0.0.1" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,169,0,0" />
+                <Button x:Name="StartButton" Width="116" Height="51" Content="Start" IsEnabled="False" ToolTipService.ShowOnDisabled="True" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" Click="Start_Click" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,330,0,0" />
 
-                <TextBlock x:Name="ClientID" Text="Twitch Client ID:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,206,0,0" />
-
-                <PasswordBox x:Name="ClientIDPasswordBox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" PasswordChar="●" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,201,0,0" />
-
-                <TextBox x:Name="ClientIDTextbox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Hidden" IsUndoEnabled="False" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,201,0,0" />
-
-                <CheckBox x:Name="ClientIDCheckbox" Content="Show" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="590,208,0,0" />
-
-                <TextBlock x:Name="TwitchUser" Text="Twitch Channel Name:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,238,0,0" />
-
-                <TextBox x:Name="TwitchUserTextbox" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,233,0,0" />
-
-                <TextBlock x:Name="BotUser" Text="Authorized Bot Account:" FontFamily="Segoe UI Variable Display Semibold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="175,270,0,0" />
-
-                <TextBox x:Name="BotUserTextbox" Width="200" Height="30" IsReadOnly="True" IsTabStop="False" ToolTip="Filled automatically after Twitch authorization." FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="383,265,0,0" />
-
-                <Button x:Name="AuthorizeTwitchButton" Width="156" Height="32" Content="Authorize Twitch" IsEnabled="False" Click="AuthorizeTwitchButton_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,312,0,0" />
-
-                <Button x:Name="StartButton" Width="116" Height="51" Content="Start" IsEnabled="False" ToolTipService.ShowOnDisabled="True" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" Click="StartButton_Click" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,356,0,0" />
+                <TextBlock Width="650" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,386,0,0" FontFamily="Segoe UI Variable Display Semibold" FontSize="10" Foreground="#FFD6D6D6" Text="TwitchCraft is an open-source application designed to enhance your Twitch streams and Minecraft playthroughs. TwitchCraft only accesses your Twitch information and permissions where needed to provide its features. Your Twitch password is never provided to TwitchCraft, your Twitch authorization tokens are stored ONLY locally on your computer. TwitchCraft's source code is publicly viewable and editable on GitHub. You can revoke TwitchCraft's access at any time through Twitch." />
 
             </Grid>
         </Viewbox>

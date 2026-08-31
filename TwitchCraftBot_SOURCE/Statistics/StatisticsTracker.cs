@@ -76,7 +76,7 @@ public sealed partial class BotMainHandler
 
     public bool StatisticsEnabled => _activeConfig?.Settings.StatisticsEnabled != false;
 
-    private void EnsureStatisticsLoaded()
+    private void EnsureLoaded()
     {
         if (_statisticsLoaded)
         {
@@ -90,17 +90,17 @@ public sealed partial class BotMainHandler
                 return;
             }
 
-            BotLifetimeStatistics loadedStatistics = BotStatisticsStore.LoadGlobalOnly();
+            BotLifetimeStatistics loadedStatistics = BotStatisticsStore.LoadGlobal();
             lock (_statisticsGate)
             {
                 _totalStatistics = loadedStatistics;
                 _statisticsLoaded = true;
-                MarkStatisticsLeaderboardDirtyNoLock();
+                MarkLeaderboardDirty();
             }
         }
     }
 
-    internal void ResetStatisticsForNewSession()
+    internal void ResetForSession()
     {
         lock (_statisticsGate)
         {
@@ -109,16 +109,16 @@ public sealed partial class BotMainHandler
                 DeathScoreBaselineSet = true,
                 LastDeathScore = ClampDeathScore(_totalStatistics.LastDeathScore)
             };
-            MarkStatisticsLeaderboardDirtyNoLock();
+            MarkLeaderboardDirty();
         }
     }
 
-    internal void ResetCurrentSurvivalForStatistics()
+    internal void ResetSurvival()
     {
         if (StatisticsEnabled)
         {
-            EnsureStatisticsLoaded();
-            _ = BotStatisticsStore.SaveDeathScoreBaseline(0);
+            EnsureLoaded();
+            _ = BotStatisticsStore.SaveDeathBaseline(0);
         }
 
         lock (_statisticsGate)
@@ -134,9 +134,9 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void ResetDeathScoreBaselineForStatistics()
+    internal void ResetDeathBaseline()
     {
-        EnsureStatisticsLoaded();
+        EnsureLoaded();
         lock (_statisticsGate)
         {
             _sessionStatistics.DeathScoreBaselineSet = true;
@@ -144,12 +144,12 @@ public sealed partial class BotMainHandler
         }
     }
 
-    public Task ResetAllStatisticsAsync()
-        => Task.Run(ResetAllStatistics);
+    public Task ResetAllAsync()
+        => Task.Run(ResetAll);
 
-    private void ResetAllStatistics()
+    private void ResetAll()
     {
-        EnsureStatisticsLoaded();
+        EnsureLoaded();
 
         DateTime now = DateTime.UtcNow;
         bool trackedPlayerIsOnline = false;
@@ -158,7 +158,7 @@ public sealed partial class BotMainHandler
 
         if (trackedPlayer.Length > 0)
         {
-            foreach (string knownPlayer in GetKnownPlayersList())
+            foreach (string knownPlayer in GetKnownPlayers())
             {
                 if (string.Equals(knownPlayer, trackedPlayer, StringComparison.OrdinalIgnoreCase))
                 {
@@ -198,7 +198,7 @@ public sealed partial class BotMainHandler
             {
                 if (preservedLifeStartedUtc is DateTime startedUtc)
                 {
-                    preservedLifeSeconds += CalculateElapsedSurvivalSeconds(startedUtc, now);
+                    preservedLifeSeconds += GetSurvivalSeconds(startedUtc, now);
                     preservedLifeStartedUtc = null;
                 }
 
@@ -216,7 +216,7 @@ public sealed partial class BotMainHandler
                 throw new IOException("Statistics could not be reset because the statistics database could not be cleared.");
 
             int deathScoreBaseline = Math.Max(0, preservedLastDeathScore ?? 0);
-            if (!BotStatisticsStore.SaveDeathScoreBaseline(deathScoreBaseline))
+            if (!BotStatisticsStore.SaveDeathBaseline(deathScoreBaseline))
                 throw new IOException("Statistics could not be reset because the death score baseline could not be saved.");
 
             lock (_statisticsGate)
@@ -233,13 +233,13 @@ public sealed partial class BotMainHandler
                 };
 
                 _totalStatistics = new BotLifetimeStatistics { LastDeathScore = deathScoreBaseline };
-                MarkStatisticsLeaderboardDirtyNoLock();
+                MarkLeaderboardDirty();
             }
         }
 
-        QueueOnlinePlayerSnapshotRefresh();
-        QueueTrackedPlayerGamemodeRefreshForStatistics();
-        QueueTrackedPlayerDeathScoreRefreshForStatistics();
+        QueueSnapshot();
+        QueueGamemode();
+        QueueDeathScore();
     }
 
 }

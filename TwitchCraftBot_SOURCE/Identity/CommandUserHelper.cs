@@ -2,10 +2,10 @@ namespace TwitchCraftBot_V1;
 
 internal static class CommandUserHelper
 {
-    internal static char ToLowerInvariantFast(char c)
+    internal static char LowerFast(char c)
         => (uint)(c - 'A') <= 25u ? (char)(c + ('a' - 'A')) : c < 128 ? c : char.ToLowerInvariant(c);
 
-    internal static string NormalizeUsername(string? user)
+    internal static string NormalizeUser(string? user)
     {
         if (string.IsNullOrEmpty(user))
             return string.Empty;
@@ -26,7 +26,7 @@ internal static class CommandUserHelper
         bool needsNewString = start != 0 || length != user.Length;
         for (int i = 0; i < length; i++)
         {
-            if (ToLowerInvariantFast(user[start + i]) != user[start + i])
+            if (LowerFast(user[start + i]) != user[start + i])
             {
                 needsNewString = true;
                 break;
@@ -39,17 +39,17 @@ internal static class CommandUserHelper
         return string.Create(length, (User: user, Start: start), static (destination, state) =>
         {
             for (int i = 0; i < destination.Length; i++)
-                destination[i] = CommandUserHelper.ToLowerInvariantFast(state.User[state.Start + i]);
+                destination[i] = CommandUserHelper.LowerFast(state.User[state.Start + i]);
         });
     }
 
-    internal static bool TryNormalizeTwitchUsername(string? user, out string normalized)
+    internal static bool TryNormalizeTwitchUser(string? user, out string normalized)
     {
-        normalized = NormalizeUsername(user);
-        return IsNormalizedTwitchUsername(normalized);
+        normalized = NormalizeUser(user);
+        return IsNormalizedUser(normalized);
     }
 
-    private static bool IsNormalizedTwitchUsername(string normalized)
+    private static bool IsNormalizedUser(string normalized)
     {
         if (normalized.Length is < 3 or > 25)
         {

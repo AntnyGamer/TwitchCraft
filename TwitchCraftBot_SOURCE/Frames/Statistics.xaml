@@ -30,7 +30,7 @@
                 </Rectangle.Fill>
             </Rectangle>
 
-        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"><Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True"><Button Width="100" Height="30" Content="Back" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="BackButton_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"><Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True"><Button Width="100" Height="30" Content="Back" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Back_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
             <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="0,18,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <TextBlock.Effect>

@@ -64,18 +64,18 @@ internal static class SortedListHelper
             values.RemoveRange(writeIndex, count - writeIndex);
     }
 
-    public static List<string> NormalizeMinecraftPlayerNames(List<string>? players, StringComparer comparer)
+    public static List<string> NormalizePlayerNames(List<string>? players, StringComparer comparer)
     {
         if (players is null)
             return [];
 
-        if (players.Count == 0 || IsNormalizedMinecraftPlayerList(players, comparer))
+        if (players.Count == 0 || IsNormalizedList(players, comparer))
             return players;
 
-        return NormalizeMinecraftPlayerNames((IEnumerable<string>)players, comparer);
+        return NormalizePlayerNames((IEnumerable<string>)players, comparer);
     }
 
-    public static List<string> NormalizeMinecraftPlayerNames(IEnumerable<string> players, StringComparer comparer)
+    public static List<string> NormalizePlayerNames(IEnumerable<string> players, StringComparer comparer)
     {
         ArgumentNullException.ThrowIfNull(players);
 
@@ -92,7 +92,7 @@ internal static class SortedListHelper
         return normalized;
     }
 
-    private static bool IsNormalizedMinecraftPlayerList(List<string> players, StringComparer comparer)
+    private static bool IsNormalizedList(List<string> players, StringComparer comparer)
     {
         int count = players.Count;
         if (!MinecraftNameHelper.TryNormalizePlayerName(players[0], out string previous) ||

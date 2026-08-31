@@ -44,7 +44,7 @@ public static partial class MinigameManager
 
             lock (MinigameGate)
             {
-                ChickenRunState state = GetChickenRunStateNoLock(runtime);
+                ChickenRunState state = GetChickenStateNoLock(runtime);
                 bettingOpen = state.BettingOpen;
                 minSeconds = state.MinSeconds;
                 maxSeconds = state.MaxSeconds;
@@ -98,7 +98,7 @@ public static partial class MinigameManager
                 tokenAmount,
                 () =>
                 {
-                    ChickenRunState state = GetChickenRunStateNoLock(runtime);
+                    ChickenRunState state = GetChickenStateNoLock(runtime);
                     if (!state.BettingOpen)
                         return MinigameBetUpdateResult.Closed;
 
@@ -130,7 +130,7 @@ public static partial class MinigameManager
                     return MinigameBetUpdateResult.Updated;
                 });
 
-            if (await TrySayBetFailureAsync(updateResult, sender, "Chicken Run", "Chicken Run betting is not open right now.", sayToChannel, ct).ConfigureAwait(false))
+            if (await ReplyBetErrorAsync(updateResult, sender, "Chicken Run", "Chicken Run betting is not open right now.", sayToChannel, ct).ConfigureAwait(false))
                 return;
 
             if (addedToExistingBet)
@@ -169,8 +169,8 @@ public static partial class MinigameManager
 
             lock (MinigameGate)
             {
-                GuessNumberState state = GetGuessNumberStateNoLock(runtime);
-                gameActive = IsGuessNumberRoundActiveNoLock(runtime, state, state.RoundID);
+                GuessNumberState state = GetGuessStateNoLock(runtime);
+                gameActive = IsGuessRoundActiveNoLock(runtime, state, state.RoundID);
 
                 if (gameActive)
                 {
@@ -201,7 +201,7 @@ public static partial class MinigameManager
                 return;
             }
 
-            TryResolveGuess(runtime, guess, out bool active, out bool correct, out int targetNumber);
+            EvaluateGuess(runtime, guess, out bool active, out bool correct, out int targetNumber);
 
             if (!active)
             {
@@ -244,8 +244,8 @@ public static partial class MinigameManager
 
             lock (MinigameGate)
             {
-                WitherBattleState state = GetWitherBattleStateNoLock(runtime);
-                bettingOpen = IsWitherBattleBettingOpenNoLock(runtime, state);
+                WitherBattleState state = GetWitherStateNoLock(runtime);
+                bettingOpen = IsWitherBettingOpenNoLock(runtime, state);
                 WitherBattleBet? existing = FindBet(state.Bets, sender);
                 existingAmount = existing?.TokenAmount ?? 0;
             }
@@ -272,8 +272,8 @@ public static partial class MinigameManager
                 tokenAmount,
                 () =>
                 {
-                    WitherBattleState state = GetWitherBattleStateNoLock(runtime);
-                    if (!IsWitherBattleBettingOpenNoLock(runtime, state))
+                    WitherBattleState state = GetWitherStateNoLock(runtime);
+                    if (!IsWitherBettingOpenNoLock(runtime, state))
                         return MinigameBetUpdateResult.Closed;
 
                     WitherBattleBet? existing = FindBet(state.Bets, sender);
@@ -309,7 +309,7 @@ public static partial class MinigameManager
                     return MinigameBetUpdateResult.Updated;
                 });
 
-            if (await TrySayBetFailureAsync(updateResult, sender, "Wither Battle", "a Wither Battle is not active right now.", sayToChannel, ct).ConfigureAwait(false))
+            if (await ReplyBetErrorAsync(updateResult, sender, "Wither Battle", "a Wither Battle is not active right now.", sayToChannel, ct).ConfigureAwait(false))
                 return;
 
             if (addedToExistingBet)

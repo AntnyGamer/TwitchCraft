@@ -24,10 +24,10 @@ Do not publish from an unreviewed working tree.
    dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
    ```
 
-4. Confirm the root solution built TwitchCraft and `TwitchCraftBot.Tests`.
+4. Confirm the root solution built TwitchCraft, `TwitchCraftBot.Tests`, and the test-process helper project.
 5. Download or inspect the CI `code-coverage` artifact; no percentage gate is enforced until a stable baseline is documented.
 6. Manually smoke-test startup, Twitch connection, local server startup, remote RCON, one paid command/refund path, multiplayer targeting, settings save/load, and shutdown.
-7. Launch TwitchCraft and smoke-test Client ID entry, browser device authorization, automatic account display, disabled-Start validation, and saved-authorization renewal.
+7. Launch TwitchCraft and smoke-test browser device authorization, automatic bot-account display, disabled-Start validation, saved-authorization renewal, and reauthorization from Settings.
 8. Check the release archive for tokens, passwords, configs, databases, logs, worlds, build symbols, and unrelated files.
 9. Verify documentation links and supported Minecraft/Java versions.
 10. Create the tag and release only after review.

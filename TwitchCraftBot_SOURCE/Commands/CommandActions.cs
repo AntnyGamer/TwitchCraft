@@ -22,10 +22,10 @@ public sealed partial class BotMainHandler
             ? baseCost
             : (baseCost * (playerCount + 1L)) / 2L;
         double multiplier = _activeConfig?.Settings.CommandCostMultiplier ?? 1.0;
-        return CalculateCommandCost(targetScaledCost, multiplier);
+        return GetCommandCost(targetScaledCost, multiplier);
     }
 
-    internal static int CalculateCommandCost(long cost, double multiplier)
+    internal static int GetCommandCost(long cost, double multiplier)
     {
         if (cost <= 0)
             return 0;
@@ -36,20 +36,20 @@ public sealed partial class BotMainHandler
         return scaled >= int.MaxValue ? int.MaxValue : (int)scaled;
     }
 
-    public bool TryBeginFireworksRepeat() => Interlocked.Exchange(ref _fireworksRepeatActive, 1) == 0;
+    public bool TryStartFireworks() => Interlocked.Exchange(ref _fireworksRepeatActive, 1) == 0;
 
-    public void EndFireworksRepeat() => Volatile.Write(ref _fireworksRepeatActive, 0);
+    public void StopFireworks() => Volatile.Write(ref _fireworksRepeatActive, 0);
 
     public bool GlobalGameCommandCooldownEnabled
-        => _activeConfig?.Settings.GlobalGameCommandCooldownEnabled == true && !HasCustomCommandCooldown();
+        => _activeConfig?.Settings.GlobalGameCommandCooldownEnabled == true && !HasGlobalCooldownOverride();
 
-    public void SetCurrentCommandSenderModeratorState(bool isModerator)
+    public void SetModerator(bool isModerator)
         => _currentCommandSenderIsModerator.Value = isModerator;
 
     private long _lastTicks;
     private long _switchMilkTagCounter;
 
-    public string CreateSwitchMilkTag()
+    public string NextSwitchMilkTag()
         => string.Create(CultureInfo.InvariantCulture, $"tc_switchmilk_{Interlocked.Increment(ref _switchMilkTagCounter)}");
 
     private long GlobalGameCommandCooldownTicks
@@ -64,7 +64,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    public bool TryGetGlobalGameCommandCooldownRemaining(out TimeSpan remaining)
+    public bool TryGetGlobalCooldown(out TimeSpan remaining)
     {
         if (!GlobalGameCommandCooldownEnabled)
         {
@@ -87,7 +87,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    public bool TryReserveGlobalGameCommandCooldown(out TimeSpan remaining, out long reservationTicks)
+    public bool TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTicks)
     {
         reservationTicks = 0;
         if (!GlobalGameCommandCooldownEnabled)
@@ -118,12 +118,12 @@ public sealed partial class BotMainHandler
         }
     }
 
-    public void ClearGlobalGameCommandCooldown()
+    public void ClearGlobalCooldown()
     {
         Interlocked.Exchange(ref _lastTicks, 0);
     }
 
-    public void ClearGlobalGameCommandCooldown(long reservationTicks)
+    public void ClearGlobalCooldown(long reservationTicks)
     {
         if (reservationTicks > 0)
             Interlocked.CompareExchange(ref _lastTicks, 0, reservationTicks);
@@ -131,7 +131,7 @@ public sealed partial class BotMainHandler
 
     public bool TryUseLightning(out TimeSpan remaining, out DateTime reservationUtc)
     {
-        if (HasCustomCommandCooldown("lightning"))
+        if (HasGlobalCooldownOverride("lightning"))
         {
             remaining = TimeSpan.Zero;
             reservationUtc = DateTime.MinValue;
@@ -172,13 +172,13 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal bool TryUseTimedScaleCommand(string commandName, out TimeSpan remaining, out DateTime reservationUtc)
+    internal bool TryUseScaleCommand(string commandName, out TimeSpan remaining, out DateTime reservationUtc)
     {
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0)
             throw new ArgumentException("A command name is required.", nameof(commandName));
 
-        if (HasCustomCommandCooldown(normalizedCommand))
+        if (HasGlobalCooldownOverride(normalizedCommand))
         {
             remaining = TimeSpan.Zero;
             reservationUtc = DateTime.MinValue;
@@ -206,7 +206,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void ClearTimedScaleCommandCooldowns()
+    internal void ClearScaleCooldowns()
     {
         lock (_cooldownGate)
         {
@@ -214,7 +214,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void ClearTimedScaleCommandCooldown(string commandName, DateTime reservationUtc)
+    internal void ClearScaleCooldown(string commandName, DateTime reservationUtc)
     {
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0 || reservationUtc == DateTime.MinValue)
@@ -229,7 +229,7 @@ public sealed partial class BotMainHandler
 
     public bool IsGambleOnCooldown(string user, out TimeSpan remaining)
     {
-        if (HasCustomCommandCooldown("gambletokens"))
+        if (HasPerUserCooldownOverride("gambletokens"))
         {
             remaining = TimeSpan.Zero;
             return false;
@@ -256,7 +256,7 @@ public sealed partial class BotMainHandler
 
     public void StartGambleCooldown(string user, TimeSpan duration)
     {
-        if (HasCustomCommandCooldown("gambletokens"))
+        if (HasPerUserCooldownOverride("gambletokens"))
             return;
         string normalized = NormalizeUser(user);
         lock (_cooldownGate)
@@ -272,8 +272,8 @@ public sealed partial class BotMainHandler
             return false;
 
         string normalized = NormalizeUser(user);
-        return string.Equals(normalized, _currentStreamerName, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, _currentBotName, StringComparison.OrdinalIgnoreCase)
+        return string.Equals(normalized, config.Twitch.StreamerName, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, config.Twitch.BotName, StringComparison.OrdinalIgnoreCase)
             || (config.Settings.ModeratorsCanUseStreamerCommands && _currentCommandSenderIsModerator.Value);
     }
 
@@ -283,7 +283,7 @@ public sealed partial class BotMainHandler
         return index >= 0 ? online[index] : null;
     }
 
-    private static ResolvedTarget CreateSinglePlayerTarget(string playerName) => new()
+    private static ResolvedTarget MakePlayerTarget(string playerName) => new()
     {
         Selector = playerName,
         DisplayName = playerName,
@@ -315,7 +315,7 @@ public sealed partial class BotMainHandler
         string player = args != null && startIndex >= 0 && startIndex < args.Count
             ? (args[startIndex] ?? string.Empty).Trim()
             : string.Empty;
-        List<string> online = await RefreshOnlinePlayersAsync(cancellationToken).ConfigureAwait(false);
+        List<string> online = await RefreshPlayersAsync(cancellationToken).ConfigureAwait(false);
 
         if (player.Length == 0)
         {
@@ -324,13 +324,13 @@ public sealed partial class BotMainHandler
                 string? exactDefault = FindOnlinePlayer(online, defaultPlayer);
                 if (!string.IsNullOrWhiteSpace(exactDefault))
                 {
-                    return CreateSinglePlayerTarget(exactDefault);
+                    return MakePlayerTarget(exactDefault);
                 }
             }
 
             if (online.Count == 1)
             {
-                return CreateSinglePlayerTarget(online[0]);
+                return MakePlayerTarget(online[0]);
             }
 
             string message;
@@ -381,7 +381,7 @@ public sealed partial class BotMainHandler
                 string? exactDefault = FindOnlinePlayer(online, defaultPlayer);
                 if (!string.IsNullOrWhiteSpace(exactDefault))
                 {
-                    return CreateSinglePlayerTarget(exactDefault);
+                    return MakePlayerTarget(exactDefault);
                 }
             }
 
@@ -396,7 +396,7 @@ public sealed partial class BotMainHandler
             return null;
         }
 
-        return CreateSinglePlayerTarget(exactPlayer);
+        return MakePlayerTarget(exactPlayer);
     }
 
 }

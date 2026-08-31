@@ -6,9 +6,16 @@ All notable changes to this project are documented here. This project follows a 
 
 ### Changed
 
+* Removed unnecessary thread-pool wrappers from already-asynchronous session loops, reducing startup/background scheduling overhead while keeping blocking maintenance and worker isolation intact.
+* `config.json` now writes Settings in the same categorized, top-to-bottom order as the Settings screen.
+* `server.properties` now separates preserved user-editable properties from TwitchCraft-managed Gameplay, Minecraft Server, and Server Startup & Connection properties.
 * Added regression coverage for complete live-roster token awards, command-registry consistency, and isolation of applied nested settings.
 * Pre-sized copied and normalized command-customization dictionaries to avoid unnecessary internal growth while applying settings.
-* Consolidated overlapping regression tests while preserving their meaningful assertions, leaving 275 focused test cases.
+* Consolidated overlapping regression tests and expanded real runtime/RCON integration coverage while preserving meaningful assertions, leaving 280 focused test cases.
+
+### Fixed
+
+* Expired saved Twitch authorizations that can no longer be refreshed now start a fresh device authorization instead of ending startup with a client-secret error; confidential applications receive explicit Public-client guidance.
 
 ## [1.8.0.0] - 2026-08-28
 

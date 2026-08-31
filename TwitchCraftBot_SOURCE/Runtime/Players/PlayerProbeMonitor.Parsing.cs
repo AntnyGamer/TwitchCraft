@@ -6,7 +6,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private static bool TryParseEntityDataLine(string line, out string playerName, out string data)
+    private static bool TryParseEntity(string line, out string playerName, out string data)
     {
         playerName = string.Empty;
         data = string.Empty;
@@ -18,7 +18,7 @@ public sealed partial class BotMainHandler
         if (markerIndex <= 0)
             return false;
 
-        string prefix = TrimPrefixAfterLastColon(line, markerIndex);
+        string prefix = AfterLastColon(line, markerIndex);
         if (!MinecraftNameHelper.IsValidPlayerName(prefix))
             return false;
 
@@ -28,7 +28,7 @@ public sealed partial class BotMainHandler
         return true;
     }
 
-    private static bool TryHandlePlayerGamemodeLine(string line, out string playerName, out int gameType)
+    private static bool TryHandleGamemode(string line, out string playerName, out int gameType)
     {
         playerName = string.Empty;
         gameType = -1;
@@ -36,16 +36,16 @@ public sealed partial class BotMainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (TryParseEntityDataLine(line, out playerName, out string suffix)
+        if (TryParseEntity(line, out playerName, out string suffix)
             && int.TryParse(suffix, NumberStyles.Integer, CultureInfo.InvariantCulture, out gameType))
         {
             return true;
         }
 
-        return TryParseGamemodeAnnouncementLine(line, out playerName, out gameType);
+        return TryParseGamemode(line, out playerName, out gameType);
     }
 
-    private static bool TryParseMinecraftPositionValue(string value)
+    private static bool TryParsePosition(string value)
     {
         ReadOnlySpan<char> text = value.AsSpan().Trim();
         return text.Length >= 5 &&
@@ -54,18 +54,18 @@ public sealed partial class BotMainHandler
                text.Contains(',');
     }
 
-    private bool HasPendingRespawnPositionRequest(string playerName)
+    private bool HasRespawnRequest(string playerName)
     {
         lock (_respawnPositionProbeGate)
             return _pendingRespawnPositionRequests.TryGetValue(playerName, out _);
     }
 
-    internal static bool TryParseGamemodeAnnouncementLine(string line, out string playerName, out int gameType)
+    internal static bool TryParseGamemode(string line, out string playerName, out int gameType)
     {
         playerName = string.Empty;
         gameType = -1;
 
-        string message = TrimPrefixAfterLastColon(line, line.Length);
+        string message = AfterLastColon(line, line.Length);
         if (message.Length == 0 || !message.Contains("game mode", StringComparison.OrdinalIgnoreCase))
             return false;
 
@@ -134,7 +134,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    private void HandlePlayerGamemodeResult(string playerName, int gameType)
+    private void HandleGamemode(string playerName, int gameType)
     {
         lock (_spectatorProbeGate)
         {
@@ -147,10 +147,10 @@ public sealed partial class BotMainHandler
             waiter?.TrySetResult(gameType);
         }
 
-        RecordTrackedPlayerGamemodeForStatistics(playerName, gameType);
+        RecordGamemode(playerName, gameType);
     }
 
-    private void HandlePlayerRespawnPositionResult(string playerName)
+    private void HandleRespawn(string playerName)
     {
         lock (_respawnPositionProbeGate)
         {
@@ -159,7 +159,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void HandleSelectedItemResult(string playerName, string itemData)
+    private void HandleItem(string playerName, string itemData)
     {
         lock (_selectedItemProbeGate)
         {
@@ -168,20 +168,20 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void HandleEntityDataLine(string line)
+    private void HandleEntity(string line)
     {
-        if (!TryParseEntityDataLine(line, out string playerName, out string suffix))
+        if (!TryParseEntity(line, out string playerName, out string suffix))
             return;
 
-        if (HasPendingRespawnPositionRequest(playerName) && TryParseMinecraftPositionValue(suffix))
+        if (HasRespawnRequest(playerName) && TryParsePosition(suffix))
         {
-            HandlePlayerRespawnPositionResult(playerName);
+            HandleRespawn(playerName);
             return;
         }
 
         if (int.TryParse(suffix, NumberStyles.Integer, CultureInfo.InvariantCulture, out int gameType))
         {
-            HandlePlayerGamemodeResult(playerName, gameType);
+            HandleGamemode(playerName, gameType);
             return;
         }
 
@@ -190,7 +190,7 @@ public sealed partial class BotMainHandler
             suffix[^1] == '}' &&
             suffix.Contains("minecraft:", StringComparison.OrdinalIgnoreCase))
         {
-            HandleSelectedItemResult(playerName, suffix);
+            HandleItem(playerName, suffix);
         }
     }
 

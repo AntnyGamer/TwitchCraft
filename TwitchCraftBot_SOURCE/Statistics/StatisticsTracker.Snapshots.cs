@@ -7,10 +7,10 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    public BotStatisticsSnapshot GetStatisticsSnapshot(CancellationToken cancellationToken = default)
+    public BotStatisticsSnapshot GetStatsSnapshot(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        EnsureStatisticsLoaded();
+        EnsureLoaded();
 
         DateTime now = DateTime.UtcNow;
         string streamerViewer = _currentStreamerName;
@@ -29,7 +29,7 @@ public sealed partial class BotMainHandler
                 if (_cachedStatisticsLeaderboardVersion == _statisticsLeaderboardVersion &&
                     string.Equals(_cachedStatisticsLeaderboardStreamer, streamerViewer, StringComparison.OrdinalIgnoreCase))
                 {
-                    return BuildStatisticsSnapshotNoLock(now);
+                    return BuildSnapshotNoLock(now);
                 }
 
                 versionToRefresh = _statisticsLeaderboardVersion;
@@ -57,30 +57,30 @@ public sealed partial class BotMainHandler
                 _cachedTotalNicestViewer = totalNicestViewer;
                 _cachedStatisticsLeaderboardStreamer = streamerViewer;
                 _cachedStatisticsLeaderboardVersion = versionToRefresh;
-                return BuildStatisticsSnapshotNoLock(now);
+                return BuildSnapshotNoLock(now);
             }
         }
     }
 
-    internal static void FlushStatisticsForShutdown()
+    internal static void FlushForShutdown()
     {
-        BotStatisticsStore.TryExportReadableJson();
+        BotStatisticsStore.TryExportJson();
     }
 
-    private BotStatisticsSnapshot BuildStatisticsSnapshotNoLock(DateTime now)
+    private BotStatisticsSnapshot BuildSnapshotNoLock(DateTime now)
     {
         return new BotStatisticsSnapshot
         {
             StatisticsEnabled = StatisticsEnabled,
             SessionGameCommandsRun = _sessionStatistics.GameCommandsRun,
-            SessionDangerousCommandsRun = GetCommandCountByFlag(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Dangerous),
-            SessionNiceCommandsRun = GetCommandCountByFlag(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Nice),
+            SessionDangerousCommandsRun = GetCommandCount(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Dangerous),
+            SessionNiceCommandsRun = GetCommandCount(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Nice),
             SessionMostUsedCommand = _cachedSessionMostUsedCommand,
             SessionTokensSpent = _sessionStatistics.TokensSpent,
             SessionEffectsGiven = _sessionStatistics.EffectsGiven,
             SessionMostDangerousViewer = _cachedSessionMostDangerousViewer,
             SessionNicestViewer = _cachedSessionNicestViewer,
-            SessionTimeSurvived = GetSessionTimeSurvived(_sessionStatistics, now),
+            SessionTimeSurvived = GetSessionSurvival(_sessionStatistics, now),
             SessionDeaths = _sessionStatistics.Deaths,
 
             TotalGameCommandsRun = _totalStatistics.GameCommandsRun,
@@ -90,13 +90,13 @@ public sealed partial class BotMainHandler
             TotalMostDangerousViewer = _cachedTotalMostDangerousViewer,
             TotalNicestViewer = _cachedTotalNicestViewer,
             TotalDeaths = _totalStatistics.Deaths,
-            LongestTimeSurvived = SecondsToDuration(_totalStatistics.LongestSurvivalSeconds),
-            ShortestTimeSurvived = SecondsToDuration(_totalStatistics.ShortestSurvivalSeconds),
+            LongestTimeSurvived = ToDuration(_totalStatistics.LongestSurvivalSeconds),
+            ShortestTimeSurvived = ToDuration(_totalStatistics.ShortestSurvivalSeconds),
             SessionsStarted = _totalStatistics.SessionsStarted
         };
     }
 
-    private long GetCommandCountByFlag(Dictionary<string, long> commandUseCounts, ChatCommandStatisticFlags flag)
+    private long GetCommandCount(Dictionary<string, long> commandUseCounts, ChatCommandStatisticFlags flag)
     {
         long count = 0;
         foreach (KeyValuePair<string, long> pair in commandUseCounts)
@@ -108,12 +108,12 @@ public sealed partial class BotMainHandler
         return count;
     }
 
-    private void MarkStatisticsLeaderboardDirtyNoLock()
+    private void MarkLeaderboardDirty()
     {
         _statisticsLeaderboardVersion++;
     }
 
-    private static TimeSpan? SecondsToDuration(long seconds)
+    private static TimeSpan? ToDuration(long seconds)
     {
         if (seconds <= 0)
         {
@@ -124,36 +124,36 @@ public sealed partial class BotMainHandler
         return TimeSpan.FromSeconds(clampedSeconds);
     }
 
-    private void PauseCurrentLifeNoLock(DateTime now)
+    private void PauseLifeNoLock(DateTime now)
     {
         if (_sessionStatistics.CurrentLifeStartedUtc is not DateTime startedUtc)
         {
             return;
         }
 
-        _sessionStatistics.CurrentLifeAccumulatedSeconds += CalculateElapsedSurvivalSeconds(startedUtc, now);
+        _sessionStatistics.CurrentLifeAccumulatedSeconds += GetSurvivalSeconds(startedUtc, now);
         _sessionStatistics.CurrentLifeStartedUtc = null;
     }
 
-    private static TimeSpan? GetSessionTimeSurvived(BotSessionStatistics session, DateTime now)
+    private static TimeSpan? GetSessionSurvival(BotSessionStatistics session, DateTime now)
     {
-        long seconds = GetCurrentLifeSurvivalSeconds(session, now);
+        long seconds = GetLifeSeconds(session, now);
         bool hasStartedLife = session.CurrentLifeHasStarted || session.CurrentLifeStartedUtc != null || session.CurrentLifeAccumulatedSeconds > 0;
-        return hasStartedLife ? SecondsToDuration(seconds) ?? TimeSpan.Zero : null;
+        return hasStartedLife ? ToDuration(seconds) ?? TimeSpan.Zero : null;
     }
 
-    private static long GetCurrentLifeSurvivalSeconds(BotSessionStatistics session, DateTime now)
+    private static long GetLifeSeconds(BotSessionStatistics session, DateTime now)
     {
         long seconds = Math.Max(0, session.CurrentLifeAccumulatedSeconds);
         if (session.CurrentLifeStartedUtc is DateTime startedUtc)
         {
-            seconds += CalculateElapsedSurvivalSeconds(startedUtc, now);
+            seconds += GetSurvivalSeconds(startedUtc, now);
         }
 
         return seconds;
     }
 
-    private static long CalculateElapsedSurvivalSeconds(DateTime startedUtc, DateTime nowUtc)
+    private static long GetSurvivalSeconds(DateTime startedUtc, DateTime nowUtc)
     {
         if (nowUtc <= startedUtc)
         {
@@ -166,7 +166,7 @@ public sealed partial class BotMainHandler
     private static int ClampDeathScore(long deathScore)
         => (int)Math.Min(int.MaxValue, Math.Max(0L, deathScore));
 
-    private bool ShouldTrackSurvivalPlayer(string playerName)
+    private bool ShouldTrackPlayer(string playerName)
     {
         return _currentStreamerMinecraftName.Length > 0
             && MinecraftNameHelper.TryNormalizePlayerName(playerName, out string player)
@@ -189,7 +189,7 @@ public sealed partial class BotMainHandler
                 continue;
             }
 
-            string command = StatisticNameHelper.NormalizeCommandName(pair.Key);
+            string command = StatisticNameHelper.CleanCommandName(pair.Key);
             if (command.Length == 0)
             {
                 continue;
@@ -206,7 +206,7 @@ public sealed partial class BotMainHandler
         return bestCommand.Length == 0 ? string.Empty : "!" + bestCommand;
     }
 
-    private static void AddViewerScore(Dictionary<string, long> scores, string viewer, long amount)
+    private static void AddScore(Dictionary<string, long> scores, string viewer, long amount)
     {
         if (amount <= 0 || string.IsNullOrWhiteSpace(viewer))
         {
@@ -225,7 +225,7 @@ public sealed partial class BotMainHandler
             return string.Empty;
         }
 
-        string excluded = CommandUserHelper.NormalizeUsername(excludedViewer);
+        string excluded = CommandUserHelper.NormalizeUser(excludedViewer);
         string bestViewer = string.Empty;
         long bestScore = 0;
 
@@ -253,7 +253,7 @@ public sealed partial class BotMainHandler
         return bestViewer;
     }
 
-    private static bool TryExtractDeathScoreFromMessage(string message, out string playerName, out int deathScore)
+    private static bool TryExtractDeathScore(string message, out string playerName, out int deathScore)
     {
         playerName = string.Empty;
         deathScore = 0;
@@ -296,7 +296,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    private static bool TryExtractDeathPlayerFromMessage(string message, out string playerName)
+    private static bool TryExtractPlayer(string message, out string playerName)
     {
         playerName = string.Empty;
         if (string.IsNullOrEmpty(message) || message[0] == '<')
@@ -318,7 +318,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    private static string ExtractMinecraftServerMessage(string line)
+    private static string ExtractMessage(string line)
     {
         string trimmed = (line ?? string.Empty).Trim();
         if (trimmed.Length == 0)

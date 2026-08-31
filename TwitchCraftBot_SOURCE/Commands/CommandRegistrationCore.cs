@@ -23,35 +23,35 @@ public static partial class CommandList
             if (commandStatisticFlags != ChatCommandStatisticFlags.None)
                 statisticFlags?[commandName] = commandStatisticFlags;
         }
-        static List<string> NormalizePlayerTargets(List<string>? players)
-            => SortedListHelper.NormalizeMinecraftPlayerNames(players, StringComparer.OrdinalIgnoreCase);
-        Task SayToChannel(string? msg, CancellationToken ct)
-            => SendResponseToChannel(msg, BotResponseKind.Essential, ct);
-        Task SayConfirmationToChannel(string? msg, CancellationToken ct)
+        static List<string> NormalizeTargets(List<string>? players)
+            => SortedListHelper.NormalizePlayerNames(players, StringComparer.OrdinalIgnoreCase);
+        Task SayAsync(string? msg, CancellationToken ct)
+            => ReplyAsync(msg, BotResponseKind.Essential, ct);
+        Task ConfirmAsync(string? msg, CancellationToken ct)
         {
-            runtime.MarkCurrentCommandSuccessful();
-            return SendResponseToChannel(msg, BotResponseKind.Confirmation, ct);
+            runtime.MarkCommandSuccess();
+            return ReplyAsync(msg, BotResponseKind.Confirmation, ct);
         }
-        Task SaySuccessfulToChannel(string? msg, CancellationToken ct)
+        Task SuccessAsync(string? msg, CancellationToken ct)
         {
-            runtime.MarkCurrentCommandSuccessful();
-            return SendResponseToChannel(msg, BotResponseKind.Essential, ct);
+            runtime.MarkCommandSuccess();
+            return ReplyAsync(msg, BotResponseKind.Essential, ct);
         }
-        Task SendResponseToChannel(string? msg, BotResponseKind kind, CancellationToken ct)
-            => string.IsNullOrWhiteSpace(msg) ? Task.CompletedTask : runtime.SendBotResponseAsync(msg, kind, ct);
-        Task SayInsufficientTokens(string sender, int cost, CancellationToken ct)
-            => SayToChannel(sender + ", you need at least " + cost.ToString(CultureInfo.InvariantCulture) + " tokens for this command.", ct);
-        async Task<bool> RequireLocalMultiplayerAdminCommandReady(string sender, string commandName, CancellationToken ct)
+        Task ReplyAsync(string? msg, BotResponseKind kind, CancellationToken ct)
+            => string.IsNullOrWhiteSpace(msg) ? Task.CompletedTask : runtime.SendReplyAsync(msg, kind, ct);
+        Task SayNotEnoughTokensAsync(string sender, int cost, CancellationToken ct)
+            => SayAsync(sender + ", you need at least " + cost.ToString(CultureInfo.InvariantCulture) + " tokens for this command.", ct);
+        async Task<bool> RequireAdminAsync(string sender, string commandName, CancellationToken ct)
         {
             if (runtime.RemoteControlEnabled || !runtime.MultiplayerEnabled)
             {
                 string mode = runtime.RemoteControlEnabled ? "Remote Control Mode" : "singleplayer mode";
-                await SayToChannel(sender + ", !" + commandName + " is not available in " + mode + ".", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", !" + commandName + " is not available in " + mode + ".", ct).ConfigureAwait(false);
                 return false;
             }
             if (runtime.MinecraftServerReady)
                 return true;
-            await SayToChannel(sender + ", the Minecraft server is still starting. Try again in a moment.", ct).ConfigureAwait(false);
+            await SayAsync(sender + ", the Minecraft server is still starting. Try again in a moment.", ct).ConfigureAwait(false);
             return false;
         }
         static string GetArg(string[]? args, int index)
@@ -60,14 +60,14 @@ public static partial class CommandList
                 return string.Empty;
             return args[index] ?? string.Empty;
         }
-        async Task<bool> RequireTokenBalance(string sender, int cost, CancellationToken ct)
+        async Task<bool> RequireTokensAsync(string sender, int cost, CancellationToken ct)
         {
             int scaledCost = runtime.ScaleCost(cost, 1);
             if (scaledCost <= 0 || runtime.GetTokens(sender) >= scaledCost) return true;
-            await SayInsufficientTokens(sender, scaledCost, ct).ConfigureAwait(false);
+            await SayNotEnoughTokensAsync(sender, scaledCost, ct).ConfigureAwait(false);
             return false;
         }
-        Task<bool> ExecutePaidCommandTransaction(
+        Task<bool> RunPaidCommandAsync(
             string sender,
             int cost,
             Func<CancellationToken, Task<bool>> dispatchAsync,
@@ -85,11 +85,11 @@ public static partial class CommandList
                 DispatchAsync = dispatchAsync,
                 RecordStatistics = amount =>
                 {
-                    runtime.MarkCurrentCommandSuccessful();
-                    runtime.RecordCurrentGameAffectingCommandForStatistics(sender, amount);
+                    runtime.MarkCommandSuccess();
+                    runtime.RecordCommand(sender, amount);
                 },
-                ReportInsufficientTokensAsync = (amount, token) => SayInsufficientTokens(sender, amount, token),
-                ReportDispatchFailureAsync = token => SayToChannel(
+                ReportInsufficientTokensAsync = (amount, token) => SayNotEnoughTokensAsync(sender, amount, token),
+                ReportDispatchFailureAsync = token => SayAsync(
                     sender + ", the Minecraft command could not be sent, so your tokens were refunded.",
                     token),
                 NotifyFailure = onSendFailure
@@ -98,9 +98,9 @@ public static partial class CommandList
             return PaidCommandTransaction.ExecuteAsync(dependencies, cost, ct);
         }
 
-        Task<bool> TrySendPaidCommandWithoutGameCooldown(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
+        Task<bool> TrySendPaidNoCooldownAsync(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
         {
-            return ExecutePaidCommandTransaction(
+            return RunPaidCommandAsync(
                 sender,
                 cost,
                 token => runtime.SendServerCommandAsync(command, token),
@@ -110,28 +110,28 @@ public static partial class CommandList
                 onSendFailure);
         }
 
-        Task<bool> TrySendPricedCommands(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct)
+        Task<bool> TrySendPricedAsync(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct)
         {
-            return ExecutePaidCommandTransaction(
+            return RunPaidCommandAsync(
                 sender,
                 cost,
                 token => runtime.SendServerCommandsAsync(buildCommands(), token),
-                token => TryReserveGameCommandCooldown(sender, token),
-                runtime.ClearGlobalGameCommandCooldown,
+                token => TryReserveCooldownAsync(sender, token),
+                runtime.ClearGlobalCooldown,
                 ct);
         }
 
-        Task<bool> TrySendPricedCommand(string sender, int cost, string command, CancellationToken ct)
+        Task<bool> TrySendPricedAsync(string sender, int cost, string command, CancellationToken ct)
         {
-            return ExecutePaidCommandTransaction(
+            return RunPaidCommandAsync(
                 sender,
                 cost,
                 token => runtime.SendServerCommandAsync(command, token),
-                token => TryReserveGameCommandCooldown(sender, token),
-                runtime.ClearGlobalGameCommandCooldown,
+                token => TryReserveCooldownAsync(sender, token),
+                runtime.ClearGlobalCooldown,
                 ct);
         }
-        static bool TargetsEveryone(ResolvedTarget? target)
+        static bool IsEveryone(ResolvedTarget? target)
         {
             if (target == null || string.IsNullOrEmpty(target.Selector))
                 return false;
@@ -142,31 +142,31 @@ public static partial class CommandList
                 !selector.Contains("name!=", StringComparison.OrdinalIgnoreCase) &&
                 !selector.Contains("limit=1", StringComparison.OrdinalIgnoreCase);
         }
-        static bool ContainsPlayer(IReadOnlyList<string> players, string playerName)
+        static bool HasPlayer(IReadOnlyList<string> players, string playerName)
             => SortedListHelper.Contains(players, playerName, StringComparer.OrdinalIgnoreCase);
-        bool SingleplayerTargetingMode() => !runtime.MultiTargetingEnabled;
-        async Task<ResolvedTarget?> ApplySpectatorFilter(ResolvedTarget? target, CancellationToken ct, List<string>? cachedTargetablePlayers = null)
+        bool IsSingleplayer() => !runtime.MultiTargetingEnabled;
+        async Task<ResolvedTarget?> FilterSpectatorsAsync(ResolvedTarget? target, CancellationToken ct, List<string>? cachedTargetablePlayers = null)
         {
             if (target == null)
                 return null;
             List<string> activePlayers = cachedTargetablePlayers ??
-                NormalizePlayerTargets(await runtime.GetOnlinePlayersAsync(ct).ConfigureAwait(false));
+                NormalizeTargets(await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
             string defaultMinecraftPlayer = runtime.DefaultMinecraftPlayerName;
             bool defaultPlayerIsValid = defaultMinecraftPlayer.Length > 0;
-            if (SingleplayerTargetingMode() && activePlayers.Count == 0 && defaultPlayerIsValid)
+            if (IsSingleplayer() && activePlayers.Count == 0 && defaultPlayerIsValid)
                 activePlayers = [defaultMinecraftPlayer];
             int activeCount = activePlayers.Count;
             bool activePlayersIncludeDefault = defaultPlayerIsValid
-                && ContainsPlayer(activePlayers, defaultMinecraftPlayer);
-            bool everyone = TargetsEveryone(target);
+                && HasPlayer(activePlayers, defaultMinecraftPlayer);
+            bool everyone = IsEveryone(target);
             target.TargetablePlayers = activePlayers;
             if (everyone)
             {
                 target.Selector = "@a[gamemode=!spectator]";
                 target.PlayerCount = activeCount;
                 target.DefaultPlayerInclusionKnown = true;
-                target.IncludesDefaultMinecraftPlayer = activePlayersIncludeDefault || (SingleplayerTargetingMode() && defaultPlayerIsValid);
-                if (SingleplayerTargetingMode() && !string.IsNullOrWhiteSpace(runtime.StreamerName))
+                target.IncludesDefaultMinecraftPlayer = activePlayersIncludeDefault || (IsSingleplayer() && defaultPlayerIsValid);
+                if (IsSingleplayer() && !string.IsNullOrWhiteSpace(runtime.StreamerName))
                     target.DisplayName = runtime.StreamerName;
                 else if (activeCount == 1)
                     target.DisplayName = activePlayers[0];
@@ -179,7 +179,7 @@ public static partial class CommandList
                 : target.MinecraftName.Trim();
             if (targetName.Length > 0)
             {
-                bool targetIsActive = activeCount > 0 && ContainsPlayer(activePlayers, targetName);
+                bool targetIsActive = activeCount > 0 && HasPlayer(activePlayers, targetName);
                 target.MinecraftName = targetName;
                 target.Selector = MinecraftCommandBuilder.PlayerSelector(targetName);
                 target.PlayerCount = targetIsActive ? 1 : 0;
@@ -196,7 +196,7 @@ public static partial class CommandList
                 target.Selector = "@a[gamemode=!spectator]";
                 target.PlayerCount = activeCount;
                 target.DefaultPlayerInclusionKnown = true;
-                target.IncludesDefaultMinecraftPlayer = activePlayersIncludeDefault || (SingleplayerTargetingMode() && defaultPlayerIsValid);
+                target.IncludesDefaultMinecraftPlayer = activePlayersIncludeDefault || (IsSingleplayer() && defaultPlayerIsValid);
                 if (string.IsNullOrWhiteSpace(target.DisplayName))
                     target.DisplayName = activeCount == 1 ? activePlayers[0] : "everyone";
                 return target;
@@ -213,7 +213,7 @@ public static partial class CommandList
             target.PlayerCount = Math.Min(target.PlayerCount, activeCount);
             return target;
         }
-        async Task<bool> TargetIncludesStreamerAsync(ResolvedTarget target, CancellationToken ct)
+        async Task<bool> IncludesStreamerAsync(ResolvedTarget target, CancellationToken ct)
         {
             string streamerMinecraftName = runtime.DefaultMinecraftPlayerName;
             if (streamerMinecraftName.Length == 0)
@@ -232,10 +232,10 @@ public static partial class CommandList
             {
                 return false;
             }
-            List<string> targetablePlayers = NormalizePlayerTargets(target.TargetablePlayers ?? await runtime.GetOnlinePlayersAsync(ct).ConfigureAwait(false));
-            return ContainsPlayer(targetablePlayers, streamerMinecraftName);
+            List<string> targetablePlayers = NormalizeTargets(target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
+            return HasPlayer(targetablePlayers, streamerMinecraftName);
         }
-        async Task<ResolvedTarget?> ResolveTargetAt(IReadOnlyList<string>? args, int startIndex, string sender, CancellationToken ct)
+        async Task<ResolvedTarget?> ResolveTargetAsync(IReadOnlyList<string>? args, int startIndex, string sender, CancellationToken ct)
         {
             if (args is not null && startIndex >= 0 && startIndex < args.Count)
             {
@@ -244,21 +244,21 @@ public static partial class CommandList
                 {
                     if (!runtime.AllowRandomPlayerTarget)
                     {
-                        await SayToChannel(sender + ", random player targeting is disabled.", ct).ConfigureAwait(false);
+                        await SayAsync(sender + ", random player targeting is disabled.", ct).ConfigureAwait(false);
                         return null;
                     }
 
-                    List<string> players = NormalizePlayerTargets(await runtime.GetOnlinePlayersAsync(ct).ConfigureAwait(false));
+                    List<string> players = NormalizeTargets(await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
                     string defaultPlayer = runtime.DefaultMinecraftPlayerName;
                     if (players.Count == 0 &&
-                        SingleplayerTargetingMode() &&
+                        IsSingleplayer() &&
                         defaultPlayer.Length > 0)
                     {
                         players = [defaultPlayer];
                     }
                     if (players.Count == 0)
                     {
-                        await SayToChannel(sender + ", no players are online to target right now.", ct).ConfigureAwait(false);
+                        await SayAsync(sender + ", no players are online to target right now.", ct).ConfigureAwait(false);
                         return null;
                     }
                     string chosen = players[BotMainHandler.Randomizer.Next(players.Count)];
@@ -269,13 +269,13 @@ public static partial class CommandList
                         MinecraftName = chosen,
                         PlayerCount = 1
                     };
-                    randomTarget = await ApplySpectatorFilter(randomTarget, ct, players).ConfigureAwait(false);
+                    randomTarget = await FilterSpectatorsAsync(randomTarget, ct, players).ConfigureAwait(false);
                     if (randomTarget is null || randomTarget.PlayerCount <= 0)
                     {
-                        await SayToChannel(sender + ", no players can be targeted right now.", ct).ConfigureAwait(false);
+                        await SayAsync(sender + ", no players can be targeted right now.", ct).ConfigureAwait(false);
                         return null;
                     }
-                    if (SingleplayerTargetingMode() && !string.IsNullOrEmpty(runtime.StreamerName))
+                    if (IsSingleplayer() && !string.IsNullOrEmpty(runtime.StreamerName))
                         randomTarget.DisplayName = runtime.StreamerName;
                     return randomTarget;
                 }
@@ -284,23 +284,23 @@ public static partial class CommandList
                 args,
                 startIndex,
                 sender,
-                SayToChannel,
+                SayAsync,
                 ct).ConfigureAwait(false);
-            ResolvedTarget? target = await ApplySpectatorFilter(resolved, ct).ConfigureAwait(false);
+            ResolvedTarget? target = await FilterSpectatorsAsync(resolved, ct).ConfigureAwait(false);
             if (target == null)
                 return null;
             if (target.PlayerCount <= 0)
             {
-                string failure = TargetsEveryone(target)
+                string failure = IsEveryone(target)
                     ? sender + ", no players can be targeted right now."
                     : sender + ", that player is spectating or unavailable and cannot be targeted.";
-                await SayToChannel(failure, ct).ConfigureAwait(false);
+                await SayAsync(failure, ct).ConfigureAwait(false);
                 return null;
             }
-            if (SingleplayerTargetingMode() &&
+            if (IsSingleplayer() &&
                 !string.IsNullOrEmpty(runtime.StreamerName) &&
                 target.PlayerCount == 1 &&
-                !TargetsEveryone(target) &&
+                !IsEveryone(target) &&
                 !string.Equals(target.DisplayName, "everyone", StringComparison.OrdinalIgnoreCase))
             {
                 if (string.IsNullOrWhiteSpace(target.MinecraftName))
@@ -309,35 +309,35 @@ public static partial class CommandList
             }
             return target;
         }
-        async Task<ResolvedTarget?> PrepareTargetedCommand(IReadOnlyList<string>? args, string sender, CancellationToken ct, bool checkGameCooldown = true, int minimumTokenCost = 0)
+        async Task<ResolvedTarget?> PrepareTargetAsync(IReadOnlyList<string>? args, string sender, CancellationToken ct, bool checkGameCooldown = true, int minimumTokenCost = 0)
         {
-            if (checkGameCooldown && !await RequireGameCommandCooldownReady(sender, ct).ConfigureAwait(false))
+            if (checkGameCooldown && !await RequireCooldownAsync(sender, ct).ConfigureAwait(false))
                 return null;
-            if (!await RequireTokenBalance(sender, minimumTokenCost, ct).ConfigureAwait(false))
+            if (!await RequireTokensAsync(sender, minimumTokenCost, ct).ConfigureAwait(false))
                 return null;
-            return await ResolveTargetAt(args, 0, sender, ct).ConfigureAwait(false);
+            return await ResolveTargetAsync(args, 0, sender, ct).ConfigureAwait(false);
         }
-        static string GetSingleTargetMinecraftName(ResolvedTarget target)
+        static string GetPlayerName(ResolvedTarget target)
         {
             if (MinecraftNameHelper.TryNormalizePlayerName(target.MinecraftName, out string playerName))
                 return playerName;
             return MinecraftNameHelper.TryNormalizePlayerName(target.DisplayName, out playerName) ? playerName : string.Empty;
         }
-        async Task<bool> ValidateEffectCount(int count, string sender, CancellationToken ct)
+        async Task<bool> CheckEffectCountAsync(int count, string sender, CancellationToken ct)
         {
             if (count <= 0)
             {
-                await SayToChannel(sender + ", effect count must be at least 1.", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", effect count must be at least 1.", ct).ConfigureAwait(false);
                 return false;
             }
             if (count > MaxEffectCount)
             {
-                await SayToChannel(sender + ", effect count cannot be higher than " + MaxEffectCount.ToString(CultureInfo.InvariantCulture) + ".", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", effect count cannot be higher than " + MaxEffectCount.ToString(CultureInfo.InvariantCulture) + ".", ct).ConfigureAwait(false);
                 return false;
             }
             return true;
         }
-        static string GetChannelTargetName(BotMainHandler runtime, ResolvedTarget? target)
+        static string GetChatTarget(BotMainHandler runtime, ResolvedTarget? target)
         {
             if (target == null)
                 return "everyone";
@@ -351,75 +351,75 @@ public static partial class CommandList
                 return minecraftName;
             return displayName.Length == 0 ? "everyone" : displayName;
         }
-        string TargetName(ResolvedTarget target) => GetChannelTargetName(runtime, target);
-        async Task TellOthers(ResolvedTarget? target, string message, string color, bool bold, CancellationToken ct)
+        string TargetName(ResolvedTarget target) => GetChatTarget(runtime, target);
+        async Task NotifyOthersAsync(ResolvedTarget? target, string message, string color, bool bold, CancellationToken ct)
         {
             if (target is null || !runtime.MultiTargetingEnabled || target.PlayerCount != 1)
                 return;
             string targetName = (target.DisplayName ?? string.Empty).Trim();
             if (targetName.Length == 0)
                 return;
-            await runtime.SendTellrawToOthersAsync(target, targetName.ToUpperInvariant() + " " + message, color, bold, ct).ConfigureAwait(false);
+            await runtime.TellrawOthersAsync(target, targetName.ToUpperInvariant() + " " + message, color, bold, ct).ConfigureAwait(false);
         }
-        async Task<bool> RequireAllowed(string sender, string commandName, CancellationToken ct)
+        async Task<bool> RequirePermissionAsync(string sender, string commandName, CancellationToken ct)
         {
             if (runtime.IsAllowedUser(sender))
                 return true;
-            await SayToChannel((string.IsNullOrWhiteSpace(sender) ? "This user" : sender) + ", only the broadcaster (or moderators if allowed) can use !" + commandName + ".", ct).ConfigureAwait(false);
+            await SayAsync((string.IsNullOrWhiteSpace(sender) ? "This user" : sender) + ", only the broadcaster (or moderators if allowed) can use !" + commandName + ".", ct).ConfigureAwait(false);
             return false;
         }
-        async Task<bool> RequireMinecraftReady(string sender, CancellationToken ct)
+        async Task<bool> RequireMinecraftAsync(string sender, CancellationToken ct)
         {
             if (runtime.MinecraftServerReady)
                 return true;
-            await SayToChannel(sender + ", the Minecraft server is still starting. Try again in a moment.", ct).ConfigureAwait(false);
+            await SayAsync(sender + ", the Minecraft server is still starting. Try again in a moment.", ct).ConfigureAwait(false);
             return false;
         }
-        async Task<bool> RequireGameCommandCooldownReady(string sender, CancellationToken ct)
+        async Task<bool> RequireCooldownAsync(string sender, CancellationToken ct)
         {
-            if (!await RequireMinecraftReady(sender, ct).ConfigureAwait(false))
+            if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return false;
-            if (!runtime.GlobalGameCommandCooldownEnabled || !runtime.TryGetGlobalGameCommandCooldownRemaining(out TimeSpan remaining))
+            if (!runtime.GlobalGameCommandCooldownEnabled || !runtime.TryGetGlobalCooldown(out TimeSpan remaining))
                 return true;
-            await SayToChannel(
-                sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldownRemaining(remaining) + ".",
+            await SayAsync(
+                sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".",
                 ct).ConfigureAwait(false);
             return false;
         }
-        async Task<long?> TryReserveGameCommandCooldown(string sender, CancellationToken ct)
+        async Task<long?> TryReserveCooldownAsync(string sender, CancellationToken ct)
         {
-            if (!await RequireMinecraftReady(sender, ct).ConfigureAwait(false))
+            if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return null;
-            if (runtime.TryReserveGlobalGameCommandCooldown(out TimeSpan remaining, out long reservationTicks))
+            if (runtime.TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTicks))
                 return reservationTicks;
-            await SayToChannel(
-                sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldownRemaining(remaining) + ".",
+            await SayAsync(
+                sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".",
                 ct).ConfigureAwait(false);
             return null;
         }
-        async Task<bool> SendTargetedPricedCommand(ResolvedTarget target, string sender, int baseCost, Func<ResolvedTarget, IEnumerable<string>> buildCommands, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
+        async Task<bool> SendPricedAsync(ResolvedTarget target, string sender, int baseCost, Func<ResolvedTarget, IEnumerable<string>> buildCommands, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
         {
             int cost = runtime.ScaleCost(baseCost, target.PlayerCount);
-            if (!await TrySendPricedCommands(sender, cost, () => buildCommands(target), ct).ConfigureAwait(false))
+            if (!await TrySendPricedAsync(sender, cost, () => buildCommands(target), ct).ConfigureAwait(false))
                 return false;
             if (!string.IsNullOrWhiteSpace(targetMessage))
                 await runtime.SendTellrawAsync(target.Selector, targetMessage, color, bold, ct).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(othersMessage))
-                await TellOthers(target, othersMessage, othersColor ?? color, bold, ct).ConfigureAwait(false);
+                await NotifyOthersAsync(target, othersMessage, othersColor ?? color, bold, ct).ConfigureAwait(false);
             return true;
         }
-        async Task<bool> SendSingleTargetedPricedCommand(ResolvedTarget target, string sender, int baseCost, string command, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
+        async Task<bool> SendPricedAsync(ResolvedTarget target, string sender, int baseCost, string command, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
         {
             int cost = runtime.ScaleCost(baseCost, target.PlayerCount);
-            if (!await TrySendPricedCommand(sender, cost, command, ct).ConfigureAwait(false))
+            if (!await TrySendPricedAsync(sender, cost, command, ct).ConfigureAwait(false))
                 return false;
             if (!string.IsNullOrWhiteSpace(targetMessage))
                 await runtime.SendTellrawAsync(target.Selector, targetMessage, color, bold, ct).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(othersMessage))
-                await TellOthers(target, othersMessage, othersColor ?? color, bold, ct).ConfigureAwait(false);
+                await NotifyOthersAsync(target, othersMessage, othersColor ?? color, bold, ct).ConfigureAwait(false);
             return true;
         }
-        async Task SendTargetedPricedCommandAndSay(
+        async Task SendPricedReplyAsync(
             ResolvedTarget target,
             string sender,
             int baseCost,
@@ -432,10 +432,10 @@ public static partial class CommandList
             string? othersColor,
             CancellationToken ct)
         {
-            if (await SendTargetedPricedCommand(target, sender, baseCost, buildCommands, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
-                await SayConfirmationToChannel(channelMessage, ct).ConfigureAwait(false);
+            if (await SendPricedAsync(target, sender, baseCost, buildCommands, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
+                await ConfirmAsync(channelMessage, ct).ConfigureAwait(false);
         }
-        async Task SendSingleTargetedPricedCommandAndSay(
+        async Task SendPricedReplyAsync(
             ResolvedTarget target,
             string sender,
             int baseCost,
@@ -448,24 +448,24 @@ public static partial class CommandList
             string? othersColor,
             CancellationToken ct)
         {
-            if (await SendSingleTargetedPricedCommand(target, sender, baseCost, command, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
-                await SayConfirmationToChannel(channelMessage, ct).ConfigureAwait(false);
+            if (await SendPricedAsync(target, sender, baseCost, command, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
+                await ConfirmAsync(channelMessage, ct).ConfigureAwait(false);
         }
-        void AddTargetedCommand(string commandName, Func<ResolvedTarget, string, CancellationToken, Task> execute, ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None, bool checkGameCooldown = true, int minimumTokenCost = 0)
+        void AddTargetCommand(string commandName, Func<ResolvedTarget, string, CancellationToken, Task> execute, ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None, bool checkGameCooldown = true, int minimumTokenCost = 0)
         {
             AddCommand(commandName, async (args, sender, ct) =>
             {
-                ResolvedTarget? target = await PrepareTargetedCommand(args, sender, ct, checkGameCooldown, minimumTokenCost).ConfigureAwait(false);
+                ResolvedTarget? target = await PrepareTargetAsync(args, sender, ct, checkGameCooldown, minimumTokenCost).ConfigureAwait(false);
                 if (target != null)
                     await execute(target, sender, ct).ConfigureAwait(false);
             }, commandStatisticFlags);
         }
-        void AddSimpleTargetedCommands(params SimpleTargetedCommandRegistration[] definitions)
+        void AddTargetCommands(params TargetedCommandDefinition[] definitions)
         {
-            foreach (SimpleTargetedCommandRegistration definition in definitions)
+            foreach (TargetedCommandDefinition definition in definitions)
             {
-                AddTargetedCommand(definition.Name, (target, sender, ct) =>
-                    SendTargetedPricedCommandAndSay(
+                AddTargetCommand(definition.Name, (target, sender, ct) =>
+                    SendPricedReplyAsync(
                         target,
                         sender,
                         definition.BaseCost,

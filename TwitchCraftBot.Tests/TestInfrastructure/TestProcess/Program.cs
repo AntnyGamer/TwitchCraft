@@ -15,10 +15,16 @@ string mode = File.Exists(jarPath)
     ? (await File.ReadAllTextAsync(jarPath)).Trim()
     : string.Empty;
 await File.WriteAllLinesAsync(jarPath + ".args", args);
-await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString());
+await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
 if (string.Equals(mode, "exit-immediately", StringComparison.Ordinal))
     return 42;
+
+if (string.Equals(mode, "ready", StringComparison.Ordinal))
+{
+    await Console.Out.WriteLineAsync("[Server thread/INFO]: Done (0.500s)! For help, type \"help\"");
+    await Console.Out.FlushAsync();
+}
 
 await using FileStream commandLog = new(
     jarPath + ".stdin",

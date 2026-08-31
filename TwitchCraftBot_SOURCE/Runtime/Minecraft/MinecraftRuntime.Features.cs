@@ -8,7 +8,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    internal Task<bool> ApplyTimedPlayerScaleAsync(
+    internal Task<bool> ApplyTimedScaleAsync(
         IReadOnlyList<string> playerNames,
         double scale,
         TimeSpan duration,
@@ -28,7 +28,7 @@ public sealed partial class BotMainHandler
             MinecraftCommandBuilder.Tellraw(string.IsNullOrWhiteSpace(selector) ? "@a" : selector, message, color, bold, UsesInlineTextComponentSyntax),
             cancellationToken);
 
-    public bool HasOtherKnownPlayer(string excludedPlayerName)
+    public bool HasOtherPlayer(string excludedPlayerName)
     {
         if (!MinecraftNameHelper.TryNormalizePlayerName(excludedPlayerName, out string excludedName))
             return false;
@@ -45,7 +45,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    public Task SendTellrawToOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
+    public Task TellrawOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
     {
         if (!MultiTargetingEnabled || target == null || string.IsNullOrWhiteSpace(message) || target.PlayerCount != 1)
             return Task.CompletedTask;
@@ -53,10 +53,10 @@ public sealed partial class BotMainHandler
         if (!MinecraftNameHelper.TryNormalizePlayerName(target.MinecraftName, out string excludedName))
             return Task.CompletedTask;
 
-        if (!HasOtherKnownPlayer(excludedName))
+        if (!HasOtherPlayer(excludedName))
             return Task.CompletedTask;
 
-        string selector = MinecraftCommandBuilder.AllExceptPlayerSelector(excludedName);
+        string selector = MinecraftCommandBuilder.EveryoneExceptSelector(excludedName);
         return SendTellrawAsync(selector, message, color, bold, cancellationToken);
     }
 
@@ -93,7 +93,7 @@ public sealed partial class BotMainHandler
 
     public string CurrentMinecraftVersion => _currentMinecraftVersion;
 
-    private MinecraftVersionSupport.MinecraftVersionInfo GetCurrentMinecraftVersionInfo()
+    private MinecraftVersionSupport.MinecraftVersionInfo GetMinecraftVersion()
     {
         string version = CurrentMinecraftVersion;
         if (!string.Equals(_cachedMinecraftFeatureVersion, version, StringComparison.OrdinalIgnoreCase))
@@ -106,25 +106,19 @@ public sealed partial class BotMainHandler
             ?? throw new InvalidOperationException("Minecraft version information is unavailable.");
     }
 
-    public bool UsesItemComponentsSyntax => GetCurrentMinecraftVersionInfo().UsesItemComponents;
+    public bool UsesItemComponentsSyntax => GetMinecraftVersion().UsesItemComponents;
 
-    public bool UsesInlineTextComponentSyntax => GetCurrentMinecraftVersionInfo().UsesInlineTextComponents;
+    public bool UsesInlineTextComponentSyntax => GetMinecraftVersion().UsesInlineTextComponents;
 
-    public bool UsesModernEntityAttributeNbt => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 48;
+    public bool UsesModernEntityAttributeNbt => GetMinecraftVersion().DataPackFormatMajor >= 48;
 
-    public bool UsesModernAttributeIds => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 57;
+    public bool UsesModernAttributeIds => GetMinecraftVersion().DataPackFormatMajor >= 57;
 
-    public bool SupportsMaceEnchantments => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 48;
+    public bool SupportsMaceEnchantments => GetMinecraftVersion().DataPackFormatMajor >= 48;
 
-    public bool UsesFlattenedEnchantmentsComponent => GetCurrentMinecraftVersionInfo().DataPackFormatMajor >= 71;
+    public bool UsesFlattenedEnchantmentsComponent => GetMinecraftVersion().DataPackFormatMajor >= 71;
 
-    public bool UsesNamespacedGameRules
-    {
-        get
-        {
-            return GetCurrentMinecraftVersionInfo().UsesNamespacedGameRules;
-        }
-    }
+    public bool UsesNamespacedGameRules => GetMinecraftVersion().UsesNamespacedGameRules;
 
     public string MobLootGameRuleName => UsesNamespacedGameRules ? "minecraft:mob_drops" : "doMobLoot";
 

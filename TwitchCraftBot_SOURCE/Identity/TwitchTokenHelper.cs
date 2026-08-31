@@ -16,7 +16,7 @@ internal static class TwitchTokenHelper
         return value;
     }
 
-    internal static string BuildIRCPassword(string? token)
+    internal static string BuildIrcPassword(string? token)
     {
         string accessToken = NormalizeAccessToken(token);
         return accessToken.Length == 0 ? string.Empty : "oauth:" + accessToken;

@@ -32,7 +32,7 @@ No coverage percentage gate is enforced until a stable baseline is measured and 
 ## Source layout
 
 - `TwitchCraftBot_SOURCE/` — WPF application, runtime, commands, persistence, and assets
-- `TwitchCraftBot.Tests/` — non-UI regression tests
+- `TwitchCraftBot.Tests/` — automated regression and focused integration tests
 - `docs/` — canonical user and maintainer documentation
 - `.github/` — CI and contribution templates
 

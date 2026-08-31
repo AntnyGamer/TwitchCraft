@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private void HandleServerReadyState(string line)
+    private void HandleReadyState(string line)
     {
         if (_minecraftServerReady || string.IsNullOrEmpty(line))
             return;
@@ -23,22 +24,37 @@ public sealed partial class BotMainHandler
 
         try
         {
-            if (_activeConfig is { } activeConfig && activeConfig.Settings?.RemoteControlEnabled != true && ServerPropertiesChangedSinceLastApply(activeConfig))
-                ApplyStartProfileAndRemember(activeConfig);
+            if (_activeConfig is { } activeConfig && activeConfig.Settings?.RemoteControlEnabled != true && ServerPropsChanged(activeConfig))
+                ApplyProfile(activeConfig);
         }
         catch (Exception ex)
         {
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
-        QueueDeathScoreObjectiveInitialization();
-        QueueInitialPlayerSnapshot();
-        QueuePlayerSidebarRefresh();
-        QueueTrackedPlayerGamemodeRefreshForStatistics();
-        QueueTrackedPlayerDeathScoreRefreshForStatistics();
+        ApplyServerSettingGameRules();
+        QueueDeathSetup();
+        QueueFirstSnapshot();
+        QueueSidebarRefresh();
+        QueueGamemode();
+        QueueDeathScore();
     }
 
-    private void RecoverSidebarInitializationFromServerLine(bool isSidebarObjectiveIssue)
+    private void ApplyServerSettingGameRules()
+    {
+        BotConfig? config = _activeConfig;
+        if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
+            return;
+
+        MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
+        if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+            return;
+
+        string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
+        TrackTask(SendServerCommandAsync(pvp, token));
+    }
+
+    private void RestoreSidebar(bool isSidebarObjectiveIssue)
     {
         if (!isSidebarObjectiveIssue)
             return;
@@ -51,20 +67,20 @@ public sealed partial class BotMainHandler
         }
 
         if (hasOnlinePlayers)
-            QueuePlayerSidebarRefresh();
+            QueueSidebarRefresh();
     }
 
-    private bool ShouldSuppressOnlinePlayersLogLine(string line)
+    private bool ShouldHidePlayerList(string line)
     {
         if (Volatile.Read(ref _suppressedOnlinePlayersLogLines) <= 0 || string.IsNullOrEmpty(line))
             return false;
 
         return (line.Contains("players online:", StringComparison.OrdinalIgnoreCase)
                 || line.Contains("player online:", StringComparison.OrdinalIgnoreCase))
-            && TryReleaseSuppressedOnlinePlayersLogLine();
+            && TryReleasePlayerList();
     }
 
-    private bool TryReleaseSuppressedOnlinePlayersLogLine()
+    private bool TryReleasePlayerList()
     {
         while (true)
         {
@@ -77,7 +93,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private async Task<bool> SendInternalProbeCommandAsync(string command, Action onProbeCompleted, CancellationToken cancellationToken)
+    private async Task<bool> SendProbeAsync(string command, Action onProbeCompleted, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command))
         {
@@ -89,9 +105,9 @@ public sealed partial class BotMainHandler
         {
             try
             {
-                string? response = await ExecuteRemoteServerQueryAsync(command, cancellationToken).ConfigureAwait(false);
+                string? response = await ExecuteRconQueryAsync(command, cancellationToken).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(response))
-                    HandleRemoteQueryResponse(response);
+                    HandleRconResponse(response);
 
                 return response != null;
             }
@@ -101,11 +117,11 @@ public sealed partial class BotMainHandler
             }
         }
 
-        string marker = RegisterServerProbeMarker(onProbeCompleted);
+        string marker = AddProbeMarker(onProbeCompleted);
         using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
         {
             (BotMainHandler handler, string marker, Action onCompleted) = ((BotMainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelServerProbeMarker(marker))
+            if (handler.TryCancelProbe(marker))
                 onCompleted();
         }, (this, marker, onProbeCompleted));
 
@@ -121,25 +137,25 @@ public sealed partial class BotMainHandler
 
             if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
             {
-                QueueServerProbeMarkerFallback(marker, onProbeCompleted, cancellationToken);
+                QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
                 return true;
             }
 
-            if (TryCancelServerProbeMarker(marker))
+            if (TryCancelProbe(marker))
                 onProbeCompleted();
 
             return false;
         }
         catch
         {
-            if (TryCancelServerProbeMarker(marker))
+            if (TryCancelProbe(marker))
                 onProbeCompleted();
 
             throw;
         }
     }
 
-    private async Task<bool> SendInternalProbeCommandsAsync(string[] commands, Action onProbeCompleted, CancellationToken cancellationToken)
+    private async Task<bool> SendProbesAsync(string[] commands, Action onProbeCompleted, CancellationToken cancellationToken)
     {
         if (commands.Length == 0)
             return false;
@@ -162,7 +178,7 @@ public sealed partial class BotMainHandler
         {
             try
             {
-                List<string?>? responses = await ExecuteRemoteServerQueriesAsync(probeCommands, cancellationToken).ConfigureAwait(false);
+                List<string?>? responses = await ExecuteRconQueriesAsync(probeCommands, cancellationToken).ConfigureAwait(false);
                 if (responses == null)
                     return false;
 
@@ -175,7 +191,7 @@ public sealed partial class BotMainHandler
 
                     delivered = true;
                     if (!string.IsNullOrWhiteSpace(response))
-                        HandleRemoteQueryResponse(response);
+                        HandleRconResponse(response);
                 }
 
                 return delivered;
@@ -186,11 +202,11 @@ public sealed partial class BotMainHandler
             }
         }
 
-        string marker = RegisterServerProbeMarker(onProbeCompleted);
+        string marker = AddProbeMarker(onProbeCompleted);
         using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
         {
             (BotMainHandler handler, string marker, Action onCompleted) = ((BotMainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelServerProbeMarker(marker))
+            if (handler.TryCancelProbe(marker))
                 onCompleted();
         }, (this, marker, onProbeCompleted));
 
@@ -201,25 +217,25 @@ public sealed partial class BotMainHandler
             probeCommands.Add("data get storage " + ProbeMarkerStorage + " " + ProbeMarkerPath);
             if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
             {
-                QueueServerProbeMarkerFallback(marker, onProbeCompleted, cancellationToken);
+                QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
                 return true;
             }
 
-            if (TryCancelServerProbeMarker(marker))
+            if (TryCancelProbe(marker))
                 onProbeCompleted();
 
             return false;
         }
         catch
         {
-            if (TryCancelServerProbeMarker(marker))
+            if (TryCancelProbe(marker))
                 onProbeCompleted();
 
             throw;
         }
     }
 
-    private string RegisterServerProbeMarker(Action onProbeCompleted)
+    private string AddProbeMarker(Action onProbeCompleted)
     {
         string marker = string.Create(CultureInfo.InvariantCulture, $"{_serverProbeMarkerSessionPrefix}{Interlocked.Increment(ref _serverProbeMarkerCounter)}");
         lock (_serverProbeMarkerGate)
@@ -231,21 +247,21 @@ public sealed partial class BotMainHandler
         return marker;
     }
 
-    private void QueueServerProbeMarkerFallback(string marker, Action onProbeCompleted, CancellationToken cancellationToken)
+    private void QueueProbeFallback(string marker, Action onProbeCompleted, CancellationToken cancellationToken)
     {
-        _ = CompleteAfterDelayAsync();
+        _ = CompleteLaterAsync();
 
-        async Task CompleteAfterDelayAsync()
+        async Task CompleteLaterAsync()
         {
             try
             {
                 await Task.Delay(ServerProbeMarkerFallbackTimeout, cancellationToken).ConfigureAwait(false);
-                if (TryCancelServerProbeMarker(marker))
+                if (TryCancelProbe(marker))
                     onProbeCompleted();
             }
             catch (OperationCanceledException)
             {
-                if (TryCancelServerProbeMarker(marker))
+                if (TryCancelProbe(marker))
                     onProbeCompleted();
             }
             catch (Exception ex)
@@ -255,7 +271,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private bool TryCancelServerProbeMarker(string marker)
+    private bool TryCancelProbe(string marker)
     {
         lock (_serverProbeMarkerGate)
         {
@@ -267,12 +283,12 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private bool TryHandleServerProbeMarkerLine(string line)
+    private bool TryHandleProbe(string line)
     {
         if (Volatile.Read(ref _pendingServerProbeMarkerCount) <= 0)
             return false;
 
-        string marker = ExtractServerProbeMarker(line);
+        string marker = GetProbeMarker(line);
         if (marker.Length == 0)
             return false;
 
@@ -289,7 +305,7 @@ public sealed partial class BotMainHandler
         return true;
     }
 
-    private static string ExtractServerProbeMarker(string line)
+    private static string GetProbeMarker(string line)
     {
         if (string.IsNullOrEmpty(line))
             return string.Empty;
@@ -305,19 +321,19 @@ public sealed partial class BotMainHandler
         return line[markerIndex..end];
     }
 
-    private static bool IsUnexpectedCommandErrorLine(string line)
+    private static bool IsUnexpectedError(string line)
         => !string.IsNullOrEmpty(line) &&
            (line.Contains("An unexpected error occurred trying to execute that command", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("An unexpected error occurred while trying to execute that command", StringComparison.OrdinalIgnoreCase));
 
-    private static bool IsMinecraftCommandErrorContextLine(string line)
+    private static bool IsErrorContext(string line)
         => !string.IsNullOrEmpty(line) &&
            (line.Contains("Command exception:", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Failed to execute", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Unable to execute command", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Error trying to execute", StringComparison.OrdinalIgnoreCase));
 
-    private void RememberSuppressedServerLogContextLine(string line)
+    private void SaveHiddenContext(string line)
     {
         if (string.IsNullOrWhiteSpace(line))
             return;
@@ -331,7 +347,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void ShowSuppressedServerLogContextLines()
+    private void ShowHiddenContext()
     {
         string[] lines;
         lock (_suppressedServerLogContextGate)
@@ -349,7 +365,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static bool ShouldSuppressServerLogLine(
+    private static bool ShouldHideLogLine(
         string line,
         in ServerLogLineFlags flags,
         bool isCommandParserError,
@@ -362,6 +378,9 @@ public sealed partial class BotMainHandler
 
         if (string.IsNullOrEmpty(line))
             return false;
+
+        if (line.Contains("Gamerule pvp is now set to:", StringComparison.OrdinalIgnoreCase))
+            return true;
 
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
@@ -393,12 +412,12 @@ public sealed partial class BotMainHandler
             line.Contains("Changed render type of [Health]", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsCommandParserErrorLine(string line)
+    private static bool IsParserError(string line)
         => !string.IsNullOrEmpty(line) &&
            line.Contains("Unknown or incomplete command", StringComparison.OrdinalIgnoreCase) &&
            line.Contains("See below for error", StringComparison.OrdinalIgnoreCase);
 
-    private bool TryConsumeServerCommandErrorContextLine()
+    private bool TryConsumeError()
     {
         while (true)
         {

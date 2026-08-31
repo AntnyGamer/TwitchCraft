@@ -13,22 +13,22 @@ public partial class Help : UserControl
         InitializeComponent();
     }
 
-    private void OpenREADME_Click(object sender, RoutedEventArgs e)
+    private void OpenReadme_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            string READMEPath = Path.Combine(AppHelpers.GetExecutableDirectory(), "README.txt");
+            string READMEPath = Path.Combine(AppHelpers.GetAppDirectory(), "README.txt");
             if (!File.Exists(READMEPath))
             {
-                ErrorHandling.ShowREADMENotFound(this, READMEPath);
+                ErrorHandling.ShowReadmeMissing(this, READMEPath);
                 return;
             }
 
-            AppHelpers.OpenShellTarget(READMEPath);
+            AppHelpers.OpenTarget(READMEPath);
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowOpenREADMEFailed(this, ex);
+            ErrorHandling.ShowReadmeError(this, ex);
         }
     }
 
@@ -37,24 +37,24 @@ public partial class Help : UserControl
         AppHelpers.NavigateBack(this);
     }
 
-    private void OpenSettings_Click(object sender, RoutedEventArgs e)
+    private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        if (AppHelpers.GetParentBot(this) is TwitchCraftBot parent)
+        if (AppHelpers.GetBotWindow(this) is TwitchCraftBot parent)
         {
-            parent.NavigateToSettings();
+            parent.ShowSettings();
         }
     }
 
-    private void BotCommands_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    private void Commands_RequestNavigate(object sender, RequestNavigateEventArgs e)
     {
         try
         {
-            AppHelpers.OpenShellTarget(e.Uri.AbsoluteUri);
+            AppHelpers.OpenTarget(e.Uri.AbsoluteUri);
             e.Handled = true;
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowOpenLinkFailed(this, ex);
+            ErrorHandling.ShowLinkError(this, ex);
         }
     }
 }

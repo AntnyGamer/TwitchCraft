@@ -11,29 +11,36 @@ public sealed class ServerPropertyEditor
     private const string DefaultLevelName = "world";
     private static readonly UTF8Encoding Utf8NoBom = new(false);
 
-    private static readonly string[] ManagedServerPropertyOrder =
+    private static readonly string[] ManagedGameplayPropertyOrder =
     [
-        "rcon.password",
-        "rcon.port",
         "difficulty",
-        "enable-query",
-        "enable-rcon",
         "hardcore",
-        "level-name",
-        "max-players",
-        "motd",
-        "network-compression-threshold",
-        "online-mode",
-        "pvp",
-        "query.port",
+        "pvp"
+    ];
+
+    private static readonly string[] ManagedMinecraftServerPropertyOrder =
+    [
         "view-distance",
         "simulation-distance",
         "entity-broadcast-range-percentage",
-        "server-ip",
-        "server-port"
+        "network-compression-threshold"
     ];
 
-    private static readonly HashSet<string> ManagedServerProperties = new(ManagedServerPropertyOrder, StringComparer.OrdinalIgnoreCase);
+    private static readonly string[] ManagedStartupPropertyOrder =
+    [
+        "max-players",
+        "motd",
+        "online-mode",
+        "server-ip",
+        "server-port",
+        "enable-query",
+        "query.port",
+        "enable-rcon",
+        "rcon.port",
+        "rcon.password"
+    ];
+
+    private static readonly HashSet<string> ManagedServerProperties = CreateManagedServerProperties();
 
     public static string GetPropertiesPath(BotConfig config)
     {
@@ -46,14 +53,21 @@ public sealed class ServerPropertyEditor
     public static string GetLevelName(BotConfig config)
     {
         string propsPath = GetPropertiesPath(config);
-        if (!string.IsNullOrWhiteSpace(propsPath) && File.Exists(propsPath))
+        if (string.IsNullOrWhiteSpace(propsPath) || !File.Exists(propsPath))
+            return DefaultLevelName;
+
+        string? levelName = null;
+        foreach (string line in File.ReadLines(propsPath, Encoding.UTF8))
         {
-            Dictionary<string, string> props = LoadProperties(propsPath);
-            if (props.TryGetValue("level-name", out string? levelName))
-                return NormalizeLevelName(levelName);
+            if (line.Length == 0 || line[0] == '#')
+                continue;
+
+            int equals = line.IndexOf('=');
+            if (equals >= 0 && MemoryExtensions.Equals(line.AsSpan(0, equals).Trim(), "level-name".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                levelName = UnescapeValue(line[(equals + 1)..]);
         }
 
-        return DefaultLevelName;
+        return levelName == null ? DefaultLevelName : NormalizeLevelName(levelName);
     }
 
     public static string GetWorldDirectory(BotConfig config)
@@ -109,10 +123,10 @@ public sealed class ServerPropertyEditor
         string eulaPath = Path.Combine(config.Server.ServerDirectory, "eula.txt");
         File.WriteAllText(eulaPath, "eula=true", Utf8NoBom);
 
-        ApplyStartProfile(config);
+        ApplyProfile(config);
     }
 
-    public static void CleanupUnusedServerJars(string serverDirectory, string currentJarPath)
+    public static void CleanupServerJars(string serverDirectory, string currentJarPath)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory) || string.IsNullOrWhiteSpace(currentJarPath) || !Directory.Exists(serverDirectory))
             return;
@@ -135,7 +149,7 @@ public sealed class ServerPropertyEditor
         }
     }
 
-    public static string ApplyStartProfile(BotConfig config)
+    public static string ApplyProfile(BotConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
 
@@ -147,7 +161,8 @@ public sealed class ServerPropertyEditor
         if (string.IsNullOrWhiteSpace(propsPath))
             return string.Empty;
 
-        Dictionary<string, string> props = LoadProperties(propsPath);
+        Dictionary<string, string> props = LoadPropertiesForUpdate(propsPath, out string existingContent);
+        MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
 
         bool multiplayer = config.Settings.MultiplayerEnabled;
         bool onlineMode = !multiplayer || config.Settings.RequireOnlineMode;
@@ -157,12 +172,13 @@ public sealed class ServerPropertyEditor
         props["rcon.port"] = config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture);
         props["enable-query"] = "true";
         props["query.port"] = serverPort;
+        // TwitchCraft validates level-name because it becomes a local folder path, but a valid
+        // user-selected world name is preserved and remains in the editable properties section.
         props["level-name"] = props.TryGetValue("level-name", out string? levelName) ? NormalizeLevelName(levelName) : DefaultLevelName;
         props["motd"] = multiplayer
             ? "§c§lT§f§lw§9§li§c§lt§f§lc§9§lh§c§lC§f§lr§9§la§c§lf§f§lt§9§l §c§l-§f§l §9§lM§c§lu§f§ll§9§lt§c§li§f§lp§9§ll§c§la§f§ly§9§le§c§lr§r"
             : "§c§lT§f§lw§9§li§c§lt§f§lc§9§lh§c§lC§f§lr§9§la§c§lf§f§lt§r";
-        props["pvp"] = config.Settings.MultiplayerPVPEnabled ? "true" : "false";
-        props["difficulty"] = ToMinecraftDifficulty(config.Settings.Difficulty);
+        props["difficulty"] = ToDifficulty(config.Settings.Difficulty);
         props["max-players"] = multiplayer ? Math.Max(2, config.Server.MaxPlayers).ToString(CultureInfo.InvariantCulture) : "1";
         props["online-mode"] = onlineMode ? "true" : "false";
         props["server-ip"] = config.Server.BindIP ?? string.Empty;
@@ -175,69 +191,74 @@ public sealed class ServerPropertyEditor
         props["entity-broadcast-range-percentage"] = config.Settings.EntityBroadcastRangePercentage.ToString(CultureInfo.InvariantCulture);
         props["network-compression-threshold"] = config.Settings.NetworkCompressionThreshold.ToString(CultureInfo.InvariantCulture);
 
-        SetDefaultProperty(props, "enable-jmx-monitoring", "false");
-        SetDefaultProperty(props, "gamemode", "survival");
-        SetDefaultProperty(props, "enable-command-block", "false");
-        SetDefaultProperty(props, "generator-settings", "{}");
-        SetDefaultProperty(props, "enforce-secure-profile", "true");
-        SetDefaultProperty(props, "max-tick-time", "60000");
-        SetDefaultProperty(props, "use-native-transport", "true");
-        SetDefaultProperty(props, "enable-status", "true");
-        SetDefaultProperty(props, "allow-flight", "false");
-        SetDefaultProperty(props, "broadcast-rcon-to-ops", "false");
-        SetDefaultProperty(props, "resource-pack-prompt", string.Empty);
-        SetDefaultProperty(props, "allow-nether", "true");
-        SetDefaultProperty(props, "sync-chunk-writes", "true");
-        SetDefaultProperty(props, "op-permission-level", "4");
-        SetDefaultProperty(props, "prevent-proxy-connections", "false");
-        SetDefaultProperty(props, "hide-online-players", "false");
-        SetDefaultProperty(props, "resource-pack", string.Empty);
-        SetDefaultProperty(props, "player-idle-timeout", "500");
-        SetDefaultProperty(props, "force-gamemode", "true");
-        SetDefaultProperty(props, "rate-limit", "0");
-        SetDefaultProperty(props, "white-list", "false");
-        SetDefaultProperty(props, "broadcast-console-to-ops", "false");
-        SetDefaultProperty(props, "previews-chat", "false");
-        SetDefaultProperty(props, "function-permission-level", "2");
-        SetDefaultProperty(props, "level-type", "minecraft:normal");
-        SetDefaultProperty(props, "text-filtering-config", string.Empty);
-        SetDefaultProperty(props, "spawn-monsters", "true");
-        SetDefaultProperty(props, "enforce-whitelist", "false");
-        SetDefaultProperty(props, "spawn-protection", "0");
-        SetDefaultProperty(props, "resource-pack-sha1", string.Empty);
-        SetDefaultProperty(props, "max-world-size", "29999984");
+        SetDefault(props, "enable-jmx-monitoring", "false");
+        SetDefault(props, "gamemode", "survival");
+        SetDefault(props, "generator-settings", "{}");
+        SetDefault(props, "enforce-secure-profile", "true");
+        SetDefault(props, "max-tick-time", "60000");
+        SetDefault(props, "use-native-transport", "true");
+        SetDefault(props, "enable-status", "true");
+        SetDefault(props, "allow-flight", "false");
+        SetDefault(props, "broadcast-rcon-to-ops", "false");
+        SetDefault(props, "resource-pack-prompt", string.Empty);
+        SetDefault(props, "sync-chunk-writes", "true");
+        SetDefault(props, "op-permission-level", "4");
+        SetDefault(props, "prevent-proxy-connections", "false");
+        SetDefault(props, "hide-online-players", "false");
+        SetDefault(props, "resource-pack", string.Empty);
+        SetDefault(props, "player-idle-timeout", "500");
+        SetDefault(props, "force-gamemode", "true");
+        SetDefault(props, "rate-limit", "0");
+        SetDefault(props, "white-list", "false");
+        SetDefault(props, "broadcast-console-to-ops", "false");
+        SetDefault(props, "previews-chat", "false");
+        SetDefault(props, "function-permission-level", "2");
+        SetDefault(props, "level-type", "minecraft:normal");
+        SetDefault(props, "text-filtering-config", string.Empty);
+        SetDefault(props, "enforce-whitelist", "false");
+        SetDefault(props, "spawn-protection", "0");
+        SetDefault(props, "resource-pack-sha1", string.Empty);
+        SetDefault(props, "max-world-size", "29999984");
 
-        ApplyVersionSpecificProperties(props, config.Server.MinecraftVersion);
-        return SaveProperties(propsPath, props);
-    }
-
-    private static void ApplyVersionSpecificProperties(Dictionary<string, string> props, string minecraftVersion)
-    {
-        if (MinecraftVersionSupport.SupportsLegacySpawnProperties(minecraftVersion))
+        if (version.UsesServerSettingGameRules)
         {
-            SetDefaultProperty(props, "spawn-npcs", "true");
-            SetDefaultProperty(props, "spawn-animals", "true");
+            props.Remove("pvp");
+            props.Remove("allow-nether");
+            props.Remove("spawn-monsters");
+            props.Remove("enable-command-block");
         }
         else
+        {
+            props["pvp"] = config.Settings.MultiplayerPVPEnabled ? "true" : "false";
+            SetDefault(props, "allow-nether", "true");
+            SetDefault(props, "spawn-monsters", "true");
+            SetDefault(props, "enable-command-block", "false");
+        }
+
+        ApplyVersion(props, version);
+        return SaveProperties(propsPath, props, existingContent);
+    }
+
+    private static void ApplyVersion(Dictionary<string, string> props, MinecraftVersionSupport.MinecraftVersionInfo version)
+    {
+        if (version.DataPackFormatMajor >= 57)
         {
             props.Remove("spawn-npcs");
             props.Remove("spawn-animals");
-        }
-
-        if (MinecraftVersionSupport.SupportsPauseWhenEmptySeconds(minecraftVersion))
-        {
-            SetDefaultProperty(props, "pause-when-empty-seconds", "300");
+            SetDefault(props, "pause-when-empty-seconds", "1");
         }
         else
         {
+            SetDefault(props, "spawn-npcs", "true");
+            SetDefault(props, "spawn-animals", "true");
             props.Remove("pause-when-empty-seconds");
         }
     }
 
-    private static void SetDefaultProperty(Dictionary<string, string> props, string key, string value)
+    private static void SetDefault(Dictionary<string, string> props, string key, string value)
         => props.TryAdd(key, value);
 
-    private static string ToMinecraftDifficulty(string? difficulty)
+    private static string ToDifficulty(string? difficulty)
     {
         string value = (difficulty ?? string.Empty).Trim();
         return value.Equals("Easy", StringComparison.OrdinalIgnoreCase) ? "easy"
@@ -245,30 +266,41 @@ public sealed class ServerPropertyEditor
             : "normal";
     }
 
-    private static Dictionary<string, string> LoadProperties(string propsPath)
+    private static Dictionary<string, string> LoadPropertiesForUpdate(string propsPath, out string existingContent)
     {
         Dictionary<string, string> props = new(StringComparer.OrdinalIgnoreCase);
         if (!File.Exists(propsPath))
-            return props;
-
-        foreach (string line in File.ReadLines(propsPath, Encoding.UTF8))
         {
-            if (line.Length == 0 || line[0] == '#')
-                continue;
-
-            int equals = line.IndexOf('=');
-            if (equals < 0)
-                continue;
-
-            string key = line[..equals].Trim();
-            string value = UnescapePropertyValue(line[(equals + 1)..]);
-            props[key] = key.Equals("rcon.password", StringComparison.OrdinalIgnoreCase) ? ConfigurationStore.NormalizeRconPassword(value) : value;
+            existingContent = string.Empty;
+            return props;
         }
+
+        existingContent = File.ReadAllText(propsPath, Encoding.UTF8);
+        using StringReader reader = new(existingContent);
+        string? line;
+        while ((line = reader.ReadLine()) != null)
+            AddProperty(props, line);
 
         return props;
     }
 
-    private static string SaveProperties(string propsPath, Dictionary<string, string> props)
+    private static void AddProperty(Dictionary<string, string> props, string line)
+    {
+        if (line.Length == 0 || line[0] == '#')
+            return;
+
+        int equals = line.IndexOf('=');
+        if (equals < 0)
+            return;
+
+        string key = line[..equals].Trim();
+        string value = UnescapeValue(line[(equals + 1)..]);
+        props[key] = key.Equals("rcon.password", StringComparison.OrdinalIgnoreCase)
+            ? ConfigurationStore.NormalizeRconPassword(value)
+            : value;
+    }
+
+    private static string SaveProperties(string propsPath, Dictionary<string, string> props, string existingContent)
     {
         StringBuilder builder = new(capacity: Math.Min(props.Count, 256) * 80);
         List<string> editableKeys = new(props.Count);
@@ -281,7 +313,8 @@ public sealed class ServerPropertyEditor
         editableKeys.Sort(StringComparer.OrdinalIgnoreCase);
         if (editableKeys.Count > 0)
         {
-            builder.AppendLine("# THESE PROPERTIES CAN BE CHANGED FROM THIS FILE. THEY WILL STAY PERMANENTLY UNTIL YOU CHANGE THEM AGAIN.");
+            builder.AppendLine("# THE SETTINGS BELOW ARE NOT MANAGED BY TWITCHCRAFT");
+            builder.AppendLine("# YOU CAN CHANGE THEM HERE; TWITCHCRAFT PRESERVES THEIR VALUES.");
             foreach (string key in editableKeys)
                 AppendProperty(builder, key, props[key]);
 
@@ -289,31 +322,62 @@ public sealed class ServerPropertyEditor
         }
 
         builder.AppendLine("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT");
-        builder.AppendLine("# SOME CAN BE CHANGED IN YOUR CONFIG OR YOUR SETTINGS AND SOME CANNOT BE MODIFIED");
-
-        foreach (string key in ManagedServerPropertyOrder)
-        {
-            if (props.TryGetValue(key, out string? value))
-                AppendProperty(builder, key, value);
-        }
+        builder.AppendLine("# CHANGE THEM IN TWITCHCRAFT; DIRECT EDITS HERE MAY BE REPLACED.");
+        builder.AppendLine();
+        AppendManagedSection(builder, props, "GAMEPLAY SETTINGS", ManagedGameplayPropertyOrder);
+        AppendManagedSection(builder, props, "MINECRAFT SERVER SETTINGS", ManagedMinecraftServerPropertyOrder);
+        AppendManagedSection(builder, props, "SERVER STARTUP & CONNECTION", ManagedStartupPropertyOrder, appendTrailingBlankLine: false);
 
         string content = builder.ToString();
-        if (File.Exists(propsPath) && string.Equals(File.ReadAllText(propsPath, Utf8NoBom), content, StringComparison.Ordinal))
+        if (string.Equals(existingContent, content, StringComparison.Ordinal))
             return content;
 
         string tempPath = propsPath + ".tmp";
         string backupPath = propsPath + ".bak";
         File.WriteAllText(tempPath, content, Utf8NoBom);
-        TwitchCraftBot_V1.FileSystemHelper.ReplaceOrMoveWithFallback(tempPath, propsPath, backupPath, "Atomic server.properties save failed; falling back to copy");
+        TwitchCraftBot_V1.FileSystemHelper.ReplaceFile(tempPath, propsPath, backupPath, "Atomic server.properties save failed; falling back to copy");
         return content;
+    }
+
+    private static HashSet<string> CreateManagedServerProperties()
+    {
+        HashSet<string> properties = new(StringComparer.OrdinalIgnoreCase);
+        AddManagedProperties(properties, ManagedGameplayPropertyOrder);
+        AddManagedProperties(properties, ManagedMinecraftServerPropertyOrder);
+        AddManagedProperties(properties, ManagedStartupPropertyOrder);
+        return properties;
+    }
+
+    private static void AddManagedProperties(HashSet<string> destination, string[] properties)
+    {
+        foreach (string property in properties)
+            destination.Add(property);
+    }
+
+    private static void AppendManagedSection(
+        StringBuilder builder,
+        Dictionary<string, string> props,
+        string title,
+        string[] propertyOrder,
+        bool appendTrailingBlankLine = true)
+    {
+        builder.Append("# ").AppendLine(title);
+        foreach (string key in propertyOrder)
+        {
+            if (props.TryGetValue(key, out string? value))
+                AppendProperty(builder, key, value);
+        }
+
+        if (appendTrailingBlankLine)
+            builder.AppendLine();
     }
 
     private static void AppendProperty(StringBuilder builder, string key, string value)
     {
-        builder.Append(key).Append('=').Append(EscapePropertyValue(value)).AppendLine();
+        builder.Append(key).Append('=').Append(EscapeValue(value)).AppendLine();
     }
 
-    private static string EscapePropertyValue(string? value)
+    private static string EscapeValue(string? value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         StringBuilder? builder = null;
@@ -327,7 +391,7 @@ public sealed class ServerPropertyEditor
         return builder?.ToString() ?? value;
     }
 
-    private static string UnescapePropertyValue(string value)
+    private static string UnescapeValue(string value)
     {
         int slash = value.IndexOf('\\');
         if (slash < 0) return value;

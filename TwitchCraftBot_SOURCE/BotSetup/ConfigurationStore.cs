@@ -11,7 +11,7 @@ public sealed partial class ConfigurationStore
     private const string AppFolderName = "TwitchCraftBot";
     private const string ConfigFileName = "config.json";
     private const string ViewerTokensFileName = "viewer_tokens.db";
-    private const string BackupsFolderName = "Backups";
+    private const string BackupsFolderName = "backups";
     private const string DefaultBindIP = "127.0.0.1";
     private const int DefaultServerPort = 25565;
     private const int DefaultRCONPort = 25575;
@@ -27,7 +27,8 @@ public sealed partial class ConfigurationStore
 
     private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        Formatting = Formatting.Indented
+        Formatting = Formatting.Indented,
+        Converters = { new StartingProfileJsonConverter() }
     };
 
     private static readonly Lock IoGate = new();
@@ -36,7 +37,10 @@ public sealed partial class ConfigurationStore
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         AppFolderName);
     private static readonly string ConfigPathValue = Path.Combine(WorkingDirectoryPath, ConfigFileName);
+    private static readonly string ConfigTempPathValue = ConfigPathValue + ".tmp";
+    private static readonly string ConfigBackupPathValue = ConfigPathValue + ".bak";
     private static readonly string ViewerTokensPathValue = Path.Combine(WorkingDirectoryPath, ViewerTokensFileName);
+    private static readonly string BackupsDirectoryPath = Path.Combine(WorkingDirectoryPath, BackupsFolderName);
 
     public static string WorkingDirectory => WorkingDirectoryPath;
 
@@ -44,9 +48,9 @@ public sealed partial class ConfigurationStore
 
     public static string ViewerTokensPath => ViewerTokensPathValue;
 
-    public static string BackupsDirectory => Path.Combine(WorkingDirectoryPath, BackupsFolderName);
+    public static string BackupsDirectory => BackupsDirectoryPath;
 
-    public static void CheckRootFolder() => Directory.CreateDirectory(WorkingDirectory);
+    public static void EnsureWorkDir() => Directory.CreateDirectory(WorkingDirectory);
 
     public static bool HasConfig()
     {
@@ -55,7 +59,7 @@ public sealed partial class ConfigurationStore
 
         lock (IoGate)
         {
-            return TryLoadConfig(GetTempPath(ConfigPath), out _);
+            return TryLoadConfig(ConfigTempPathValue, out _);
         }
     }
 
@@ -63,19 +67,19 @@ public sealed partial class ConfigurationStore
     {
         lock (IoGate)
         {
-            TwitchCraftBot_V1.FileSystemHelper.TryDeleteFile(ConfigPath);
-            TwitchCraftBot_V1.FileSystemHelper.TryDeleteFile(GetTempPath(ConfigPath));
-            TwitchCraftBot_V1.FileSystemHelper.TryDeleteFile(ConfigPath + ".bak");
+            TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigPath);
+            TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigTempPathValue);
+            TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
         }
     }
 
     public static BotConfig Load()
     {
-        CheckRootFolder();
+        EnsureWorkDir();
 
         lock (IoGate)
         {
-            string tempPath = GetTempPath(ConfigPath);
+            string tempPath = ConfigTempPathValue;
             bool hasConfig = File.Exists(ConfigPath);
             bool hasTemp = File.Exists(tempPath);
 
@@ -86,8 +90,8 @@ public sealed partial class ConfigurationStore
                 TryLoadConfig(tempPath, out loaded))
             {
                 Normalize(loaded);
-                ResetTransientStartMode(loaded);
-                TwitchCraftBot_V1.FileSystemHelper.TryDeleteFile(ConfigPath + ".bak");
+                ResetStartMode(loaded);
+                TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
                 return loaded;
             }
         }
@@ -95,7 +99,7 @@ public sealed partial class ConfigurationStore
         throw new InvalidDataException("config.json could not be read. Restore an automatic backup or run setup again.");
     }
 
-    public static void NormalizeForRuntime(BotConfig config)
+    public static void NormalizeRuntime(BotConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
         Normalize(config);
@@ -106,7 +110,7 @@ public sealed partial class ConfigurationStore
         ArgumentNullException.ThrowIfNull(config);
 
         Normalize(config);
-        CheckRootFolder();
+        EnsureWorkDir();
 
         lock (IoGate)
             SaveNoLock(config);
@@ -115,11 +119,11 @@ public sealed partial class ConfigurationStore
     public static BotConfig Update(Action<BotConfig> update)
     {
         ArgumentNullException.ThrowIfNull(update);
-        CheckRootFolder();
+        EnsureWorkDir();
 
         lock (IoGate)
         {
-            string tempPath = GetTempPath(ConfigPath);
+            string tempPath = ConfigTempPathValue;
             bool hasConfig = File.Exists(ConfigPath);
             bool hasTemp = File.Exists(tempPath);
             if (!TryLoadConfig(ConfigPath, out BotConfig config) && !TryLoadConfig(tempPath, out config))
@@ -131,7 +135,7 @@ public sealed partial class ConfigurationStore
             }
 
             Normalize(config);
-            ResetTransientStartMode(config);
+            ResetStartMode(config);
             update(config);
             Normalize(config);
             SaveNoLock(config);
@@ -141,22 +145,22 @@ public sealed partial class ConfigurationStore
 
     private static void SaveNoLock(BotConfig config)
     {
-        string json = SerializeForStorage(config);
-        string tempPath = GetTempPath(ConfigPath);
+        string json = SerializeConfig(config);
+        string tempPath = ConfigTempPathValue;
 
-        if (ConfigFileAlreadyMatches(json))
+        if (ConfigMatches(json))
         {
-            TwitchCraftBot_V1.FileSystemHelper.TryDeleteFile(tempPath);
-            TwitchCraftBot_V1.FileSystemHelper.TryDeleteFile(ConfigPath + ".bak");
+            TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(tempPath);
+            TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
             return;
         }
 
         File.WriteAllText(tempPath, json, Utf8NoBom);
-        TwitchCraftBot_V1.FileSystemHelper.ReplaceOrMoveWithFallback(tempPath, ConfigPath, null, "Atomic config save failed; falling back to copy");
-        TwitchCraftBot_V1.FileSystemHelper.TryDeleteFile(ConfigPath + ".bak");
+        TwitchCraftBot_V1.FileSystemHelper.ReplaceFile(tempPath, ConfigPath, null, "Atomic config save failed; falling back to copy");
+        TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
     }
 
-    private static string SerializeForStorage(BotConfig config)
+    private static string SerializeConfig(BotConfig config)
     {
         bool originalMultiplayerEnabled = config.Settings.MultiplayerEnabled;
         bool originalRemoteControlEnabled = config.Settings.RemoteControlEnabled;
@@ -164,7 +168,7 @@ public sealed partial class ConfigurationStore
 
         try
         {
-            ResetTransientStartMode(config);
+            ResetStartMode(config);
             return JsonConvert.SerializeObject(config, JsonSettings);
         }
         finally
@@ -184,7 +188,7 @@ public sealed partial class ConfigurationStore
         try
         {
             string text = File.ReadAllText(path, Encoding.UTF8);
-            config = JsonConvert.DeserializeObject<BotConfig>(text) ?? new BotConfig();
+            config = JsonConvert.DeserializeObject<BotConfig>(text, JsonSettings) ?? new BotConfig();
             return true;
         }
         catch (Exception ex)
@@ -194,7 +198,7 @@ public sealed partial class ConfigurationStore
         }
     }
 
-    private static bool ConfigFileAlreadyMatches(string json)
+    private static bool ConfigMatches(string json)
     {
         try
         {
@@ -207,9 +211,7 @@ public sealed partial class ConfigurationStore
         }
     }
 
-    private static string GetTempPath(string path) => path + ".tmp";
-
-    internal static bool TryCopyConfigTo(string destinationPath)
+    internal static bool TryCopyConfig(string destinationPath)
     {
         try
         {
@@ -217,7 +219,7 @@ public sealed partial class ConfigurationStore
             {
                 if (!File.Exists(ConfigPath))
                     return false;
-                TwitchCraftBot_V1.FileSystemHelper.EnsureDirectoryForFile(destinationPath);
+                TwitchCraftBot_V1.FileSystemHelper.EnsureParentDir(destinationPath);
                 File.Copy(ConfigPath, destinationPath, overwrite: true);
                 return true;
             }

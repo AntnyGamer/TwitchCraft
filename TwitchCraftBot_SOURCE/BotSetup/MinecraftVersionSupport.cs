@@ -69,17 +69,11 @@ internal static class MinecraftVersionSupport
         throw new NotSupportedException("Minecraft version '" + display + "' is not supported by this TwitchCraft build.");
     }
 
-    public static IReadOnlyList<string> GetAdditionalMobIDs(string versionID)
+    public static IReadOnlyList<string> GetExtraMobIds(string versionID)
         => GetVersion(versionID).AdditionalMobIDs;
 
-    public static IReadOnlyList<string> GetAdditionalLootTableIDs(string versionID)
+    public static IReadOnlyList<string> GetExtraLootIds(string versionID)
         => GetVersion(versionID).AdditionalLootTableIDs;
-
-    public static bool SupportsPauseWhenEmptySeconds(string versionID)
-        => GetVersion(versionID).DataPackFormatMajor >= 57;
-
-    public static bool SupportsLegacySpawnProperties(string versionID)
-        => GetVersion(versionID).DataPackFormatMajor < 57;
 
     public static bool SupportsStatusEffect(string versionID, string? effectID)
     {
@@ -136,10 +130,11 @@ internal static class MinecraftVersionSupport
         public bool UsesInlineTextComponents { get; } = usesInlineTextComponents;
         public bool UsesModernPackMetadata { get; } = usesModernPackMetadata;
         public bool UsesNamespacedGameRules { get; } = usesNamespacedGameRules;
+        public bool UsesServerSettingGameRules => DataPackFormatMajor >= 88;
         public IReadOnlyList<string> AdditionalMobIDs { get; } = additionalMobIDs ?? [];
         public IReadOnlyList<string> AdditionalLootTableIDs { get; } = additionalLootTableIDs ?? [];
 
-        public string GetExactPackFormatJsonValue()
+        public string GetPackFormatJson()
         {
             if (DataPackFormatMinor > 0 || UsesModernPackMetadata)
                 return "[" + DataPackFormatMajor.ToString(CultureInfo.InvariantCulture) + ", " + DataPackFormatMinor.ToString(CultureInfo.InvariantCulture) + "]";

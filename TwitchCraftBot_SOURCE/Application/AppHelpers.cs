@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -7,7 +8,7 @@ namespace TwitchCraftBot_V1;
 
 internal static class AppHelpers
 {
-    public static TwitchCraftBot? GetParentBot(DependencyObject source)
+    public static TwitchCraftBot? GetBotWindow(DependencyObject source)
         => Window.GetWindow(source) as TwitchCraftBot;
 
     public static string? GetExecutablePath()
@@ -27,7 +28,7 @@ internal static class AppHelpers
         }
     }
 
-    public static string GetExecutableDirectory()
+    public static string GetAppDirectory()
     {
         string? exePath = GetExecutablePath();
         if (string.IsNullOrWhiteSpace(exePath))
@@ -40,13 +41,13 @@ internal static class AppHelpers
 
     public static void NavigateBack(DependencyObject source)
     {
-        if (GetParentBot(source) is TwitchCraftBot parent)
+        if (GetBotWindow(source) is TwitchCraftBot parent)
         {
             parent.Shell.Navigate(parent.Shell.PreviousPage);
         }
     }
 
-    public static void OpenShellTarget(string target, string? workingDirectory = null)
+    public static void OpenTarget(string target, string? workingDirectory = null)
     {
         ProcessStartInfo processStartInfo = new()
         {
@@ -60,5 +61,49 @@ internal static class AppHelpers
         }
 
         Process.Start(processStartInfo);
+    }
+
+    internal static string? FindWorldFolder()
+    {
+        string initialPath = GetWorldPath();
+
+        OpenFolderDialog dialog = new()
+        {
+            Multiselect = false,
+            Title = "Select a Minecraft world folder.",
+            InitialDirectory = initialPath,
+            DefaultDirectory = initialPath,
+            FolderName = initialPath
+        };
+
+        bool? result = dialog.ShowDialog();
+        if (result != true)
+        {
+            return null;
+        }
+
+        string selectedPath = dialog.FolderName ?? string.Empty;
+        return string.IsNullOrWhiteSpace(selectedPath) ? null : selectedPath;
+    }
+
+    private static string GetWorldPath()
+    {
+        string minecraftSavesPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            ".minecraft",
+            "saves");
+
+        if (Directory.Exists(minecraftSavesPath))
+        {
+            return minecraftSavesPath;
+        }
+
+        string downloadsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads");
+
+        return Directory.Exists(downloadsPath)
+            ? downloadsPath
+            : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
     }
 }

@@ -57,7 +57,7 @@ internal static class MinecraftItemEnchantHelper
         new("wind_burst", 3)
     ];
 
-    internal static void ChooseRandomEnchant(
+    internal static void PickEnchant(
         Random random,
         bool supportsMaceEnchantments,
         out string enchantID,
@@ -77,6 +77,6 @@ internal static class MinecraftItemEnchantHelper
         level = random.Next(1, selected.MaxLevel + 1);
     }
 
-    internal static string BuildVanillaEnchantCommand(string selector, string enchantID, int level)
+    internal static string BuildEnchant(string selector, string enchantID, int level)
         => "enchant " + selector + " minecraft:" + enchantID + " " + Math.Max(1, level).ToString(CultureInfo.InvariantCulture);
 }

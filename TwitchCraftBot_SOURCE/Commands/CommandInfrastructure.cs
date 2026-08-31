@@ -74,7 +74,7 @@ public sealed class ChatCommandRegistry(
     public static ChatCommandRegistry CreateDefault(BotMainHandler runtime)
     {
         var statisticFlags = new Dictionary<string, ChatCommandStatisticFlags>(64, StringComparer.OrdinalIgnoreCase);
-        return new(CommandList.BuildCommandHandlers(runtime, statisticFlags), statisticFlags);
+        return new(CommandList.BuildCommands(runtime, statisticFlags), statisticFlags);
     }
 }
 
@@ -88,7 +88,7 @@ public static class MinecraftCommandBuilder
     public static string Tellraw(string selector, string message, string color, bool bold, bool usesInlineTextComponents)
         => $"tellraw {selector} {BuildTextComponent(message, color, bold, usesInlineTextComponents)}";
 
-    public static string ClearVerticalColumn(string selector, int height)
+    public static string ClearColumn(string selector, int height)
         => $"execute at {selector} run fill ~ ~ ~ ~ ~{height} ~ minecraft:air";
 
     public static string DropAnvil(string selector)
@@ -150,7 +150,7 @@ public static class MinecraftCommandBuilder
 
     public static string BanPlayer(string playerName, string reason)
     {
-        reason = CleanCommandArgumentText(reason);
+        reason = CleanCommandArg(reason);
         return reason.Length == 0 ? $"ban {playerName}" : $"ban {playerName} {reason}";
     }
 
@@ -159,7 +159,7 @@ public static class MinecraftCommandBuilder
 
     public static string KickPlayer(string playerName, string reason)
     {
-        reason = CleanCommandArgumentText(reason);
+        reason = CleanCommandArg(reason);
         return reason.Length == 0 ? $"kick {playerName}" : $"kick {playerName} {reason}";
     }
 
@@ -169,7 +169,7 @@ public static class MinecraftCommandBuilder
     public static string WhitelistRemove(string playerName)
         => $"whitelist remove {playerName}";
 
-    private static string CleanCommandArgumentText(string? value)
+    private static string CleanCommandArg(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
             return string.Empty;
@@ -197,31 +197,31 @@ public static class MinecraftCommandBuilder
         string safeColor = string.IsNullOrWhiteSpace(color) ? "white" : color.Trim();
         if (usesInlineTextComponents)
         {
-            return "{text:'" + EscapeSnbtString(message) + "',color:'" + EscapeSnbtString(safeColor) + "',bold:" + (bold ? "true" : "false") + "}";
+            return "{text:'" + EscapeSnbt(message) + "',color:'" + EscapeSnbt(safeColor) + "',bold:" + (bold ? "true" : "false") + "}";
         }
 
         return "{\"text\":\"" + EscapeJson(message) + "\",\"color\":\"" + EscapeJson(safeColor) + "\",\"bold\":" + (bold ? "true" : "false") + "}";
     }
 
     public static string PlayerSelector(string playerName)
-        => "@a[name=\"" + EscapeSelectorValue(playerName) + "\",gamemode=!spectator]";
+        => "@a[name=\"" + EscapeSelector(playerName) + "\",gamemode=!spectator]";
 
-    public static string PlayerSelectorLimitOne(string playerName)
-        => "@a[name=\"" + EscapeSelectorValue(playerName) + "\",limit=1]";
+    public static string SinglePlayerSelector(string playerName)
+        => "@a[name=\"" + EscapeSelector(playerName) + "\",limit=1]";
 
-    public static string AllExceptPlayerSelector(string playerName)
-        => "@a[name=!\"" + EscapeSelectorValue(playerName) + "\"]";
+    public static string EveryoneExceptSelector(string playerName)
+        => "@a[name=!\"" + EscapeSelector(playerName) + "\"]";
 
-    public static string EscapeSelectorValue(string? value)
-        => EscapeMinecraftString(value, escapeDoubleQuote: true, escapeSingleQuote: false, escapeControls: false);
+    public static string EscapeSelector(string? value)
+        => EscapeMinecraft(value, escapeDoubleQuote: true, escapeSingleQuote: false, escapeControls: false);
 
     public static string EscapeJson(string? value)
-        => EscapeMinecraftString(value, escapeDoubleQuote: true, escapeSingleQuote: false, escapeControls: true);
+        => EscapeMinecraft(value, escapeDoubleQuote: true, escapeSingleQuote: false, escapeControls: true);
 
-    public static string EscapeSnbtString(string? value)
-        => EscapeMinecraftString(value, escapeDoubleQuote: false, escapeSingleQuote: true, escapeControls: true);
+    public static string EscapeSnbt(string? value)
+        => EscapeMinecraft(value, escapeDoubleQuote: false, escapeSingleQuote: true, escapeControls: true);
 
-    private static string EscapeMinecraftString(string? value, bool escapeDoubleQuote, bool escapeSingleQuote, bool escapeControls)
+    private static string EscapeMinecraft(string? value, bool escapeDoubleQuote, bool escapeSingleQuote, bool escapeControls)
     {
         if (string.IsNullOrEmpty(value))
             return string.Empty;

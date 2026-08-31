@@ -32,6 +32,11 @@ public partial class Settings
         (60, "60"), (120, "120"), (300, "300")
     ];
 
+    private static readonly string[] CommonCommandPrefixes =
+    [
+        "!", "?", ".", "#", "$", "%", "&", "+", "-", "~"
+    ];
+
     private static readonly (string Value, string Label)[] RelayTextColorOptions =
     [
         ("black", "Black"), ("dark_blue", "Dark Blue"), ("dark_green", "Dark Green"),
@@ -42,7 +47,7 @@ public partial class Settings
         ("white", "White")
     ];
 
-    private void CheckSelectedSettingsItems()
+    private void AddMainOptions()
     {
         AddOptions(PassivePayoutAmountDropdown, PassivePayoutAmountOptions);
         AddOptions(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions);
@@ -55,6 +60,30 @@ public partial class Settings
                 RelayTextColorDropdown.Items.Add(label);
     }
 
+    private static void AddPrefixOptions(ComboBox dropdown)
+    {
+        if (dropdown.Items.Count == 0)
+            foreach (string prefix in CommonCommandPrefixes)
+                dropdown.Items.Add(prefix);
+
+        dropdown.Loaded -= Prefix_Loaded;
+        dropdown.Loaded += Prefix_Loaded;
+        SetupPrefixBox(dropdown);
+    }
+
+    private static void Prefix_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is ComboBox dropdown)
+            SetupPrefixBox(dropdown);
+    }
+
+    private static void SetupPrefixBox(ComboBox dropdown)
+    {
+        dropdown.ApplyTemplate();
+        if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is TextBox editor)
+            editor.MaxLength = 2;
+    }
+
     private static void AddOptions(ComboBox dropdown, (int Value, string Label)[] options)
     {
         if (dropdown.Items.Count == 0)
@@ -62,7 +91,7 @@ public partial class Settings
                 dropdown.Items.Add(label);
     }
 
-    private void LoadSelectedSettingsIntoControls(StartingProfile settings)
+    private void LoadMainSettings(StartingProfile settings)
     {
         CommandPrefixTextBox.Text = ConfigurationStore.NormalizeCommandPrefix(settings.CommandPrefix, "!");
         SecondaryCommandPrefixTextBox.Text = ConfigurationStore.NormalizeCommandPrefix(settings.SecondaryCommandPrefix, string.Empty);
@@ -70,20 +99,20 @@ public partial class Settings
         ExactCooldownCheckbox.IsChecked = settings.ShowExactCooldownRemaining;
         UnknownCommandResponseCheckbox.IsChecked = settings.RespondToUnknownCommands;
         ViewerCommandsPausedCheckbox.IsChecked = settings.ViewerCommandsPaused;
-        SelectEditableOption(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, settings.PassiveTokensPerPayout);
-        SelectEditableOption(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMinimumSeconds);
-        SelectEditableOption(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMaximumSeconds);
-        SelectEditableOption(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, settings.MaximumTokenBalance);
+        SetEditableInt(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, settings.PassiveTokensPerPayout);
+        SetEditableInt(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMinimumSeconds);
+        SetEditableInt(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMaximumSeconds);
+        SetEditableInt(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, settings.MaximumTokenBalance);
         RecentChatPayoutCheckbox.IsChecked = settings.PassiveRewardsRequireRecentChat;
-        SelectEditableOption(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, settings.ChannelCommandLimitPerMinute);
+        SetEditableInt(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, settings.ChannelCommandLimitPerMinute);
         AllowAllTargetsCheckbox.IsChecked = settings.AllowAllPlayerTarget;
         AllowRandomTargetsCheckbox.IsChecked = settings.AllowRandomPlayerTarget;
         RelayTimestampsCheckbox.IsChecked = settings.IncludeRelayTimestamps;
-        SelectRelayColor(settings.MinecraftRelayTextColor);
+        SetRelayColor(settings.MinecraftRelayTextColor);
         ConnectionHealthCheckbox.IsChecked = settings.ShowConnectionHealth;
     }
 
-    private static void SelectOption(ComboBox dropdown, (int Value, string Label)[] options, int value, int fallback)
+    private static void SetIntOption(ComboBox dropdown, (int Value, string Label)[] options, int value, int fallback)
     {
         foreach ((int option, string label) in options)
         {
@@ -102,7 +131,7 @@ public partial class Settings
             }
     }
 
-    private static bool TryGetSelectedOption(ComboBox dropdown, (int Value, string Label)[] options, out int value)
+    private static bool TryGetIntOption(ComboBox dropdown, (int Value, string Label)[] options, out int value)
     {
         if (dropdown.SelectedItem is string selected)
             foreach ((int option, string label) in options)
@@ -116,7 +145,7 @@ public partial class Settings
         return false;
     }
 
-    private static void SelectEditableOption(ComboBox dropdown, (int Value, string Label)[] options, int value)
+    private static void SetEditableInt(ComboBox dropdown, (int Value, string Label)[] options, int value)
     {
         dropdown.SelectedIndex = -1;
         foreach ((int option, string label) in options)
@@ -131,7 +160,7 @@ public partial class Settings
         dropdown.Text = value.ToString(CultureInfo.InvariantCulture);
     }
 
-    private static bool TryGetEditableOption(
+    private static bool TryReadEditableInt(
         ComboBox dropdown,
         (int Value, string Label)[] options,
         int minimum,
@@ -161,7 +190,7 @@ public partial class Settings
             value >= minimum && value <= maximum;
     }
 
-    private static bool TryGetEditableInteger(ComboBox dropdown, int minimum, int maximum, out int value)
+    private static bool TryReadInt(ComboBox dropdown, int minimum, int maximum, out int value)
     {
         string text = (dropdown.SelectedItem as string ?? dropdown.Text ?? string.Empty).Trim();
         return int.TryParse(
@@ -171,7 +200,7 @@ public partial class Settings
             out value) && value >= minimum && value <= maximum;
     }
 
-    private static bool TryGetEditableDoubleOption(
+    private static bool TryReadDouble(
         ComboBox dropdown,
         (double Value, string Label)[] options,
         double minimum,
@@ -198,9 +227,9 @@ public partial class Settings
             double.IsFinite(value) && value >= minimum && value <= maximum;
     }
 
-    private void SelectRelayColor(string color)
+    private void SetRelayColor(string color)
     {
-        string normalized = ConfigurationStore.NormalizeMinecraftChatColor(color);
+        string normalized = ConfigurationStore.NormalizeColor(color);
         foreach ((string value, string label) in RelayTextColorOptions)
             if (string.Equals(value, normalized, StringComparison.Ordinal))
             {
@@ -211,7 +240,7 @@ public partial class Settings
         RelayTextColorDropdown.SelectedItem = "White";
     }
 
-    private async void CommandPrefixTextBox_LostFocus(object sender, RoutedEventArgs e)
+    private async void Prefix_LostFocus(object sender, RoutedEventArgs e)
     {
         if (_initializing)
             return;
@@ -223,105 +252,105 @@ public partial class Settings
 
         CommandPrefixTextBox.Text = primary;
         SecondaryCommandPrefixTextBox.Text = secondary;
-        await UpdateConfigAsync(config =>
+        await SaveConfigAsync(config =>
         {
             config.Settings.CommandPrefix = primary;
             config.Settings.SecondaryCommandPrefix = secondary;
         });
     }
 
-    private async void MentionViewersCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void MentionViewers_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(MentionViewersCheckbox, static (settings, value) => settings.MentionViewersInBotReplies = value);
 
-    private async void ExactCooldownCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void ExactCooldown_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(ExactCooldownCheckbox, static (settings, value) => settings.ShowExactCooldownRemaining = value);
 
-    private async void UnknownCommandResponseCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void UnknownCommands_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(UnknownCommandResponseCheckbox, static (settings, value) => settings.RespondToUnknownCommands = value);
 
-    private async void ViewerCommandsPausedCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void ViewerPause_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(ViewerCommandsPausedCheckbox, static (settings, value) => settings.ViewerCommandsPaused = value);
 
-    private async void RecentChatPayoutCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void RequireActivity_Changed(object sender, RoutedEventArgs e)
     {
         RecentChatWindowDropdown.IsEnabled = RecentChatPayoutCheckbox.IsChecked == true;
         await SaveBoolAsync(RecentChatPayoutCheckbox, static (settings, value) => settings.PassiveRewardsRequireRecentChat = value);
     }
 
-    private async void AllowAllTargetsCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void AllowAllTargets_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(AllowAllTargetsCheckbox, static (settings, value) => settings.AllowAllPlayerTarget = value);
 
-    private async void AllowRandomTargetsCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void AllowRandomTargets_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(AllowRandomTargetsCheckbox, static (settings, value) => settings.AllowRandomPlayerTarget = value);
 
-    private async void RelayTimestampsCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void RelayTimestamps_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(RelayTimestampsCheckbox, static (settings, value) => settings.IncludeRelayTimestamps = value);
 
-    private async void ConnectionHealthCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void ConnectionHealth_Changed(object sender, RoutedEventArgs e)
         => await SaveBoolAsync(ConnectionHealthCheckbox, static (settings, value) => settings.ShowConnectionHealth = value);
 
     private Task SaveBoolAsync(CheckBox checkbox, Action<StartingProfile, bool> update)
-        => UpdateBoolSettingIfReadyAsync(
+        => UpdateBoolAsync(
             checkbox.IsChecked == true,
             (config, value) => update(config.Settings, value));
 
-    private async void PassivePayoutAmountDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void PayoutAmount_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && PassivePayoutAmountDropdown.SelectedItem is string)
-            await SavePassivePayoutAmountAsync();
+            await SavePayoutAmountAsync();
     }
 
-    private async void PassivePayoutAmountDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SavePassivePayoutAmountAsync();
+    private async void PayoutAmount_LostFocus(object sender, RoutedEventArgs e)
+        => await SavePayoutAmountAsync();
 
-    private async void PassivePayoutRangeDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void PayoutRange_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && sender is ComboBox { SelectedItem: string })
-            await SavePassivePayoutRangeAsync(sender);
+            await SavePayoutRangeAsync(sender);
     }
 
-    private async void PassivePayoutRangeDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SavePassivePayoutRangeAsync(sender);
+    private async void PayoutRange_LostFocus(object sender, RoutedEventArgs e)
+        => await SavePayoutRangeAsync(sender);
 
-    private async void MaximumTokenBalanceDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void TokenLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaximumTokenBalanceDropdown.SelectedItem is string)
-            await SaveMaximumTokenBalanceAsync();
+            await SaveTokenLimitAsync();
     }
 
-    private async void MaximumTokenBalanceDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveMaximumTokenBalanceAsync();
+    private async void TokenLimit_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveTokenLimitAsync();
 
-    private async void ChannelCommandLimitDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ChannelLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && ChannelCommandLimitDropdown.SelectedItem is string)
-            await SaveChannelCommandLimitAsync();
+            await SaveChannelLimitAsync();
     }
 
-    private async void ChannelCommandLimitDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveChannelCommandLimitAsync();
+    private async void ChannelLimit_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveChannelLimitAsync();
 
-    private async Task SavePassivePayoutAmountAsync()
+    private async Task SavePayoutAmountAsync()
     {
         if (_initializing || _updatingCustomValueControls)
             return;
-        if (!TryGetEditableOption(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, 1, 1_000_000, out int value))
+        if (!TryReadEditableInt(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, 1, 1_000_000, out int value))
         {
-            RestoreEditableValue(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, static settings => settings.PassiveTokensPerPayout);
+            RestoreIntValue(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, static settings => settings.PassiveTokensPerPayout);
             return;
         }
-        SetEditableValue(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, value);
-        await UpdateConfigAsync(config => config.Settings.PassiveTokensPerPayout = value);
+        SetIntValue(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, value);
+        await SaveConfigAsync(config => config.Settings.PassiveTokensPerPayout = value);
     }
 
-    private async Task SavePassivePayoutRangeAsync(object changedControl)
+    private async Task SavePayoutRangeAsync(object changedControl)
     {
         if (_initializing || _updatingCustomValueControls)
             return;
-        if (!TryGetEditableOption(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, 10, 900, out int minimum) ||
-            !TryGetEditableOption(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, 10, 900, out int maximum))
+        if (!TryReadEditableInt(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, 10, 900, out int minimum) ||
+            !TryReadEditableInt(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, 10, 900, out int maximum))
         {
-            RestorePassivePayoutRange();
+            RestorePayoutRange();
             return;
         }
 
@@ -333,42 +362,42 @@ public partial class Settings
                 minimum = maximum;
         }
 
-        SetEditableValue(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, minimum);
-        SetEditableValue(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, maximum);
-        await UpdateConfigAsync(config =>
+        SetIntValue(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, minimum);
+        SetIntValue(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, maximum);
+        await SaveConfigAsync(config =>
         {
             config.Settings.PassiveTokenPayoutMinimumSeconds = minimum;
             config.Settings.PassiveTokenPayoutMaximumSeconds = maximum;
         });
     }
 
-    private async Task SaveMaximumTokenBalanceAsync()
+    private async Task SaveTokenLimitAsync()
     {
         if (_initializing || _updatingCustomValueControls)
             return;
-        if (!TryGetEditableOption(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, 0, int.MaxValue, out int value))
+        if (!TryReadEditableInt(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, 0, int.MaxValue, out int value))
         {
-            RestoreEditableValue(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, static settings => settings.MaximumTokenBalance);
+            RestoreIntValue(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, static settings => settings.MaximumTokenBalance);
             return;
         }
-        SetEditableValue(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, value);
-        await UpdateConfigAsync(config => config.Settings.MaximumTokenBalance = value);
+        SetIntValue(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, value);
+        await SaveConfigAsync(config => config.Settings.MaximumTokenBalance = value);
     }
 
-    private async Task SaveChannelCommandLimitAsync()
+    private async Task SaveChannelLimitAsync()
     {
         if (_initializing || _updatingCustomValueControls)
             return;
-        if (!TryGetEditableOption(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, 0, 1000, out int value))
+        if (!TryReadEditableInt(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, 0, 1000, out int value))
         {
-            RestoreEditableValue(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, static settings => settings.ChannelCommandLimitPerMinute);
+            RestoreIntValue(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, static settings => settings.ChannelCommandLimitPerMinute);
             return;
         }
-        SetEditableValue(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, value);
-        await UpdateConfigAsync(config => config.Settings.ChannelCommandLimitPerMinute = value);
+        SetIntValue(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, value);
+        await SaveConfigAsync(config => config.Settings.ChannelCommandLimitPerMinute = value);
     }
 
-    private void SetEditableTextValue(ComboBox dropdown, string text)
+    private void SetTextValue(ComboBox dropdown, string text)
     {
         void ApplyValue()
         {
@@ -398,48 +427,48 @@ public partial class Settings
         ApplyValue();
     }
 
-    private void SetEditableValue(ComboBox dropdown, (int Value, string Label)[] options, int value)
+    private void SetIntValue(ComboBox dropdown, (int Value, string Label)[] options, int value)
     {
         foreach ((int option, string label) in options)
         {
             if (option == value)
             {
-                SetEditableTextValue(dropdown, label);
+                SetTextValue(dropdown, label);
                 return;
             }
         }
 
-        SetEditableTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
+        SetTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
     }
 
-    private void SetEditableDoubleValue(ComboBox dropdown, (double Value, string Label)[] options, double value)
+    private void SetDoubleValue(ComboBox dropdown, (double Value, string Label)[] options, double value)
     {
         foreach ((double option, string label) in options)
         {
             if (Math.Abs(option - value) < 0.0000001)
             {
-                SetEditableTextValue(dropdown, label);
+                SetTextValue(dropdown, label);
                 return;
             }
         }
 
-        SetEditableTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
+        SetTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
     }
 
-    private void RestoreEditableValue(
+    private void RestoreIntValue(
         ComboBox dropdown,
         (int Value, string Label)[] options,
         Func<StartingProfile, int> getValue)
-        => SetEditableValue(dropdown, options, getValue(ConfigurationStore.Load().Settings));
+        => SetIntValue(dropdown, options, getValue(ConfigurationStore.Load().Settings));
 
-    private void RestorePassivePayoutRange()
+    private void RestorePayoutRange()
     {
         StartingProfile settings = ConfigurationStore.Load().Settings;
-        SetEditableValue(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMinimumSeconds);
-        SetEditableValue(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMaximumSeconds);
+        SetIntValue(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMinimumSeconds);
+        SetIntValue(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMaximumSeconds);
     }
 
-    private async void RelayTextColorDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void RelayColor_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_initializing || RelayTextColorDropdown.SelectedItem is not string selected)
             return;
@@ -447,12 +476,12 @@ public partial class Settings
         foreach ((string value, string label) in RelayTextColorOptions)
             if (string.Equals(selected, label, StringComparison.Ordinal))
             {
-                await UpdateConfigAsync(config => config.Settings.MinecraftRelayTextColor = value);
+                await SaveConfigAsync(config => config.Settings.MinecraftRelayTextColor = value);
                 return;
             }
     }
 
-    private static void CopySelectedSettings(StartingProfile source, StartingProfile target)
+    private static void CopyMainSettings(StartingProfile source, StartingProfile target)
     {
         target.CommandPrefix = source.CommandPrefix;
         target.SecondaryCommandPrefix = source.SecondaryCommandPrefix;

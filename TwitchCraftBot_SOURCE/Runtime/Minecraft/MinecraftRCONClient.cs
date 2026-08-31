@@ -28,31 +28,31 @@ internal static class MinecraftRCONClient
     private static int _nextRequestId = Environment.TickCount & 0x3FFFFFFF;
 
     public static Task<bool> ExecuteCommandAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
-        => InvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command)
+        => IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command)
             ? Task.FromResult(false)
-            : WithConnectionAsync(host.Trim(), port, password, async token =>
+            : UseConnectionAsync(host.Trim(), port, password, async token =>
             {
                 await WriteCommandAsync(command, token).ConfigureAwait(false);
                 return true;
             }, cancellationToken);
 
     public static Task<bool> ExecuteCommandsAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
-        => InvalidRequest(host, port, password) || commands.Count == 0
+        => IsInvalidRequest(host, port, password) || commands.Count == 0
             ? Task.FromResult(false)
-            : WithConnectionAsync(host.Trim(), port, password, async token =>
+            : UseConnectionAsync(host.Trim(), port, password, async token =>
             {
                 await WriteCommandsAsync(commands, token).ConfigureAwait(false);
                 return true;
             }, cancellationToken);
 
     public static Task<string?> ExecuteQueryAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
-        => InvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command)
+        => IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command)
             ? Task.FromResult<string?>(null)
-            : WithConnectionAsync<string?>(host.Trim(), port, password, token => QueryAsync(command, token), cancellationToken);
+            : UseConnectionAsync<string?>(host.Trim(), port, password, token => QueryAsync(command, token), cancellationToken);
 
     public static async Task<List<string?>?> ExecuteQueriesAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
-        if (InvalidRequest(host, port, password) || commands.Count == 0)
+        if (IsInvalidRequest(host, port, password) || commands.Count == 0)
             return null;
 
         string normalizedHost = host.Trim();
@@ -113,7 +113,7 @@ internal static class MinecraftRCONClient
         }
     }
 
-    private static async Task<T> WithConnectionAsync<T>(string host, int port, string password, Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
+    private static async Task<T> UseConnectionAsync<T>(string host, int port, string password, Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
     {
         await ConnectionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -137,12 +137,12 @@ internal static class MinecraftRCONClient
         }
     }
 
-    private static bool InvalidRequest(string host, int port, string password)
+    private static bool IsInvalidRequest(string host, int port, string password)
         => string.IsNullOrWhiteSpace(host) || port is < 1 or > 65535 || string.IsNullOrEmpty(password);
 
     private static async Task<bool> EnsureConnectedAsync(string host, int port, string password, CancellationToken cancellationToken)
     {
-        if (_client?.Connected == true
+        if (_client?.Connected == true && !(_client.Client.Poll(0, SelectMode.SelectRead) && _client.Available == 0)
             && _stream != null
             && _packetLengthBuffer != null
             && _port == port
@@ -327,8 +327,8 @@ internal static class MinecraftRCONClient
 
     private static void DisposeConnection()
     {
-        TryDispose(_stream);
-        TryDispose(_client);
+        DisposeSafe(_stream);
+        DisposeSafe(_client);
         _stream = null;
         _client = null;
         _packetLengthBuffer = null;
@@ -337,7 +337,7 @@ internal static class MinecraftRCONClient
         _password = string.Empty;
     }
 
-    private static void TryDispose(IDisposable? disposable)
+    private static void DisposeSafe(IDisposable? disposable)
     {
         try
         {

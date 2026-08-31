@@ -43,8 +43,10 @@ public partial class Settings
         [(0, "Off"), (5, "5 minutes"), (10, "10 minutes"), (15, "15 minutes"), (30, "30 minutes"), (60, "1 hour"), (120, "2 hours")];
     private static readonly (int? Value, string Label)[] CommandCooldownOptions =
         [(null, "Default"), (0, "None"), (1, "1 second"), (3, "3 seconds"), (5, "5 seconds"), (10, "10 seconds"), (15, "15 seconds"), (30, "30 seconds"), (60, "1 minute"), (300, "5 minutes"), (600, "10 minutes")];
+    private static readonly (double? Value, string Label)[] CommandGlobalCooldownOptions =
+        [(null, "Default"), (0, "None"), (0.1, "0.1 second"), (0.5, "0.5 seconds"), (1, "1 second"), (3, "3 seconds"), (5, "5 seconds"), (10, "10 seconds"), (15, "15 seconds"), (30, "30 seconds"), (60, "1 minute"), (300, "5 minutes"), (600, "10 minutes")];
 
-    private void CheckAdditionalSettingsItems()
+    private void AddExtraOptions()
     {
         AddOptions(ViewerCommandLimitDropdown, ViewerCommandLimitOptions);
         AddOptions(RecentChatWindowDropdown, RecentChatWindowOptions);
@@ -65,50 +67,58 @@ public partial class Settings
         AddOptions(EmptyShutdownDropdown, EmptyShutdownOptions);
     }
 
-    private void LoadAdditionalSettingsIntoControls(StartingProfile settings)
+    private void LoadExtraSettings(StartingProfile settings)
     {
-        SelectEditableOption(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, settings.ViewerCommandLimitPerMinute);
-        SelectEditableOption(RecentChatWindowDropdown, RecentChatWindowOptions, settings.PassiveRecentChatWindowMinutes);
+        SetEditableInt(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, settings.ViewerCommandLimitPerMinute);
+        SetEditableInt(RecentChatWindowDropdown, RecentChatWindowOptions, settings.PassiveRecentChatWindowMinutes);
         RecentChatWindowDropdown.IsEnabled = settings.PassiveRewardsRequireRecentChat;
         AutomaticBackupsCheckbox.IsChecked = settings.AutomaticBackupsEnabled;
-        SelectOption(BackupIntervalDropdown, BackupIntervalOptions, settings.AutomaticBackupIntervalHours, 24);
-        SelectOption(BackupRetentionDropdown, BackupRetentionOptions, settings.AutomaticBackupRetentionCount, StartingProfile.DefaultAutomaticBackupRetentionCount);
+        SetIntOption(BackupIntervalDropdown, BackupIntervalOptions, settings.AutomaticBackupIntervalHours, 24);
+        SetIntOption(BackupRetentionDropdown, BackupRetentionOptions, settings.AutomaticBackupRetentionCount, StartingProfile.DefaultAutomaticBackupRetentionCount);
         BackupIntervalDropdown.IsEnabled = settings.AutomaticBackupsEnabled;
         BackupRetentionDropdown.IsEnabled = settings.AutomaticBackupsEnabled;
         LowResourceModeCheckbox.IsChecked = settings.LowResourceModeEnabled;
         PauseUIUpdatesCheckbox.IsChecked = settings.PauseUIUpdatesWhenMinimized;
-        SelectEditableOption(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, settings.MaxVisibleTwitchLogLines);
-        SelectEditableOption(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, settings.MaxVisibleMinecraftLogLines);
-        SelectOption(ViewerRosterIntervalDropdown, ViewerRosterIntervalOptions, settings.ViewerRosterRefreshIntervalSeconds, 30);
-        SelectEditableOption(RelayRateDropdown, RelayRateOptions, settings.MinecraftRelayMessagesPerSecond);
-        SelectEditableOption(GameplayQueueDropdown, GameplayQueueOptions, settings.MaxGameplayCommandQueue);
-        SelectEditableOption(RconTimeoutDropdown, RconTimeoutOptions, settings.RCONTimeoutSeconds);
-        SelectOption(GracefulShutdownTimeoutDropdown, GracefulShutdownTimeoutOptions, settings.GracefulShutdownTimeoutSeconds, 5);
-        SelectOption(SqliteOptimizeDropdown, SqliteOptimizeOptions, settings.SQLiteOptimizeIntervalHours, 0);
-        SelectEditableOption(ViewDistanceDropdown, DistanceOptions, settings.ViewDistance);
-        SelectEditableOption(SimulationDistanceDropdown, DistanceOptions, settings.SimulationDistance);
-        SelectEditableOption(EntityBroadcastRangeDropdown, EntityBroadcastOptions, settings.EntityBroadcastRangePercentage);
-        SelectEditableOption(NetworkCompressionDropdown, NetworkCompressionOptions, settings.NetworkCompressionThreshold);
-        SelectOption(EmptyShutdownDropdown, EmptyShutdownOptions, settings.EmptyServerShutdownDelayMinutes, 0);
-        UpdateLowResourceEffectiveValuesDisplay(settings);
-        BuildCommandCustomizationControls(settings);
+        SetEditableInt(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, settings.MaxVisibleTwitchLogLines);
+        SetEditableInt(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, settings.MaxVisibleMinecraftLogLines);
+        SetIntOption(ViewerRosterIntervalDropdown, ViewerRosterIntervalOptions, settings.ViewerRosterRefreshIntervalSeconds, 30);
+        SetEditableInt(RelayRateDropdown, RelayRateOptions, settings.MinecraftRelayMessagesPerSecond);
+        SetEditableInt(GameplayQueueDropdown, GameplayQueueOptions, settings.MaxGameplayCommandQueue);
+        SetEditableInt(RconTimeoutDropdown, RconTimeoutOptions, settings.RCONTimeoutSeconds);
+        SetIntOption(GracefulShutdownTimeoutDropdown, GracefulShutdownTimeoutOptions, settings.GracefulShutdownTimeoutSeconds, 5);
+        SetIntOption(SqliteOptimizeDropdown, SqliteOptimizeOptions, settings.SQLiteOptimizeIntervalHours, 0);
+        SetEditableInt(ViewDistanceDropdown, DistanceOptions, settings.ViewDistance);
+        SetEditableInt(SimulationDistanceDropdown, DistanceOptions, settings.SimulationDistance);
+        SetEditableInt(EntityBroadcastRangeDropdown, EntityBroadcastOptions, settings.EntityBroadcastRangePercentage);
+        SetEditableInt(NetworkCompressionDropdown, NetworkCompressionOptions, settings.NetworkCompressionThreshold);
+        SetIntOption(EmptyShutdownDropdown, EmptyShutdownOptions, settings.EmptyServerShutdownDelayMinutes, 0);
+        UpdateLowResource(settings);
+        BuildCommandSettings(settings);
     }
 
-    private void BuildCommandCustomizationControls(StartingProfile settings)
+    private void BuildCommandSettings(StartingProfile settings)
     {
         CommandCustomizationPanel.Children.Clear();
-        BotMainHandler? runtime = AppHelpers.GetParentBot(this)?.Runtime;
+        BotMainHandler? runtime = AppHelpers.GetBotWindow(this)?.Runtime;
         if (runtime == null)
             return;
+
+        Grid header = CreateCommandSettingsRow();
+        header.Margin = new Thickness(0, 0, 0, 4);
+        AddCommandHeader(header, "Command", 0);
+        AddCommandHeader(header, "Enabled", 1);
+        AddCommandHeader(header, "Per-user", 2);
+        AddCommandHeader(header, "Global", 3);
+        CommandCustomizationPanel.Children.Add(header);
 
         foreach (string commandName in runtime.RegisteredCommandNames)
         {
             settings.CommandCustomizations.TryGetValue(commandName, out CommandCustomization? customization);
-            DockPanel row = new() { MinHeight = 34, LastChildFill = false };
+            Grid row = CreateCommandSettingsRow();
+
             TextBlock name = new()
             {
                 Text = "!" + commandName,
-                Width = 230,
                 VerticalAlignment = VerticalAlignment.Center,
                 FontFamily = new FontFamily("Cascadia Mono"),
                 FontSize = 14,
@@ -116,33 +126,77 @@ public partial class Settings
             };
             CheckBox enabled = new()
             {
-                Content = "Enabled",
-                Width = 85,
                 Tag = commandName,
                 IsChecked = customization?.Enabled ?? true,
+                HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = Brushes.White
             };
-            ComboBox cooldown = new()
+            ComboBox perUserCooldown = new()
             {
-                Width = 128,
                 Tag = commandName,
-                VerticalAlignment = VerticalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "Cooldown for each viewer separately. Default keeps the command's built-in per-user behavior."
             };
+            ComboBox globalCooldown = new()
+            {
+                Tag = commandName,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "Cooldown shared by all viewers for this command. Default keeps the command's normal global cooldown behavior."
+            };
+
             foreach ((int? _, string label) in CommandCooldownOptions)
-                cooldown.Items.Add(label);
-            SelectCommandCooldown(cooldown, customization?.CooldownSeconds);
+                perUserCooldown.Items.Add(label);
+            foreach ((double? _, string label) in CommandGlobalCooldownOptions)
+                globalCooldown.Items.Add(label);
+
+            SetCommandCooldown(perUserCooldown, customization?.CooldownSeconds);
+            SetCommandGlobalCooldown(globalCooldown, customization?.GlobalCooldownSeconds);
+
             enabled.Checked += CommandEnabled_Changed;
             enabled.Unchecked += CommandEnabled_Changed;
-            cooldown.SelectionChanged += CommandCooldown_SelectionChanged;
+            perUserCooldown.SelectionChanged += CommandCooldown_Changed;
+            globalCooldown.SelectionChanged += CommandCooldown_Changed;
+
+            Grid.SetColumn(name, 0);
+            Grid.SetColumn(enabled, 1);
+            Grid.SetColumn(perUserCooldown, 2);
+            Grid.SetColumn(globalCooldown, 3);
             row.Children.Add(name);
             row.Children.Add(enabled);
-            row.Children.Add(cooldown);
+            row.Children.Add(perUserCooldown);
+            row.Children.Add(globalCooldown);
             CommandCustomizationPanel.Children.Add(row);
         }
     }
 
-    private static void SelectCommandCooldown(ComboBox dropdown, int? seconds)
+    private static Grid CreateCommandSettingsRow()
+    {
+        Grid row = new() { MinHeight = 34 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(165) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(65) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(125) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(125) });
+        return row;
+    }
+
+    private static void AddCommandHeader(Grid row, string text, int column)
+    {
+        TextBlock header = new()
+        {
+            Text = text,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = Brushes.LightGray,
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold
+        };
+        Grid.SetColumn(header, column);
+        row.Children.Add(header);
+    }
+
+    private static void SetCommandCooldown(ComboBox dropdown, int? seconds)
     {
         foreach ((int? value, string label) in CommandCooldownOptions)
             if (value == seconds)
@@ -162,7 +216,27 @@ public partial class Settings
         dropdown.SelectedItem = "Default";
     }
 
-    private static bool TryGetCommandCooldown(ComboBox dropdown, out int? seconds)
+    private static void SetCommandGlobalCooldown(ComboBox dropdown, double? seconds)
+    {
+        foreach ((double? value, string label) in CommandGlobalCooldownOptions)
+            if (value == seconds)
+            {
+                dropdown.SelectedItem = label;
+                return;
+            }
+
+        if (seconds.HasValue && double.IsFinite(seconds.Value) && seconds.Value is >= 0.0 and <= 86400.0)
+        {
+            string customLabel = seconds.Value.ToString("0.###", CultureInfo.InvariantCulture) + " seconds";
+            dropdown.Items.Add(customLabel);
+            dropdown.SelectedItem = customLabel;
+            return;
+        }
+
+        dropdown.SelectedItem = "Default";
+    }
+
+    private static bool TryReadCommandCooldown(ComboBox dropdown, out int? seconds)
     {
         if (dropdown.SelectedItem is string selected)
         {
@@ -187,261 +261,309 @@ public partial class Settings
         return false;
     }
 
+    private static bool TryReadCommandGlobalCooldown(ComboBox dropdown, out double? seconds)
+    {
+        if (dropdown.SelectedItem is string selected)
+        {
+            foreach ((double? value, string label) in CommandGlobalCooldownOptions)
+                if (string.Equals(selected, label, StringComparison.Ordinal))
+                {
+                    seconds = value;
+                    return true;
+                }
+
+            const string suffix = " seconds";
+            if (selected.EndsWith(suffix, StringComparison.Ordinal) &&
+                double.TryParse(selected[..^suffix.Length], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double customSeconds) &&
+                double.IsFinite(customSeconds) && customSeconds is >= 0.0 and <= 86400.0)
+            {
+                seconds = customSeconds;
+                return true;
+            }
+        }
+
+        seconds = null;
+        return false;
+    }
+
     private async void CommandEnabled_Changed(object sender, RoutedEventArgs e)
     {
         if (_initializing || sender is not CheckBox checkbox || checkbox.Tag is not string commandName)
             return;
-        await SaveCommandCustomizationAsync(commandName, checkbox.IsChecked == true, FindCommandCooldown(commandName));
+        await SaveCommandRowAsync(checkbox, commandName);
     }
 
-    private async void CommandCooldown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void CommandCooldown_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (_initializing || sender is not ComboBox dropdown || dropdown.Tag is not string commandName || !TryGetCommandCooldown(dropdown, out int? cooldown))
+        if (_initializing || sender is not ComboBox dropdown || dropdown.Tag is not string commandName)
             return;
-        await SaveCommandCustomizationAsync(commandName, FindCommandEnabled(commandName), cooldown);
-    }
 
-    private bool FindCommandEnabled(string commandName)
-    {
-        foreach (DockPanel row in CommandCustomizationPanel.Children)
-            foreach (object child in row.Children)
-                if (child is CheckBox checkbox && string.Equals(checkbox.Tag as string, commandName, StringComparison.OrdinalIgnoreCase))
-                    return checkbox.IsChecked == true;
-        return true;
-    }
-
-    private int? FindCommandCooldown(string commandName)
-    {
-        foreach (DockPanel row in CommandCustomizationPanel.Children)
-            foreach (object child in row.Children)
-                if (child is ComboBox dropdown && string.Equals(dropdown.Tag as string, commandName, StringComparison.OrdinalIgnoreCase) && TryGetCommandCooldown(dropdown, out int? cooldown))
-                    return cooldown;
-        return null;
-    }
-
-    private Task SaveCommandCustomizationAsync(string commandName, bool enabled, int? cooldown)
-        => UpdateConfigAsync(config =>
+        int column = Grid.GetColumn(dropdown);
+        if (column == 2)
         {
-            if (enabled && !cooldown.HasValue)
+            if (!TryReadCommandCooldown(dropdown, out _))
+                return;
+        }
+        else if (column == 3)
+        {
+            if (!TryReadCommandGlobalCooldown(dropdown, out _))
+                return;
+        }
+        else
+        {
+            return;
+        }
+
+        await SaveCommandRowAsync(dropdown, commandName);
+    }
+
+    private Task SaveCommandRowAsync(FrameworkElement control, string commandName)
+    {
+        if (control.Parent is not Grid row ||
+            row.Children.Count < 4 ||
+            row.Children[1] is not CheckBox enabled ||
+            row.Children[2] is not ComboBox perUser ||
+            row.Children[3] is not ComboBox global ||
+            !TryReadCommandCooldown(perUser, out int? cooldown) ||
+            !TryReadCommandGlobalCooldown(global, out double? globalCooldown))
+        {
+            return Task.CompletedTask;
+        }
+
+        return SaveCommandSettingAsync(commandName, enabled.IsChecked == true, cooldown, globalCooldown);
+    }
+
+    private Task SaveCommandSettingAsync(string commandName, bool enabled, int? cooldown, double? globalCooldown)
+        => SaveConfigAsync(config =>
+        {
+            if (enabled && !cooldown.HasValue && !globalCooldown.HasValue)
+            {
                 config.Settings.CommandCustomizations.Remove(commandName);
-            else
-                config.Settings.CommandCustomizations[commandName] = new CommandCustomization { Enabled = enabled, CooldownSeconds = cooldown };
+                return;
+            }
+
+            config.Settings.CommandCustomizations[commandName] = new CommandCustomization
+            {
+                Enabled = enabled,
+                CooldownSeconds = cooldown,
+                GlobalCooldownSeconds = globalCooldown
+            };
         });
 
-    private async void ViewerCommandLimitDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ViewerLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && ViewerCommandLimitDropdown.SelectedItem is string)
-            await SaveViewerCommandLimitAsync();
+            await SaveViewerLimitAsync();
     }
 
-    private async void ViewerCommandLimitDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveViewerCommandLimitAsync();
+    private async void ViewerLimit_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveViewerLimitAsync();
 
-    private async Task SaveViewerCommandLimitAsync()
+    private async Task SaveViewerLimitAsync()
     {
         if (_initializing || _updatingCustomValueControls)
             return;
-        if (!TryGetEditableOption(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, 0, 1000, out int value))
+        if (!TryReadEditableInt(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, 0, 1000, out int value))
         {
-            RestoreEditableValue(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, static settings => settings.ViewerCommandLimitPerMinute);
+            RestoreIntValue(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, static settings => settings.ViewerCommandLimitPerMinute);
             return;
         }
-        SetEditableValue(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, value);
-        await UpdateConfigAsync(config => config.Settings.ViewerCommandLimitPerMinute = value);
+        SetIntValue(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, value);
+        await SaveConfigAsync(config => config.Settings.ViewerCommandLimitPerMinute = value);
     }
-    private async void RecentChatWindowDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ActivityWindow_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && RecentChatWindowDropdown.SelectedItem is string)
-            await SaveEditableAdditionalOptionAsync(RecentChatWindowDropdown, RecentChatWindowOptions, 1, 120,
+            await SaveExtraValueAsync(RecentChatWindowDropdown, RecentChatWindowOptions, 1, 120,
                 static settings => settings.PassiveRecentChatWindowMinutes,
                 static (settings, value) => settings.PassiveRecentChatWindowMinutes = value);
     }
 
-    private async void RecentChatWindowDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableAdditionalOptionAsync(RecentChatWindowDropdown, RecentChatWindowOptions, 1, 120,
+    private async void ActivityWindow_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveExtraValueAsync(RecentChatWindowDropdown, RecentChatWindowOptions, 1, 120,
             static settings => settings.PassiveRecentChatWindowMinutes,
             static (settings, value) => settings.PassiveRecentChatWindowMinutes = value);
 
-    private async void BackupIntervalDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void BackupInterval_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(BackupIntervalDropdown, BackupIntervalOptions, static (settings, value) => settings.AutomaticBackupIntervalHours = value);
 
-    private async void BackupRetentionDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void BackupRetention_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(BackupRetentionDropdown, BackupRetentionOptions, static (settings, value) => settings.AutomaticBackupRetentionCount = value);
 
-    private async void MaxTwitchLogLinesDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void TwitchLogLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaxTwitchLogLinesDropdown.SelectedItem is string)
-            await SaveEditableAdditionalOptionAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+            await SaveExtraValueAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleTwitchLogLines,
                 static (settings, value) => settings.MaxVisibleTwitchLogLines = value,
                 refreshLowResourceSummary: true);
     }
 
-    private async void MaxTwitchLogLinesDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableAdditionalOptionAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+    private async void TwitchLogLimit_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveExtraValueAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
             static settings => settings.MaxVisibleTwitchLogLines,
             static (settings, value) => settings.MaxVisibleTwitchLogLines = value,
             refreshLowResourceSummary: true);
 
-    private async void MaxMinecraftLogLinesDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void MinecraftLogLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaxMinecraftLogLinesDropdown.SelectedItem is string)
-            await SaveEditableAdditionalOptionAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+            await SaveExtraValueAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleMinecraftLogLines,
                 static (settings, value) => settings.MaxVisibleMinecraftLogLines = value,
                 refreshLowResourceSummary: true);
     }
 
-    private async void MaxMinecraftLogLinesDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableAdditionalOptionAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+    private async void MinecraftLogLimit_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveExtraValueAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
             static settings => settings.MaxVisibleMinecraftLogLines,
             static (settings, value) => settings.MaxVisibleMinecraftLogLines = value,
             refreshLowResourceSummary: true);
 
-    private async void ViewerRosterIntervalDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void RosterInterval_Changed(object sender, SelectionChangedEventArgs e)
     {
         await SaveOptionAsync(ViewerRosterIntervalDropdown, ViewerRosterIntervalOptions, static (settings, value) => settings.ViewerRosterRefreshIntervalSeconds = value);
         if (!_initializing)
-            UpdateLowResourceEffectiveValuesDisplay();
+            UpdateLowResource();
     }
 
-    private async void RelayRateDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void RelayRate_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && RelayRateDropdown.SelectedItem is string)
-            await SaveEditableAdditionalOptionAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
+            await SaveExtraValueAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
                 static settings => settings.MinecraftRelayMessagesPerSecond,
                 static (settings, value) => settings.MinecraftRelayMessagesPerSecond = value,
                 refreshLowResourceSummary: true);
     }
 
-    private async void RelayRateDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableAdditionalOptionAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
+    private async void RelayRate_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveExtraValueAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
             static settings => settings.MinecraftRelayMessagesPerSecond,
             static (settings, value) => settings.MinecraftRelayMessagesPerSecond = value,
             refreshLowResourceSummary: true);
 
-    private async void GameplayQueueDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void QueueLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && GameplayQueueDropdown.SelectedItem is string)
-            await SaveEditableAdditionalOptionAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
+            await SaveExtraValueAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
                 static settings => settings.MaxGameplayCommandQueue,
                 static (settings, value) => settings.MaxGameplayCommandQueue = value,
                 refreshLowResourceSummary: true);
     }
 
-    private async void GameplayQueueDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableAdditionalOptionAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
+    private async void QueueLimit_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveExtraValueAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
             static settings => settings.MaxGameplayCommandQueue,
             static (settings, value) => settings.MaxGameplayCommandQueue = value,
             refreshLowResourceSummary: true);
 
-    private async void RconTimeoutDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void RconTimeout_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && RconTimeoutDropdown.SelectedItem is string)
-            await SaveEditableAdditionalOptionAsync(RconTimeoutDropdown, RconTimeoutOptions, 1, 60,
+            await SaveExtraValueAsync(RconTimeoutDropdown, RconTimeoutOptions, 1, 60,
                 static settings => settings.RCONTimeoutSeconds,
                 static (settings, value) => settings.RCONTimeoutSeconds = value);
     }
 
-    private async void RconTimeoutDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableAdditionalOptionAsync(RconTimeoutDropdown, RconTimeoutOptions, 1, 60,
+    private async void RconTimeout_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveExtraValueAsync(RconTimeoutDropdown, RconTimeoutOptions, 1, 60,
             static settings => settings.RCONTimeoutSeconds,
             static (settings, value) => settings.RCONTimeoutSeconds = value);
 
-    private async void GracefulShutdownTimeoutDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ShutdownTimeout_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(GracefulShutdownTimeoutDropdown, GracefulShutdownTimeoutOptions, static (settings, value) => settings.GracefulShutdownTimeoutSeconds = value);
 
-    private async void SqliteOptimizeDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void SqliteOptimize_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(SqliteOptimizeDropdown, SqliteOptimizeOptions, static (settings, value) => settings.SQLiteOptimizeIntervalHours = value);
-    private async void EmptyShutdownDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void EmptyShutdown_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(EmptyShutdownDropdown, EmptyShutdownOptions, static (settings, value) => settings.EmptyServerShutdownDelayMinutes = value);
 
-    private async void ViewDistanceDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ViewDistance_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && ViewDistanceDropdown.SelectedItem is string)
-            await SaveEditableServerOptionAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
+            await SaveServerValueAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.ViewDistance,
                 static (settings, value) => settings.ViewDistance = value);
     }
 
-    private async void ViewDistanceDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableServerOptionAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
+    private async void ViewDistance_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveServerValueAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
             static settings => settings.ViewDistance,
             static (settings, value) => settings.ViewDistance = value);
 
-    private async void SimulationDistanceDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void Simulation_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && SimulationDistanceDropdown.SelectedItem is string)
-            await SaveEditableServerOptionAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
+            await SaveServerValueAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.SimulationDistance,
                 static (settings, value) => settings.SimulationDistance = value);
     }
 
-    private async void SimulationDistanceDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableServerOptionAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
+    private async void Simulation_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveServerValueAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
             static settings => settings.SimulationDistance,
             static (settings, value) => settings.SimulationDistance = value);
 
-    private async void EntityBroadcastRangeDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void EntityRange_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && EntityBroadcastRangeDropdown.SelectedItem is string)
-            await SaveEditableServerOptionAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
+            await SaveServerValueAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
                 static settings => settings.EntityBroadcastRangePercentage,
                 static (settings, value) => settings.EntityBroadcastRangePercentage = value);
     }
 
-    private async void EntityBroadcastRangeDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableServerOptionAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
+    private async void EntityRange_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveServerValueAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
             static settings => settings.EntityBroadcastRangePercentage,
             static (settings, value) => settings.EntityBroadcastRangePercentage = value);
 
-    private async void NetworkCompressionDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void Compression_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && NetworkCompressionDropdown.SelectedItem is string)
-            await SaveEditableServerOptionAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
+            await SaveServerValueAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
                 static settings => settings.NetworkCompressionThreshold,
                 static (settings, value) => settings.NetworkCompressionThreshold = value);
     }
 
-    private async void NetworkCompressionDropdown_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableServerOptionAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
+    private async void Compression_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveServerValueAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
             static settings => settings.NetworkCompressionThreshold,
             static (settings, value) => settings.NetworkCompressionThreshold = value);
 
-    private async void LowResourceModeCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void LowResource_Changed(object sender, RoutedEventArgs e)
     {
-        await SaveAdditionalBoolAsync(LowResourceModeCheckbox, static (settings, value) => settings.LowResourceModeEnabled = value);
+        await SaveExtraBoolAsync(LowResourceModeCheckbox, static (settings, value) => settings.LowResourceModeEnabled = value);
         if (!_initializing)
-            UpdateLowResourceEffectiveValuesDisplay();
+            UpdateLowResource();
     }
 
-    private async void PauseUIUpdatesCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await SaveAdditionalBoolAsync(PauseUIUpdatesCheckbox, static (settings, value) => settings.PauseUIUpdatesWhenMinimized = value);
-    private async void AutomaticBackupsCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void PauseUi_Changed(object sender, RoutedEventArgs e)
+        => await SaveExtraBoolAsync(PauseUIUpdatesCheckbox, static (settings, value) => settings.PauseUIUpdatesWhenMinimized = value);
+    private async void Backups_Changed(object sender, RoutedEventArgs e)
     {
         bool enabled = AutomaticBackupsCheckbox.IsChecked == true;
         BackupIntervalDropdown.IsEnabled = enabled;
         BackupRetentionDropdown.IsEnabled = enabled;
-        await SaveAdditionalBoolAsync(AutomaticBackupsCheckbox, static (settings, value) => settings.AutomaticBackupsEnabled = value);
+        await SaveExtraBoolAsync(AutomaticBackupsCheckbox, static (settings, value) => settings.AutomaticBackupsEnabled = value);
     }
 
-    private Task SaveAdditionalBoolAsync(CheckBox checkbox, Action<StartingProfile, bool> update)
+    private Task SaveExtraBoolAsync(CheckBox checkbox, Action<StartingProfile, bool> update)
     {
         if (_initializing)
             return Task.CompletedTask;
 
-        // WPF controls belong to the UI thread. UpdateConfigAsync runs its config mutation
+        // WPF controls belong to the UI thread. SaveConfigAsync runs its config mutation
         // inside Task.Run, so capture the DependencyProperty value before crossing threads.
         bool value = checkbox.IsChecked == true;
-        return UpdateConfigAsync(config => update(config.Settings, value));
+        return SaveConfigAsync(config => update(config.Settings, value));
     }
 
     private Task SaveOptionAsync(ComboBox dropdown, (int Value, string Label)[] options, Action<StartingProfile, int> update)
-        => _initializing || !TryGetSelectedOption(dropdown, options, out int value)
+        => _initializing || !TryGetIntOption(dropdown, options, out int value)
             ? Task.CompletedTask
-            : UpdateConfigAsync(config => update(config.Settings, value));
+            : SaveConfigAsync(config => update(config.Settings, value));
 
-    private async Task SaveEditableAdditionalOptionAsync(
+    private async Task SaveExtraValueAsync(
         ComboBox dropdown,
         (int Value, string Label)[] options,
         int minimum,
@@ -453,21 +575,21 @@ public partial class Settings
         if (_initializing || _updatingCustomValueControls)
             return;
 
-        if (!TryGetEditableOption(dropdown, options, minimum, maximum, out int value))
+        if (!TryReadEditableInt(dropdown, options, minimum, maximum, out int value))
         {
-            RestoreEditableValue(dropdown, options, getValue);
+            RestoreIntValue(dropdown, options, getValue);
             if (refreshLowResourceSummary)
-                UpdateLowResourceEffectiveValuesDisplay();
+                UpdateLowResource();
             return;
         }
 
-        SetEditableValue(dropdown, options, value);
-        await UpdateConfigAsync(config => update(config.Settings, value));
+        SetIntValue(dropdown, options, value);
+        await SaveConfigAsync(config => update(config.Settings, value));
         if (refreshLowResourceSummary)
-            UpdateLowResourceEffectiveValuesDisplay();
+            UpdateLowResource();
     }
 
-    private async Task SaveEditableServerOptionAsync(
+    private async Task SaveServerValueAsync(
         ComboBox dropdown,
         (int Value, string Label)[] options,
         int minimum,
@@ -478,17 +600,17 @@ public partial class Settings
         if (_initializing || _updatingCustomValueControls)
             return;
 
-        if (!TryGetEditableOption(dropdown, options, minimum, maximum, out int value))
+        if (!TryReadEditableInt(dropdown, options, minimum, maximum, out int value))
         {
-            RestoreEditableValue(dropdown, options, getValue);
+            RestoreIntValue(dropdown, options, getValue);
             return;
         }
 
-        SetEditableValue(dropdown, options, value);
-        await UpdateConfigAsync(config => update(config.Settings, value), beforeSave: ApplyLocalStartProfile);
+        SetIntValue(dropdown, options, value);
+        await SaveConfigAsync(config => update(config.Settings, value), beforeSave: ApplyLocalProfile);
     }
 
-    private void UpdateLowResourceEffectiveValuesDisplay(StartingProfile? settings = null)
+    private void UpdateLowResource(StartingProfile? settings = null)
     {
         bool enabled = settings?.LowResourceModeEnabled ?? LowResourceModeCheckbox.IsChecked == true;
         LowResourceEffectiveValuesBorder.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
@@ -526,7 +648,7 @@ public partial class Settings
         }
     }
 
-    private static void CopyAdditionalSettings(StartingProfile source, StartingProfile target)
+    private static void CopyExtraSettings(StartingProfile source, StartingProfile target)
     {
         target.ViewerCommandLimitPerMinute = source.ViewerCommandLimitPerMinute;
         target.PassiveRecentChatWindowMinutes = source.PassiveRecentChatWindowMinutes;

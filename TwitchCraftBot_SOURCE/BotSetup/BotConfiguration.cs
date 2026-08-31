@@ -115,11 +115,11 @@ public sealed class StartingProfile
     public int EmptyServerShutdownDelayMinutes { get; set; }
     public Dictionary<string, CommandCustomization> CommandCustomizations { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
-
 }
 
 public sealed class CommandCustomization
 {
     public bool Enabled { get; set; } = true;
     public int? CooldownSeconds { get; set; }
+    public double? GlobalCooldownSeconds { get; set; }
 }

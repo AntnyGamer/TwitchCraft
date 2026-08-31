@@ -18,19 +18,19 @@ public partial class Statistics : UserControl
     public Statistics()
     {
         InitializeComponent();
-        _refreshTimer.Tick += RefreshTimer_Tick;
-        Loaded += (_, _) => StartRefreshTimerIfVisible();
+        _refreshTimer.Tick += Refresh_Tick;
+        Loaded += (_, _) => StartRefreshTimer();
         Unloaded += (_, _) => StopRefreshTimer(clearParent: true);
-        IsVisibleChanged += (_, _) => { if (IsVisible) StartRefreshTimerIfVisible(); else StopRefreshTimer(clearParent: false); };
+        IsVisibleChanged += (_, _) => { if (IsVisible) StartRefreshTimer(); else StopRefreshTimer(clearParent: false); };
     }
 
-    private void StartRefreshTimerIfVisible()
+    private void StartRefreshTimer()
     {
         if (!IsVisible || _refreshTimer.IsEnabled || _refreshing)
             return;
 
         _refreshTimer.Start();
-        RefreshTimer_Tick(this, EventArgs.Empty);
+        Refresh_Tick(this, EventArgs.Empty);
     }
 
     private void StopRefreshTimer(bool clearParent)
@@ -41,7 +41,7 @@ public partial class Statistics : UserControl
             _parentBot = null;
     }
 
-    private async void RefreshTimer_Tick(object? sender, EventArgs e)
+    private async void Refresh_Tick(object? sender, EventArgs e)
     {
         if (_refreshing)
             return;
@@ -54,13 +54,13 @@ public partial class Statistics : UserControl
 
         try
         {
-            _parentBot ??= AppHelpers.GetParentBot(this);
+            _parentBot ??= AppHelpers.GetBotWindow(this);
             if (_parentBot is not TwitchCraftBot parent || !IsVisible)
                 return;
 
-            BotStatisticsSnapshot? stats = await Task.Run(() => parent.GetStatisticsSnapshot(refreshToken), refreshToken);
+            BotStatisticsSnapshot? stats = await Task.Run(() => parent.GetStatsSnapshot(refreshToken), refreshToken);
             if (stats != null && IsVisible && !refreshToken.IsCancellationRequested)
-                ApplyStatistics(stats);
+                UpdateStats(stats);
         }
         catch (OperationCanceledException) when (refreshToken.IsCancellationRequested)
         {
@@ -80,40 +80,40 @@ public partial class Statistics : UserControl
         }
     }
 
-    private void ApplyStatistics(BotStatisticsSnapshot stats)
+    private void UpdateStats(BotStatisticsSnapshot stats)
     {
         Visibility disabledVisibility = stats.StatisticsEnabled ? Visibility.Collapsed : Visibility.Visible;
         if (StatisticsDisabledBox.Visibility != disabledVisibility)
             StatisticsDisabledBox.Visibility = disabledVisibility;
 
-        SetTextIfChanged(SessionCommandsText, FormatNumber(stats.SessionGameCommandsRun));
-        SetTextIfChanged(SessionMostUsedCommandText, FormatName(stats.SessionMostUsedCommand));
-        SetTextIfChanged(SessionTokensSpentText, FormatNumber(stats.SessionTokensSpent));
-        SetTextIfChanged(SessionEffectsText, FormatNumber(stats.SessionEffectsGiven));
-        SetTextIfChanged(SessionDangerousText, FormatName(stats.SessionMostDangerousViewer));
-        SetTextIfChanged(SessionNicestText, FormatName(stats.SessionNicestViewer));
-        SetTextIfChanged(SessionDeathsText, FormatNumber(stats.SessionDeaths));
-        SetTextIfChanged(SessionSurvivedText, FormatDuration(stats.SessionTimeSurvived, "Waiting for join"));
+        SetText(SessionCommandsText, FormatNumber(stats.SessionGameCommandsRun));
+        SetText(SessionMostUsedCommandText, FormatName(stats.SessionMostUsedCommand));
+        SetText(SessionTokensSpentText, FormatNumber(stats.SessionTokensSpent));
+        SetText(SessionEffectsText, FormatNumber(stats.SessionEffectsGiven));
+        SetText(SessionDangerousText, FormatName(stats.SessionMostDangerousViewer));
+        SetText(SessionNicestText, FormatName(stats.SessionNicestViewer));
+        SetText(SessionDeathsText, FormatNumber(stats.SessionDeaths));
+        SetText(SessionSurvivedText, FormatDuration(stats.SessionTimeSurvived, "Waiting for join"));
 
-        SetTextIfChanged(TotalCommandsText, FormatNumber(stats.TotalGameCommandsRun));
-        SetTextIfChanged(TotalMostUsedCommandText, FormatName(stats.TotalMostUsedCommand));
-        SetTextIfChanged(TotalTokensSpentText, FormatNumber(stats.TotalTokensSpent));
-        SetTextIfChanged(TotalEffectsText, FormatNumber(stats.TotalEffectsGiven));
-        SetTextIfChanged(TotalDangerousText, FormatName(stats.TotalMostDangerousViewer));
-        SetTextIfChanged(TotalNicestText, FormatName(stats.TotalNicestViewer));
-        SetTextIfChanged(TotalDeathsText, FormatNumber(stats.TotalDeaths));
-        SetTextIfChanged(TotalLongestText, FormatDuration(stats.LongestTimeSurvived, "None"));
-        SetTextIfChanged(TotalShortestText, FormatDuration(stats.ShortestTimeSurvived, "None"));
-        SetTextIfChanged(TotalSessionsStartedText, FormatNumber(stats.SessionsStarted));
+        SetText(TotalCommandsText, FormatNumber(stats.TotalGameCommandsRun));
+        SetText(TotalMostUsedCommandText, FormatName(stats.TotalMostUsedCommand));
+        SetText(TotalTokensSpentText, FormatNumber(stats.TotalTokensSpent));
+        SetText(TotalEffectsText, FormatNumber(stats.TotalEffectsGiven));
+        SetText(TotalDangerousText, FormatName(stats.TotalMostDangerousViewer));
+        SetText(TotalNicestText, FormatName(stats.TotalNicestViewer));
+        SetText(TotalDeathsText, FormatNumber(stats.TotalDeaths));
+        SetText(TotalLongestText, FormatDuration(stats.LongestTimeSurvived, "None"));
+        SetText(TotalShortestText, FormatDuration(stats.ShortestTimeSurvived, "None"));
+        SetText(TotalSessionsStartedText, FormatNumber(stats.SessionsStarted));
     }
 
-    private static void SetTextIfChanged(TextBlock textBlock, string value)
+    private static void SetText(TextBlock textBlock, string value)
     {
         if (!string.Equals(textBlock.Text, value, StringComparison.Ordinal))
             textBlock.Text = value;
     }
 
-    private void BackButton_Click(object sender, RoutedEventArgs e) => AppHelpers.NavigateBack(this);
+    private void Back_Click(object sender, RoutedEventArgs e) => AppHelpers.NavigateBack(this);
 
     private static string FormatName(string value) => string.IsNullOrWhiteSpace(value) ? "None yet" : value;
 

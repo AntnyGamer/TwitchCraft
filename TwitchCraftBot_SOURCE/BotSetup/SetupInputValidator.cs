@@ -39,16 +39,16 @@ internal static class SetupInputValidator
 
         string normalizedClientId = (clientId ?? string.Empty).Trim();
         if (normalizedClientId.Length == 0)
-            return "Enter your Twitch Client ID before starting.";
+            return "This TwitchCraft build is missing its Twitch Client ID.";
         if (string.IsNullOrWhiteSpace(botToken) ||
             !string.Equals(normalizedClientId, (authorizedClientId ?? string.Empty).Trim(), StringComparison.Ordinal))
         {
-            return "Authorize Twitch with the current Client ID before starting.";
+            return "Authorize Twitch before starting.";
         }
 
-        if (!CommandUserHelper.TryNormalizeTwitchUsername(channel, out _))
+        if (!CommandUserHelper.TryNormalizeTwitchUser(channel, out _))
             return "Enter a valid Twitch channel name before starting.";
-        if (!CommandUserHelper.TryNormalizeTwitchUsername(botName, out _))
+        if (!CommandUserHelper.TryNormalizeTwitchUser(botName, out _))
             return "Twitch authorization must return a valid bot account before starting.";
 
         return null;

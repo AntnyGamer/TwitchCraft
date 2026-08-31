@@ -5,7 +5,7 @@ namespace TwitchCraftBot_V1;
 
 internal static partial class BotStatisticsStore
 {
-    private static BotLifetimeStatistics LoadGlobalOnlyCore(SqliteConnection connection)
+    private static BotLifetimeStatistics LoadGlobalCore(SqliteConnection connection)
     {
         BotLifetimeStatistics statistics = new();
         using (SqliteCommand command = connection.CreateCommand())
@@ -38,7 +38,7 @@ internal static partial class BotStatisticsStore
             using SqliteDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
-                string commandName = StatisticNameHelper.NormalizeCommandName(reader.GetString(0));
+                string commandName = StatisticNameHelper.CleanCommandName(reader.GetString(0));
                 long count = ReadInt64(reader, 1);
                 if (commandName.Length > 0 && count > 0)
                 {
@@ -51,11 +51,11 @@ internal static partial class BotStatisticsStore
         return statistics;
     }
 
-    private static void ClearAllCore(SqliteConnection connection)
+    private static void ClearCore(SqliteConnection connection)
     {
         using SqliteTransaction transaction = connection.BeginTransaction();
-        ExecuteClearCommandUseCountsNoLock(transaction);
-        ExecuteClearViewerScoresNoLock(transaction);
+        ClearCommandCountsNoLock(transaction);
+        ClearScoresNoLock(transaction);
         ExecuteNonQuery(
             connection,
             transaction,
@@ -78,22 +78,22 @@ internal static partial class BotStatisticsStore
     {
         return reader.IsDBNull(ordinal)
             ? string.Empty
-            : CommandUserHelper.NormalizeUsername(reader.GetString(ordinal));
+            : CommandUserHelper.NormalizeUser(reader.GetString(ordinal));
     }
 
-    private static void ExportReadableJsonCore(SqliteConnection connection)
+    private static void ExportJsonCore(SqliteConnection connection)
     {
         string exportDirectory = JSONExportWriter.GetExportDirectory(DatabasePath);
         Directory.CreateDirectory(exportDirectory);
-        JSONExportWriter.WriteReadMe(exportDirectory);
+        JSONExportWriter.WriteReadme(exportDirectory);
 
-        WriteStatisticsExport(connection, Path.Combine(exportDirectory, "statistics.json"));
-        WriteViewerStatisticsExport(connection, Path.Combine(exportDirectory, "statistics_viewers.json"));
+        WriteStats(connection, Path.Combine(exportDirectory, "statistics.json"));
+        WriteViewers(connection, Path.Combine(exportDirectory, "statistics_viewers.json"));
     }
 
-    private static void WriteStatisticsExport(SqliteConnection connection, string path)
+    private static void WriteStats(SqliteConnection connection, string path)
     {
-        JSONExportWriter.WriteJsonExportAtomic(
+        JSONExportWriter.WriteJsonAtomic(
             path,
             writer =>
             {
@@ -132,13 +132,13 @@ internal static partial class BotStatisticsStore
                     }
                 }
 
-                JSONExportWriter.WriteNonNegativeLongProperty(writer, "Deaths", deaths);
-                JSONExportWriter.WriteNonNegativeLongProperty(writer, "SessionsStarted", sessionsStarted);
-                JSONExportWriter.WriteNonNegativeLongProperty(writer, "LongestSurvivalSeconds", longestSurvivalSeconds);
-                JSONExportWriter.WriteNonNegativeLongProperty(writer, "ShortestSurvivalSeconds", shortestSurvivalSeconds);
-                JSONExportWriter.WriteNonNegativeLongProperty(writer, "GameCommandsRun", gameCommandsRun);
-                JSONExportWriter.WriteNonNegativeLongProperty(writer, "TokensSpent", tokensSpent);
-                JSONExportWriter.WriteNonNegativeLongProperty(writer, "EffectsGiven", effectsGiven);
+                JSONExportWriter.WriteCount(writer, "Deaths", deaths);
+                JSONExportWriter.WriteCount(writer, "SessionsStarted", sessionsStarted);
+                JSONExportWriter.WriteCount(writer, "LongestSurvivalSeconds", longestSurvivalSeconds);
+                JSONExportWriter.WriteCount(writer, "ShortestSurvivalSeconds", shortestSurvivalSeconds);
+                JSONExportWriter.WriteCount(writer, "GameCommandsRun", gameCommandsRun);
+                JSONExportWriter.WriteCount(writer, "TokensSpent", tokensSpent);
+                JSONExportWriter.WriteCount(writer, "EffectsGiven", effectsGiven);
                 writer.WriteEndObject();
 
                 writer.WritePropertyName("CommandUseCounts");
@@ -150,7 +150,7 @@ internal static partial class BotStatisticsStore
                     using SqliteDataReader reader = command.ExecuteReader();
                     while (reader.Read())
                     {
-                        string commandName = StatisticNameHelper.NormalizeCommandName(reader.GetString(0));
+                        string commandName = StatisticNameHelper.CleanCommandName(reader.GetString(0));
                         long count = ReadInt64(reader, 1);
                         if (commandName.Length == 0 || count <= 0)
                         {
@@ -167,9 +167,9 @@ internal static partial class BotStatisticsStore
             });
     }
 
-    private static void WriteViewerStatisticsExport(SqliteConnection connection, string path)
+    private static void WriteViewers(SqliteConnection connection, string path)
     {
-        JSONExportWriter.WriteJsonExportAtomic(
+        JSONExportWriter.WriteJsonAtomic(
             path,
             writer =>
             {
@@ -183,7 +183,7 @@ internal static partial class BotStatisticsStore
                 using SqliteDataReader reader = command.ExecuteReader();
                 while (reader.Read())
                 {
-                    string username = CommandUserHelper.NormalizeUsername(reader.GetString(0));
+                    string username = CommandUserHelper.NormalizeUser(reader.GetString(0));
                     long dangerous = ReadInt64(reader, 1);
                     long nice = ReadInt64(reader, 2);
                     if (username.Length == 0 || (dangerous <= 0 && nice <= 0))
@@ -195,8 +195,8 @@ internal static partial class BotStatisticsStore
                     writer.WriteStartObject();
                     writer.WritePropertyName("Username");
                     writer.WriteValue(username);
-                    JSONExportWriter.WriteNonNegativeLongProperty(writer, "DangerousScore", dangerous);
-                    JSONExportWriter.WriteNonNegativeLongProperty(writer, "NiceScore", nice);
+                    JSONExportWriter.WriteCount(writer, "DangerousScore", dangerous);
+                    JSONExportWriter.WriteCount(writer, "NiceScore", nice);
                     writer.WriteEndObject();
                 }
 

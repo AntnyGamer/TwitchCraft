@@ -8,7 +8,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private async Task NotifyIRCCommandQueueOverloadAsync(CancellationToken cancellationToken)
+    private async Task WarnQueueOverloadAsync(CancellationToken cancellationToken)
     {
         long nowTicks = DateTime.UtcNow.Ticks;
         long previousTicks = Volatile.Read(ref _lastIRCCommandOverflowNoticeTicks);
@@ -19,10 +19,10 @@ public sealed partial class BotMainHandler
             return;
 
         _shellWindow?.AddChatLogLine("[IRC] Command queue overloaded; skipped commands temporarily.");
-        await SendToChannelAsync("The bot is backed up, so commands are being skipped for a moment. Try again in a few seconds.", cancellationToken).ConfigureAwait(false);
+        await SendChatAsync("The bot is backed up, so commands are being skipped for a moment. Try again in a few seconds.", cancellationToken).ConfigureAwait(false);
     }
 
-    private bool QueueIRCWorkCore(
+    private bool QueueIrcWork(
         IRCWorkQueueState state,
         Func<CancellationToken, Task> work,
         string context,
@@ -58,23 +58,23 @@ public sealed partial class BotMainHandler
         }
 
         if (startProcessor)
-            TrackSessionBackgroundTask(Task.Run(() => ProcessIRCWorkQueueAsync(state, queueToRun, quick), CancellationToken.None));
+            TrackTask(Task.Run(() => RunQueueAsync(state, queueToRun, quick), CancellationToken.None));
 
         return true;
     }
 
-    internal bool QueueIRCCommandWork(
+    internal bool QueueCommand(
         Func<CancellationToken, Task> work,
         string context,
         CancellationToken cancellationToken)
-        => QueueIRCWorkCore(
+        => QueueIrcWork(
             _IRCCommandQueue,
             work,
             context,
             quick: false,
             cancellationToken);
 
-    private async Task ProcessIRCWorkQueueAsync(IRCWorkQueueState state, Queue<IRCQueuedWork> queue, bool quick)
+    private async Task RunQueueAsync(IRCWorkQueueState state, Queue<IRCQueuedWork> queue, bool quick)
     {
         try
         {
@@ -89,7 +89,7 @@ public sealed partial class BotMainHandler
                     item = queue.Dequeue();
                 }
 
-                await ExecuteQueuedIRCWorkAsync(state, item, quick).ConfigureAwait(false);
+                await RunQueuedWorkAsync(state, item, quick).ConfigureAwait(false);
             }
         }
         finally
@@ -108,14 +108,14 @@ public sealed partial class BotMainHandler
 
             if (queueToRestart != null)
             {
-                TrackSessionBackgroundTask(Task.Run(
-                    () => ProcessIRCWorkQueueAsync(state, queueToRestart, quick),
+                TrackTask(Task.Run(
+                    () => RunQueueAsync(state, queueToRestart, quick),
                     CancellationToken.None));
             }
         }
     }
 
-    private async Task ExecuteQueuedIRCWorkAsync(IRCWorkQueueState state, IRCQueuedWork item, bool quick)
+    private async Task RunQueuedWorkAsync(IRCWorkQueueState state, IRCQueuedWork item, bool quick)
     {
         CancellationToken cancellationToken = item.CancellationToken;
         try
@@ -129,8 +129,8 @@ public sealed partial class BotMainHandler
         catch (Exception ex)
         {
             string prefix = quick ? "Quick IRC " : "Queued IRC ";
-            string context = quick ? item.Context : BuildCommandQueueContext(item.Context);
-            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage(prefix + context + " failed", ex));
+            string context = quick ? item.Context : BuildQueueContext(item.Context);
+            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog(prefix + context + " failed", ex));
         }
         finally
         {
@@ -139,24 +139,24 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void ResetIRCQueues()
+    internal void ResetQueues()
     {
         lock (_IRCCommandQueue.Gate)
             lock (_IRCQuickQueue.Gate)
             {
                 Interlocked.Increment(ref _IRCQueueGeneration);
-                ResetIRCQueueStateNoLock(_IRCCommandQueue);
-                ResetIRCQueueStateNoLock(_IRCQuickQueue);
+                ResetQueueNoLock(_IRCCommandQueue);
+                ResetQueueNoLock(_IRCQuickQueue);
             }
     }
 
-    private static void ResetIRCQueueStateNoLock(IRCWorkQueueState state)
+    private static void ResetQueueNoLock(IRCWorkQueueState state)
     {
         state.Queue = new Queue<IRCQueuedWork>();
         Volatile.Write(ref state.Depth, 0);
     }
 
-    internal static bool IsIgnoredIRCUser(string sender, string botName, bool separateBotAccount)
+    internal static bool IsIgnoredUser(string sender, string botName, bool separateBotAccount)
     {
         if (separateBotAccount &&
             string.Equals(sender, botName, StringComparison.OrdinalIgnoreCase))
@@ -164,16 +164,12 @@ public sealed partial class BotMainHandler
             return true;
         }
 
-        for (int i = 0; i < IgnoredIRCUsers.Length; i++)
-        {
-            if (string.Equals(sender, IgnoredIRCUsers[i], StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        return false;
+        return string.Equals(sender, "nightbot", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sender, "streamlabs", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(sender, "streamelements", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static string StripIRCTagsForLog(string line)
+    internal static string StripIrcTags(string line)
     {
         if (line.Length == 0 || line[0] != '@')
             return line;
@@ -182,7 +178,7 @@ public sealed partial class BotMainHandler
         return firstSpace > 0 && firstSpace + 1 < line.Length ? line[(firstSpace + 1)..] : line;
     }
 
-    internal static string BuildCommandQueueContext(string payload)
+    private static string BuildQueueContext(string payload)
     {
         const string Prefix = "command ";
         int commandEnd = payload.IndexOf(' ');
@@ -191,13 +187,14 @@ public sealed partial class BotMainHandler
             : Prefix + payload;
     }
 
-    private async Task DispatchCommandAsync(string payload, string prefix, string sender, bool isModerator, CancellationToken cancellationToken)
+    internal async Task DispatchAsync(string payload, string prefix, string sender, bool isModerator, CancellationToken cancellationToken)
     {
         ParsedCommand parsed = ParsedCommand.Parse(payload, prefix);
         if (parsed.Name.Length == 0)
             return;
 
         CustomCommandCooldownReservation customCooldownReservation = default;
+        CustomCommandCooldownReservation globalCooldownReservation = default;
         _currentCommandSender.Value = sender;
         try
         {
@@ -205,7 +202,7 @@ public sealed partial class BotMainHandler
             {
                 if (_activeConfig?.Settings.RespondToUnknownCommands == true)
                 {
-                    await SendBotResponseAsync(
+                    await SendReplyAsync(
                         sender + ", unknown command " + prefix + parsed.Name + ".",
                         BotResponseKind.Essential,
                         cancellationToken).ConfigureAwait(false);
@@ -213,73 +210,82 @@ public sealed partial class BotMainHandler
                 return;
             }
 
-            if (IsViewerCommandsPausedForNormalizedSender(sender))
+            if (AreViewerCommandsPaused(sender))
             {
-                await SendBotResponseAsync(
+                await SendReplyAsync(
                     sender + ", viewer commands are currently paused.",
                     BotResponseKind.Essential,
                     cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            CommandCustomization? customization = TryGetCommandCustomization(parsed.Name, out CommandCustomization resolvedCustomization)
+            CommandCustomization? customization = TryGetCommandSettings(parsed.Name, out CommandCustomization resolvedCustomization)
                 ? resolvedCustomization
                 : null;
             if (customization?.Enabled == false)
             {
-                await SendBotResponseAsync(
+                await SendReplyAsync(
                     sender + ", " + prefix + parsed.Name + " is disabled.",
                     BotResponseKind.Essential,
                     cancellationToken).ConfigureAwait(false);
                 return;
             }
-            if (!TryConsumeNormalizedViewerCommandSlot(sender))
-            {
-                if (ShouldNotifyViewerCommandLimit(sender))
-                    await SendBotResponseAsync(sender + ", you have reached your command limit. Try again shortly.", BotResponseKind.Essential, cancellationToken).ConfigureAwait(false);
-                return;
-            }
-            if (!TryConsumeChannelCommandSlot())
-            {
-                if (ShouldNotifyChannelCommandLimit())
-                {
-                    await SendBotResponseAsync(
-                        sender + ", the channel command limit has been reached. Try again shortly.",
-                        BotResponseKind.Essential,
-                        cancellationToken).ConfigureAwait(false);
-                }
-                return;
-            }
-
-            if (!TryReserveCustomCommandCooldown(
+            if (!TryReserveCustomCooldown(
                     parsed.Name,
                     sender,
-                    customization,
+                    customization?.CooldownSeconds,
                     out TimeSpan customCooldownRemaining,
                     out customCooldownReservation))
             {
-                await SendBotResponseAsync(
-                    sender + ", " + prefix + parsed.Name + " is on cooldown. Try again in " + FormatCooldownRemaining(customCooldownRemaining) + ".",
+                await SendReplyAsync(
+                    sender + ", you are on cooldown for " + prefix + parsed.Name + ". Try again in " + FormatCooldown(customCooldownRemaining) + ".",
                     BotResponseKind.Essential,
                     cancellationToken).ConfigureAwait(false);
                 return;
             }
 
-            BeginCurrentCommandExecution();
-            SetCurrentCommandSenderModeratorState(isModerator);
-            SetCurrentStatisticCommandName(parsed.Name);
+            if (!TryReserveCustomCooldown(
+                    parsed.Name,
+                    GlobalCooldownKey,
+                    customization?.GlobalCooldownSeconds,
+                    out TimeSpan customGlobalCooldownRemaining,
+                    out globalCooldownReservation))
+            {
+                await SendReplyAsync(
+                    sender + ", " + prefix + parsed.Name + " is on global cooldown. Try again in " + FormatCooldown(customGlobalCooldownRemaining) + ".",
+                    BotResponseKind.Essential,
+                    cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            if (!TryUseCommandSlots(sender, out bool viewerLimited))
+            {
+                if (viewerLimited && ShouldWarnViewerLimit(sender))
+                    await SendReplyAsync(sender + ", you have reached your command limit. Try again shortly.", BotResponseKind.Essential, cancellationToken).ConfigureAwait(false);
+                else if (!viewerLimited && ShouldWarnChannelLimit())
+                    await SendReplyAsync(
+                        sender + ", the channel command limit has been reached. Try again shortly.",
+                        BotResponseKind.Essential,
+                        cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            BeginCommand();
+            SetModerator(isModerator);
+            SetStatsCommand(parsed.Name);
             await handler(parsed.ArgumentArray, sender, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Command error in " + prefix + parsed.Name, ex));
+            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Command error in " + prefix + parsed.Name, ex));
         }
         finally
         {
-            FinishCustomCommandCooldown(customCooldownReservation, CurrentCommandSucceeded);
-            EndCurrentCommandExecution();
-            SetCurrentStatisticCommandName(null);
-            SetCurrentCommandSenderModeratorState(false);
+            FinishCustomCooldown(customCooldownReservation, CommandSucceeded);
+            FinishCustomCooldown(globalCooldownReservation, CommandSucceeded);
+            EndCommand();
+            SetStatsCommand(null);
+            SetModerator(false);
             _currentCommandSender.Value = null;
         }
     }

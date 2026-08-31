@@ -23,7 +23,7 @@ internal static class JSONExportWriter
         return Path.Combine(directory, ExportsFolderName);
     }
 
-    public static void WriteReadMe(string exportDirectory)
+    public static void WriteReadme(string exportDirectory)
     {
         string warningText =
             ViewingOnlyWarning + Environment.NewLine +
@@ -40,11 +40,11 @@ internal static class JSONExportWriter
         ReplaceFile(tempPath, READMEPath);
     }
 
-    public static void WriteJsonExportAtomic(string path, Action<JsonTextWriter> writeBody)
+    public static void WriteJsonAtomic(string path, Action<JsonTextWriter> writeBody)
     {
         ArgumentNullException.ThrowIfNull(writeBody);
 
-        FileSystemHelper.EnsureDirectoryForFile(path);
+        FileSystemHelper.EnsureParentDir(path);
 
         string tempPath = FileSystemHelper.GetUniqueTempPath(path);
         using (StreamWriter streamWriter = new(tempPath, false, Encoding.UTF8))
@@ -80,12 +80,12 @@ internal static class JSONExportWriter
         writer.WriteWhitespace(Environment.NewLine);
     }
 
-    public static void WriteNonNegativeLongProperty(JsonWriter writer, string name, long value)
+    public static void WriteCount(JsonWriter writer, string name, long value)
     {
         writer.WritePropertyName(name);
         writer.WriteValue(Math.Max(0L, value));
     }
 
     private static void ReplaceFile(string tempPath, string path)
-        => FileSystemHelper.ReplaceOrMoveWithFallback(tempPath, path, backupPath: null, "Atomic JSON export save failed; falling back to copy");
+        => FileSystemHelper.ReplaceFile(tempPath, path, backupPath: null, "Atomic JSON export save failed; falling back to copy");
 }

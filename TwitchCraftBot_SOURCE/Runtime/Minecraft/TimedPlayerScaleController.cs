@@ -53,7 +53,7 @@ internal sealed class TimedPlayerScaleController
         if (players.Count == 0)
             return false;
 
-        List<SemaphoreSlim> acquiredGates = await AcquirePlayerGatesAsync(players, cancellationToken).ConfigureAwait(false);
+        List<SemaphoreSlim> acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
         Dictionary<string, ScaleState?> previousStates = new(players.Count, StringComparer.OrdinalIgnoreCase);
         List<(string Player, ScaleState State)> appliedStates = new(players.Count);
         try
@@ -71,7 +71,7 @@ internal sealed class TimedPlayerScaleController
                     _states[player] = applied;
                     appliedStates.Add((player, applied));
                     commands.Add(MinecraftCommandBuilder.SetScale(
-                        MinecraftCommandBuilder.PlayerSelectorLimitOne(player),
+                        MinecraftCommandBuilder.SinglePlayerSelector(player),
                         scale,
                         usesModernAttributeIds));
                 }
@@ -84,26 +84,26 @@ internal sealed class TimedPlayerScaleController
             }
             catch
             {
-                RestorePreviousStates(appliedStates, previousStates);
+                RestoreStates(appliedStates, previousStates);
                 throw;
             }
 
             if (!dispatched)
             {
-                RestorePreviousStates(appliedStates, previousStates);
+                RestoreStates(appliedStates, previousStates);
                 return false;
             }
 
             foreach ((string player, ScaleState state) in appliedStates)
             {
-                _trackTask(ResetAfterDelayAsync(player, state, duration, cancellationToken));
+                _trackTask(ResetLaterAsync(player, state, duration, cancellationToken));
             }
 
             return true;
         }
         finally
         {
-            ReleasePlayerGates(acquiredGates);
+            UnlockPlayers(acquiredGates);
         }
     }
 
@@ -119,7 +119,7 @@ internal sealed class TimedPlayerScaleController
         if (players.Count == 0)
             return;
 
-        List<SemaphoreSlim> acquiredGates = await AcquirePlayerGatesAsync(players, cancellationToken).ConfigureAwait(false);
+        List<SemaphoreSlim> acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
         try
         {
             foreach (string player in players)
@@ -131,14 +131,14 @@ internal sealed class TimedPlayerScaleController
                         continue;
                 }
 
-                bool sent = await TrySendResetAsync(player, state, retryUntilCancelled: false, cancellationToken: cancellationToken).ConfigureAwait(false);
+                bool sent = await TryResetAsync(player, state, retryUntilCancelled: false, cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (sent)
-                    RemoveStateIfCurrent(player, state);
+                    RemoveIfCurrent(player, state);
             }
         }
         finally
         {
-            ReleasePlayerGates(acquiredGates);
+            UnlockPlayers(acquiredGates);
         }
     }
 
@@ -150,7 +150,7 @@ internal sealed class TimedPlayerScaleController
         }
     }
 
-    private async Task ResetAfterDelayAsync(
+    private async Task ResetLaterAsync(
         string player,
         ScaleState state,
         TimeSpan duration,
@@ -162,7 +162,7 @@ internal sealed class TimedPlayerScaleController
             if (warningDelay > TimeSpan.Zero)
             {
                 await _delay(warningDelay, cancellationToken).ConfigureAwait(false);
-                if (!await ShowRestoreWarningIfCurrentAsync(player, state, cancellationToken).ConfigureAwait(false))
+                if (!await ShowRestoreWarningAsync(player, state, cancellationToken).ConfigureAwait(false))
                     return;
 
                 await _delay(RestoreWarningLeadTime, cancellationToken).ConfigureAwait(false);
@@ -172,15 +172,15 @@ internal sealed class TimedPlayerScaleController
                 await _delay(duration, cancellationToken).ConfigureAwait(false);
             }
 
-            SemaphoreSlim playerGate = GetPlayerGate(player);
+            SemaphoreSlim playerGate = GetGate(player);
             await playerGate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                if (!IsCurrentState(player, state))
+                if (!IsCurrent(player, state))
                     return;
 
-                if (await TrySendResetAsync(player, state, retryUntilCancelled: true, cancellationToken: cancellationToken).ConfigureAwait(false))
-                    RemoveStateIfCurrent(player, state);
+                if (await TryResetAsync(player, state, retryUntilCancelled: true, cancellationToken: cancellationToken).ConfigureAwait(false))
+                    RemoveIfCurrent(player, state);
             }
             finally
             {
@@ -192,23 +192,23 @@ internal sealed class TimedPlayerScaleController
         }
         catch (Exception ex)
         {
-            _log(ErrorHandling.FormatLogMessage("Timed player-size reset failed", ex));
+            _log(ErrorHandling.FormatLog("Timed player-size reset failed", ex));
         }
     }
 
-    private async Task<bool> ShowRestoreWarningIfCurrentAsync(
+    private async Task<bool> ShowRestoreWarningAsync(
         string player,
         ScaleState state,
         CancellationToken cancellationToken)
     {
-        SemaphoreSlim playerGate = GetPlayerGate(player);
+        SemaphoreSlim playerGate = GetGate(player);
         await playerGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!IsCurrentState(player, state))
+            if (!IsCurrent(player, state))
                 return false;
 
-            string selector = MinecraftCommandBuilder.PlayerSelectorLimitOne(player);
+            string selector = MinecraftCommandBuilder.SinglePlayerSelector(player);
             string[] commands =
             [
                 MinecraftCommandBuilder.TitleTimes(selector, 0, 60, 0),
@@ -234,7 +234,7 @@ internal sealed class TimedPlayerScaleController
         }
         catch (Exception ex)
         {
-            _log(ErrorHandling.FormatLogMessage("Timed player-size warning failed", ex));
+            _log(ErrorHandling.FormatLog("Timed player-size warning failed", ex));
             return true;
         }
         finally
@@ -243,14 +243,14 @@ internal sealed class TimedPlayerScaleController
         }
     }
 
-    private async Task<bool> TrySendResetAsync(
+    private async Task<bool> TryResetAsync(
         string player,
         ScaleState state,
         bool retryUntilCancelled,
         CancellationToken cancellationToken)
     {
         string command = MinecraftCommandBuilder.SetScale(
-            MinecraftCommandBuilder.PlayerSelectorLimitOne(player),
+            MinecraftCommandBuilder.SinglePlayerSelector(player),
             1.0,
             state.UsesModernAttributeIds);
 
@@ -269,7 +269,7 @@ internal sealed class TimedPlayerScaleController
         return false;
     }
 
-    private async Task<List<SemaphoreSlim>> AcquirePlayerGatesAsync(
+    private async Task<List<SemaphoreSlim>> LockPlayersAsync(
         List<string> players,
         CancellationToken cancellationToken)
     {
@@ -278,7 +278,7 @@ internal sealed class TimedPlayerScaleController
         {
             foreach (string player in players)
             {
-                SemaphoreSlim playerGate = GetPlayerGate(player);
+                SemaphoreSlim playerGate = GetGate(player);
                 await playerGate.WaitAsync(cancellationToken).ConfigureAwait(false);
                 acquired.Add(playerGate);
             }
@@ -287,12 +287,12 @@ internal sealed class TimedPlayerScaleController
         }
         catch
         {
-            ReleasePlayerGates(acquired);
+            UnlockPlayers(acquired);
             throw;
         }
     }
 
-    private SemaphoreSlim GetPlayerGate(string player)
+    private SemaphoreSlim GetGate(string player)
     {
         lock (_gate)
         {
@@ -306,7 +306,7 @@ internal sealed class TimedPlayerScaleController
         }
     }
 
-    private bool IsCurrentState(string player, ScaleState state)
+    private bool IsCurrent(string player, ScaleState state)
     {
         lock (_gate)
         {
@@ -314,7 +314,7 @@ internal sealed class TimedPlayerScaleController
         }
     }
 
-    private void RemoveStateIfCurrent(string player, ScaleState state)
+    private void RemoveIfCurrent(string player, ScaleState state)
     {
         lock (_gate)
         {
@@ -323,7 +323,7 @@ internal sealed class TimedPlayerScaleController
         }
     }
 
-    private void RestorePreviousStates(
+    private void RestoreStates(
         IReadOnlyList<(string Player, ScaleState State)> appliedStates,
         IReadOnlyDictionary<string, ScaleState?> previousStates)
     {
@@ -356,7 +356,7 @@ internal sealed class TimedPlayerScaleController
         return players;
     }
 
-    private static void ReleasePlayerGates(List<SemaphoreSlim> acquiredGates)
+    private static void UnlockPlayers(List<SemaphoreSlim> acquiredGates)
     {
         for (int i = acquiredGates.Count - 1; i >= 0; i--)
             acquiredGates[i].Release();

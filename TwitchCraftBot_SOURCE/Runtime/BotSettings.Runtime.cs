@@ -25,7 +25,8 @@ public sealed partial class BotMainHandler
     private readonly Queue<long> _channelCommandTimestamps = new();
     private readonly Dictionary<string, Queue<long>> _viewerCommandTimestamps = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _viewerCommandLimitNotices = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<(string Command, string Sender), long> _customCommandLastUsedTicks = new();
+    private const string GlobalCooldownKey = "\0";
+    private readonly Dictionary<(string Command, string Sender), long> _customCommandLastUsedTicks = [];
     private readonly Queue<long> _relayMessageTimestamps = new();
     private readonly Dictionary<string, long> _viewerLastChatActivity = new(StringComparer.OrdinalIgnoreCase);
     private long _lastChannelCommandLimitNoticeTicks;
@@ -53,18 +54,7 @@ public sealed partial class BotMainHandler
     internal string MinecraftRelayTextColor => _currentMinecraftRelayTextColor;
     internal string BotResponseVerbosity => _currentBotResponseVerbosity;
 
-    internal static bool TryMatchCommandPrefix(
-        string payload,
-        string primaryPrefix,
-        string secondaryPrefix,
-        out string matchedPrefix)
-        => TryMatchNormalizedCommandPrefix(
-            payload,
-            ConfigurationStore.NormalizeCommandPrefix(primaryPrefix, "!"),
-            ConfigurationStore.NormalizeCommandPrefix(secondaryPrefix, string.Empty),
-            out matchedPrefix);
-
-    private static bool TryMatchNormalizedCommandPrefix(
+    internal static bool TryMatchPrefix(
         string payload,
         string primaryPrefix,
         string secondaryPrefix,
@@ -93,26 +83,29 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    internal static string FormatBotReplyForViewer(string message, string? sender, bool mentionViewer)
-        => FormatBotReplyForNormalizedViewer(message, NormalizeUser(sender), mentionViewer);
-
-    private static string FormatBotReplyForNormalizedViewer(string message, string normalizedSender, bool mentionViewer)
+    internal static string FormatReply(string message, string sender, bool mentionViewer)
     {
-        if (!mentionViewer || normalizedSender.Length == 0 || string.IsNullOrWhiteSpace(message))
+        if (!mentionViewer || sender.Length == 0 || string.IsNullOrWhiteSpace(message))
             return message;
 
-        if (message.StartsWith("@" + normalizedSender, StringComparison.OrdinalIgnoreCase))
+        if (message.Length > sender.Length &&
+            message[0] == '@' &&
+            message.AsSpan(1).StartsWith(sender.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
             return message;
-        if (message.StartsWith(normalizedSender + ",", StringComparison.OrdinalIgnoreCase))
+        }
+
+        if (message.Length > sender.Length &&
+            message[sender.Length] == ',' &&
+            message.AsSpan(0, sender.Length).Equals(sender.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
             return "@" + message;
+        }
 
-        return "@" + normalizedSender + " " + message;
+        return "@" + sender + " " + message;
     }
 
-    internal static string ApplyConfiguredCommandPrefix(string message, string prefix)
-        => ApplyConfiguredNormalizedCommandPrefix(message, ConfigurationStore.NormalizeCommandPrefix(prefix, "!"));
-
-    private static string ApplyConfiguredNormalizedCommandPrefix(string message, string prefix)
+    internal static string ApplyPrefix(string message, string prefix)
     {
         if (prefix == "!" || string.IsNullOrEmpty(message))
             return message;
@@ -135,7 +128,7 @@ public sealed partial class BotMainHandler
         return builder == null ? message : builder.Append(message, copyStart, message.Length - copyStart).ToString();
     }
 
-    internal string FormatCooldownRemaining(TimeSpan remaining)
+    internal string FormatCooldown(TimeSpan remaining)
     {
         if (_activeConfig?.Settings.ShowExactCooldownRemaining == false)
             return "a moment";
@@ -148,7 +141,7 @@ public sealed partial class BotMainHandler
             : seconds.ToString(CultureInfo.InvariantCulture) + "s";
     }
 
-    internal static string FormatMinecraftRelayMessage(string sender, string payload, bool includeTimestamp, DateTime localTime)
+    internal static string FormatRelay(string sender, string payload, bool includeTimestamp, DateTime localTime)
     {
         string prefix = includeTimestamp
             ? "[" + localTime.ToString("HH:mm", CultureInfo.InvariantCulture) + "] "
@@ -156,10 +149,11 @@ public sealed partial class BotMainHandler
         return prefix + sender + ": " + payload;
     }
 
-    internal int GetNextPassivePayoutDelaySeconds()
+    internal int GetPayoutDelay()
     {
-        int minimum = Math.Clamp(_activeConfig?.Settings.PassiveTokenPayoutMinimumSeconds ?? 30, 10, 900);
-        int maximum = Math.Clamp(_activeConfig?.Settings.PassiveTokenPayoutMaximumSeconds ?? 60, 10, 900);
+        StartingProfile settings = EffectiveSettings;
+        int minimum = Math.Clamp(settings.PassiveTokenPayoutMinimumSeconds, 10, 900);
+        int maximum = Math.Clamp(settings.PassiveTokenPayoutMaximumSeconds, 10, 900);
         if (minimum > maximum)
             (minimum, maximum) = (maximum, minimum);
         return minimum == maximum ? minimum : Random.Shared.Next(minimum, maximum + 1);
@@ -174,11 +168,12 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void RecordViewerChatActivity(string sender, long unixSeconds)
-        => RecordNormalizedViewerChatActivity(NormalizeUser(sender), unixSeconds);
-
-    private void RecordNormalizedViewerChatActivity(string normalizedSender, long unixSeconds)
+    internal void RecordChatActivity(string sender, long unixSeconds)
     {
+        if (!EffectiveSettings.PassiveRewardsRequireRecentChat)
+            return;
+
+        string normalizedSender = NormalizeUser(sender);
         if (normalizedSender.Length == 0)
             return;
 
@@ -186,38 +181,60 @@ public sealed partial class BotMainHandler
             _viewerLastChatActivity[normalizedSender] = unixSeconds;
     }
 
-    internal bool IsViewerPassiveRewardEligibleNoLock(string viewer, long nowUnixSeconds)
+    internal bool IsRewardEligibleNoLock(string viewer, long nowUnixSeconds)
     {
-        if (_activeConfig?.Settings.PassiveRewardsRequireRecentChat != true)
+        StartingProfile settings = EffectiveSettings;
+        if (!settings.PassiveRewardsRequireRecentChat)
             return true;
 
-        int minutes = Math.Clamp(_activeConfig?.Settings.PassiveRecentChatWindowMinutes ?? 10, 1, 120);
+        int minutes = Math.Clamp(settings.PassiveRecentChatWindowMinutes, 1, 120);
         return _viewerLastChatActivity.TryGetValue(viewer, out long lastActive) &&
             nowUnixSeconds - lastActive <= minutes * 60L;
     }
 
-    internal bool TryConsumeChannelCommandSlot(long? nowTicks = null)
+    internal bool TryUseCommandSlots(string viewer, out bool viewerLimited, long? nowTicks = null)
     {
-        int limit = _activeConfig?.Settings.ChannelCommandLimitPerMinute ?? 0;
-        if (limit <= 0)
+        int viewerLimit = _activeConfig?.Settings.ViewerCommandLimitPerMinute ?? 0;
+        int channelLimit = _activeConfig?.Settings.ChannelCommandLimitPerMinute ?? 0;
+        viewerLimited = false;
+        if (viewerLimit <= 0 && channelLimit <= 0)
             return true;
-
-        long now = nowTicks ?? DateTime.UtcNow.Ticks;
+        long now = nowTicks ?? DateTime.UtcNow.Ticks, cutoff = now - TimeSpan.TicksPerMinute;
         lock (_cooldownGate)
         {
-            long cutoff = now - TimeSpan.TicksPerMinute;
-            while (_channelCommandTimestamps.Count > 0 && _channelCommandTimestamps.Peek() <= cutoff)
-                _channelCommandTimestamps.Dequeue();
+            Queue<long>? viewerTimestamps = null;
+            if (viewerLimit > 0 && viewer.Length > 0 && _viewerCommandTimestamps.TryGetValue(viewer, out viewerTimestamps))
+            {
+                while (viewerTimestamps.Count > 0 && viewerTimestamps.Peek() <= cutoff)
+                    viewerTimestamps.Dequeue();
+                if (viewerTimestamps.Count >= viewerLimit)
+                {
+                    viewerLimited = true;
+                    return false;
+                }
+            }
 
-            if (_channelCommandTimestamps.Count >= limit)
-                return false;
+            if (channelLimit > 0)
+            {
+                while (_channelCommandTimestamps.Count > 0 && _channelCommandTimestamps.Peek() <= cutoff)
+                    _channelCommandTimestamps.Dequeue();
+                if (_channelCommandTimestamps.Count >= channelLimit)
+                    return false;
+            }
 
-            _channelCommandTimestamps.Enqueue(now);
+            if (viewerLimit > 0 && viewer.Length > 0)
+            {
+                if (viewerTimestamps == null)
+                    _viewerCommandTimestamps[viewer] = viewerTimestamps = new();
+                viewerTimestamps.Enqueue(now);
+            }
+            if (channelLimit > 0)
+                _channelCommandTimestamps.Enqueue(now);
             return true;
         }
     }
 
-    internal bool ShouldNotifyChannelCommandLimit(long? nowTicks = null)
+    internal bool ShouldWarnChannelLimit(long? nowTicks = null)
     {
         long now = nowTicks ?? DateTime.UtcNow.Ticks;
         long previous = Volatile.Read(ref _lastChannelCommandLimitNoticeTicks);
@@ -226,33 +243,7 @@ public sealed partial class BotMainHandler
         return Interlocked.CompareExchange(ref _lastChannelCommandLimitNoticeTicks, now, previous) == previous;
     }
 
-    internal bool TryConsumeViewerCommandSlot(string sender, long? nowTicks = null)
-        => TryConsumeNormalizedViewerCommandSlot(NormalizeUser(sender), nowTicks);
-
-    private bool TryConsumeNormalizedViewerCommandSlot(string viewer, long? nowTicks = null)
-    {
-        int limit = _activeConfig?.Settings.ViewerCommandLimitPerMinute ?? 0;
-        if (limit <= 0 || viewer.Length == 0)
-            return true;
-
-        long now = nowTicks ?? DateTime.UtcNow.Ticks;
-        lock (_cooldownGate)
-        {
-            if (!_viewerCommandTimestamps.TryGetValue(viewer, out Queue<long>? timestamps))
-                _viewerCommandTimestamps[viewer] = timestamps = new Queue<long>();
-
-            long cutoff = now - TimeSpan.TicksPerMinute;
-            while (timestamps.Count > 0 && timestamps.Peek() <= cutoff)
-                timestamps.Dequeue();
-            if (timestamps.Count >= limit)
-                return false;
-
-            timestamps.Enqueue(now);
-            return true;
-        }
-    }
-
-    internal bool ShouldNotifyViewerCommandLimit(string sender, long? nowTicks = null)
+    internal bool ShouldWarnViewerLimit(string sender, long? nowTicks = null)
     {
         string viewer = NormalizeUser(sender);
         long now = nowTicks ?? DateTime.UtcNow.Ticks;
@@ -266,27 +257,25 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal bool IsCommandEnabled(string commandName)
-        => !TryGetCommandCustomization(commandName, out CommandCustomization customization) || customization.Enabled;
-
-    private bool TryReserveCustomCommandCooldown(
+    private bool TryReserveCustomCooldown(
         string commandName,
-        string sender,
-        CommandCustomization? customization,
+        string keyOwner,
+        double? cooldownSeconds,
         out TimeSpan remaining,
         out CustomCommandCooldownReservation reservation)
     {
         remaining = TimeSpan.Zero;
         reservation = default;
-        if (customization?.CooldownSeconds is not int seconds || seconds <= 0)
+        if (cooldownSeconds is not double seconds || seconds <= 0.0)
             return true;
 
         long nowTicks = DateTime.UtcNow.Ticks;
-        (string Command, string Sender) key = (commandName, sender);
+        long cooldownTicks = (long)(seconds * TimeSpan.TicksPerSecond);
+        (string Command, string Sender) key = (commandName, keyOwner);
         lock (_cooldownGate)
         {
             _customCommandLastUsedTicks.TryGetValue(key, out long previous);
-            long next = previous + seconds * TimeSpan.TicksPerSecond;
+            long next = previous + cooldownTicks;
             if (previous != 0 && nowTicks < next)
             {
                 remaining = TimeSpan.FromTicks(next - nowTicks);
@@ -299,7 +288,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void FinishCustomCommandCooldown(
+    private void FinishCustomCooldown(
         CustomCommandCooldownReservation reservation,
         bool succeeded)
     {
@@ -321,25 +310,31 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void BeginCurrentCommandExecution() => _currentCommandExecution.Value = new();
+    private void BeginCommand() => _currentCommandExecution.Value = new();
 
-    internal void MarkCurrentCommandSuccessful()
+    internal void MarkCommandSuccess()
     {
         if (_currentCommandExecution.Value is CommandExecutionState state)
             state.Succeeded = true;
     }
 
-    private bool CurrentCommandSucceeded => _currentCommandExecution.Value?.Succeeded == true;
+    private bool CommandSucceeded => _currentCommandExecution.Value?.Succeeded == true;
 
-    private void EndCurrentCommandExecution() => _currentCommandExecution.Value = null;
+    private void EndCommand() => _currentCommandExecution.Value = null;
 
-    internal bool HasCustomCommandCooldown(string? commandName = null)
+    internal bool HasPerUserCooldownOverride(string? commandName = null)
     {
         string name = (commandName ?? _currentStatisticCommandName.Value ?? string.Empty).Trim();
-        return TryGetCommandCustomization(name, out CommandCustomization customization) && customization.CooldownSeconds.HasValue;
+        return TryGetCommandSettings(name, out CommandCustomization customization) && customization.CooldownSeconds.HasValue;
     }
 
-    private bool TryGetCommandCustomization(string? commandName, out CommandCustomization customization)
+    internal bool HasGlobalCooldownOverride(string? commandName = null)
+    {
+        string name = (commandName ?? _currentStatisticCommandName.Value ?? string.Empty).Trim();
+        return TryGetCommandSettings(name, out CommandCustomization customization) && customization.GlobalCooldownSeconds.HasValue;
+    }
+
+    private bool TryGetCommandSettings(string? commandName, out CommandCustomization customization)
     {
         customization = null!;
         Dictionary<string, CommandCustomization>? customizations = _activeConfig?.Settings.CommandCustomizations;
@@ -354,10 +349,11 @@ public sealed partial class BotMainHandler
         return true;
     }
 
-    internal bool TryConsumeMinecraftRelaySlot(long? nowTicks = null)
+    internal bool TryUseRelaySlot(long? nowTicks = null)
     {
-        int limit = _activeConfig?.Settings.MinecraftRelayMessagesPerSecond ?? 0;
-        if (_activeConfig?.Settings.LowResourceModeEnabled == true)
+        StartingProfile settings = EffectiveSettings;
+        int limit = settings.MinecraftRelayMessagesPerSecond;
+        if (settings.LowResourceModeEnabled)
             limit = limit <= 0 ? 5 : Math.Min(limit, 5);
         if (limit <= 0)
             return true;
@@ -375,10 +371,10 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private bool IsViewerCommandsPausedForNormalizedSender(string sender)
+    private bool AreViewerCommandsPaused(string sender)
         => _activeConfig?.Settings.ViewerCommandsPaused == true &&
             !string.Equals(sender, _currentStreamerName, StringComparison.OrdinalIgnoreCase);
 
-    private void SetTwitchChatConnected(bool connected)
+    private void SetChatConnected(bool connected)
         => Volatile.Write(ref _twitchChatConnected, connected ? 1 : 0);
 }

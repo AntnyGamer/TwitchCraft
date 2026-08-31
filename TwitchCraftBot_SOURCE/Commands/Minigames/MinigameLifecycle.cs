@@ -7,7 +7,7 @@ namespace TwitchCraftBot_V1;
 
 public static partial class MinigameManager
 {
-    public static void StartMinigameLoops(BotMainHandler runtime, CancellationToken sessionToken)
+    public static void StartLoops(BotMainHandler runtime, CancellationToken sessionToken)
     {
         if (runtime == null || !runtime.MinigamesEnabled)
             return;
@@ -22,11 +22,11 @@ public static partial class MinigameManager
 
             loop = new(
                 CancellationTokenSource.CreateLinkedTokenSource(sessionToken),
-                TakeNextMinigameTimeNoLock(runtime));
+                TakeNextTimeNoLock(runtime));
             MinigameLoops[runtime] = loop;
         }
 
-        Task loopTask = Task.Run(() => RunMinigameLoopAsync(runtime, loop, loop.Cts.Token), CancellationToken.None);
+        Task loopTask = Task.Run(() => RunLoopAsync(runtime, loop, loop.Cts.Token), CancellationToken.None);
         lock (MinigameGate)
         {
             if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop))
@@ -34,20 +34,20 @@ public static partial class MinigameManager
         }
 
         _ = loopTask.ContinueWith(
-            _ => CleanupMinigameLoop(runtime, loop),
+            _ => CleanupLoop(runtime, loop),
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
     }
 
-    public static void StopMinigameLoops(BotMainHandler runtime, bool preserveSchedule = false)
+    public static void StopLoops(BotMainHandler runtime, bool preserveSchedule = false)
     {
-        _ = StopMinigameLoopsCore(runtime, preserveSchedule);
+        _ = StopLoopsCore(runtime, preserveSchedule);
     }
 
-    public static async Task StopMinigameLoopsAsync(BotMainHandler runtime, bool preserveSchedule = false)
+    public static async Task StopLoopsAsync(BotMainHandler runtime, bool preserveSchedule = false)
     {
-        Task? loopTask = StopMinigameLoopsCore(runtime, preserveSchedule);
+        Task? loopTask = StopLoopsCore(runtime, preserveSchedule);
         if (loopTask == null)
             return;
 
@@ -63,11 +63,11 @@ public static partial class MinigameManager
         }
         catch (Exception ex)
         {
-            runtime.AddChatLogLine(ErrorHandling.FormatLogMessage("Minigame loop stop failed", ex));
+            runtime.AddChatLogLine(ErrorHandling.FormatLog("Minigame loop stop failed", ex));
         }
     }
 
-    private static Task? StopMinigameLoopsCore(BotMainHandler runtime, bool preserveSchedule)
+    private static Task? StopLoopsCore(BotMainHandler runtime, bool preserveSchedule)
     {
         if (runtime == null)
             return null;
@@ -84,7 +84,7 @@ public static partial class MinigameManager
             else if (!preserveSchedule)
             {
                 PreservedNextMinigameAtUtc?.Remove(runtime);
-                ClearEmptyPreservedScheduleNoLock();
+                ClearScheduleNoLock();
             }
 
             if (ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chickenState))
@@ -127,7 +127,7 @@ public static partial class MinigameManager
         return loop?.Task;
     }
 
-    private static void CleanupMinigameLoop(BotMainHandler runtime, MinigameLoopState loop)
+    private static void CleanupLoop(BotMainHandler runtime, MinigameLoopState loop)
     {
         lock (MinigameGate)
         {
@@ -138,7 +138,7 @@ public static partial class MinigameManager
         try { loop.Cts.Dispose(); } catch { }
     }
 
-    private static void RemoveMinigameState(BotMainHandler runtime)
+    private static void RemoveState(BotMainHandler runtime)
     {
         lock (MinigameGate)
         {
@@ -149,7 +149,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static bool IsCurrentMinigameLoop(BotMainHandler runtime, MinigameLoopState loop)
+    private static bool IsCurrentLoop(BotMainHandler runtime, MinigameLoopState loop)
     {
         lock (MinigameGate)
         {
@@ -157,7 +157,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static async Task RunMinigameLoopAsync(BotMainHandler runtime, MinigameLoopState loop, CancellationToken cancellationToken)
+    private static async Task RunLoopAsync(BotMainHandler runtime, MinigameLoopState loop, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -175,27 +175,27 @@ public static partial class MinigameManager
                 TimeSpan remaining = nextAtUtc - nowUtc;
                 if (remaining > TimeSpan.Zero)
                 {
-                    await WaitForMinigameDelayAsync(runtime, loop, cancellationToken).ConfigureAwait(false);
+                    await WaitForDelayAsync(runtime, loop, cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
                 switch (BotMainHandler.SecureRandomInt(3))
                 {
                     case 0:
-                        await RunChickenRunAsync(runtime, cancellationToken).ConfigureAwait(false);
+                        await RunChickenAsync(runtime, cancellationToken).ConfigureAwait(false);
                         break;
                     case 1:
                         await RunGuessNumberAsync(runtime, cancellationToken).ConfigureAwait(false);
                         break;
                     default:
-                        await RunWitherBattleAsync(runtime, cancellationToken).ConfigureAwait(false);
+                        await RunWitherAsync(runtime, cancellationToken).ConfigureAwait(false);
                         break;
                 }
 
-                if (cancellationToken.IsCancellationRequested || !IsCurrentMinigameLoop(runtime, loop))
+                if (cancellationToken.IsCancellationRequested || !IsCurrentLoop(runtime, loop))
                     break;
 
-                SetNextMinigameTime(runtime, runtime.MinigameCooldown);
+                SetNextTime(runtime, runtime.MinigameCooldown);
             }
             catch (OperationCanceledException)
             {
@@ -203,15 +203,15 @@ public static partial class MinigameManager
             }
             catch (Exception ex)
             {
-                if (cancellationToken.IsCancellationRequested || !IsCurrentMinigameLoop(runtime, loop))
+                if (cancellationToken.IsCancellationRequested || !IsCurrentLoop(runtime, loop))
                     break;
 
-                runtime.AddChatLogLine(ErrorHandling.FormatLogMessage("Minigame loop error", ex));
-                RefundAllChickenRunBets(runtime);
-                RefundAllWitherBattleBets(runtime);
+                runtime.AddChatLogLine(ErrorHandling.FormatLog("Minigame loop error", ex));
+                RefundChickenBets(runtime);
+                RefundWitherBets(runtime);
 
-                RemoveMinigameState(runtime);
-                SetNextMinigameTime(runtime, 10.0);
+                RemoveState(runtime);
+                SetNextTime(runtime, 10.0);
 
                 try
                 {
@@ -225,6 +225,44 @@ public static partial class MinigameManager
         }
     }
 
-    // ===== Minigame session control =====
+    private static DateTime TakeNextTimeNoLock(BotMainHandler runtime)
+    {
+        if (PreservedNextMinigameAtUtc?.Remove(runtime, out DateTime nextAtUtc) == true)
+        {
+            ClearScheduleNoLock();
+            return nextAtUtc;
+        }
 
+        return DateTime.UtcNow.AddMinutes(runtime.MinigameCooldown);
+    }
+
+    private static void ClearScheduleNoLock()
+    {
+        if (PreservedNextMinigameAtUtc?.Count == 0)
+            PreservedNextMinigameAtUtc = null;
+    }
+
+    private static void SetNextTime(BotMainHandler runtime, double minutesFromNow)
+    {
+        lock (MinigameGate)
+        {
+            if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? loop))
+                loop.NextAtUtc = DateTime.UtcNow.AddMinutes(minutesFromNow);
+        }
+    }
+
+    private static async Task WaitForDelayAsync(BotMainHandler runtime, MinigameLoopState expectedLoop, CancellationToken cancellationToken)
+    {
+        TimeSpan delay;
+        lock (MinigameGate)
+        {
+            if (!MinigameLoops.TryGetValue(runtime, out MinigameLoopState? loop) || !ReferenceEquals(loop, expectedLoop))
+                return;
+
+            delay = loop.NextAtUtc - DateTime.UtcNow;
+        }
+
+        if (delay > TimeSpan.Zero)
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+    }
 }

@@ -91,7 +91,7 @@ public sealed partial class BotMainHandler
     private int _deathScoreObjectiveReady;
     private int _trackedPlayerDeathScoreRefreshQueued;
 
-    private bool TryGetQueuedSessionToken(bool requireMultiplayer, out CancellationToken token)
+    private bool TryGetSessionToken(bool requireMultiplayer, out CancellationToken token)
     {
         token = default;
         CancellationTokenSource? cts = _sessionCts;
@@ -110,13 +110,13 @@ public sealed partial class BotMainHandler
         return true;
     }
 
-    private void RunQueuedSessionWork(
+    private void RunSessionWork(
         Func<CancellationToken, Task> work,
         Action clearQueued,
         string? errorContext = null,
         CancellationToken token = default)
     {
-        TrackSessionBackgroundTask(Task.Run(async () =>
+        TrackTask(Task.Run(async () =>
         {
             try
             {
@@ -137,7 +137,7 @@ public sealed partial class BotMainHandler
         }, CancellationToken.None));
     }
 
-    private void RunCoalescedQueuedSessionWork(
+    private void RunCoalescedWork(
         Func<CancellationToken, Task> work,
         Func<bool> clearIfNoRerunRequested,
         Action markRunning,
@@ -146,7 +146,7 @@ public sealed partial class BotMainHandler
         Action<Exception>? onError = null,
         CancellationToken token = default)
     {
-        TrackSessionBackgroundTask(Task.Run(async () =>
+        TrackTask(Task.Run(async () =>
         {
             while (true)
             {
@@ -175,13 +175,13 @@ public sealed partial class BotMainHandler
         }, CancellationToken.None));
     }
 
-    private static int FindSortedPlayerIndex(IReadOnlyList<string> players, string playerName)
+    private static int FindPlayerIndex(IReadOnlyList<string> players, string playerName)
         => SortedListHelper.FindIndex(players, playerName, PlayerNameComparer);
 
-    private static bool ContainsPlayer(IReadOnlyList<string> players, string playerName)
+    private static bool HasPlayer(IReadOnlyList<string> players, string playerName)
         => SortedListHelper.Contains(players, playerName, PlayerNameComparer);
 
-    private async Task<List<string>> RefreshOnlinePlayersAsync(CancellationToken cancellationToken)
+    private async Task<List<string>> RefreshPlayersAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -190,14 +190,14 @@ public sealed partial class BotMainHandler
             snapshotBefore = _lastOnlinePlayersSnapshotUtc;
 
         if (_minecraftServerReady && DateTime.UtcNow - snapshotBefore >= OnlinePlayersRefreshInterval)
-            await RefreshOnlinePlayerSnapshotNowAsync(cancellationToken).ConfigureAwait(false);
+            await RefreshSnapshotAsync(cancellationToken).ConfigureAwait(false);
 
-        return GetKnownPlayersList();
+        return GetKnownPlayers();
     }
 
-    private void QueueOnlinePlayerSnapshotRefresh()
+    private void QueueSnapshot()
     {
-        if (!TryGetQueuedSessionToken(requireMultiplayer: false, out CancellationToken token))
+        if (!TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
             return;
 
         int previous = Interlocked.CompareExchange(ref _onlinePlayerSnapshotQueued, 1, 0);
@@ -207,8 +207,8 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        RunCoalescedQueuedSessionWork(
-            RefreshOnlinePlayerSnapshotNowAsync,
+        RunCoalescedWork(
+            RefreshSnapshotAsync,
             () => Interlocked.CompareExchange(ref _onlinePlayerSnapshotQueued, 0, 1) == 1,
             () => Interlocked.Exchange(ref _onlinePlayerSnapshotQueued, 1),
             () => Interlocked.Exchange(ref _onlinePlayerSnapshotQueued, 0),
@@ -216,25 +216,25 @@ public sealed partial class BotMainHandler
             token: token);
     }
 
-    private async Task<bool> RefreshOnlinePlayerSnapshotNowAsync(CancellationToken cancellationToken)
+    private async Task<bool> RefreshSnapshotAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (_activeConfig?.Settings.RemoteControlEnabled == true)
         {
-            if (await TryRefreshOnlinePlayerSnapshotFromRemoteRCONAsync(cancellationToken).ConfigureAwait(false))
+            if (await TryRefreshRconAsync(cancellationToken).ConfigureAwait(false))
                 return true;
 
-            return await TryRefreshOnlinePlayerSnapshotFromQueryAsync(cancellationToken).ConfigureAwait(false);
+            return await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        if (await TryRefreshOnlinePlayerSnapshotFromQueryAsync(cancellationToken).ConfigureAwait(false))
+        if (await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false))
             return true;
 
-        return await RefreshOnlinePlayerSnapshotFromListCommandAsync(cancellationToken).ConfigureAwait(false);
+        return await RefreshListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<bool> TryRefreshOnlinePlayerSnapshotFromRemoteRCONAsync(CancellationToken cancellationToken)
+    private async Task<bool> TryRefreshRconAsync(CancellationToken cancellationToken)
     {
         BotConfig? config = _activeConfig;
         if (config?.Server == null)
@@ -245,7 +245,7 @@ public sealed partial class BotMainHandler
             using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(RCONTimeout);
             string? response = await MinecraftRCONClient.ExecuteQueryAsync(
-                GetRemoteControllerHost(config),
+                GetRconHost(config),
                 config.Server.RCON.Port,
                 config.Server.RCON.Password,
                 "list",
@@ -254,11 +254,11 @@ public sealed partial class BotMainHandler
             if (string.IsNullOrWhiteSpace(response))
                 return false;
 
-            if (!TryParsePlayerListResponse(response, true, out List<string> players))
+            if (!TryParseList(response, true, out List<string> players))
                 return false;
 
-            ApplyOnlinePlayerSnapshot(players);
-            CompleteOnlinePlayerSnapshotRequest(true);
+            ApplySnapshot(players);
+            CompleteSnapshot(true);
             return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -271,7 +271,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private async Task<bool> RefreshOnlinePlayerSnapshotFromListCommandAsync(CancellationToken cancellationToken)
+    private async Task<bool> RefreshListAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -293,10 +293,10 @@ public sealed partial class BotMainHandler
 
         int suppressedLineReleasePending = 0;
 
-        void ReleaseSuppressedLineOnce()
+        void ReleaseLine()
         {
             if (Interlocked.Exchange(ref suppressedLineReleasePending, 0) != 0)
-                _ = TryReleaseSuppressedOnlinePlayersLogLine();
+                _ = TryReleasePlayerList();
         }
 
         try
@@ -305,17 +305,17 @@ public sealed partial class BotMainHandler
             {
                 Interlocked.Increment(ref _suppressedOnlinePlayersLogLines);
                 suppressedLineReleasePending = 1;
-                if (!await SendInternalProbeCommandAsync(
+                if (!await SendProbeAsync(
                         "list",
                         () =>
                         {
-                            CompleteOnlinePlayerSnapshotRequest(false, waiter);
-                            ReleaseSuppressedLineOnce();
+                            CompleteSnapshot(false, waiter);
+                            ReleaseLine();
                         },
                         cancellationToken).ConfigureAwait(false))
                 {
-                    CompleteOnlinePlayerSnapshotRequest(false, waiter);
-                    ReleaseSuppressedLineOnce();
+                    CompleteSnapshot(false, waiter);
+                    ReleaseLine();
                     return false;
                 }
             }
@@ -326,8 +326,8 @@ public sealed partial class BotMainHandler
         {
             if (createdWaiter)
             {
-                CompleteOnlinePlayerSnapshotRequest(false, waiter);
-                ReleaseSuppressedLineOnce();
+                CompleteSnapshot(false, waiter);
+                ReleaseLine();
             }
 
             throw;
@@ -336,15 +336,15 @@ public sealed partial class BotMainHandler
         {
             if (createdWaiter)
             {
-                CompleteOnlinePlayerSnapshotRequest(false, waiter);
-                ReleaseSuppressedLineOnce();
+                CompleteSnapshot(false, waiter);
+                ReleaseLine();
             }
 
             return false;
         }
     }
 
-    private async Task<bool> TryRefreshOnlinePlayerSnapshotFromQueryAsync(CancellationToken cancellationToken)
+    private async Task<bool> TryRefreshQueryAsync(CancellationToken cancellationToken)
     {
         BotConfig? config = _activeConfig;
         if (config?.Server == null)
@@ -354,17 +354,17 @@ public sealed partial class BotMainHandler
         if (Volatile.Read(ref _minecraftQueryUnavailableUntilTicks) > nowTicks)
             return false;
 
-        string host = GetMinecraftQueryHost(config);
+        string host = GetQueryHost(config);
         int port = config.Server.Port;
 
         try
         {
             using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(MinecraftQueryTimeout);
-            List<string> players = await MinecraftQueryClient.GetOnlinePlayerNamesAsync(host, port, timeout.Token).ConfigureAwait(false);
+            List<string> players = await MinecraftQueryClient.GetPlayersAsync(host, port, timeout.Token).ConfigureAwait(false);
             Volatile.Write(ref _minecraftQueryUnavailableUntilTicks, 0);
-            ApplyOnlinePlayerSnapshot(players);
-            CompleteOnlinePlayerSnapshotRequest(true);
+            ApplySnapshot(players);
+            CompleteSnapshot(true);
             return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -378,10 +378,10 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static string GetMinecraftQueryHost(BotConfig config)
+    private static string GetQueryHost(BotConfig config)
     {
         string host = config.Settings.RemoteControlEnabled
-            ? GetRemoteControllerHost(config)
+            ? GetRconHost(config)
             : (config.Server.BindIP ?? string.Empty).Trim();
         if (host.Length == 0)
             return MinecraftQueryLoopbackHost;
@@ -397,7 +397,7 @@ public sealed partial class BotMainHandler
         return host;
     }
 
-    private void ApplyOnlinePlayerSnapshot(List<string> currentPlayers)
+    private void ApplySnapshot(List<string> currentPlayers)
     {
         List<string>? previousPlayers = null;
         bool playersChanged;
@@ -415,16 +415,16 @@ public sealed partial class BotMainHandler
 
         if (playersChanged && previousPlayers != null)
         {
-            RecordPlayerRosterChanges(previousPlayers, currentPlayers);
+            RecordRoster(previousPlayers, currentPlayers);
             if (MultiplayerEnabled)
-                QueuePlayerSidebarRefresh();
+                QueueSidebarRefresh();
         }
 
-        QueueTrackedPlayerGamemodeRefreshForStatistics();
-        QueueTrackedPlayerDeathScoreRefreshForStatistics();
+        QueueGamemode();
+        QueueDeathScore();
     }
 
-    private void CompleteOnlinePlayerSnapshotRequest(bool result, TaskCompletionSource<bool>? expectedWaiter = null)
+    private void CompleteSnapshot(bool result, TaskCompletionSource<bool>? expectedWaiter = null)
     {
         TaskCompletionSource<bool>? waiter;
         lock (_onlinePlayerSnapshotRequestGate)
@@ -439,7 +439,7 @@ public sealed partial class BotMainHandler
         waiter.TrySetResult(result);
     }
 
-    private static bool IsSidebarObjectiveIssueLine(
+    private static bool IsSidebarErrorLine(
         string line,
         in ServerLogLineFlags flags,
         bool isCommandParserError,

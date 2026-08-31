@@ -103,18 +103,18 @@ internal sealed class IRCMessage
                     int valueStart = equals + 1;
                     int valueLength = end - valueStart;
 
-                    if (keyLength == 4 && TagKeyEqualsLowerExpected(line, start, keyLength, "bits"))
+                    if (keyLength == 4 && TagKeyEquals(line, start, keyLength, "bits"))
                     {
                         int bits = ParsePositiveIntTag(line, valueStart, valueLength);
                         if (bits > 0)
                             message.Bits = bits;
                     }
-                    else if (keyLength == 3 && TagKeyEqualsLowerExpected(line, start, keyLength, "mod"))
+                    else if (keyLength == 3 && TagKeyEquals(line, start, keyLength, "mod"))
                     {
                         if (valueLength == 1 && line[valueStart] == '1')
                             message.IsModerator = true;
                     }
-                    else if (keyLength == 6 && TagKeyEqualsLowerExpected(line, start, keyLength, "badges"))
+                    else if (keyLength == 6 && TagKeyEquals(line, start, keyLength, "badges"))
                     {
                         if (valueLength > 0 && line.IndexOf("moderator/", valueStart, valueLength, StringComparison.OrdinalIgnoreCase) >= 0)
                             message.IsModerator = true;
@@ -126,7 +126,7 @@ internal sealed class IRCMessage
         }
     }
 
-    private static bool TagKeyEqualsLowerExpected(string line, int start, int length, string expected)
+    private static bool TagKeyEquals(string line, int start, int length, string expected)
     {
         if (length != expected.Length)
             return false;
@@ -135,7 +135,7 @@ internal sealed class IRCMessage
         {
             char actual = line[start + i];
             char wanted = expected[i];
-            if (actual != wanted && CommandUserHelper.ToLowerInvariantFast(actual) != wanted)
+            if (actual != wanted && CommandUserHelper.LowerFast(actual) != wanted)
                 return false;
         }
 
@@ -172,6 +172,6 @@ internal sealed class IRCMessage
         while (end >= start && char.IsWhiteSpace(line[end]))
             end--;
 
-        return start > end ? string.Empty : ParsedCommand.ToLowerInvariantSegment(line, start, end - start + 1);
+        return start > end ? string.Empty : ParsedCommand.LowerSegment(line, start, end - start + 1);
     }
 }

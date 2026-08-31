@@ -19,13 +19,13 @@
             </TextBlock>
 
             <TextBlock FontFamily="Segoe UI Variable Display Semibold" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="34,71,0,0">
-                <Hyperlink Click="OpenREADME_Click" Foreground="LightSkyBlue">
+                <Hyperlink Click="OpenReadme_Click" Foreground="LightSkyBlue">
                     <Run Text="Open README.txt" />
                 </Hyperlink>
             </TextBlock>
 
             <TextBlock FontFamily="Segoe UI Variable Display Semibold" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="34,111,0,0">
-                <Hyperlink NavigateUri="https://rentry.co/bot-commands" RequestNavigate="BotCommands_RequestNavigate" Foreground="LightSkyBlue">
+                <Hyperlink NavigateUri="https://rentry.co/bot-commands" RequestNavigate="Commands_RequestNavigate" Foreground="LightSkyBlue">
                     <Run Text="View Bot Commands Online" />
                 </Hyperlink>
             </TextBlock>
@@ -36,7 +36,7 @@
                 </TextBlock.Effect>
             </TextBlock>
 
-            <Button Content="Open Settings" Width="170" Height="46" Click="OpenSettings_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,214,0,0" />
+            <Button Content="Open Settings" Width="170" Height="46" Click="Settings_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,214,0,0" />
 
             <TextBlock Text="CREDITS" FontFamily="Cascadia Mono" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,282,0,0">
                 <TextBlock.Effect>

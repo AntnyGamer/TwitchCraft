@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 
-namespace TwitchCraftBot_V1.BotSetup;
+namespace TwitchCraftBot_V1;
 
 internal enum FollowRewardResult
 {
@@ -28,7 +28,7 @@ internal sealed partial class TokenHandler(string path)
         ON CONFLICT(Username) DO UPDATE SET Balance = excluded.Balance
         WHERE TokenBalances.Balance <> excluded.Balance;
         """;
-    private static readonly string[] BatchParameterNames = BuildBatchParameterNames(250);
+    private static readonly string[] BatchParameterNames = BuildParamNames(250);
 
     private SqliteConnection? _connection;
     private SqliteCommand? _selectBalanceCommand;
@@ -40,13 +40,13 @@ internal sealed partial class TokenHandler(string path)
     private SqliteParameter? _deleteBalanceUsername;
     private bool _schemaInitialized;
 
-    internal bool TryBackupDatabase(string destinationPath)
+    internal bool TryBackup(string destinationPath)
     {
         try
         {
             lock (_gate)
             {
-                FileSystemHelper.EnsureDirectoryForFile(destinationPath);
+                FileSystemHelper.EnsureParentDir(destinationPath);
                 using SqliteConnection destination = new(new SqliteConnectionStringBuilder
                 {
                     DataSource = destinationPath,
@@ -64,7 +64,7 @@ internal sealed partial class TokenHandler(string path)
         }
     }
 
-    internal bool TryOptimizeDatabase()
+    internal bool TryOptimize()
     {
         try
         {
@@ -93,7 +93,7 @@ internal sealed partial class TokenHandler(string path)
 
         lock (_gate)
         {
-            if (!EnsureViewerLoadedNoLock(normalized))
+            if (!EnsureLoadedNoLock(normalized))
             {
                 return 0;
             }
@@ -102,7 +102,7 @@ internal sealed partial class TokenHandler(string path)
         }
     }
 
-    public bool TrySpendNow(string user, int amount)
+    public bool TrySpend(string user, int amount)
     {
         string normalized = Normalize(user);
         if (normalized.Length == 0 || amount <= 0)
@@ -112,7 +112,7 @@ internal sealed partial class TokenHandler(string path)
 
         lock (_gate)
         {
-            if (!EnsureViewerLoadedNoLock(normalized))
+            if (!EnsureLoadedNoLock(normalized))
             {
                 return false;
             }
@@ -124,13 +124,13 @@ internal sealed partial class TokenHandler(string path)
             }
 
             int newBalance = current - amount;
-            SetCachedBalanceNoLock(normalized, newBalance);
-            if (SaveChangedBalanceNoLock(normalized, newBalance))
+            SetCacheNoLock(normalized, newBalance);
+            if (SaveChangedNoLock(normalized, newBalance))
             {
                 return true;
             }
 
-            SetCachedBalanceNoLock(normalized, current);
+            SetCacheNoLock(normalized, current);
             return false;
         }
     }
@@ -139,20 +139,20 @@ internal sealed partial class TokenHandler(string path)
     {
         string normalized = Normalize(user);
         if (normalized.Length != 0 && delta != 0)
-            return AdjustNormalizedBalance(normalized, delta, maximumBalance);
+            return AdjustBalanceCore(normalized, delta, maximumBalance);
 
         return 0;
     }
 
-    public FollowRewardResult TryRewardFollowerOnce(
+    public FollowRewardResult TryRewardFollower(
         string twitchUserId,
         string username,
         DateTimeOffset followedAt,
         int amount,
         int maximumBalance = 0)
-        => TryRewardFollowerOnce(twitchUserId, username, followedAt, amount, out _, maximumBalance);
+        => TryRewardFollower(twitchUserId, username, followedAt, amount, out _, maximumBalance);
 
-    public FollowRewardResult TryRewardFollowerOnce(
+    public FollowRewardResult TryRewardFollower(
         string twitchUserId,
         string username,
         DateTimeOffset followedAt,
@@ -172,7 +172,7 @@ internal sealed partial class TokenHandler(string path)
 
         lock (_gate)
         {
-            if (!EnsureViewerLoadedNoLock(normalizedUsername))
+            if (!EnsureLoadedNoLock(normalizedUsername))
                 return FollowRewardResult.Failed;
 
             try
@@ -197,16 +197,16 @@ internal sealed partial class TokenHandler(string path)
                 }
 
                 _balances.TryGetValue(normalizedUsername, out int current);
-                int newBalance = ClampAdjustedBalance(current, amount, maximumBalance);
+                int newBalance = ClampAdjusted(current, amount, maximumBalance);
                 if (newBalance != current)
                 {
-                    using SqliteCommand upsert = CreateUpsertBalanceCommand(connection, transaction);
-                    using SqliteCommand delete = CreateDeleteBalanceCommand(connection, transaction);
+                    using SqliteCommand upsert = CreateUpsertCommand(connection, transaction);
+                    using SqliteCommand delete = CreateDeleteCommand(connection, transaction);
                     SaveBalanceNoLock(upsert, delete, normalizedUsername, newBalance);
                 }
 
                 transaction.Commit();
-                SetCachedBalanceNoLock(normalizedUsername, newBalance);
+                SetCacheNoLock(normalizedUsername, newBalance);
                 awardedAmount = newBalance - current;
                 return FollowRewardResult.Rewarded;
             }
@@ -218,26 +218,26 @@ internal sealed partial class TokenHandler(string path)
         }
     }
 
-    private int AdjustNormalizedBalance(string normalized, int delta, int maximumBalance = 0)
+    private int AdjustBalanceCore(string normalized, int delta, int maximumBalance = 0)
     {
         lock (_gate)
         {
-            if (!EnsureViewerLoadedNoLock(normalized))
+            if (!EnsureLoadedNoLock(normalized))
             {
                 return 0;
             }
 
             _balances.TryGetValue(normalized, out int current);
-            int newBalance = ClampAdjustedBalance(current, delta, maximumBalance);
+            int newBalance = ClampAdjusted(current, delta, maximumBalance);
             if (newBalance == current)
             {
                 return 0;
             }
 
-            SetCachedBalanceNoLock(normalized, newBalance);
-            if (!SaveChangedBalanceNoLock(normalized, newBalance))
+            SetCacheNoLock(normalized, newBalance);
+            if (!SaveChangedNoLock(normalized, newBalance))
             {
-                SetCachedBalanceNoLock(normalized, current);
+                SetCacheNoLock(normalized, current);
                 return 0;
             }
 
@@ -261,12 +261,12 @@ internal sealed partial class TokenHandler(string path)
             if (normalized.Length > 0)
             {
                 normalizedDeltas[normalized] = normalizedDeltas.TryGetValue(normalized, out int current)
-                    ? ClampTokenDelta((long)current + delta)
+                    ? ClampDelta((long)current + delta)
                     : delta;
             }
         }
 
-        return AdjustNormalizedDeltas(normalizedDeltas, maximumBalance);
+        return AdjustDeltas(normalizedDeltas, maximumBalance);
     }
 
     public void AdjustBalances(IEnumerable<KeyValuePair<string, int>> changes, int maximumBalance = 0)
@@ -285,14 +285,14 @@ internal sealed partial class TokenHandler(string path)
             }
 
             normalizedDeltas[normalized] = normalizedDeltas.TryGetValue(normalized, out int current)
-                ? ClampTokenDelta((long)current + change.Value)
+                ? ClampDelta((long)current + change.Value)
                 : change.Value;
         }
 
-        _ = AdjustNormalizedDeltas(normalizedDeltas, maximumBalance);
+        _ = AdjustDeltas(normalizedDeltas, maximumBalance);
     }
 
-    private int AdjustNormalizedDeltas(Dictionary<string, int> normalizedDeltas, int maximumBalance)
+    private int AdjustDeltas(Dictionary<string, int> normalizedDeltas, int maximumBalance)
     {
         if (normalizedDeltas.Count == 0)
             return 0;
@@ -300,15 +300,14 @@ internal sealed partial class TokenHandler(string path)
         if (normalizedDeltas.Count == 1)
         {
             foreach (KeyValuePair<string, int> pair in normalizedDeltas)
-                return AdjustNormalizedBalance(pair.Key, pair.Value, maximumBalance) != 0 ? 1 : 0;
+                return AdjustBalanceCore(pair.Key, pair.Value, maximumBalance) != 0 ? 1 : 0;
 
             return 0;
         }
 
-        List<string> usersToLoad = [.. normalizedDeltas.Keys];
         lock (_gate)
         {
-            if (!EnsureViewersLoadedNoLock(usersToLoad))
+            if (!EnsureManyLoadedNoLock(normalizedDeltas.Keys))
                 return 0;
 
             Dictionary<string, int> originalBalances = new(normalizedDeltas.Count, StringComparer.Ordinal);
@@ -316,31 +315,26 @@ internal sealed partial class TokenHandler(string path)
             foreach (KeyValuePair<string, int> change in normalizedDeltas)
             {
                 _balances.TryGetValue(change.Key, out int current);
-                int newBalance = ClampAdjustedBalance(current, change.Value, maximumBalance);
+                int newBalance = ClampAdjusted(current, change.Value, maximumBalance);
                 if (newBalance == current)
                     continue;
 
                 originalBalances[change.Key] = current;
-                SetCachedBalanceNoLock(change.Key, newBalance);
+                SetCacheNoLock(change.Key, newBalance);
                 changedUsers[change.Key] = newBalance;
             }
 
             if (changedUsers.Count == 0)
                 return 0;
 
-            if (SaveChangedBalancesNoLock(changedUsers))
+            if (SaveChangesNoLock(changedUsers))
                 return changedUsers.Count;
 
             // A bulk transaction is all-or-nothing. Restore the cache, then retry
             // viewers individually so one database error cannot silently skip the
             // entire live roster.
-            if (changedUsers.Count > 0)
-            {
-                RestoreCachedBalancesNoLock(originalBalances);
-                return SaveChangedBalancesIndividuallyNoLock(changedUsers, originalBalances);
-            }
-
-            return 0;
+            RestoreCacheNoLock(originalBalances);
+            return SaveOneByOneNoLock(changedUsers, originalBalances);
         }
     }
 
@@ -358,7 +352,7 @@ internal sealed partial class TokenHandler(string path)
         {
             try
             {
-                DisposePreparedCommandsNoLock();
+                DisposeCommandsNoLock();
                 _connection?.Dispose();
             }
             catch (Exception ex)
@@ -375,14 +369,14 @@ internal sealed partial class TokenHandler(string path)
         }
     }
 
-    public bool TryExportReadableJson()
+    public bool TryExportJson()
     {
         try
         {
             lock (_gate)
             {
                 _ = GetConnectionNoLock();
-                ExportReadableJsonNoLock();
+                ExportJsonNoLock();
             }
 
             return true;
@@ -394,17 +388,17 @@ internal sealed partial class TokenHandler(string path)
         }
     }
 
-    private void RestoreCachedBalancesNoLock(Dictionary<string, int> originalBalances)
+    private void RestoreCacheNoLock(Dictionary<string, int> originalBalances)
     {
         foreach (KeyValuePair<string, int> pair in originalBalances)
         {
-            SetCachedBalanceNoLock(pair.Key, pair.Value);
+            SetCacheNoLock(pair.Key, pair.Value);
         }
     }
 
-    private void SetCachedBalanceNoLock(string normalized, int balance)
+    private void SetCacheNoLock(string normalized, int balance)
     {
-        int safeBalance = ClampTokenBalance(balance);
+        int safeBalance = ClampBalance(balance);
         if (normalized.Length == 0 || safeBalance <= 0)
         {
             _balances.Remove(normalized);
@@ -414,21 +408,21 @@ internal sealed partial class TokenHandler(string path)
         _balances[normalized] = safeBalance;
     }
 
-    private static int ClampTokenBalance(long balance)
+    private static int ClampBalance(long balance)
         => balance <= 0 ? 0 : balance > int.MaxValue ? int.MaxValue : (int)balance;
 
-    private static int ClampAdjustedBalance(int current, int delta, int maximumBalance)
+    private static int ClampAdjusted(int current, int delta, int maximumBalance)
     {
-        int adjusted = ClampTokenBalance((long)current + delta);
+        int adjusted = ClampBalance((long)current + delta);
         return delta > 0 && maximumBalance > 0 ? Math.Min(adjusted, maximumBalance) : adjusted;
     }
 
-    private static int ClampTokenDelta(long delta)
+    private static int ClampDelta(long delta)
         => delta > int.MaxValue ? int.MaxValue : delta < int.MinValue ? int.MinValue : (int)delta;
 
-    private static string Normalize(string? user) => TwitchCraftBot_V1.CommandUserHelper.NormalizeUsername(user);
+    private static string Normalize(string? user) => TwitchCraftBot_V1.CommandUserHelper.NormalizeUser(user);
 
-    private static string[] BuildBatchParameterNames(int count)
+    private static string[] BuildParamNames(int count)
     {
         string[] names = new string[count];
         for (int i = 0; i < names.Length; i++)
