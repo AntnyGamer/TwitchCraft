@@ -9,7 +9,7 @@ public sealed partial class BotMainHandler
 {
     private void QueueGamemode()
     {
-        if (!StatisticsEnabled)
+        if (!Statistics.Enabled)
             return;
 
         string playerName = _currentStreamerMinecraftName;
@@ -27,8 +27,8 @@ public sealed partial class BotMainHandler
 
     private void QueueGamemode(string playerName)
     {
-        if (!StatisticsEnabled ||
-            !ShouldTrackPlayer(playerName) ||
+        if (!Statistics.Enabled ||
+            !Statistics.ShouldTrackPlayer(playerName) ||
             !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
             Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 1) != 0)
         {
@@ -53,7 +53,7 @@ public sealed partial class BotMainHandler
 
     private void QueueRespawn(string playerName)
     {
-        if (!NeedsRespawnRefresh(playerName) ||
+        if (!Statistics.NeedsRespawnRefresh(playerName) ||
             !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
             Interlocked.Exchange(ref _trackedPlayerRespawnPositionRefreshQueued, 1) != 0)
         {
@@ -65,7 +65,7 @@ public sealed partial class BotMainHandler
             {
                 await Task.Delay(250, t).ConfigureAwait(false);
                 if (await QueryRespawnAsync(playerName, t).ConfigureAwait(false))
-                    RecordRespawn(playerName);
+                    Statistics.RecordRespawn(playerName);
             },
             () => Interlocked.Exchange(ref _trackedPlayerRespawnPositionRefreshQueued, 0),
             "Tracked player respawn position refresh failed",
@@ -74,7 +74,7 @@ public sealed partial class BotMainHandler
 
     private void QueueDeathSetup()
     {
-        if (!StatisticsEnabled ||
+        if (!Statistics.Enabled ||
             Volatile.Read(ref _deathScoreObjectiveReady) != 0 ||
             !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
             Interlocked.Exchange(ref _deathScoreObjectiveQueued, 1) != 0)
@@ -91,7 +91,7 @@ public sealed partial class BotMainHandler
 
     private async Task<bool> EnsureDeathScoreAsync(CancellationToken cancellationToken)
     {
-        if (!StatisticsEnabled)
+        if (!Statistics.Enabled)
             return false;
 
         if (Volatile.Read(ref _deathScoreObjectiveReady) != 0)
@@ -115,7 +115,7 @@ public sealed partial class BotMainHandler
                 return false;
 
             await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
-            ResetDeathBaseline();
+            Statistics.ResetDeathBaseline();
             Volatile.Write(ref _deathScoreObjectiveReady, 1);
             return true;
         }
@@ -127,7 +127,7 @@ public sealed partial class BotMainHandler
 
     private void QueueDeathScore()
     {
-        if (!StatisticsEnabled)
+        if (!Statistics.Enabled)
             return;
 
         string playerName = _currentStreamerMinecraftName;
@@ -139,9 +139,9 @@ public sealed partial class BotMainHandler
 
     private void QueueDeathScore(string playerName)
     {
-        if (!StatisticsEnabled ||
+        if (!Statistics.Enabled ||
             !MinecraftNameHelper.TryNormalizePlayerName(playerName, out string normalizedPlayerName) ||
-            !ShouldTrackPlayer(normalizedPlayerName) ||
+            !Statistics.ShouldTrackPlayer(normalizedPlayerName) ||
             !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
         {
             return;
@@ -207,12 +207,12 @@ public sealed partial class BotMainHandler
             if (comparison < 0)
             {
                 RemoveSpectator(previous);
-                RecordPlayerLeave(previous);
+                Statistics.RecordPlayerLeave(previous);
                 previousIndex++;
                 continue;
             }
 
-            RecordPlayerJoin(current);
+            Statistics.RecordPlayerJoin(current);
             currentIndex++;
         }
 
@@ -220,11 +220,11 @@ public sealed partial class BotMainHandler
         {
             string previous = previousPlayers[previousIndex];
             RemoveSpectator(previous);
-            RecordPlayerLeave(previous);
+            Statistics.RecordPlayerLeave(previous);
         }
 
         for (; currentIndex < currentPlayers.Count; currentIndex++)
-            RecordPlayerJoin(currentPlayers[currentIndex]);
+            Statistics.RecordPlayerJoin(currentPlayers[currentIndex]);
     }
 
     private static List<string> ParsePlayers(ReadOnlySpan<char> remainder)

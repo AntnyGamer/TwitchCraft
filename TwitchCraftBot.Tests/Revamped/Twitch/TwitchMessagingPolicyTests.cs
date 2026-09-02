@@ -76,7 +76,7 @@ public sealed class TwitchMessagingPolicyTests
     [InlineData(10, double.NaN, 10)]
     public void GetCommandCost_AppliesMultiplierAndRoundsUp(long cost, double multiplier, int expected)
     {
-        Assert.Equal(expected, BotMainHandler.GetCommandCost(cost, multiplier));
+        Assert.Equal(expected, CommandService.GetCommandCost(cost, multiplier));
     }
 
     [Theory]

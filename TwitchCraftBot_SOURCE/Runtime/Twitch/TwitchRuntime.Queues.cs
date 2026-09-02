@@ -271,8 +271,8 @@ public sealed partial class BotMainHandler
             }
 
             BeginCommand();
-            SetModerator(isModerator);
-            SetStatsCommand(parsed.Name);
+            Commands.SetModerator(isModerator);
+            Statistics.SetStatsCommand(parsed.Name);
             await handler(parsed.ArgumentArray, sender, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -284,8 +284,8 @@ public sealed partial class BotMainHandler
             FinishCustomCooldown(customCooldownReservation, CommandSucceeded);
             FinishCustomCooldown(globalCooldownReservation, CommandSucceeded);
             EndCommand();
-            SetStatsCommand(null);
-            SetModerator(false);
+            Statistics.SetStatsCommand(null);
+            Commands.SetModerator(false);
             _currentCommandSender.Value = null;
         }
     }

@@ -94,7 +94,7 @@ public sealed class MinigameTransactionBehaviorTests
         var updateResult = (MinigameManager.MinigameBetUpdateResult)updateResultValue;
         var expected = (MinigameManager.MinigameBetUpdateResult)expectedValue;
         if (spendSucceeds)
-            runtime.AdjustTokens("viewer", 25);
+            runtime.Tokens.Adjust("viewer", 25);
 
         try
         {
@@ -110,11 +110,11 @@ public sealed class MinigameTransactionBehaviorTests
 
             Assert.Equal(expected, result);
             Assert.Equal(updateCalled, updated);
-            Assert.Equal(expectedRefund, runtime.GetTokens("viewer"));
+            Assert.Equal(expectedRefund, runtime.Tokens.GetBalance("viewer"));
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 }

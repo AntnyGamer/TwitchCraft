@@ -147,7 +147,7 @@ public sealed partial class BotMainHandler
             waiter?.TrySetResult(gameType);
         }
 
-        RecordGamemode(playerName, gameType);
+        Statistics.RecordGamemode(playerName, gameType);
     }
 
     private void HandleRespawn(string playerName)

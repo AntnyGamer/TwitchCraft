@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,10 +45,6 @@ public partial class TwitchCraftBot : Window
     public void ShowSettings() => Shell.Navigate(ShellPage.Settings);
 
     public void ShowStatistics() => Shell.Navigate(ShellPage.Statistics);
-
-    public BotStatisticsSnapshot GetStatsSnapshot(CancellationToken cancellationToken = default) => Runtime.GetStatsSnapshot(cancellationToken);
-
-    public Task ResetStatisticsAsync() => Runtime.ResetAllAsync();
 
     public Task StartAsync() => Runtime.StartAsync();
 

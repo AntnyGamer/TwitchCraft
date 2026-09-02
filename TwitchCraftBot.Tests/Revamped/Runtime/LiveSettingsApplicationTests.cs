@@ -40,7 +40,7 @@ public sealed class LiveSettingsApplicationTests
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -81,7 +81,7 @@ public sealed class LiveSettingsApplicationTests
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -111,7 +111,7 @@ public sealed class LiveSettingsApplicationTests
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -168,7 +168,7 @@ public sealed class LiveSettingsApplicationTests
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 }

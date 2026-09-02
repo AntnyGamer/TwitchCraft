@@ -120,9 +120,9 @@ public static partial class MinigameManager
         }
 
         if (chickenRefunds is { Count: > 0 })
-            runtime.AdjustTokens(chickenRefunds);
+            runtime.Tokens.Adjust(chickenRefunds);
         if (witherRefunds is { Count: > 0 })
-            runtime.AdjustTokens(witherRefunds);
+            runtime.Tokens.Adjust(witherRefunds);
 
         return loop?.Task;
     }

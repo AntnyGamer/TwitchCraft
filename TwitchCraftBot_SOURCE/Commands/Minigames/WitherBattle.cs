@@ -100,7 +100,7 @@ public static partial class MinigameManager
                     payouts.Add(new(bet.Viewer, payout));
             }
 
-            runtime.AwardTokens(payouts);
+            runtime.Tokens.Award(payouts);
             payoutApplied = true;
 
             if (witherDefeated)
@@ -137,7 +137,7 @@ public static partial class MinigameManager
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             if (settlementBets is { Count: > 0 } && !payoutApplied)
-                runtime.AdjustTokens(BuildRefunds(settlementBets));
+                runtime.Tokens.Adjust(BuildRefunds(settlementBets));
             else if (IsMinigameActive(runtime, "WitherBattle", runID))
                 RefundWitherBets(runtime);
 

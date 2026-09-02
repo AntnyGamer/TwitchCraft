@@ -2,16 +2,16 @@ using System;
 
 namespace TwitchCraftBot_V1;
 
-public sealed partial class BotMainHandler
+public sealed partial class StatisticsService
 {
-    private void RecordLine(string line, bool hasDeathScoreObjective)
+    internal void RecordLine(string line, bool hasDeathScoreObjective)
     {
-        if (!StatisticsEnabled || string.IsNullOrEmpty(line))
+        if (!Enabled || string.IsNullOrEmpty(line))
         {
             return;
         }
 
-        string trackedPlayer = _currentStreamerMinecraftName;
+        string trackedPlayer = _streamerMinecraftName;
         if (!hasDeathScoreObjective &&
             (trackedPlayer.Length == 0 || !line.Contains(trackedPlayer, StringComparison.OrdinalIgnoreCase)))
         {
@@ -33,16 +33,16 @@ public sealed partial class BotMainHandler
         if (TryExtractPlayer(message, out string deathMessagePlayerName) &&
             ShouldTrackPlayer(deathMessagePlayerName))
         {
-            QueueDeathScore(deathMessagePlayerName);
+            _dependencies.QueueDeathScore(deathMessagePlayerName);
         }
     }
 
     internal void RecordDeathScore(string playerName, int deathScore)
     {
-        if (!StatisticsEnabled || deathScore < 0 || !ShouldTrackPlayer(playerName))
+        if (!Enabled || deathScore < 0 || !ShouldTrackPlayer(playerName))
             return;
 
-        EnsureLoaded();
+        Load();
 
         DateTime now = DateTime.UtcNow;
         long survivedSeconds = 0;

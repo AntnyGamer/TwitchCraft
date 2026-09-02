@@ -2,7 +2,7 @@ using System;
 
 namespace TwitchCraftBot_V1;
 
-public sealed partial class BotMainHandler
+public sealed partial class StatisticsService
 {
     internal void PauseSurvival()
     {
@@ -19,21 +19,23 @@ public sealed partial class BotMainHandler
         _currentStatisticCommandName.Value = normalizedCommand.Length == 0 ? null : normalizedCommand;
     }
 
+    internal string CurrentCommandName => _currentStatisticCommandName.Value ?? string.Empty;
+
     internal void RecordCommand(string sender, int tokensSpent = 0)
     {
-        if (!StatisticsEnabled)
+        if (!Enabled)
         {
             return;
         }
 
         string command = _currentStatisticCommandName.Value ?? string.Empty;
-        ChatCommandStatisticFlags statisticFlags = _commandRegistry.GetStatisticFlags(command);
+        ChatCommandStatisticFlags statisticFlags = _dependencies.GetCommandFlags(command);
         if ((statisticFlags & ChatCommandStatisticFlags.GameAffecting) == 0)
         {
             return;
         }
 
-        EnsureLoaded();
+        Load();
 
         string viewer = CommandUserHelper.NormalizeUser(sender);
         bool isEffectCommand = string.Equals(command, "effect", StringComparison.OrdinalIgnoreCase);
@@ -75,7 +77,7 @@ public sealed partial class BotMainHandler
 
     internal void RecordEffects(int count, bool streamerReceivedEffect)
     {
-        if (!StatisticsEnabled || !streamerReceivedEffect)
+        if (!Enabled || !streamerReceivedEffect)
         {
             return;
         }
@@ -86,7 +88,7 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        EnsureLoaded();
+        Load();
 
         if (!BotStatisticsStore.ApplyEffectsDelta(effectsReceivedByStreamer))
         {
@@ -102,12 +104,12 @@ public sealed partial class BotMainHandler
 
     internal void RecordSession()
     {
-        if (!StatisticsEnabled)
+        if (!Enabled)
         {
             return;
         }
 
-        EnsureLoaded();
+        Load();
 
         if (!BotStatisticsStore.ApplySessionDelta())
         {
@@ -122,7 +124,7 @@ public sealed partial class BotMainHandler
 
     internal void RecordPlayerJoin(string playerName)
     {
-        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
+        if (!Enabled || !ShouldTrackPlayer(playerName))
             return;
 
         DateTime now = DateTime.UtcNow;
@@ -140,7 +142,7 @@ public sealed partial class BotMainHandler
 
     internal void RecordPlayerLeave(string playerName)
     {
-        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
+        if (!Enabled || !ShouldTrackPlayer(playerName))
             return;
 
         DateTime now = DateTime.UtcNow;
@@ -153,7 +155,7 @@ public sealed partial class BotMainHandler
 
     internal void RecordGamemode(string playerName, int gameType)
     {
-        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
+        if (!Enabled || !ShouldTrackPlayer(playerName))
             return;
 
         DateTime now = DateTime.UtcNow;
@@ -177,14 +179,14 @@ public sealed partial class BotMainHandler
             }
         }
 
-        QueueDeathScore(playerName);
+        _dependencies.QueueDeathScore(playerName);
         if (shouldRefreshRespawnPosition)
-            QueueRespawn(playerName);
+            _dependencies.QueueRespawn(playerName);
     }
 
     internal void RecordRespawn(string playerName)
     {
-        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
+        if (!Enabled || !ShouldTrackPlayer(playerName))
         {
             return;
         }
@@ -203,9 +205,9 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private bool NeedsRespawnRefresh(string playerName)
+    internal bool NeedsRespawnRefresh(string playerName)
     {
-        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
+        if (!Enabled || !ShouldTrackPlayer(playerName))
         {
             return false;
         }
@@ -218,9 +220,10 @@ public sealed partial class BotMainHandler
 
     private bool IsStreamer(string normalizedViewer)
     {
+        string streamerName = _streamerName;
         return normalizedViewer.Length > 0
-            && _currentStreamerName.Length > 0
-            && string.Equals(normalizedViewer, _currentStreamerName, StringComparison.OrdinalIgnoreCase);
+            && streamerName.Length > 0
+            && string.Equals(normalizedViewer, streamerName, StringComparison.OrdinalIgnoreCase);
     }
 
 }

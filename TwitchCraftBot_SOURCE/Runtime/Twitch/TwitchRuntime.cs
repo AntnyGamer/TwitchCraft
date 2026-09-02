@@ -330,7 +330,7 @@ public sealed partial class BotMainHandler
                         int bitReward = GetBitReward(
                             _activeConfig?.Settings.AutomaticBitRewardsEnabled ?? true,
                             message.Bits);
-                        int awardedBits = bitReward > 0 ? AwardTokens(sender, bitReward) : 0;
+                        int awardedBits = bitReward > 0 ? Tokens.Award(sender, bitReward) : 0;
                         string bitsText = message.Bits.ToString(CultureInfo.InvariantCulture);
                         string rewardResult = bitReward > 0
                             ? " and received " + awardedBits.ToString(CultureInfo.InvariantCulture) + " " + (awardedBits == 1 ? "token" : "tokens") + "."

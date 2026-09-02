@@ -88,7 +88,7 @@ public sealed class StartupAndEligibilityRegressionTests
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -118,7 +118,7 @@ public sealed class StartupAndEligibilityRegressionTests
 
         public void Dispose()
         {
-            Runtime.CloseTokenStore();
+            Runtime.Tokens.Close();
             _directory.Dispose();
         }
     }

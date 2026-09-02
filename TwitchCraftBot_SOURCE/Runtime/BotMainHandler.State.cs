@@ -14,8 +14,6 @@ namespace TwitchCraftBot_V1;
 public sealed partial class BotMainHandler
 {
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
-    private static readonly TimeSpan FiveMinuteCommandCooldown = TimeSpan.FromMinutes(5);
-
     private readonly AppShellViewModel _shellModel;
     private readonly ChatCommandRegistry _commandRegistry;
     private readonly SemaphoreSlim _lifecycleGate;
@@ -25,31 +23,25 @@ public sealed partial class BotMainHandler
     private readonly SemaphoreSlim _twitchTokenRefreshGate;
     private const int MaxQueuedIRCCommands = 75;
     private const int MaxQueuedIRCQuickWork = 500;
-
     private readonly Lock _viewerGate;
     private readonly Lock _playerGate;
     private readonly Lock _cooldownGate;
     private readonly Lock _configPersistenceGate;
-    private readonly Lock _backgroundTasksGate;
     private readonly Lock _effectCacheGate;
     private readonly TimedPlayerScaleController _timedPlayerScaleController;
-
+    private readonly BackgroundTaskTracker _backgroundTaskTracker;
+    private readonly DataMaintenance _dataMaintenance;
     private TwitchCraftBot? _shellWindow;
     private Process? _javaServerProcess;
     private CancellationTokenSource? _sessionCts;
-    private readonly List<Task> _backgroundTasks;
     private BotConfig? _activeConfig;
     private RuntimeState _runtimeState;
-    private readonly TokenHandler _tokenStore;
     private Dictionary<string, long> _viewerRewardSchedule;
     private List<string> _knownChatters;
     private List<string> _knownPlayers;
     private List<string> _lastSidebarPlayers;
     private bool _playerSidebarInitialized;
     private DateTime _lastOnlinePlayersSnapshotUtc;
-    private DateTime _lastLightningUtc;
-    private readonly Dictionary<string, DateTime> _timedScaleCommandCooldowns;
-    private readonly Dictionary<string, DateTime> _gambleCooldowns;
     private TcpClient? _IRCSocket;
     private StreamWriter? _IRCWriter;
     private readonly IRCWorkQueueState _IRCCommandQueue;
@@ -57,7 +49,6 @@ public sealed partial class BotMainHandler
     private int _IRCQueueGeneration;
     private int _serverExitExpected;
     private int _lifecycleStopGeneration;
-    private int _fireworksRepeatActive;
     private long _lastIRCCommandOverflowNoticeTicks;
     private string _currentStreamerName;
     private string _currentCommandPrefix;
@@ -72,7 +63,6 @@ public sealed partial class BotMainHandler
     private string _currentMinecraftVersion;
     private string _lastServerPropertiesPath;
     private string _lastServerPropertiesContent;
-
     private readonly List<EffectDefinition> _effectList;
     private List<string> _lootList;
     private List<string> _mobList;
@@ -80,6 +70,12 @@ public sealed partial class BotMainHandler
     private List<EffectDefinition> _cachedSupportedEffects;
     private string _cachedMinecraftFeatureVersion;
     private MinecraftVersionSupport.MinecraftVersionInfo? _cachedMinecraftFeatureInfo;
+
+    public TokenService Tokens { get; }
+
+    public CommandService Commands { get; }
+
+    public StatisticsService Statistics { get; }
 
     internal void AddChatLogLine(string line) => _shellWindow?.AddChatLogLine(line);
 
@@ -96,7 +92,20 @@ public sealed partial class BotMainHandler
         ArgumentNullException.ThrowIfNull(shellModel);
 
         _shellModel = shellModel;
+        Commands = new CommandService(
+            HasGlobalCooldownOverride,
+            HasPerUserCooldownOverride,
+            RefreshPlayersAsync);
         _commandRegistry = ChatCommandRegistry.CreateDefault(this);
+        Statistics = new StatisticsService(new BotStatisticsDependencies(
+            command => _commandRegistry.GetStatisticFlags(command),
+            GetKnownPlayers,
+            IsSpectatorPlayer,
+            QueueSnapshot,
+            QueueGamemode,
+            () => QueueDeathScore(),
+            playerName => QueueDeathScore(playerName),
+            QueueRespawn));
         _lifecycleGate = new(1, 1);
         _serverWriteGate = new(1, 1);
         _IRCWriteGate = new(1, 1);
@@ -106,20 +115,24 @@ public sealed partial class BotMainHandler
         _playerGate = new();
         _cooldownGate = new();
         _configPersistenceGate = new();
-        _backgroundTasksGate = new();
         _effectCacheGate = new();
+        _backgroundTaskTracker = new();
         _timedPlayerScaleController = new(
             (command, token) => SendServerCommandAsync(command, token),
             TrackTask,
             AddServerLogLine);
-        _backgroundTasks = [];
         _viewerRewardSchedule = new(StringComparer.OrdinalIgnoreCase);
         _knownChatters = [];
         _knownPlayers = [];
         _lastSidebarPlayers = [];
-        _tokenStore = new(tokenStorePath);
-        _timedScaleCommandCooldowns = new(StringComparer.OrdinalIgnoreCase);
-        _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
+        Tokens = new TokenService(tokenStorePath, () => MaximumTokenBalance);
+        _dataMaintenance = new DataMaintenance(
+            () => _activeConfig,
+            DefaultEffectiveSettings,
+            Tokens,
+            ValidateBotAsync,
+            SaveBot,
+            TryRefreshAuthAsync);
         _IRCCommandQueue = new(MaxQueuedIRCCommands);
         _IRCQuickQueue = new(MaxQueuedIRCQuickWork);
         _currentStreamerName = string.Empty;
@@ -146,12 +159,13 @@ public sealed partial class BotMainHandler
     {
         // SQLite loads individual rows on demand and queries top viewers by index.
         // Load lifetime totals off the UI thread so construction does not block on disk I/O.
-        _ = Task.Run(EnsureLoaded);
+        _ = Task.Run(Statistics.Load);
 
         try
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => SafeCleanup();
         }
+
         catch
         {
         }
@@ -160,39 +174,14 @@ public sealed partial class BotMainHandler
         {
             AppDomain.CurrentDomain.UnhandledException += (s, e) => SafeCleanup();
         }
+
         catch
         {
         }
+
     }
 
-    internal void TrackTask(Task task)
-    {
-        if (task == null)
-            return;
-
-        if (task.IsCompleted)
-        {
-            if (task.IsFaulted)
-                ErrorHandling.LogNonFatal("Background task failed", task.Exception);
-            return;
-        }
-
-        lock (_backgroundTasksGate)
-            _backgroundTasks.Add(task);
-
-        _ = task.ContinueWith(
-            completedTask =>
-            {
-                if (completedTask.IsFaulted)
-                    ErrorHandling.LogNonFatal("Background task failed", completedTask.Exception);
-
-                lock (_backgroundTasksGate)
-                    _backgroundTasks.Remove(completedTask);
-            },
-            CancellationToken.None,
-            TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
-    }
+    internal void TrackTask(Task task) => _backgroundTaskTracker.Track(task);
 
     public static int SecureRandomInt(int exclusiveMaximum) => RandomNumberGenerator.GetInt32(exclusiveMaximum);
 
@@ -220,6 +209,7 @@ public sealed partial class BotMainHandler
             int minutes = _activeConfig?.Settings.MinigameCooldown ?? 15;
             return minutes is < 2 or > 30 ? 15 : minutes;
         }
+
     }
 
     private void SetConfig(BotConfig config)
@@ -245,6 +235,8 @@ public sealed partial class BotMainHandler
             ? normalizedMinecraftPlayer
             : string.Empty;
         _currentMinecraftVersion = (config.Server.MinecraftVersion ?? string.Empty).Trim();
+        Commands.SetContext(config, _currentDefaultMinecraftPlayer);
+        Statistics.SetContext(config.Settings.StatisticsEnabled, _currentStreamerName, _currentStreamerMinecraftName);
     }
 
     public string DefaultMinecraftPlayer => _currentDefaultMinecraftPlayer;

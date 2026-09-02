@@ -28,7 +28,9 @@ public partial class Start : UserControl
     {
         InitializeComponent();
         string? botVersion = typeof(Start).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        BotVersion.Text = "Bot Version: " + (botVersion ?? "Unknown").Split('+', 2)[0];
+        string displayVersion = botVersion ?? "Unknown";
+        int metadataSeparator = displayVersion.IndexOf('+', StringComparison.Ordinal);
+        BotVersion.Text = "Bot Version: " + (metadataSeparator < 0 ? displayVersion : displayVersion[..metadataSeparator]);
         Focusable = true;
         MCUserTextbox.TextChanged += (_, _) => UpdateMultiplayer();
         RemoteHostTextbox.TextChanged += (_, _) => UpdateMultiplayer();
@@ -61,6 +63,7 @@ public partial class Start : UserControl
             window.PreviewKeyDown -= Start_PreviewKeyDown;
             window.PreviewKeyDown += Start_PreviewKeyDown;
         }
+
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -69,6 +72,7 @@ public partial class Start : UserControl
         {
             window.PreviewKeyDown -= Start_PreviewKeyDown;
         }
+
     }
 
     private void Start_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -77,7 +81,6 @@ public partial class Start : UserControl
         bool pressedRemoteShortcut = key == Key.R
             && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control
             && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt;
-
         if (!pressedRemoteShortcut)
         {
             return;
@@ -89,6 +92,7 @@ public partial class Start : UserControl
             _remoteControllerUnlocked = true;
             MultiplayerCheckbox.IsChecked = false;
         }
+
         else
         {
             _remoteControllerUnlocked = false;
@@ -133,9 +137,9 @@ public partial class Start : UserControl
             if (!string.Equals(MCUserTextbox.Text, config.Identity.StreamerMinecraftName, StringComparison.Ordinal))
                 MCUserTextbox.Text = config.Identity.StreamerMinecraftName;
             _showMinecraftUsernameUntilStart = !MinecraftNameHelper.IsValidPlayerName(MCUserTextbox.Text);
-
             UpdateMultiplayer();
         }
+
         catch
         {
             MCVersion.Text = "Config found, but it could not be read.";
@@ -143,6 +147,7 @@ public partial class Start : UserControl
             _showMinecraftUsernameUntilStart = true;
             UpdateMultiplayer();
         }
+
     }
 
     private async void Start_Click(object sender, RoutedEventArgs e)
@@ -178,15 +183,18 @@ public partial class Start : UserControl
 
             await parent.StartAsync();
         }
+
         catch (Exception ex)
         {
             ErrorHandling.ShowStartupError(this, "Failed to start TwitchCraft.\n\n" + ex.Message);
         }
+
         finally
         {
             _launchClickInProgress = false;
             UpdateMultiplayer();
         }
+
     }
 
     private async void ImportWorld_Click(object sender, RoutedEventArgs e)
@@ -195,7 +203,6 @@ public partial class Start : UserControl
         {
             if (_launchClickInProgress || _worldImportInProgress)
                 return;
-
             TwitchCraftBot? parent = AppHelpers.GetBotWindow(this);
             if (parent == null)
             {
@@ -244,7 +251,6 @@ public partial class Start : UserControl
             config.Settings.MultiplayerEnabled = multiplayerEnabled;
             config.Settings.RemoteControlEnabled = false;
             config.Settings.RequireOnlineMode = requireOnlineMode;
-
             _worldImportInProgress = true;
             UpdateMultiplayer();
             ImportWorldButton.IsEnabled = false;
@@ -260,6 +266,7 @@ public partial class Start : UserControl
                     });
                 });
             }
+
             finally
             {
                 _worldImportInProgress = false;
@@ -269,10 +276,12 @@ public partial class Start : UserControl
 
             ErrorHandling.ShowImportSuccess(this);
         }
+
         catch (Exception ex)
         {
             ErrorHandling.ShowImportError(this, ex);
         }
+
     }
 
     private void Help_Click(object sender, MouseButtonEventArgs e)
@@ -282,6 +291,7 @@ public partial class Start : UserControl
             parent.ShowHelp();
             e.Handled = true;
         }
+
     }
 
     private void Stats_Click(object sender, MouseButtonEventArgs e)
@@ -291,6 +301,7 @@ public partial class Start : UserControl
             parent.ShowStatistics();
             e.Handled = true;
         }
+
     }
 
     private bool TryGetBotWindow(out TwitchCraftBot parent)
@@ -324,14 +335,12 @@ public partial class Start : UserControl
         string minecraftUser = (MCUserTextbox.Text ?? string.Empty).Trim();
         bool usernameIsValid = MinecraftNameHelper.IsValidPlayerName(minecraftUser);
         bool showMinecraftUser = multiplayerEnabled || remoteControlEnabled || _showMinecraftUsernameUntilStart || !usernameIsValid;
-
         OnlineMode.Visibility = multiplayerEnabled ? Visibility.Visible : Visibility.Collapsed;
         OnlineModeCheckbox.Visibility = multiplayerEnabled ? Visibility.Visible : Visibility.Collapsed;
         OnlineModeCheckbox.IsEnabled = multiplayerEnabled;
 
         if (!multiplayerEnabled || OnlineModeCheckbox.IsChecked == null)
             OnlineModeCheckbox.IsChecked = true;
-
         Visibility multiplayerVisibility = remoteControlEnabled ? Visibility.Collapsed : Visibility.Visible;
         Multiplayer.Visibility = multiplayerVisibility;
         MultiplayerCheckbox.Visibility = multiplayerVisibility;
@@ -347,7 +356,6 @@ public partial class Start : UserControl
         RemoteRCONPasswordShowCheckbox.Visibility = remoteVisibility;
         UpdateRconPassword(remoteControlEnabled);
         ImportWorldButton.Visibility = remoteControlEnabled ? Visibility.Collapsed : Visibility.Visible;
-
         SetLayoutTop(MCUser, remoteControlEnabled ? 270 : 212);
         SetLayoutTop(MCUserTextbox, remoteControlEnabled ? 270 : 212);
         SetLayoutTop(StartButton, remoteControlEnabled ? 332 : 305);
@@ -355,7 +363,6 @@ public partial class Start : UserControl
 
         MCUser.Visibility = showMinecraftUser ? Visibility.Visible : Visibility.Collapsed;
         MCUserTextbox.Visibility = showMinecraftUser ? Visibility.Visible : Visibility.Collapsed;
-
         string? disabledReason = GetDisabledReason(minecraftUser, usernameIsValid);
         bool canStart = disabledReason == null;
         StartButton.IsEnabled = canStart;
@@ -391,7 +398,6 @@ public partial class Start : UserControl
 
             if (!ConfigurationStore.IsValidRemoteHost(remoteHost))
                 return "Enter a valid host server address for Remote Control Mode.";
-
             if (!TryGetRconPort(out _))
                 return "Enter a valid RCON port from 1 to 65535.";
 
@@ -418,7 +424,6 @@ public partial class Start : UserControl
         bool multiplayerEnabled = !remoteControlEnabled && MultiplayerCheckbox.IsChecked == true;
         bool requireOnlineMode = !multiplayerEnabled || OnlineModeCheckbox.IsChecked == true;
         string minecraftUser = (MCUserTextbox.Text ?? string.Empty).Trim();
-
         if (minecraftUser.Length == 0)
         {
             _showMinecraftUsernameUntilStart = true;
@@ -450,11 +455,13 @@ public partial class Start : UserControl
                 GetRconPassword());
             return true;
         }
+
         catch (Exception ex)
         {
             ErrorHandling.ShowSettingsUpdateError(this, ex);
             return false;
         }
+
     }
 
     private bool TryGetRconPort(out int port)
@@ -484,6 +491,7 @@ public partial class Start : UserControl
         {
             RemoteRCONPasswordTextbox.Text = RemoteRCONPasswordBox.Password ?? string.Empty;
         }
+
         else
         {
             RemoteRCONPasswordBox.Password = RemoteRCONPasswordTextbox.Text ?? string.Empty;
@@ -508,10 +516,12 @@ public partial class Start : UserControl
             RemoteRCONPasswordBox.Visibility = Visibility.Collapsed;
             RemoteRCONPasswordTextbox.Visibility = Visibility.Visible;
         }
+
         else
         {
             RemoteRCONPasswordTextbox.Visibility = Visibility.Collapsed;
             RemoteRCONPasswordBox.Visibility = Visibility.Visible;
         }
+
     }
 }

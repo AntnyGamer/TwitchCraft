@@ -36,7 +36,7 @@ public sealed partial class BotMainHandler
         else if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
             HandleGamemode(playerName, gameType);
 
-        RecordLine(line, flags.HasTcDeaths);
+        Statistics.RecordLine(line, flags.HasTcDeaths);
     }
 
     internal async Task ReadOutputAsync(CancellationToken cancellationToken)
@@ -85,7 +85,7 @@ public sealed partial class BotMainHandler
 
                 HandleReadyState(line);
                 RestoreSidebar(isSidebarObjectiveIssue);
-                RecordLine(line, flags.HasTcDeaths);
+                Statistics.RecordLine(line, flags.HasTcDeaths);
 
                 bool showCommandErrorContext = TryConsumeError();
                 if (isCommandParserError)
@@ -275,7 +275,7 @@ public sealed partial class BotMainHandler
 
                 RemoveSpectator(joinedPlayer);
 
-                RecordPlayerJoin(joinedPlayer);
+                Statistics.RecordPlayerJoin(joinedPlayer);
                 QueueGamemode(joinedPlayer);
                 QueueSnapshot();
             }
@@ -294,7 +294,7 @@ public sealed partial class BotMainHandler
 
                 RemoveSpectator(leftPlayer);
 
-                RecordPlayerLeave(leftPlayer);
+                Statistics.RecordPlayerLeave(leftPlayer);
                 QueueSnapshot();
             }
 

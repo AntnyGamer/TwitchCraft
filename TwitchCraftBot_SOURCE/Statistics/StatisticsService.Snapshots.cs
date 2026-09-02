@@ -5,16 +5,14 @@ using System.Threading;
 
 namespace TwitchCraftBot_V1;
 
-public sealed partial class BotMainHandler
+public sealed partial class StatisticsService
 {
-    public BotStatisticsSnapshot GetStatsSnapshot(CancellationToken cancellationToken = default)
+    public BotStatisticsSnapshot GetSnapshot(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        EnsureLoaded();
-
+        Load();
         DateTime now = DateTime.UtcNow;
-        string streamerViewer = _currentStreamerName;
-
+        string streamerViewer = _streamerName;
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -23,7 +21,6 @@ public sealed partial class BotMainHandler
             string sessionMostDangerousViewer;
             string sessionNicestViewer;
             string totalMostUsedCommand;
-
             lock (_statisticsGate)
             {
                 if (_cachedStatisticsLeaderboardVersion == _statisticsLeaderboardVersion &&
@@ -41,7 +38,6 @@ public sealed partial class BotMainHandler
 
             (string totalMostDangerousViewer, string totalNicestViewer) = BotStatisticsStore.GetTopViewers(streamerViewer);
             cancellationToken.ThrowIfCancellationRequested();
-
             lock (_statisticsGate)
             {
                 if (versionToRefresh != _statisticsLeaderboardVersion)
@@ -59,22 +55,25 @@ public sealed partial class BotMainHandler
                 _cachedStatisticsLeaderboardVersion = versionToRefresh;
                 return BuildSnapshotNoLock(now);
             }
+
         }
+
     }
 
-    internal static void FlushForShutdown()
+    internal void FlushForShutdown()
     {
         BotStatisticsStore.TryExportJson();
     }
 
     private BotStatisticsSnapshot BuildSnapshotNoLock(DateTime now)
     {
+        (long dangerousCommands, long niceCommands) = GetCommandCounts(_sessionStatistics.CommandUseCounts);
         return new BotStatisticsSnapshot
         {
-            StatisticsEnabled = StatisticsEnabled,
+            StatisticsEnabled = Enabled,
             SessionGameCommandsRun = _sessionStatistics.GameCommandsRun,
-            SessionDangerousCommandsRun = GetCommandCount(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Dangerous),
-            SessionNiceCommandsRun = GetCommandCount(_sessionStatistics.CommandUseCounts, ChatCommandStatisticFlags.Nice),
+            SessionDangerousCommandsRun = dangerousCommands,
+            SessionNiceCommandsRun = niceCommands,
             SessionMostUsedCommand = _cachedSessionMostUsedCommand,
             SessionTokensSpent = _sessionStatistics.TokensSpent,
             SessionEffectsGiven = _sessionStatistics.EffectsGiven,
@@ -82,7 +81,6 @@ public sealed partial class BotMainHandler
             SessionNicestViewer = _cachedSessionNicestViewer,
             SessionTimeSurvived = GetSessionSurvival(_sessionStatistics, now),
             SessionDeaths = _sessionStatistics.Deaths,
-
             TotalGameCommandsRun = _totalStatistics.GameCommandsRun,
             TotalMostUsedCommand = _cachedTotalMostUsedCommand,
             TotalTokensSpent = _totalStatistics.TokensSpent,
@@ -96,16 +94,22 @@ public sealed partial class BotMainHandler
         };
     }
 
-    private long GetCommandCount(Dictionary<string, long> commandUseCounts, ChatCommandStatisticFlags flag)
+    private (long Dangerous, long Nice) GetCommandCounts(Dictionary<string, long> commandUseCounts)
     {
-        long count = 0;
+        long dangerous = 0;
+        long nice = 0;
         foreach (KeyValuePair<string, long> pair in commandUseCounts)
         {
-            if (pair.Value > 0 && (_commandRegistry.GetStatisticFlags(pair.Key) & flag) != 0)
-                count += pair.Value;
+            if (pair.Value <= 0)
+                continue;
+            ChatCommandStatisticFlags flags = _dependencies.GetCommandFlags(pair.Key);
+            if ((flags & ChatCommandStatisticFlags.Dangerous) != 0)
+                dangerous += pair.Value;
+            if ((flags & ChatCommandStatisticFlags.Nice) != 0)
+                nice += pair.Value;
         }
 
-        return count;
+        return (dangerous, nice);
     }
 
     private void MarkLeaderboardDirty()
@@ -166,11 +170,12 @@ public sealed partial class BotMainHandler
     private static int ClampDeathScore(long deathScore)
         => (int)Math.Min(int.MaxValue, Math.Max(0L, deathScore));
 
-    private bool ShouldTrackPlayer(string playerName)
+    internal bool ShouldTrackPlayer(string playerName)
     {
-        return _currentStreamerMinecraftName.Length > 0
+        string streamerMinecraftName = _streamerMinecraftName;
+        return streamerMinecraftName.Length > 0
             && MinecraftNameHelper.TryNormalizePlayerName(playerName, out string player)
-            && string.Equals(player, _currentStreamerMinecraftName, StringComparison.OrdinalIgnoreCase);
+            && string.Equals(player, streamerMinecraftName, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string GetTopCommand(Dictionary<string, long> commandUseCounts)
@@ -201,6 +206,7 @@ public sealed partial class BotMainHandler
                 bestCount = pair.Value;
                 bestCommand = command;
             }
+
         }
 
         return bestCommand.Length == 0 ? string.Empty : "!" + bestCommand;
@@ -248,6 +254,7 @@ public sealed partial class BotMainHandler
                 bestScore = pair.Value;
                 bestViewer = viewer;
             }
+
         }
 
         return bestViewer;
@@ -275,6 +282,7 @@ public sealed partial class BotMainHandler
                 playerName = candidate;
                 return true;
             }
+
         }
 
         const string missingPrefix = "Can't get value of ";
@@ -290,7 +298,9 @@ public sealed partial class BotMainHandler
                     deathScore = 0;
                     return true;
                 }
+
             }
+
         }
 
         return false;
@@ -301,7 +311,6 @@ public sealed partial class BotMainHandler
         playerName = string.Empty;
         if (string.IsNullOrEmpty(message) || message[0] == '<')
             return false;
-
         int firstSpace = message.IndexOf(' ');
         if (firstSpace <= 0)
             return false;
@@ -311,7 +320,6 @@ public sealed partial class BotMainHandler
         {
             if (!suffix.StartsWith(phrase.AsSpan(), StringComparison.OrdinalIgnoreCase))
                 continue;
-
             return MinecraftNameHelper.TryNormalizePlayerName(message.AsSpan(0, firstSpace), out playerName);
         }
 
@@ -340,6 +348,7 @@ public sealed partial class BotMainHandler
             {
                 return afterColon;
             }
+
         }
 
         return trimmed;

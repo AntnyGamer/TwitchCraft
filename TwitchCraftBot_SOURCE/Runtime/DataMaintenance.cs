@@ -8,61 +8,82 @@ using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1;
 
-public sealed partial class BotMainHandler
+internal sealed class DataMaintenance(
+    Func<BotConfig?> getConfig,
+    StartingProfile defaultSettings,
+    TokenService tokens,
+    Func<string, CancellationToken, Task<string>> validateBot,
+    Action<string, string> saveBot,
+    Func<string, CancellationToken, Task<bool>> tryRefreshAuth)
 {
+    private readonly Func<BotConfig?> _getConfig = getConfig ?? throw new ArgumentNullException(nameof(getConfig));
+    private readonly StartingProfile _defaultSettings = defaultSettings ?? throw new ArgumentNullException(nameof(defaultSettings));
+    private readonly TokenService _tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
+    private readonly Func<string, CancellationToken, Task<string>> _validateBot = validateBot ?? throw new ArgumentNullException(nameof(validateBot));
+    private readonly Action<string, string> _saveBot = saveBot ?? throw new ArgumentNullException(nameof(saveBot));
+    private readonly Func<string, CancellationToken, Task<bool>> _tryRefreshAuth = tryRefreshAuth ?? throw new ArgumentNullException(nameof(tryRefreshAuth));
     private readonly Lock _automaticBackupGate = new();
     private DateTime _lastDatabaseOptimizeUtc = DateTime.MinValue;
     private DateTime _lastTwitchValidationUtc = DateTime.MinValue;
     private DateTime _lastAutomaticBackupUtc = DateTime.MinValue;
     private bool _automaticBackupTimestampLoaded;
 
-    private async Task RunMaintenanceAsync(CancellationToken cancellationToken)
+    internal async Task RunAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                StartingProfile settings = EffectiveSettings;
+                StartingProfile settings = _getConfig()?.Settings ?? _defaultSettings;
                 if (DateTime.UtcNow - _lastTwitchValidationUtc >= TimeSpan.FromHours(1))
                 {
-                    TwitchConfig? twitch = _activeConfig?.Twitch;
-                    string token = NormalizeToken(twitch?.BotToken);
+                    TwitchConfig? twitch = _getConfig()?.Twitch;
+                    string token = TwitchTokenHelper.NormalizeAccessToken(twitch?.BotToken);
                     if (token.Length > 0)
                     {
                         try
                         {
-                            string login = await ValidateBotAsync(token, cancellationToken).ConfigureAwait(false);
+                            string login = await _validateBot(token, cancellationToken).ConfigureAwait(false);
                             if (login.Length > 0 && !string.Equals(login, twitch?.BotName, StringComparison.OrdinalIgnoreCase))
-                                SaveBot(token, login);
+                                _saveBot(token, login);
                             _lastTwitchValidationUtc = DateTime.UtcNow;
                         }
+
                         catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                        { if (await TryRefreshAuthAsync(token, cancellationToken).ConfigureAwait(false)) _lastTwitchValidationUtc = DateTime.UtcNow; }
+                        { if (await _tryRefreshAuth(token, cancellationToken).ConfigureAwait(false)) _lastTwitchValidationUtc = DateTime.UtcNow; }
                     }
+
                 }
+
                 if (settings.AutomaticBackupsEnabled && IsBackupDue(settings.AutomaticBackupIntervalHours))
                     CreateBackup(settings.AutomaticBackupRetentionCount);
-
                 int optimizeHours = settings.SQLiteOptimizeIntervalHours;
                 if (optimizeHours > 0 && DateTime.UtcNow - _lastDatabaseOptimizeUtc >= TimeSpan.FromHours(optimizeHours))
                 {
-                    if (_tokenStore.TryOptimize())
+                    if (_tokens.TryOptimize())
                         _lastDatabaseOptimizeUtc = DateTime.UtcNow;
                 }
 
                 await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken).ConfigureAwait(false);
             }
+
             catch (OperationCanceledException)
             {
                 break;
             }
+
             catch (Exception ex)
             {
                 ErrorHandling.LogNonFatal("Automatic data maintenance failed", ex);
                 await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken).ConfigureAwait(false);
             }
+
         }
+
     }
+
+    internal void MarkTwitchValidated()
+        => _lastTwitchValidationUtc = DateTime.UtcNow;
 
     private bool IsBackupDue(int intervalHours)
     {
@@ -81,7 +102,6 @@ public sealed partial class BotMainHandler
         string root = ConfigurationStore.BackupsDirectory;
         if (!Directory.Exists(root))
             return DateTime.MinValue;
-
         DateTime newest = DateTime.MinValue;
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
@@ -106,7 +126,7 @@ public sealed partial class BotMainHandler
                 Directory.CreateDirectory(backupDirectory);
 
                 bool configSaved = ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json"));
-                bool tokensSaved = _tokenStore.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db"));
+                bool tokensSaved = _tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db"));
                 if (!configSaved || !tokensSaved)
                 {
                     try { Directory.Delete(backupDirectory, recursive: true); } catch { }
@@ -117,33 +137,37 @@ public sealed partial class BotMainHandler
                 _automaticBackupTimestampLoaded = true;
                 PruneBackups(root, retentionCount);
             }
+
             catch (Exception ex)
             {
                 ErrorHandling.LogNonFatal("Failed to create automatic backup", ex);
             }
+
         }
+
     }
 
-    private void BackupOnShutdown()
+    internal void BackupOnShutdown()
     {
         try
         {
-            StartingProfile? settings = _activeConfig?.Settings;
+            StartingProfile? settings = _getConfig()?.Settings;
             if (settings == null)
             {
                 if (!ConfigurationStore.HasConfig())
                     return;
-
                 settings = ConfigurationStore.Load().Settings;
             }
 
             if (settings.AutomaticBackupsEnabled)
                 CreateBackup(settings.AutomaticBackupRetentionCount);
         }
+
         catch (Exception ex)
         {
             ErrorHandling.LogNonFatal("Failed to create shutdown backup", ex);
         }
+
     }
 
     internal static void PruneBackups(string root, int retentionCount)
@@ -171,6 +195,7 @@ public sealed partial class BotMainHandler
             try { backups[i].Directory.Delete(recursive: true); }
             catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to prune an old automatic backup", ex); }
         }
+
     }
 
     private static bool TryGetBackupTime(

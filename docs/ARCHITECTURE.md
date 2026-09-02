@@ -1,18 +1,20 @@
 # Architecture
 
-TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI.
+TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI. `BotMainHandler` is the application-facing coordinator; focused components own command, token, statistics, maintenance, and background-task behavior.
 
 ```text
-Twitch OAuth, Helix, EventSub, and IRC
-        ↓
-TwitchRuntime: connection, queues, parsing, identity
-        ↓
-Command registry and handlers
-        ├── TokenHandler (SQLite + JSON export)
-        ├── StatisticsTracker / StatisticsStore (SQLite + JSON export)
-        └── Minecraft runtime
-              ├── Local Java process + stdin
-              └── Remote RCON + query clients
+WPF shell
+    ↓
+BotMainHandler (application coordinator)
+    ├── CommandService (targeting, costs, authorization, cooldown state)
+    ├── TokenService (viewer economy and token-database lifecycle)
+    ├── StatisticsService (session/lifetime tracking and snapshots)
+    ├── DataMaintenance (backups, optimization, auth validation)
+    ├── BackgroundTaskTracker (owned task collection and fault observation)
+    ├── Twitch transport (IRC, Helix, EventSub)
+    └── Minecraft runtime
+          ├── Local Java process + stdin
+          └── Remote RCON + query clients
 ```
 
 ## Main folders
@@ -23,14 +25,14 @@ Command registry and handlers
 - `Diagnostics/` — exception handling, structured rolling logs, and application-version metadata
 - `Identity/` — Twitch token, Twitch username, and Minecraft username normalization
 - `Infrastructure/` — shared file, JSON export, sorted-list, and text-segment helpers
-- `Runtime/` — lifecycle and central runtime state, with `Minecraft/`, `Players/`, and `Twitch/` transport/monitoring areas
-- `Statistics/` — lifetime/session statistics models, tracking, SQLite persistence, and JSON exports
-- `Tokens/` — viewer-token accounting, SQLite persistence, and JSON export
+- `Runtime/` — the coordinator, lifecycle, task/maintenance owners, and `Minecraft/`, `Players/`, and `Twitch/` transport/monitoring areas
+- `Statistics/` — `StatisticsService`, lifetime/session models, SQLite persistence, and JSON exports
+- `Tokens/` — `TokenService`, viewer-token accounting, SQLite persistence, and JSON export
 - `Frames/` — WPF pages and their event logic
 - `Assets/` — images, icon, server icon, and locate-players datapack
 - `TwitchCraftBot.Tests/` — non-UI behavioral regression tests
 
-The supplied source is already split into focused partial files. Future work should move ownership into services gradually rather than splitting state across additional partial files.
+`BotMainHandler` exposes the focused components through `runtime.Commands`, `runtime.Tokens`, and `runtime.Statistics`. Twitch, Minecraft, and player-monitor code remain coordinated partials for now; move them behind similarly focused ownership boundaries incrementally rather than adding more state to the coordinator.
 
 ## Startup flow
 
@@ -41,6 +43,17 @@ The supplied source is already split into focused partial files. Future work sho
 5. Local mode prepares the server directory, locates Java, and starts the Java process; remote mode verifies RCON.
 6. TwitchCraft renews its locally stored device authorization when needed, then Twitch IRC connects over TLS, joins the configured channel, and starts bounded processing queues. Helix and EventSub provide viewer-roster and follow data.
 7. Player monitoring and optional minigame/statistics loops start after Minecraft readiness.
+
+## Component ownership
+
+- `BotMainHandler` owns application composition and session lifecycle coordination.
+- `CommandService` owns mutable command cooldowns, command cost scaling, moderator authorization, and player-target resolution.
+- `TokenService` owns the `TokenHandler` database and all balance/reward operations.
+- `StatisticsService` owns statistics locks, session/lifetime state, persistence deltas, death tracking, and snapshot caches.
+- `DataMaintenance` owns backup schedules, retention, SQLite optimization, and periodic Twitch-token validation.
+- `BackgroundTaskTracker` owns tracked task state and observes task faults.
+
+Dependencies flow into components through small callbacks or focused collaborators. Components do not reach into the coordinator's private state.
 
 ## Command execution
 
@@ -72,4 +85,4 @@ Cancellation tokens stop background loops. Local mode requests graceful server s
 
 ## Testability direction
 
-Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.
+Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The runtime uses explicit construction and narrow callback seams rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.

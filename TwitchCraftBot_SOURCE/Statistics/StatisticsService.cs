@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace TwitchCraftBot_V1;
 
-public sealed partial class BotMainHandler
+/// <summary>
+/// Owns session and lifetime statistics, persistence coordination, and snapshots.
+/// </summary>
+public sealed partial class StatisticsService
 {
     private static readonly string[] DeathMessagePhrases =
 [
@@ -56,7 +60,6 @@ public sealed partial class BotMainHandler
     " left the confines of this world",
     " didn't want to live in the same world as "
 ];
-
     private readonly Lock _statisticsGate = new();
     private readonly Lock _deathStatisticsGate = new();
     private readonly Lock _statisticsLoadGate = new();
@@ -73,10 +76,27 @@ public sealed partial class BotMainHandler
     private string _cachedTotalMostUsedCommand = string.Empty;
     private string _cachedTotalMostDangerousViewer = string.Empty;
     private string _cachedTotalNicestViewer = string.Empty;
+    private readonly BotStatisticsDependencies _dependencies;
+    private bool _enabled = true;
+    private string _streamerName = string.Empty;
+    private string _streamerMinecraftName = string.Empty;
 
-    public bool StatisticsEnabled => _activeConfig?.Settings.StatisticsEnabled != false;
+    internal StatisticsService(BotStatisticsDependencies dependencies)
+    {
+        ArgumentNullException.ThrowIfNull(dependencies);
+        _dependencies = dependencies;
+    }
 
-    private void EnsureLoaded()
+    public bool Enabled => _enabled;
+
+    internal void SetContext(bool enabled, string streamerName, string streamerMinecraftName)
+    {
+        _enabled = enabled;
+        _streamerName = streamerName;
+        _streamerMinecraftName = streamerMinecraftName;
+    }
+
+    internal void Load()
     {
         if (_statisticsLoaded)
         {
@@ -97,7 +117,9 @@ public sealed partial class BotMainHandler
                 _statisticsLoaded = true;
                 MarkLeaderboardDirty();
             }
+
         }
+
     }
 
     internal void ResetForSession()
@@ -111,13 +133,14 @@ public sealed partial class BotMainHandler
             };
             MarkLeaderboardDirty();
         }
+
     }
 
     internal void ResetSurvival()
     {
-        if (StatisticsEnabled)
+        if (Enabled)
         {
-            EnsureLoaded();
+            Load();
             _ = BotStatisticsStore.SaveDeathBaseline(0);
         }
 
@@ -132,16 +155,18 @@ public sealed partial class BotMainHandler
             _sessionStatistics.LastDeathScore = 0;
             _totalStatistics.LastDeathScore = 0;
         }
+
     }
 
     internal void ResetDeathBaseline()
     {
-        EnsureLoaded();
+        Load();
         lock (_statisticsGate)
         {
             _sessionStatistics.DeathScoreBaselineSet = true;
             _sessionStatistics.LastDeathScore = ClampDeathScore(_totalStatistics.LastDeathScore);
         }
+
     }
 
     public Task ResetAllAsync()
@@ -149,28 +174,25 @@ public sealed partial class BotMainHandler
 
     private void ResetAll()
     {
-        EnsureLoaded();
-
+        Load();
         DateTime now = DateTime.UtcNow;
         bool trackedPlayerIsOnline = false;
         bool trackedPlayerIsSpectator = false;
-        string trackedPlayer = _currentStreamerMinecraftName;
+        string trackedPlayer = _streamerMinecraftName;
 
         if (trackedPlayer.Length > 0)
         {
-            foreach (string knownPlayer in GetKnownPlayers())
+            foreach (string knownPlayer in _dependencies.GetKnownPlayers())
             {
                 if (string.Equals(knownPlayer, trackedPlayer, StringComparison.OrdinalIgnoreCase))
                 {
                     trackedPlayerIsOnline = true;
                     break;
                 }
+
             }
 
-            lock (_spectatorProbeGate)
-            {
-                trackedPlayerIsSpectator = _spectatorPlayers.Contains(trackedPlayer);
-            }
+            trackedPlayerIsSpectator = _dependencies.IsSpectator(trackedPlayer);
         }
 
         long preservedLifeSeconds;
@@ -179,7 +201,6 @@ public sealed partial class BotMainHandler
         bool preservedPlayerIsSpectator;
         bool preservedLifeWaitingForRespawn;
         int? preservedLastDeathScore;
-
         lock (_statisticsGate)
         {
             preservedLifeSeconds = Math.Max(0, _sessionStatistics.CurrentLifeAccumulatedSeconds);
@@ -193,7 +214,6 @@ public sealed partial class BotMainHandler
         if (trackedPlayerIsOnline)
         {
             preservedLifeHasStarted = true;
-
             if (trackedPlayerIsSpectator)
             {
                 if (preservedLifeStartedUtc is DateTime startedUtc)
@@ -204,10 +224,12 @@ public sealed partial class BotMainHandler
 
                 preservedPlayerIsSpectator = true;
             }
+
             else
             {
                 preservedPlayerIsSpectator = false;
             }
+
         }
 
         lock (_deathStatisticsGate)
@@ -218,7 +240,6 @@ public sealed partial class BotMainHandler
             int deathScoreBaseline = Math.Max(0, preservedLastDeathScore ?? 0);
             if (!BotStatisticsStore.SaveDeathBaseline(deathScoreBaseline))
                 throw new IOException("Statistics could not be reset because the death score baseline could not be saved.");
-
             lock (_statisticsGate)
             {
                 _sessionStatistics = new BotSessionStatistics
@@ -235,11 +256,31 @@ public sealed partial class BotMainHandler
                 _totalStatistics = new BotLifetimeStatistics { LastDeathScore = deathScoreBaseline };
                 MarkLeaderboardDirty();
             }
+
         }
 
-        QueueSnapshot();
-        QueueGamemode();
-        QueueDeathScore();
+        _dependencies.QueueSnapshot();
+        _dependencies.QueueGamemode();
+        _dependencies.QueueAllDeathScores();
     }
 
+}
+
+internal sealed record BotStatisticsDependencies(
+    Func<string, ChatCommandStatisticFlags> GetCommandFlags,
+    Func<List<string>> GetKnownPlayers,
+    Func<string, bool> IsSpectator,
+    Action QueueSnapshot,
+    Action QueueGamemode,
+    Action QueueAllDeathScores,
+    Action<string> QueueDeathScore,
+    Action<string> QueueRespawn);
+
+public sealed partial class BotMainHandler
+{
+    private bool IsSpectatorPlayer(string playerName)
+    {
+        lock (_spectatorProbeGate)
+            return _spectatorPlayers.Contains(playerName);
+    }
 }

@@ -58,7 +58,7 @@ public partial class Statistics : UserControl
             if (_parentBot is not TwitchCraftBot parent || !IsVisible)
                 return;
 
-            BotStatisticsSnapshot? stats = await Task.Run(() => parent.GetStatsSnapshot(refreshToken), refreshToken);
+            BotStatisticsSnapshot? stats = await Task.Run(() => parent.Runtime.Statistics.GetSnapshot(refreshToken), refreshToken);
             if (stats != null && IsVisible && !refreshToken.IsCancellationRequested)
                 UpdateStats(stats);
         }

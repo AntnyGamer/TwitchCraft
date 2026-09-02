@@ -41,7 +41,7 @@ public static partial class CommandList
             if (!await SendPricedAsync(target, sender, 10, fireworkCommand, ct, sender + " sent you some fireworks.", "GOT FIREWORKS!").ConfigureAwait(false))
                 return;
             await ConfirmAsync(sender + ", you sent " + TargetName(target) + " some fireworks.", ct).ConfigureAwait(false);
-            if (!runtime.TryStartFireworks())
+            if (!runtime.Commands.TryStartFireworks())
                 return;
             Task fireworksRepeatTask = Task.Run(async () =>
             {
@@ -64,7 +64,7 @@ public static partial class CommandList
                 }
                 finally
                 {
-                    runtime.StopFireworks();
+                    runtime.Commands.StopFireworks();
                 }
             }, CancellationToken.None);
             runtime.TrackTask(fireworksRepeatTask);
@@ -112,7 +112,7 @@ public static partial class CommandList
         {
             if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return;
-            if (!runtime.TryUseLightning(out TimeSpan remaining, out DateTime lightningReservationUtc))
+            if (!runtime.Commands.TryUseLightning(out TimeSpan remaining, out DateTime lightningReservationUtc))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
@@ -124,21 +124,21 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.ClearLightningCooldown(lightningReservationUtc);
+                runtime.Commands.ClearLightningCooldown(lightningReservationUtc);
                 throw;
             }
             if (target == null)
             {
-                runtime.ClearLightningCooldown(lightningReservationUtc);
+                runtime.Commands.ClearLightningCooldown(lightningReservationUtc);
                 return;
             }
-            int cost = runtime.ScaleCost(50, target.PlayerCount);
+            int cost = runtime.Commands.ScaleCost(50, target.PlayerCount);
             if (!await TrySendPaidNoCooldownAsync(
                     sender,
                     cost,
                     MinecraftCommandBuilder.Lightning(target.Selector),
                     ct,
-                    () => runtime.ClearLightningCooldown(lightningReservationUtc)).ConfigureAwait(false))
+                    () => runtime.Commands.ClearLightningCooldown(lightningReservationUtc)).ConfigureAwait(false))
             {
                 return;
             }
@@ -250,7 +250,7 @@ public static partial class CommandList
                 rolls.Add((playerName, prettyItemName, prettyEnchantName, level, hadItem));
             }
 
-            int cost = runtime.ScaleCost(baseCost, playerNames.Count);
+            int cost = runtime.Commands.ScaleCost(baseCost, playerNames.Count);
             if (!await TrySendPricedAsync(sender, cost, () => enchantCommands, ct).ConfigureAwait(false))
                 return;
 
@@ -305,13 +305,13 @@ public static partial class CommandList
                 return;
             }
 
-            if (!runtime.TryUseScaleCommand(commandName, out TimeSpan remaining, out DateTime cooldownReservationUtc))
+            if (!runtime.Commands.TryUseScaleCommand(commandName, out TimeSpan remaining, out DateTime cooldownReservationUtc))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
             }
 
-            int cost = runtime.ScaleCost(baseCost, playerNames.Count);
+            int cost = runtime.Commands.ScaleCost(baseCost, playerNames.Count);
             bool sent;
             try
             {
@@ -324,13 +324,13 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.ClearScaleCooldown(commandName, cooldownReservationUtc);
+                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationUtc);
                 throw;
             }
 
             if (!sent)
             {
-                runtime.ClearScaleCooldown(commandName, cooldownReservationUtc);
+                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationUtc);
                 return;
             }
 
@@ -406,7 +406,7 @@ public static partial class CommandList
                 await SayAsync(sender + ", " + TargetName(target) + " is not holding a renameable item right now.", ct).ConfigureAwait(false);
                 return;
             }
-            int cost = runtime.ScaleCost(10, renameCommands.Count);
+            int cost = runtime.Commands.ScaleCost(10, renameCommands.Count);
             if (!await TrySendPricedAsync(sender, cost, () => renameCommands, ct).ConfigureAwait(false))
                 return;
             string notificationMessage = sender + " renamed your held item.";
@@ -472,7 +472,7 @@ public static partial class CommandList
                 await SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct).ConfigureAwait(false);
                 return;
             }
-            string switchMilkTag = runtime.NextSwitchMilkTag();
+            string switchMilkTag = runtime.Commands.NextSwitchMilkTag();
             string taggedMilkSelector = "@a[tag=" + switchMilkTag + "]";
             List<string> switchMilkCommands = ["tag @a remove " + switchMilkTag];
             switchMilkCommands.Add("execute as " + target.Selector + " if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + switchMilkTag);

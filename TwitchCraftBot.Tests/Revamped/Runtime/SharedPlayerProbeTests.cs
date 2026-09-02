@@ -56,7 +56,7 @@ public sealed class SharedPlayerProbeTests
         finally
         {
             releaseSend.TrySetResult(true);
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 

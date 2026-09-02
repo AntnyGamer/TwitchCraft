@@ -17,7 +17,6 @@ public sealed partial class BotMainHandler
     public void ApplyProfile(bool multiplayerEnabled, bool requireOnlineMode, string streamerMinecraftName, bool remoteControlEnabled = false, string remoteHost = "", int RCONPort = 25575, string RCONPassword = "")
     {
         BotConfig config = ConfigurationStore.Load();
-
         config.Settings.MultiplayerEnabled = multiplayerEnabled;
         config.Settings.RequireOnlineMode = !multiplayerEnabled || requireOnlineMode;
         config.Settings.RemoteControlEnabled = remoteControlEnabled;
@@ -29,9 +28,9 @@ public sealed partial class BotMainHandler
             {
                 if (!ConfigurationStore.TryNormalizeRconPassword(RCONPassword, out string normalizedRCONPassword))
                     throw new InvalidOperationException("RCON password is invalid.");
-
                 config.Server.RCON.Password = normalizedRCONPassword;
             }
+
         }
 
         ConfigurationStore.NormalizeRuntime(config);
@@ -56,10 +55,10 @@ public sealed partial class BotMainHandler
                 currentBind = "0.0.0.0";
             else if (string.Equals(currentBind, "::1", StringComparison.OrdinalIgnoreCase))
                 currentBind = "::";
-
             config.Server.BindIP = currentBind;
             config.Server.MaxPlayers = Math.Max(5, config.Server.MaxPlayers);
         }
+
         else if (!remoteControlEnabled)
         {
             string restoredBind = ConfigurationStore.NormalizeBindIP(config.Server.PreviousBindIP);
@@ -73,7 +72,6 @@ public sealed partial class BotMainHandler
 
         if (!remoteControlEnabled)
             ApplyProfile(config);
-
         BotConfig persistedConfig = CloneConfig(config);
         persistedConfig.Settings.MultiplayerEnabled = false;
         persistedConfig.Settings.RemoteControlEnabled = false;
@@ -99,10 +97,12 @@ public sealed partial class BotMainHandler
                 || !File.Exists(path)
                 || !string.Equals(File.ReadAllText(path), _lastServerPropertiesContent, StringComparison.Ordinal);
         }
+
         catch
         {
             return true;
         }
+
     }
 
     public Task StartAsync()
@@ -115,16 +115,17 @@ public sealed partial class BotMainHandler
             await StopSessionAsync().ConfigureAwait(false);
             await MinigameManager.StopLoopsAsync(this).ConfigureAwait(false);
 
-            BackupOnShutdown();
-
+            _dataMaintenance.BackupOnShutdown();
             CloseStores();
             return true;
         }
+
         catch (Exception ex)
         {
             ErrorHandling.LogNonFatal("Shutdown failed", ex);
             return false;
         }
+
     }
 
     public async Task PauseAsync()
@@ -134,10 +135,12 @@ public sealed partial class BotMainHandler
             AddServerLogLine(RemoteControlEnabled ? "Stopping remote controller..." : "Pausing server...");
             await StopSessionAsync().ConfigureAwait(false);
         }
+
         catch (Exception ex)
         {
             ErrorHandling.LogNonFatal("Pause failed", ex);
         }
+
     }
 
     private async Task RunEmptyShutdownAsync(CancellationToken cancellationToken)
@@ -152,6 +155,7 @@ public sealed partial class BotMainHandler
                 {
                     emptySinceTicks = 0;
                 }
+
                 else
                 {
                     bool hasPlayers;
@@ -162,6 +166,7 @@ public sealed partial class BotMainHandler
                     {
                         emptySinceTicks = 0;
                     }
+
                     else
                     {
                         long nowTicks = DateTime.UtcNow.Ticks;
@@ -173,16 +178,21 @@ public sealed partial class BotMainHandler
                             _ = Task.Run(PauseAsync, CancellationToken.None);
                             return;
                         }
+
                     }
+
                 }
 
                 await Task.Delay(15000, cancellationToken).ConfigureAwait(false);
             }
+
             catch (OperationCanceledException)
             {
                 break;
             }
+
         }
+
     }
 
     public Task RestartAsync() => RestartCoreAsync(false);
@@ -208,7 +218,6 @@ public sealed partial class BotMainHandler
             }
 
             await StopSessionAsync().ConfigureAwait(false);
-
             if (wipeWorld)
             {
                 BotConfig config = CloneConfig(_activeConfig ?? ConfigurationStore.Load());
@@ -225,15 +234,17 @@ public sealed partial class BotMainHandler
                         DatapackInstaller.SyncLocateDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, levelName);
                 }
 
-                ResetSurvival();
+                Statistics.ResetSurvival();
             }
 
             await StartSessionAsync(resetStatistics: false, countSessionStarted: wipeWorld).ConfigureAwait(false);
         }
+
         catch (Exception ex)
         {
             ErrorHandling.ShowRestartError(_shellWindow, ex.Message);
         }
+
     }
 
     public async Task StartSessionAsync(bool resetStatistics = true, bool countSessionStarted = false)
@@ -253,7 +264,6 @@ public sealed partial class BotMainHandler
             CancellationToken token = _sessionCts.Token;
             BotConfig config = CloneConfig(_activeConfig ?? ConfigurationStore.Load());
             config = await EnsureAuthAsync(config, token).ConfigureAwait(false);
-
             if (!config.Settings.MultiplayerEnabled)
                 config.Settings.RequireOnlineMode = true;
 
@@ -262,20 +272,17 @@ public sealed partial class BotMainHandler
             ValidateConfig(config);
             SetConfig(config);
             RefreshCatalogs();
-            _tokenStore.Load();
-            EnsureLoaded();
+            Tokens.Load();
+            Statistics.Load();
             Interlocked.Exchange(ref _serverExitExpected, 0);
             ResetSession();
-
-            lock (_backgroundTasksGate)
-            {
-                _backgroundTasks.Clear();
-            }
+            _backgroundTaskTracker.Clear();
 
             if (config.Settings.RemoteControlEnabled)
             {
                 await EnsureRconAsync(config, token).ConfigureAwait(false);
             }
+
             else
             {
                 await StartServerAsync(config, token).ConfigureAwait(false);
@@ -285,29 +292,30 @@ public sealed partial class BotMainHandler
             }
 
             _runtimeState = RuntimeState.Running;
-            if (resetStatistics || countSessionStarted) ResetForSession();
-            if (countSessionStarted) RecordSession();
+            if (resetStatistics || countSessionStarted) Statistics.ResetForSession();
+            if (countSessionStarted) Statistics.RecordSession();
 
             MinigameManager.StartLoops(this, token);
-
             TrackTask(RunIrcAsync(token));
             TrackTask(RunChatRosterAsync(token));
             TrackTask(RunRosterAsync(token));
             TrackTask(RunPassiveRewardsAsync(token));
             TrackTask(RunFollowRewardsAsync(token));
-            TrackTask(Task.Run(() => RunMaintenanceAsync(token), token));
+            TrackTask(Task.Run(() => _dataMaintenance.RunAsync(token), token));
             TrackTask(RunEmptyShutdownAsync(token));
 
             if (!config.Settings.RemoteControlEnabled)
                 TrackTask(WatchServerAsync(token));
             UIThread.BeginInvoke(() => _shellModel.Navigate(ShellPage.Main));
         }
+
         catch (Exception)
         {
             try
             {
                 await MinigameManager.StopLoopsAsync(this, true).ConfigureAwait(false);
             }
+
             catch
             {
             }
@@ -316,28 +324,24 @@ public sealed partial class BotMainHandler
 
             failedSessionCts?.Cancel();
             failedSessionCts?.Dispose();
-
-            lock (_backgroundTasksGate)
-            {
-                _backgroundTasks.Clear();
-            }
+            _backgroundTaskTracker.Clear();
 
             _runtimeState = RuntimeState.Stopped;
-
             CloseIrcSocket();
 
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(false).ConfigureAwait(false);
-
-            FlushForShutdown();
+            Statistics.FlushForShutdown();
             CloseStores();
 
             throw;
         }
+
         finally
         {
             _lifecycleGate.Release();
         }
+
     }
 
     public async Task StopSessionAsync()
@@ -358,7 +362,7 @@ public sealed partial class BotMainHandler
             _minecraftServerReady = false;
             Interlocked.Exchange(ref _serverExitExpected, 1);
             ResetQueues();
-            PauseSurvival();
+            Statistics.PauseSurvival();
             sessionCts = _sessionCts;
             await LeaveIrcAsync(sessionCts?.Token ?? CancellationToken.None).ConfigureAwait(false);
             await MinigameManager.StopLoopsAsync(this, true).ConfigureAwait(false);
@@ -366,42 +370,39 @@ public sealed partial class BotMainHandler
             {
                 sessionCts.Cancel();
             }
-            await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
 
+            await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
             CloseIrcSocket();
             if (!RemoteControlEnabled)
                 await TryStopServerAsync().ConfigureAwait(false);
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(true).ConfigureAwait(false);
 
-            Task[] runningTasks;
-            lock (_backgroundTasksGate)
-                runningTasks = [.. _backgroundTasks];
+            Task[] runningTasks = _backgroundTaskTracker.Snapshot();
             if (runningTasks.Length > 0)
             {
                 await Task.WhenAny(Task.WhenAll(runningTasks), Task.Delay(3000)).ConfigureAwait(false);
             }
 
-            _tokenStore.TryExportJson();
-            FlushForShutdown();
+            Tokens.TryExportJson();
+            Statistics.FlushForShutdown();
             CloseStores();
         }
+
         catch
         {
-            _tokenStore.TryExportJson();
-            FlushForShutdown();
+            Tokens.TryExportJson();
+            Statistics.FlushForShutdown();
             CloseStores();
             CloseIrcSocket();
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(false).ConfigureAwait(false);
             throw;
         }
+
         finally
         {
-            lock (_backgroundTasksGate)
-            {
-                _backgroundTasks.Clear();
-            }
+            _backgroundTaskTracker.Clear();
             _sessionCts = null;
             if (sessionCts != null)
             {
@@ -409,19 +410,22 @@ public sealed partial class BotMainHandler
                 {
                     sessionCts.Dispose();
                 }
+
                 catch
                 {
                 }
+
             }
 
             _runtimeState = RuntimeState.Stopped;
             _lifecycleGate.Release();
         }
+
     }
 
     private void CloseStores()
     {
-        _tokenStore.CloseConnection();
+        Tokens.Close();
         BotStatisticsStore.CloseConnection();
     }
 
@@ -429,12 +433,12 @@ public sealed partial class BotMainHandler
     {
         Process process = _javaServerProcess
             ?? throw new InvalidOperationException("Minecraft server process could not be started.");
-
         await Task.Delay(250, cancellationToken).ConfigureAwait(false);
 
         if (!ReferenceEquals(process, _javaServerProcess) || process.HasExited)
         {
             throw new InvalidOperationException("Minecraft server process exited during startup.");
         }
+
     }
 }

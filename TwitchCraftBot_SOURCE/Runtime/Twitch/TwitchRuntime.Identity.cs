@@ -28,7 +28,7 @@ public sealed partial class BotMainHandler
         if (token.Length == 0)
             return config;
 
-        _lastTwitchValidationUtc = DateTime.UtcNow;
+        _dataMaintenance.MarkTwitchValidated();
         try
         {
             string login = await ValidateBotAsync(token, cancellationToken).ConfigureAwait(false);

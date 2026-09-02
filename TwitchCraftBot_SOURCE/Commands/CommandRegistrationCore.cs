@@ -62,8 +62,8 @@ public static partial class CommandList
         }
         async Task<bool> RequireTokensAsync(string sender, int cost, CancellationToken ct)
         {
-            int scaledCost = runtime.ScaleCost(cost, 1);
-            if (scaledCost <= 0 || runtime.GetTokens(sender) >= scaledCost) return true;
+            int scaledCost = runtime.Commands.ScaleCost(cost, 1);
+            if (scaledCost <= 0 || runtime.Tokens.GetBalance(sender) >= scaledCost) return true;
             await SayNotEnoughTokensAsync(sender, scaledCost, ct).ConfigureAwait(false);
             return false;
         }
@@ -80,13 +80,13 @@ public static partial class CommandList
             {
                 ReserveCooldownAsync = reserveCooldownAsync,
                 ReleaseCooldown = releaseCooldown,
-                TrySpendTokens = amount => runtime.TrySpendTokens(sender, amount),
-                RefundTokens = amount => runtime.AdjustTokens(sender, amount),
+                TrySpendTokens = amount => runtime.Tokens.TrySpend(sender, amount),
+                RefundTokens = amount => runtime.Tokens.Adjust(sender, amount),
                 DispatchAsync = dispatchAsync,
                 RecordStatistics = amount =>
                 {
                     runtime.MarkCommandSuccess();
-                    runtime.RecordCommand(sender, amount);
+                    runtime.Statistics.RecordCommand(sender, amount);
                 },
                 ReportInsufficientTokensAsync = (amount, token) => SayNotEnoughTokensAsync(sender, amount, token),
                 ReportDispatchFailureAsync = token => SayAsync(
@@ -117,7 +117,7 @@ public static partial class CommandList
                 cost,
                 token => runtime.SendServerCommandsAsync(buildCommands(), token),
                 token => TryReserveCooldownAsync(sender, token),
-                runtime.ClearGlobalCooldown,
+                runtime.Commands.ClearGlobalCooldown,
                 ct);
         }
 
@@ -128,7 +128,7 @@ public static partial class CommandList
                 cost,
                 token => runtime.SendServerCommandAsync(command, token),
                 token => TryReserveCooldownAsync(sender, token),
-                runtime.ClearGlobalCooldown,
+                runtime.Commands.ClearGlobalCooldown,
                 ct);
         }
         static bool IsEveryone(ResolvedTarget? target)
@@ -280,7 +280,7 @@ public static partial class CommandList
                     return randomTarget;
                 }
             }
-            ResolvedTarget? resolved = await runtime.ResolveTargetAsync(
+            ResolvedTarget? resolved = await runtime.Commands.ResolveTargetAsync(
                 args,
                 startIndex,
                 sender,
@@ -363,7 +363,7 @@ public static partial class CommandList
         }
         async Task<bool> RequirePermissionAsync(string sender, string commandName, CancellationToken ct)
         {
-            if (runtime.IsAllowedUser(sender))
+            if (runtime.Commands.IsAllowedUser(sender))
                 return true;
             await SayAsync((string.IsNullOrWhiteSpace(sender) ? "This user" : sender) + ", only the broadcaster (or moderators if allowed) can use !" + commandName + ".", ct).ConfigureAwait(false);
             return false;
@@ -379,7 +379,7 @@ public static partial class CommandList
         {
             if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return false;
-            if (!runtime.GlobalGameCommandCooldownEnabled || !runtime.TryGetGlobalCooldown(out TimeSpan remaining))
+            if (!runtime.Commands.GlobalGameCommandCooldownEnabled || !runtime.Commands.TryGetGlobalCooldown(out TimeSpan remaining))
                 return true;
             await SayAsync(
                 sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".",
@@ -390,7 +390,7 @@ public static partial class CommandList
         {
             if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return null;
-            if (runtime.TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTicks))
+            if (runtime.Commands.TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTicks))
                 return reservationTicks;
             await SayAsync(
                 sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".",
@@ -399,7 +399,7 @@ public static partial class CommandList
         }
         async Task<bool> SendPricedAsync(ResolvedTarget target, string sender, int baseCost, Func<ResolvedTarget, IEnumerable<string>> buildCommands, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
         {
-            int cost = runtime.ScaleCost(baseCost, target.PlayerCount);
+            int cost = runtime.Commands.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedAsync(sender, cost, () => buildCommands(target), ct).ConfigureAwait(false))
                 return false;
             if (!string.IsNullOrWhiteSpace(targetMessage))
@@ -410,7 +410,7 @@ public static partial class CommandList
         }
         async Task<bool> SendPricedAsync(ResolvedTarget target, string sender, int baseCost, string command, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
         {
-            int cost = runtime.ScaleCost(baseCost, target.PlayerCount);
+            int cost = runtime.Commands.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedAsync(sender, cost, command, ct).ConfigureAwait(false))
                 return false;
             if (!string.IsNullOrWhiteSpace(targetMessage))

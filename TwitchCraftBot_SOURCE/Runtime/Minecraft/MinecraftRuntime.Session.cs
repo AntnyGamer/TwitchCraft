@@ -145,9 +145,9 @@ public sealed partial class BotMainHandler
             Volatile.Write(ref _pendingServerProbeMarkerCount, 0);
         }
 
-        ClearLightningCooldown();
-        ClearScaleCooldowns();
-        ClearGlobalCooldown();
+        Commands.ClearLightningCooldown();
+        Commands.ClearScaleCooldowns();
+        Commands.ClearGlobalCooldown();
 
         Interlocked.Exchange(ref _playerSidebarRefreshQueued, 0);
         Interlocked.Exchange(ref _initialPlayerSnapshotQueued, 0);
@@ -264,7 +264,7 @@ public sealed partial class BotMainHandler
 
     private void SafeCleanup()
     {
-        PauseSurvival();
+        Statistics.PauseSurvival();
 
         try
         {
@@ -285,8 +285,8 @@ public sealed partial class BotMainHandler
         CloseIrcSocket();
         StopProcessSafe();
 
-        _tokenStore.TryExportJson();
-        FlushForShutdown();
+        Tokens.TryExportJson();
+        Statistics.FlushForShutdown();
         CloseStores();
     }
 

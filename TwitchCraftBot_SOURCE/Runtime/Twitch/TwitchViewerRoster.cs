@@ -62,7 +62,7 @@ public sealed partial class BotMainHandler
                 }
 
                 if (rewarded is { Count: > 0 })
-                    AwardTokens(rewarded, PassiveTokensPerPayout);
+                    Tokens.Award(rewarded, PassiveTokensPerPayout);
             }
 
             try

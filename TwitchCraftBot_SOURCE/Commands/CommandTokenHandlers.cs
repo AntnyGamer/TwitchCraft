@@ -37,28 +37,28 @@ public static partial class CommandList
             if (args.Length >= 2 && int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedRisk))
                 risk = parsedRisk;
             risk = Math.Clamp(risk, 1, 10);
-            if (runtime.IsGambleOnCooldown(who, out TimeSpan cooldownRemaining))
+            if (runtime.Commands.IsGambleOnCooldown(who, out TimeSpan cooldownRemaining))
             {
                 await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who}, gamble is on cooldown. Try again in {runtime.FormatCooldown(cooldownRemaining)}."), ct).ConfigureAwait(false);
                 return;
             }
-            int balance = runtime.GetTokens(who);
-            if (!runtime.TrySpendTokens(who, amount))
+            int balance = runtime.Tokens.GetBalance(who);
+            if (!runtime.Tokens.TrySpend(who, amount))
             {
                 await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who}, you must have at least {amount} tokens to gamble that amount. You currently have {balance}."), ct).ConfigureAwait(false);
                 return;
             }
             double winChance = 0.9 - ((risk - 1) * 0.08888888888888889);
             double payoutMul = 1.05 + ((risk - 1) * 0.21666666666666667);
-            runtime.StartGambleCooldown(who, GambleTokenCooldown);
+            runtime.Commands.StartGambleCooldown(who, GambleTokenCooldown);
             bool win = BotMainHandler.SecureRandomChance(winChance);
             if (win)
             {
                 int gain = (int)Math.Round(amount * (payoutMul - 1.0));
                 if (gain <= 0)
                     gain = 1;
-                runtime.AwardTokens(who, amount + gain); // Gamble win payout restores bet plus profit up to the configured cap.
-                int newBalance = runtime.GetTokens(who);
+                runtime.Tokens.Award(who, amount + gain); // Gamble win payout restores bet plus profit up to the configured cap.
+                int newBalance = runtime.Tokens.GetBalance(who);
                 int actualGain = Math.Max(0, newBalance - balance);
                 await saySuccessfulToChannel(
                     string.Create(
@@ -68,7 +68,7 @@ public static partial class CommandList
             }
             else
             {
-                int newBalance = runtime.GetTokens(who);
+                int newBalance = runtime.Tokens.GetBalance(who);
                 await saySuccessfulToChannel(
                     string.Create(
                         CultureInfo.InvariantCulture,
@@ -113,8 +113,8 @@ public static partial class CommandList
                     return;
                 }
                 int adjustedCount = isGive
-                    ? runtime.AwardTokens(chatters, amount)
-                    : runtime.AdjustTokens(chatters, delta);
+                    ? runtime.Tokens.Award(chatters, amount)
+                    : runtime.Tokens.Adjust(chatters, delta);
                 string amountDescription = isGive && runtime.MaximumTokenBalance > 0
                     ? "up to " + amount.ToString(CultureInfo.InvariantCulture)
                     : amount.ToString(CultureInfo.InvariantCulture);
@@ -142,7 +142,7 @@ public static partial class CommandList
                     return;
                 }
                 string chosen = chatters[BotMainHandler.SecureRandomInt(chatters.Count)];
-                int adjusted = isGive ? runtime.AwardTokens(chosen, amount) : runtime.AdjustTokens(chosen, delta);
+                int adjusted = isGive ? runtime.Tokens.Award(chosen, amount) : runtime.Tokens.Adjust(chosen, delta);
                 int actualAmount = Math.Abs(adjusted);
                 await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {actualAmount} {TokenLabel(actualAmount)} {direction} random viewer {chosen}."), ct).ConfigureAwait(false);
                 return;
@@ -152,7 +152,7 @@ public static partial class CommandList
                 await sayToChannel(who + ", please provide a valid Twitch username to " + action + " tokens " + direction + ".", ct).ConfigureAwait(false);
                 return;
             }
-            int changed = isGive ? runtime.AwardTokens(targetUsername, amount) : runtime.AdjustTokens(targetUsername, delta);
+            int changed = isGive ? runtime.Tokens.Award(targetUsername, amount) : runtime.Tokens.Adjust(targetUsername, delta);
             int changedAmount = Math.Abs(changed);
             await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {changedAmount} {TokenLabel(changedAmount)} {direction} {targetUsername}."), ct).ConfigureAwait(false);
         }
@@ -165,7 +165,7 @@ public static partial class CommandList
                 await sayToChannel(whoAsked + ", please provide a valid Twitch username to check tokens for.", ct).ConfigureAwait(false);
                 return;
             }
-            int balance = runtime.GetTokens(queryUser);
+            int balance = runtime.Tokens.GetBalance(queryUser);
             if (args is { Length: > 0 })
                 await saySuccessfulToChannel(whoAsked + ", " + queryUser + " has " + balance.ToString(CultureInfo.InvariantCulture) + " " + TokenLabel(balance) + ".", ct).ConfigureAwait(false);
             else
@@ -174,7 +174,7 @@ public static partial class CommandList
         handlers["tokenleaderboard"] = async (_, sender, ct) =>
         {
             string whoAsked = NormalizeUser(sender);
-            IReadOnlyList<KeyValuePair<string, int>> leaders = runtime.GetTopTokenBalances(5);
+            IReadOnlyList<KeyValuePair<string, int>> leaders = runtime.Tokens.GetTopBalances(5);
             if (leaders.Count == 0)
             {
                 await saySuccessfulToChannel(whoAsked + ", no viewers have tokens yet.", ct).ConfigureAwait(false);
@@ -201,7 +201,7 @@ public static partial class CommandList
                 return;
             }
 
-            TokenRankResult? rank = runtime.GetTokenRank(queryUser);
+            TokenRankResult? rank = runtime.Tokens.GetRank(queryUser);
             if (rank is not TokenRankResult result)
             {
                 string subject = string.Equals(queryUser, whoAsked, StringComparison.OrdinalIgnoreCase) ? "you are" : queryUser + " is";
@@ -246,14 +246,14 @@ public static partial class CommandList
                 await sayToChannel(fromUser + ", you cannot trade tokens to yourself.", ct).ConfigureAwait(false);
                 return;
             }
-            if (!runtime.TrySpendTokens(fromUser, amount))
+            if (!runtime.Tokens.TrySpend(fromUser, amount))
             {
                 await sayToChannel(fromUser + ", you don't have enough tokens to trade.", ct).ConfigureAwait(false);
                 return;
             }
             int received = amount / 2;
             if (received > 0)
-                received = runtime.AwardTokens(toUser, received);
+                received = runtime.Tokens.Award(toUser, received);
             await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{fromUser} traded {amount} tokens to {toUser}. {toUser} received {received} tokens (50%, limited by the maximum balance if configured)."), ct).ConfigureAwait(false);
         };
     }

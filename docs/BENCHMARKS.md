@@ -1,6 +1,6 @@
 # TwitchCraft Benchmarks
 
-Performance testing for TwitchCraft.
+Performance testing for TwitchCraft. (for v1.8.0.0)
 
 > **TL;DR:** TwitchCraft itself is lightweight. In the latest minimized benchmark, it averaged roughly **171–182 MB RAM** and **0.01–0.08% CPU** depending on the selected settings. The Minecraft Java server is a much larger part of total system memory use. For ordinary use, TwitchCraft generally stays around **150–185 MB of RAM** and uses a very small amount of CPU. If you are running TwitchCraft on the same PC as Minecraft and streaming software, **Low Resource Mode** is the best option when you want to minimize background overhead.
 

@@ -168,7 +168,7 @@ public sealed partial class BotMainHandler
             }
 
             if (!activeConfig.Settings.GlobalGameCommandCooldownEnabled)
-                ClearGlobalCooldown();
+                Commands.ClearGlobalCooldown();
 
             if (passiveScheduleChanged)
             {

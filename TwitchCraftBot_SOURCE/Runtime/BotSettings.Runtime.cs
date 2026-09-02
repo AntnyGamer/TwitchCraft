@@ -324,13 +324,13 @@ public sealed partial class BotMainHandler
 
     internal bool HasPerUserCooldownOverride(string? commandName = null)
     {
-        string name = (commandName ?? _currentStatisticCommandName.Value ?? string.Empty).Trim();
+        string name = (commandName ?? Statistics.CurrentCommandName).Trim();
         return TryGetCommandSettings(name, out CommandCustomization customization) && customization.CooldownSeconds.HasValue;
     }
 
     internal bool HasGlobalCooldownOverride(string? commandName = null)
     {
-        string name = (commandName ?? _currentStatisticCommandName.Value ?? string.Empty).Trim();
+        string name = (commandName ?? Statistics.CurrentCommandName).Trim();
         return TryGetCommandSettings(name, out CommandCustomization customization) && customization.GlobalCooldownSeconds.HasValue;
     }
 

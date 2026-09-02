@@ -24,11 +24,11 @@ public sealed class CommandRuntimeIntegrationTests
         try
         {
             await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
-            runtime.AwardTokens("viewer", 100);
+            runtime.Tokens.Award("viewer", 100);
 
             await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
-            Assert.Equal(100, runtime.GetTokens("viewer"));
+            Assert.Equal(100, runtime.Tokens.GetBalance("viewer"));
             Assert.Empty(FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin"));
 
             config.Settings.CommandCustomizations["night"].Enabled = true;
@@ -38,7 +38,7 @@ public sealed class CommandRuntimeIntegrationTests
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
             List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
 
-            Assert.Equal(85, runtime.GetTokens("viewer"));
+            Assert.Equal(85, runtime.Tokens.GetBalance("viewer"));
             Assert.Equal("time set night", commands[0]);
             Assert.StartsWith("tellraw @a ", commands[1], StringComparison.Ordinal);
             Assert.Contains("viewer made it night", commands[1], StringComparison.OrdinalIgnoreCase);
@@ -66,8 +66,8 @@ public sealed class CommandRuntimeIntegrationTests
         try
         {
             await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
-            runtime.AwardTokens("alice", 100);
-            runtime.AwardTokens("bob", 100);
+            runtime.Tokens.Award("alice", 100);
+            runtime.Tokens.Award("bob", 100);
 
             await QueueCommandAndWaitAsync(runtime, "!night", "alice", cancellationToken);
             await QueueCommandAndWaitAsync(runtime, "!night", "alice", cancellationToken);
@@ -77,8 +77,8 @@ public sealed class CommandRuntimeIntegrationTests
             List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
 
             Assert.Equal(4, commands.Count);
-            Assert.Equal(85, runtime.GetTokens("alice"));
-            Assert.Equal(85, runtime.GetTokens("bob"));
+            Assert.Equal(85, runtime.Tokens.GetBalance("alice"));
+            Assert.Equal(85, runtime.Tokens.GetBalance("bob"));
             Assert.Equal(2, commands.Count(command => string.Equals(command, "time set night", StringComparison.Ordinal)));
 
             config.Settings.CommandCustomizations["night"] = new CommandCustomization
@@ -86,8 +86,8 @@ public sealed class CommandRuntimeIntegrationTests
                 GlobalCooldownSeconds = 60
             };
             await runtime.ApplySettingsAsync(config);
-            runtime.AwardTokens("carol", 100);
-            runtime.AwardTokens("dave", 100);
+            runtime.Tokens.Award("carol", 100);
+            runtime.Tokens.Award("dave", 100);
 
             await QueueCommandAndWaitAsync(runtime, "!night", "carol", cancellationToken);
             await QueueCommandAndWaitAsync(runtime, "!night", "dave", cancellationToken);
@@ -96,8 +96,8 @@ public sealed class CommandRuntimeIntegrationTests
             commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
 
             Assert.Equal(6, commands.Count);
-            Assert.Equal(85, runtime.GetTokens("carol"));
-            Assert.Equal(100, runtime.GetTokens("dave"));
+            Assert.Equal(85, runtime.Tokens.GetBalance("carol"));
+            Assert.Equal(100, runtime.Tokens.GetBalance("dave"));
             Assert.Equal(3, commands.Count(command => string.Equals(command, "time set night", StringComparison.Ordinal)));
         }
         finally
@@ -134,7 +134,7 @@ public sealed class CommandRuntimeIntegrationTests
         finally
         {
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -170,7 +170,7 @@ public sealed class CommandRuntimeIntegrationTests
         finally
         {
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -202,7 +202,7 @@ public sealed class CommandRuntimeIntegrationTests
         finally
         {
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -222,12 +222,12 @@ public sealed class CommandRuntimeIntegrationTests
         try
         {
             await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
-            runtime.AwardTokens("viewer", 100);
+            runtime.Tokens.Award("viewer", 100);
 
             await runtime.StopProcessSafeAsync(waitBriefly: false);
             await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
-            Assert.Equal(100, runtime.GetTokens("viewer"));
+            Assert.Equal(100, runtime.Tokens.GetBalance("viewer"));
             Assert.Empty(FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin"));
 
             await runtime.StartServerAsync(config, serverCts.Token);
@@ -236,7 +236,7 @@ public sealed class CommandRuntimeIntegrationTests
             await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
-            Assert.Equal(85, runtime.GetTokens("viewer"));
+            Assert.Equal(85, runtime.Tokens.GetBalance("viewer"));
         }
         finally
         {

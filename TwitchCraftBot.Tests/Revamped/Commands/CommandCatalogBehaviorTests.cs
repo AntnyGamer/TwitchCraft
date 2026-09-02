@@ -54,7 +54,7 @@ public sealed class CommandCatalogBehaviorTests
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -84,11 +84,11 @@ public sealed class CommandCatalogBehaviorTests
 
             await handler(["all", "25"], "streamer", CancellationToken.None);
 
-            Assert.All(knownChatters, viewer => Assert.Equal(25, runtime.GetTokens(viewer)));
+            Assert.All(knownChatters, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
         }
         finally
         {
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 }

@@ -3,13 +3,47 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1;
 
-public sealed partial class BotMainHandler
+/// <summary>
+/// Owns command targeting, authorization, costs, and command-specific cooldown state.
+/// </summary>
+public sealed class CommandService
 {
     private const double DefaultGlobalGameCommandCooldownSeconds = 10.0;
+    private static readonly TimeSpan FiveMinuteCommandCooldown = TimeSpan.FromMinutes(5);
+    private BotConfig? _config;
+    private string _defaultMinecraftPlayer = string.Empty;
+    private readonly Func<string?, bool> _hasGlobalCooldownOverride;
+    private readonly Func<string, bool> _hasPerUserCooldownOverride;
+    private readonly Func<CancellationToken, Task<List<string>>> _refreshPlayers;
+    private readonly Lock _cooldownGate = new();
     private readonly AsyncLocal<bool> _currentCommandSenderIsModerator = new();
+    private readonly Dictionary<string, DateTime> _timedScaleCommandCooldowns = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DateTime> _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
+    private DateTime _lastLightningUtc;
+    private int _fireworksRepeatActive;
+
+    internal CommandService(
+        Func<string?, bool> hasGlobalCooldownOverride,
+        Func<string, bool> hasPerUserCooldownOverride,
+        Func<CancellationToken, Task<List<string>>> refreshPlayers)
+    {
+        ArgumentNullException.ThrowIfNull(hasGlobalCooldownOverride);
+        ArgumentNullException.ThrowIfNull(hasPerUserCooldownOverride);
+        ArgumentNullException.ThrowIfNull(refreshPlayers);
+        _hasGlobalCooldownOverride = hasGlobalCooldownOverride;
+        _hasPerUserCooldownOverride = hasPerUserCooldownOverride;
+        _refreshPlayers = refreshPlayers;
+    }
+
+    internal void SetContext(BotConfig? config, string defaultMinecraftPlayer)
+    {
+        _config = config;
+        _defaultMinecraftPlayer = defaultMinecraftPlayer;
+    }
 
     public int ScaleCost(int baseCost, int playerCount)
     {
@@ -18,10 +52,12 @@ public sealed partial class BotMainHandler
             return 0;
         }
 
-        long targetScaledCost = !MultiTargetingEnabled || playerCount <= 1
+        BotConfig? config = _config;
+        bool multiTargetingEnabled = config?.Settings.MultiplayerEnabled == true || config?.Settings.RemoteControlEnabled == true;
+        long targetScaledCost = !multiTargetingEnabled || playerCount <= 1
             ? baseCost
             : (baseCost * (playerCount + 1L)) / 2L;
-        double multiplier = _activeConfig?.Settings.CommandCostMultiplier ?? 1.0;
+        double multiplier = config?.Settings.CommandCostMultiplier ?? 1.0;
         return GetCommandCost(targetScaledCost, multiplier);
     }
 
@@ -31,7 +67,6 @@ public sealed partial class BotMainHandler
             return 0;
         if (!double.IsFinite(multiplier) || multiplier < 0.0 || multiplier > 5.0)
             multiplier = 1.0;
-
         double scaled = Math.Ceiling(cost * multiplier);
         return scaled >= int.MaxValue ? int.MaxValue : (int)scaled;
     }
@@ -41,7 +76,7 @@ public sealed partial class BotMainHandler
     public void StopFireworks() => Volatile.Write(ref _fireworksRepeatActive, 0);
 
     public bool GlobalGameCommandCooldownEnabled
-        => _activeConfig?.Settings.GlobalGameCommandCooldownEnabled == true && !HasGlobalCooldownOverride();
+        => _config?.Settings.GlobalGameCommandCooldownEnabled == true && !_hasGlobalCooldownOverride(null);
 
     public void SetModerator(bool isModerator)
         => _currentCommandSenderIsModerator.Value = isModerator;
@@ -56,12 +91,12 @@ public sealed partial class BotMainHandler
     {
         get
         {
-            double seconds = _activeConfig?.Settings.GlobalGameCommandCooldownSeconds ?? DefaultGlobalGameCommandCooldownSeconds;
+            double seconds = _config?.Settings.GlobalGameCommandCooldownSeconds ?? DefaultGlobalGameCommandCooldownSeconds;
             if (double.IsNaN(seconds) || seconds < 0.1 || seconds > 120.0)
                 seconds = DefaultGlobalGameCommandCooldownSeconds;
-
             return TimeSpan.FromSeconds(seconds).Ticks;
         }
+
     }
 
     public bool TryGetGlobalCooldown(out TimeSpan remaining)
@@ -76,7 +111,6 @@ public sealed partial class BotMainHandler
         long last = Interlocked.Read(ref _lastTicks);
         long next = last + cooldownTicks;
         long now = DateTime.UtcNow.Ticks;
-
         if (now < next)
         {
             remaining = TimeSpan.FromTicks(next - now);
@@ -102,7 +136,6 @@ public sealed partial class BotMainHandler
             long last = Interlocked.Read(ref _lastTicks);
             long next = last + cooldownTicks;
             long now = DateTime.UtcNow.Ticks;
-
             if (now < next)
             {
                 remaining = TimeSpan.FromTicks(next - now);
@@ -115,7 +148,9 @@ public sealed partial class BotMainHandler
                 remaining = TimeSpan.Zero;
                 return true;
             }
+
         }
+
     }
 
     public void ClearGlobalCooldown()
@@ -131,12 +166,13 @@ public sealed partial class BotMainHandler
 
     public bool TryUseLightning(out TimeSpan remaining, out DateTime reservationUtc)
     {
-        if (HasGlobalCooldownOverride("lightning"))
+        if (_hasGlobalCooldownOverride("lightning"))
         {
             remaining = TimeSpan.Zero;
             reservationUtc = DateTime.MinValue;
             return true;
         }
+
         lock (_cooldownGate)
         {
             DateTime now = DateTime.UtcNow;
@@ -153,6 +189,7 @@ public sealed partial class BotMainHandler
             reservationUtc = now;
             return true;
         }
+
     }
 
     public void ClearLightningCooldown()
@@ -161,6 +198,7 @@ public sealed partial class BotMainHandler
         {
             _lastLightningUtc = DateTime.MinValue;
         }
+
     }
 
     public void ClearLightningCooldown(DateTime reservationUtc)
@@ -170,6 +208,7 @@ public sealed partial class BotMainHandler
             if (_lastLightningUtc == reservationUtc)
                 _lastLightningUtc = DateTime.MinValue;
         }
+
     }
 
     internal bool TryUseScaleCommand(string commandName, out TimeSpan remaining, out DateTime reservationUtc)
@@ -177,8 +216,7 @@ public sealed partial class BotMainHandler
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0)
             throw new ArgumentException("A command name is required.", nameof(commandName));
-
-        if (HasGlobalCooldownOverride(normalizedCommand))
+        if (_hasGlobalCooldownOverride(normalizedCommand))
         {
             remaining = TimeSpan.Zero;
             reservationUtc = DateTime.MinValue;
@@ -197,6 +235,7 @@ public sealed partial class BotMainHandler
                     reservationUtc = DateTime.MinValue;
                     return false;
                 }
+
             }
 
             _timedScaleCommandCooldowns[normalizedCommand] = now;
@@ -204,6 +243,7 @@ public sealed partial class BotMainHandler
             reservationUtc = now;
             return true;
         }
+
     }
 
     internal void ClearScaleCooldowns()
@@ -212,6 +252,7 @@ public sealed partial class BotMainHandler
         {
             _timedScaleCommandCooldowns.Clear();
         }
+
     }
 
     internal void ClearScaleCooldown(string commandName, DateTime reservationUtc)
@@ -219,22 +260,23 @@ public sealed partial class BotMainHandler
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0 || reservationUtc == DateTime.MinValue)
             return;
-
         lock (_cooldownGate)
         {
             if (_timedScaleCommandCooldowns.TryGetValue(normalizedCommand, out DateTime current) && current == reservationUtc)
                 _timedScaleCommandCooldowns.Remove(normalizedCommand);
         }
+
     }
 
     public bool IsGambleOnCooldown(string user, out TimeSpan remaining)
     {
-        if (HasPerUserCooldownOverride("gambletokens"))
+        if (_hasPerUserCooldownOverride("gambletokens"))
         {
             remaining = TimeSpan.Zero;
             return false;
         }
-        string normalized = NormalizeUser(user);
+
+        string normalized = CommandUserHelper.NormalizeUser(user);
         lock (_cooldownGate)
         {
             if (_gambleCooldowns.TryGetValue(normalized, out DateTime until))
@@ -248,6 +290,7 @@ public sealed partial class BotMainHandler
 
                 _gambleCooldowns.Remove(normalized);
             }
+
         }
 
         remaining = TimeSpan.Zero;
@@ -256,22 +299,22 @@ public sealed partial class BotMainHandler
 
     public void StartGambleCooldown(string user, TimeSpan duration)
     {
-        if (HasPerUserCooldownOverride("gambletokens"))
+        if (_hasPerUserCooldownOverride("gambletokens"))
             return;
-        string normalized = NormalizeUser(user);
+        string normalized = CommandUserHelper.NormalizeUser(user);
         lock (_cooldownGate)
         {
             _gambleCooldowns[normalized] = DateTime.UtcNow + duration;
         }
+
     }
 
     public bool IsAllowedUser(string user)
     {
-        var config = _activeConfig;
+        BotConfig? config = _config;
         if (config == null)
             return false;
-
-        string normalized = NormalizeUser(user);
+        string normalized = CommandUserHelper.NormalizeUser(user);
         return string.Equals(normalized, config.Twitch.StreamerName, StringComparison.OrdinalIgnoreCase)
             || string.Equals(normalized, config.Twitch.BotName, StringComparison.OrdinalIgnoreCase)
             || (config.Settings.ModeratorsCanUseStreamerCommands && _currentCommandSenderIsModerator.Value);
@@ -298,25 +341,26 @@ public sealed partial class BotMainHandler
         Func<string, CancellationToken, Task> replyAsync,
         CancellationToken cancellationToken)
     {
-        if (!MultiTargetingEnabled)
+        BotConfig? config = _config;
+        string defaultMinecraftPlayer = _defaultMinecraftPlayer;
+        bool multiTargetingEnabled = config?.Settings.MultiplayerEnabled == true || config?.Settings.RemoteControlEnabled == true;
+        if (!multiTargetingEnabled)
         {
-            string streamer = _activeConfig?.Twitch.StreamerName.Trim() ?? string.Empty;
-
+            string streamer = config?.Twitch.StreamerName.Trim() ?? string.Empty;
             return new ResolvedTarget
             {
                 Selector = "@a",
-                DisplayName = streamer.Length > 0 ? streamer : (DefaultMinecraftPlayer.Length == 0 ? "everyone" : DefaultMinecraftPlayer),
-                MinecraftName = DefaultMinecraftPlayer,
+                DisplayName = streamer.Length > 0 ? streamer : (defaultMinecraftPlayer.Length == 0 ? "everyone" : defaultMinecraftPlayer),
+                MinecraftName = defaultMinecraftPlayer,
                 PlayerCount = 1
             };
         }
 
-        string defaultPlayer = DefaultMinecraftPlayer;
+        string defaultPlayer = defaultMinecraftPlayer;
         string player = args != null && startIndex >= 0 && startIndex < args.Count
             ? (args[startIndex] ?? string.Empty).Trim()
             : string.Empty;
-        List<string> online = await RefreshPlayersAsync(cancellationToken).ConfigureAwait(false);
-
+        List<string> online = await _refreshPlayers(cancellationToken).ConfigureAwait(false);
         if (player.Length == 0)
         {
             if (defaultPlayer.Length > 0)
@@ -326,6 +370,7 @@ public sealed partial class BotMainHandler
                 {
                     return MakePlayerTarget(exactDefault);
                 }
+
             }
 
             if (online.Count == 1)
@@ -340,6 +385,7 @@ public sealed partial class BotMainHandler
                     ? requester + ", " + defaultPlayer + " is not online. Please specify a player name."
                     : requester + ", please specify which player to target.";
             }
+
             else
             {
                 message = defaultPlayer.Length > 0
@@ -353,7 +399,7 @@ public sealed partial class BotMainHandler
 
         if (string.Equals(player, "all", StringComparison.OrdinalIgnoreCase))
         {
-            if (!AllowAllPlayerTarget)
+            if (_config?.Settings.AllowAllPlayerTarget == false)
             {
                 await replyAsync(requester + ", targeting every player is disabled. You were not charged.", cancellationToken).ConfigureAwait(false);
                 return null;
@@ -383,6 +429,7 @@ public sealed partial class BotMainHandler
                 {
                     return MakePlayerTarget(exactDefault);
                 }
+
             }
 
             await replyAsync(requester + ", invalid player name '" + player + "'. You were not charged.", cancellationToken).ConfigureAwait(false);

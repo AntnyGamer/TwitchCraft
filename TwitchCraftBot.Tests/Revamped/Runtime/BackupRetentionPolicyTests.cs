@@ -12,7 +12,7 @@ public sealed class BackupRetentionPolicyTests
         CreateCompleteBackup(root.Path, "20260830-231500-a1b2c3");
         CreateCompleteBackup(root.Path, "20260829-231500");
 
-        BotMainHandler.PruneBackups(root.Path, retentionCount: 1);
+        DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
 
         Assert.True(Directory.Exists(Path.Combine(root.Path, "20260830-231500-a1b2c3")));
         Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-231500")));
@@ -26,7 +26,7 @@ public sealed class BackupRetentionPolicyTests
         string unrelated = Path.Combine(root.Path, "2026-08-30-231500");
         Directory.CreateDirectory(unrelated);
 
-        BotMainHandler.PruneBackups(root.Path, retentionCount: 1);
+        DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
 
         Assert.True(Directory.Exists(unrelated));
     }
@@ -46,7 +46,7 @@ public sealed class BackupRetentionPolicyTests
         foreach (string name in names)
             CreateCompleteBackup(root.Path, name);
 
-        BotMainHandler.PruneBackups(root.Path, retentionCount: 3);
+        DataMaintenance.PruneBackups(root.Path, retentionCount: 3);
 
         Assert.False(Directory.Exists(Path.Combine(root.Path, names[0])));
         Assert.False(Directory.Exists(Path.Combine(root.Path, names[1])));
@@ -62,7 +62,7 @@ public sealed class BackupRetentionPolicyTests
         Directory.CreateDirectory(Path.Combine(root.Path, "20260829-120000"));
         Directory.CreateDirectory(Path.Combine(root.Path, "notes"));
 
-        BotMainHandler.PruneBackups(root.Path, retentionCount: 1);
+        DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
 
         Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000")));
         Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-120000")));

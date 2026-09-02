@@ -38,7 +38,7 @@ public static partial class CommandList
         }
         async Task CommandStatsAsync(string[]? _, string sender, CancellationToken ct)
         {
-            BotStatisticsSnapshot stats = runtime.GetStatsSnapshot(ct);
+            BotStatisticsSnapshot stats = runtime.Statistics.GetSnapshot(ct);
             if (!stats.StatisticsEnabled)
             {
                 await SayAsync(sender + ", statistics are disabled in TwitchCraft settings.", ct).ConfigureAwait(false);
@@ -211,7 +211,7 @@ public static partial class CommandList
                     return;
             }
             string channelTargetName = TargetName(target);
-            int cost = runtime.ScaleCost(count, target.PlayerCount);
+            int cost = runtime.Commands.ScaleCost(count, target.PlayerCount);
             List<string> effectCommands = new(count);
             List<string> effectNames = new(count);
             for (int i = 0; i < count; i++)
@@ -228,7 +228,7 @@ public static partial class CommandList
             if (!await TrySendPricedAsync(sender, cost, () => effectCommands, ct).ConfigureAwait(false))
                 return;
             bool streamerReceivedEffect = await IncludesStreamerAsync(target, ct).ConfigureAwait(false);
-            runtime.RecordEffects(count, streamerReceivedEffect);
+            runtime.Statistics.RecordEffects(count, streamerReceivedEffect);
             foreach (string effectPretty in effectNames)
             {
                 await runtime.SendTellrawAsync(target.Selector, sender + " gave you " + effectPretty + ".", "yellow", true, ct).ConfigureAwait(false);

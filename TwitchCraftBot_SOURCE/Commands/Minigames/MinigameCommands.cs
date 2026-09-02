@@ -215,7 +215,7 @@ public static partial class MinigameManager
                 return;
             }
 
-            runtime.AwardTokens(sender, 10); //Guess Number Win
+            runtime.Tokens.Award(sender, 10); //Guess Number Win
             await saySuccessfulToChannel(sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + " and won 10 tokens!", ct).ConfigureAwait(false);
         };
 

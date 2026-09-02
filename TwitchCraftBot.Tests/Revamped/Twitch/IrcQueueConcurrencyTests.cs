@@ -64,7 +64,7 @@ public sealed class IrcQueueConcurrencyTests
         {
             runtime.ResetQueues();
             releaseFirst.TrySetResult(true);
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -107,7 +107,7 @@ public sealed class IrcQueueConcurrencyTests
         {
             runtime.ResetQueues();
             releaseFirst.TrySetResult(true);
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 
@@ -188,7 +188,7 @@ public sealed class IrcQueueConcurrencyTests
         {
             runtime.ResetQueues();
             releaseOldWork.TrySetResult(true);
-            runtime.CloseTokenStore();
+            runtime.Tokens.Close();
         }
     }
 

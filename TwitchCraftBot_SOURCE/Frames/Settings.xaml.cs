@@ -672,7 +672,7 @@ public partial class Settings : UserControl
 
         try
         {
-            await parent.ResetStatisticsAsync();
+            await parent.Runtime.Statistics.ResetAllAsync();
         }
         catch (Exception ex)
         {
