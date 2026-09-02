@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
-## [1.8.0.0] - 2026-09-01
+## [1.8.0.0] - 2026-09-02
 
 - Completely redesigned and greatly expanded Settings with many new command, economy, chat, performance, backup, and Minecraft server options
 - Added per-command customization, customizable command prefixes, rate limits, and cooldown controls

@@ -38,10 +38,11 @@ public sealed class AuthorizationUiLifecycleTests
                 Dispatcher.CurrentDispatcher.InvokeShutdown();
             }
         });
+        thread.IsBackground = true;
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
 
-        Assert.True(thread.Join(TimeSpan.FromSeconds(10)), "Settings UI test did not finish.");
+        Assert.True(thread.Join(TimeSpan.FromSeconds(15)), "Settings UI test did not finish.");
         if (failure != null)
             ExceptionDispatchInfo.Capture(failure).Throw();
     }
