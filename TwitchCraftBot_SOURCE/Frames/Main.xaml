@@ -46,6 +46,13 @@
 
             <TextBlock Text="Twitch Log:" FontFamily="Segoe UI Variable Display Semibold" FontSize="18" TextAlignment="Center" Margin="102,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
+            <Border x:Name="ConnectionHealthPanel" Width="180" Height="44" Background="Transparent" BorderBrush="#FF545454" BorderThickness="1" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="422,84,0,0">
+                <StackPanel Margin="4,3,4,3">
+                    <TextBlock x:Name="TwitchConnectionHealth" Text="Twitch: Connecting" FontFamily="Segoe UI Variable Display Semibold" FontSize="12" TextAlignment="Center" />
+                    <TextBlock x:Name="MinecraftConnectionHealth" Text="Minecraft: Starting" FontFamily="Segoe UI Variable Display Semibold" FontSize="12" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
+
             <Border Width="268" Height="155" BorderBrush="#FF545454" BorderThickness="2" Margin="14,79,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
 
                 <TextBox x:Name="TwitchLogs" BorderThickness="0" Background="#F0F0F0" Foreground="Black" IsReadOnly="True" IsUndoEnabled="False" UndoLimit="0" FontFamily="Consolas" FontSize="8" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
@@ -67,17 +74,17 @@
                 <TextBox x:Name="MinecraftLogs" BorderThickness="0" Background="White" Foreground="Black" IsReadOnly="True" IsUndoEnabled="False" UndoLimit="0" FontFamily="Consolas" FontSize="8" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
             </Border>
 
-            <TextBox x:Name="CommandTextBox" Width="195" Height="20" FontFamily="HP Simplified" FontSize="12" KeyDown="CommandTextBox_KeyDown" Margin="14,418,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <TextBox x:Name="CommandTextBox" Width="195" Height="20" FontFamily="HP Simplified" FontSize="12" KeyDown="CommandBox_KeyDown" Margin="14,418,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <Button x:Name="CommandButton" Width="75" Height="20" Content="Send" Click="CommandButton_Click" FontFamily="HP Simplified" Margin="207,418,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <Button x:Name="CommandButton" Width="75" Height="20" Content="Send" Click="SendCommand_Click" FontFamily="HP Simplified" Margin="207,418,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <Button x:Name="Restart" Width="117" Height="51" Content="Restart" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="RestartButton_Click" Margin="635,198,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <Button x:Name="Restart" Width="117" Height="51" Content="Restart" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Restart_Click" Margin="635,198,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <Button x:Name="Pause" Width="117" Height="51" Content="Pause" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="PauseButton_Click" Margin="635,110,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <Button x:Name="Pause" Width="117" Height="51" Content="Pause" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Pause_Click" Margin="635,110,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <Button x:Name="Reset" Width="117" Height="51" Content="Reset" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="ResetButton_Click" Margin="635,286,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <Button x:Name="Reset" Width="117" Height="51" Content="Reset" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Reset_Click" Margin="635,286,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-            <Button x:Name="Shutdown" Width="117" Height="50" Content="Shutdown" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="ShutdownButton_Click" Margin="635,374,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <Button x:Name="Shutdown" Width="117" Height="50" Content="Shutdown" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Shutdown_Click" Margin="635,374,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
             <Image x:Name="Gear" Height="34" Source="/Assets/Gear.png" Stretch="Fill" Width="34" HorizontalAlignment="Left" VerticalAlignment="Top" Cursor="Hand" MouseLeftButtonDown="Help_Click" Margin="6,6,0,0" />
             <Image x:Name="Statistics" Height="34" Source="/Assets/Statistics.png" Stretch="Fill" Width="34" Cursor="Hand" MouseLeftButtonDown="Stats_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="45,6,0,0" />
         </Grid></Viewbox></Grid></UserControl>

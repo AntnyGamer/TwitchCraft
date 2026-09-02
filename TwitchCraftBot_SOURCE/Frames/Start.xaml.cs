@@ -1,6 +1,4 @@
-using Microsoft.Win32;
 using System;
-using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
@@ -32,48 +30,48 @@ public partial class Start : UserControl
         string? botVersion = typeof(Start).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         BotVersion.Text = "Bot Version: " + (botVersion ?? "Unknown").Split('+', 2)[0];
         Focusable = true;
-        MCUserTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();
-        RemoteHostTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();
-        RemoteRCONPortTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();
-        RemoteRCONPortTextbox.PreviewTextInput += RemoteRCONPortTextbox_PreviewTextInput;
-        DataObject.AddPastingHandler(RemoteRCONPortTextbox, RemoteRCONPortTextbox_Pasting);
-        RemoteRCONPasswordBox.PasswordChanged += (_, _) => UpdateMultiplayerUi();
-        RemoteRCONPasswordTextbox.TextChanged += (_, _) => UpdateMultiplayerUi();
-        RemoteRCONPasswordShowCheckbox.Checked += RemoteRCONPasswordShowCheckbox_Changed;
-        RemoteRCONPasswordShowCheckbox.Unchecked += RemoteRCONPasswordShowCheckbox_Changed;
-        Loaded += Start_Loaded;
-        Unloaded += Start_Unloaded;
-        UpdateMultiplayerUi();
+        MCUserTextbox.TextChanged += (_, _) => UpdateMultiplayer();
+        RemoteHostTextbox.TextChanged += (_, _) => UpdateMultiplayer();
+        RemoteRCONPortTextbox.TextChanged += (_, _) => UpdateMultiplayer();
+        RemoteRCONPortTextbox.PreviewTextInput += RconPort_PreviewTextInput;
+        DataObject.AddPastingHandler(RemoteRCONPortTextbox, RconPort_Pasting);
+        RemoteRCONPasswordBox.PasswordChanged += (_, _) => UpdateMultiplayer();
+        RemoteRCONPasswordTextbox.TextChanged += (_, _) => UpdateMultiplayer();
+        RemoteRCONPasswordShowCheckbox.Checked += ShowRconPassword_Changed;
+        RemoteRCONPasswordShowCheckbox.Unchecked += ShowRconPassword_Changed;
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+        UpdateMultiplayer();
     }
 
-    private void RemoteRCONPortTextbox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    private void RconPort_PreviewTextInput(object sender, TextCompositionEventArgs e)
         => e.Handled = !IsDigits(e.Text);
 
-    private void RemoteRCONPortTextbox_Pasting(object sender, DataObjectPastingEventArgs e)
+    private void RconPort_Pasting(object sender, DataObjectPastingEventArgs e)
     {
         if (e.DataObject.GetData(DataFormats.Text) is not string text || !IsDigits(text))
             e.CancelCommand();
     }
 
-    private void Start_Loaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
         Window? window = Window.GetWindow(this);
         if (window != null)
         {
-            window.PreviewKeyDown -= StartWindow_PreviewKeyDown;
-            window.PreviewKeyDown += StartWindow_PreviewKeyDown;
+            window.PreviewKeyDown -= Start_PreviewKeyDown;
+            window.PreviewKeyDown += Start_PreviewKeyDown;
         }
     }
 
-    private void Start_Unloaded(object sender, RoutedEventArgs e)
+    private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         if (Window.GetWindow(this) is Window window)
         {
-            window.PreviewKeyDown -= StartWindow_PreviewKeyDown;
+            window.PreviewKeyDown -= Start_PreviewKeyDown;
         }
     }
 
-    private void StartWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void Start_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         Key key = e.Key == Key.System ? e.SystemKey : e.Key;
         bool pressedRemoteShortcut = key == Key.R
@@ -101,14 +99,14 @@ public partial class Start : UserControl
         }
 
         e.Handled = true;
-        UpdateMultiplayerUi();
+        UpdateMultiplayer();
     }
 
-    public void RefreshFromConfig()
+    public void RefreshConfig()
     {
         try
         {
-            if (AppHelpers.GetParentBot(this) == null)
+            if (AppHelpers.GetBotWindow(this) == null)
             {
                 MCVersion.Text = "Main window was not found.";
                 MCUserTextbox.Text = string.Empty;
@@ -117,7 +115,7 @@ public partial class Start : UserControl
 
             BotConfig config = ConfigurationStore.Load();
             string minecraftVersion = string.IsNullOrWhiteSpace(config.Server.MinecraftVersion)
-                ? "(unknown version)"
+                ? "(not configured)"
                 : config.Server.MinecraftVersion.Trim();
 
             MCVersion.Text = "Minecraft " + minecraftVersion;
@@ -130,24 +128,24 @@ public partial class Start : UserControl
             string RCONPortText = config.Server.RCON.Port.ToString();
             if (!string.Equals(RemoteRCONPortTextbox.Text, RCONPortText, StringComparison.Ordinal))
                 RemoteRCONPortTextbox.Text = RCONPortText;
-            if (!string.Equals(GetRemoteRCONPasswordText(), config.Server.RCON.Password, StringComparison.Ordinal))
-                SetRemoteRCONPasswordText(config.Server.RCON.Password);
+            if (!string.Equals(GetRconPassword(), config.Server.RCON.Password, StringComparison.Ordinal))
+                SetRconPassword(config.Server.RCON.Password);
             if (!string.Equals(MCUserTextbox.Text, config.Identity.StreamerMinecraftName, StringComparison.Ordinal))
                 MCUserTextbox.Text = config.Identity.StreamerMinecraftName;
             _showMinecraftUsernameUntilStart = !MinecraftNameHelper.IsValidPlayerName(MCUserTextbox.Text);
 
-            UpdateMultiplayerUi();
+            UpdateMultiplayer();
         }
         catch
         {
             MCVersion.Text = "Config found, but it could not be read.";
             MCUserTextbox.Text = string.Empty;
             _showMinecraftUsernameUntilStart = true;
-            UpdateMultiplayerUi();
+            UpdateMultiplayer();
         }
     }
 
-    private async void StartButton_Click(object sender, RoutedEventArgs e)
+    private async void Start_Click(object sender, RoutedEventArgs e)
     {
         if (_launchClickInProgress)
         {
@@ -155,19 +153,19 @@ public partial class Start : UserControl
         }
 
         _launchClickInProgress = true;
-        UpdateMultiplayerUi();
+        UpdateMultiplayer();
 
         try
         {
-            if (!ApplyLaunchSettingsToConfig())
+            if (!ApplyLaunch())
             {
                 return;
             }
 
-            TwitchCraftBot? parent = AppHelpers.GetParentBot(this);
+            TwitchCraftBot? parent = AppHelpers.GetBotWindow(this);
             if (parent == null)
             {
-                ErrorHandling.ShowStartWindowNotFound(this);
+                ErrorHandling.ShowStartWindowError(this);
                 return;
             }
 
@@ -175,10 +173,10 @@ public partial class Start : UserControl
             {
                 BotConfig config = ConfigurationStore.Load();
                 config.Settings.MultiplayerEnabled = true;
-                DatapackInstaller.SyncLocatePlayersDatapack(config);
+                DatapackInstaller.SyncLocateDatapack(config);
             }
 
-            await parent.BeginLaunchAsync();
+            await parent.StartAsync();
         }
         catch (Exception ex)
         {
@@ -187,21 +185,21 @@ public partial class Start : UserControl
         finally
         {
             _launchClickInProgress = false;
-            UpdateMultiplayerUi();
+            UpdateMultiplayer();
         }
     }
 
-    private async void ImportWorldButton_Click(object sender, RoutedEventArgs e)
+    private async void ImportWorld_Click(object sender, RoutedEventArgs e)
     {
         try
         {
             if (_launchClickInProgress || _worldImportInProgress)
                 return;
 
-            TwitchCraftBot? parent = AppHelpers.GetParentBot(this);
+            TwitchCraftBot? parent = AppHelpers.GetBotWindow(this);
             if (parent == null)
             {
-                ErrorHandling.ShowImportWorldWindowNotFound(this);
+                ErrorHandling.ShowImportWindowError(this);
                 return;
             }
 
@@ -213,30 +211,30 @@ public partial class Start : UserControl
 
             if (string.IsNullOrWhiteSpace(config.Server.ServerDirectory))
             {
-                ErrorHandling.ShowSetupRequiredBeforeImportWorld(this);
+                ErrorHandling.ShowSetupRequired(this);
                 return;
             }
 
-            string? selectedWorldPath = LookForMinecraftWorldFolder();
+            string? selectedWorldPath = AppHelpers.FindWorldFolder();
             if (string.IsNullOrWhiteSpace(selectedWorldPath))
             {
                 return;
             }
 
-            if (!MinecraftWorldImporter.IsMinecraftWorldFolder(selectedWorldPath))
+            if (!MinecraftWorldImporter.IsWorldFolder(selectedWorldPath))
             {
-                ErrorHandling.ShowInvalidWorldFolder(this, selectedWorldPath);
+                ErrorHandling.ShowWorldFolderError(this, selectedWorldPath);
                 return;
             }
 
             MinecraftWorldImportPlan importPlan = MinecraftWorldImporter.CreateImportPlan(config, selectedWorldPath);
             if (importPlan.SourceIsCurrentWorld)
             {
-                ErrorHandling.ShowWorldAlreadyCurrent(this);
+                ErrorHandling.ShowWorldLoaded(this);
                 return;
             }
 
-            if (importPlan.DestinationExists && !ErrorHandling.ConfirmOverwriteExistingWorld(this))
+            if (importPlan.DestinationExists && !ErrorHandling.ConfirmOverwrite(this))
             {
                 return;
             }
@@ -248,17 +246,17 @@ public partial class Start : UserControl
             config.Settings.RequireOnlineMode = requireOnlineMode;
 
             _worldImportInProgress = true;
-            UpdateMultiplayerUi();
+            UpdateMultiplayer();
             ImportWorldButton.IsEnabled = false;
             try
             {
                 await Task.Run(() =>
                 {
-                    MinecraftWorldImporter.ReplaceWorldSafely(importPlan, () =>
+                    MinecraftWorldImporter.ReplaceWorld(importPlan, () =>
                     {
                         if (multiplayerEnabled)
-                            DatapackInstaller.SyncLocatePlayersDatapack(importPlan.ServerDirectory, config.Server.MinecraftVersion, importPlan.LevelName);
-                        ServerPropertyEditor.ApplyStartProfile(config);
+                            DatapackInstaller.SyncLocateDatapack(importPlan.ServerDirectory, config.Server.MinecraftVersion, importPlan.LevelName);
+                        ServerPropertyEditor.ApplyProfile(config);
                     });
                 });
             }
@@ -266,48 +264,48 @@ public partial class Start : UserControl
             {
                 _worldImportInProgress = false;
                 ImportWorldButton.IsEnabled = true;
-                UpdateMultiplayerUi();
+                UpdateMultiplayer();
             }
 
-            ErrorHandling.ShowWorldImportSucceeded(this);
+            ErrorHandling.ShowImportSuccess(this);
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowWorldImportFailed(this, ex);
+            ErrorHandling.ShowImportError(this, ex);
         }
     }
 
     private void Help_Click(object sender, MouseButtonEventArgs e)
     {
-        if (TryGetNavigationParent(out TwitchCraftBot parent))
+        if (TryGetBotWindow(out TwitchCraftBot parent))
         {
-            parent.NavigateToHelp();
+            parent.ShowHelp();
             e.Handled = true;
         }
     }
 
     private void Stats_Click(object sender, MouseButtonEventArgs e)
     {
-        if (TryGetNavigationParent(out TwitchCraftBot parent))
+        if (TryGetBotWindow(out TwitchCraftBot parent))
         {
-            parent.NavigateToStatistics();
+            parent.ShowStatistics();
             e.Handled = true;
         }
     }
 
-    private bool TryGetNavigationParent(out TwitchCraftBot parent)
+    private bool TryGetBotWindow(out TwitchCraftBot parent)
     {
-        parent = AppHelpers.GetParentBot(this)!;
+        parent = AppHelpers.GetBotWindow(this)!;
         if (parent != null)
             return true;
 
-        ErrorHandling.ShowNavigationWindowNotFound(this);
+        ErrorHandling.ShowNavigationError(this);
         return false;
     }
 
-    private void MultiplayerCheckbox_CheckedChanged(object sender, RoutedEventArgs e)
+    private void Multiplayer_Changed(object sender, RoutedEventArgs e)
     {
-        UpdateMultiplayerUi();
+        UpdateMultiplayer();
     }
 
     private static void SetLayoutTop(FrameworkElement element, double top)
@@ -316,7 +314,7 @@ public partial class Start : UserControl
         element.Margin = new Thickness(margin.Left, top, margin.Right, margin.Bottom);
     }
 
-    private void UpdateMultiplayerUi()
+    private void UpdateMultiplayer()
     {
         bool remoteControlEnabled = _remoteControllerUnlocked;
         if (remoteControlEnabled && MultiplayerCheckbox.IsChecked == true)
@@ -347,7 +345,7 @@ public partial class Start : UserControl
         RemoteRCONPortTextbox.Visibility = remoteVisibility;
         RemoteRCONPassword.Visibility = remoteVisibility;
         RemoteRCONPasswordShowCheckbox.Visibility = remoteVisibility;
-        SyncRemoteRCONPasswordVisibility(remoteControlEnabled);
+        UpdateRconPassword(remoteControlEnabled);
         ImportWorldButton.Visibility = remoteControlEnabled ? Visibility.Collapsed : Visibility.Visible;
 
         SetLayoutTop(MCUser, remoteControlEnabled ? 270 : 212);
@@ -358,7 +356,7 @@ public partial class Start : UserControl
         MCUser.Visibility = showMinecraftUser ? Visibility.Visible : Visibility.Collapsed;
         MCUserTextbox.Visibility = showMinecraftUser ? Visibility.Visible : Visibility.Collapsed;
 
-        string? disabledReason = GetStartButtonDisabledReason(minecraftUser, usernameIsValid);
+        string? disabledReason = GetDisabledReason(minecraftUser, usernameIsValid);
         bool canStart = disabledReason == null;
         StartButton.IsEnabled = canStart;
         StartButton.ToolTip = disabledReason;
@@ -366,7 +364,7 @@ public partial class Start : UserControl
         StartButtonDisabledOverlay.ToolTip = disabledReason;
     }
 
-    private string? GetStartButtonDisabledReason(string minecraftUser, bool usernameIsValid)
+    private string? GetDisabledReason(string minecraftUser, bool usernameIsValid)
     {
         if (_launchClickInProgress)
         {
@@ -394,22 +392,22 @@ public partial class Start : UserControl
             if (!ConfigurationStore.IsValidRemoteHost(remoteHost))
                 return "Enter a valid host server address for Remote Control Mode.";
 
-            if (!TryGetRemoteRCONPort(out _))
+            if (!TryGetRconPort(out _))
                 return "Enter a valid RCON port from 1 to 65535.";
 
-            if (string.IsNullOrWhiteSpace(GetRemoteRCONPasswordText()))
+            if (string.IsNullOrWhiteSpace(GetRconPassword()))
                 return "Enter the host server RCON password.";
         }
 
         return null;
     }
 
-    private bool ApplyLaunchSettingsToConfig()
+    private bool ApplyLaunch()
     {
-        TwitchCraftBot? parent = AppHelpers.GetParentBot(this);
+        TwitchCraftBot? parent = AppHelpers.GetBotWindow(this);
         if (parent == null)
         {
-            ErrorHandling.ShowLaunchSettingsWindowNotFound(this);
+            ErrorHandling.ShowSettingsWindowError(this);
             return false;
         }
 
@@ -424,55 +422,55 @@ public partial class Start : UserControl
         if (minecraftUser.Length == 0)
         {
             _showMinecraftUsernameUntilStart = true;
-            UpdateMultiplayerUi();
+            UpdateMultiplayer();
             MCUserTextbox.Focus();
-            ErrorHandling.ShowMissingMinecraftUsername(this);
+            ErrorHandling.ShowMissingMinecraftName(this);
             return false;
         }
 
         if (!MinecraftNameHelper.IsValidPlayerName(minecraftUser))
         {
             _showMinecraftUsernameUntilStart = true;
-            UpdateMultiplayerUi();
+            UpdateMultiplayer();
             MCUserTextbox.Focus();
-            ErrorHandling.ShowInvalidMinecraftUsername(this);
+            ErrorHandling.ShowMinecraftNameError(this);
             return false;
         }
 
         try
         {
-            int RCONPort = TryGetRemoteRCONPort(out int parsedRCONPort) ? parsedRCONPort : 25575;
-            parent.Runtime.ApplyStartProfile(
+            int RCONPort = TryGetRconPort(out int parsedRCONPort) ? parsedRCONPort : 25575;
+            parent.Runtime.ApplyProfile(
                 multiplayerEnabled,
                 requireOnlineMode,
                 minecraftUser,
                 remoteControlEnabled,
                 RemoteHostTextbox.Text,
                 RCONPort,
-                GetRemoteRCONPasswordText());
+                GetRconPassword());
             return true;
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowLaunchSettingsUpdateFailed(this, ex);
+            ErrorHandling.ShowSettingsUpdateError(this, ex);
             return false;
         }
     }
 
-    private bool TryGetRemoteRCONPort(out int port)
+    private bool TryGetRconPort(out int port)
     {
         return int.TryParse((RemoteRCONPortTextbox.Text ?? string.Empty).Trim(), out port)
             && port is >= 1 and <= 65535;
     }
 
-    private string GetRemoteRCONPasswordText()
+    private string GetRconPassword()
     {
         return RemoteRCONPasswordShowCheckbox.IsChecked == true
             ? RemoteRCONPasswordTextbox.Text ?? string.Empty
             : RemoteRCONPasswordBox.Password ?? string.Empty;
     }
 
-    private void SetRemoteRCONPasswordText(string value)
+    private void SetRconPassword(string value)
     {
         if (RemoteRCONPasswordShowCheckbox.IsChecked == true)
             RemoteRCONPasswordTextbox.Text = value;
@@ -480,7 +478,7 @@ public partial class Start : UserControl
             RemoteRCONPasswordBox.Password = value;
     }
 
-    private void RemoteRCONPasswordShowCheckbox_Changed(object sender, RoutedEventArgs e)
+    private void ShowRconPassword_Changed(object sender, RoutedEventArgs e)
     {
         if (RemoteRCONPasswordShowCheckbox.IsChecked == true)
         {
@@ -492,11 +490,11 @@ public partial class Start : UserControl
             RemoteRCONPasswordTextbox.Clear();
         }
 
-        SyncRemoteRCONPasswordVisibility(_remoteControllerUnlocked);
-        UpdateMultiplayerUi();
+        UpdateRconPassword(_remoteControllerUnlocked);
+        UpdateMultiplayer();
     }
 
-    private void SyncRemoteRCONPasswordVisibility(bool remoteControlEnabled)
+    private void UpdateRconPassword(bool remoteControlEnabled)
     {
         if (!remoteControlEnabled)
         {
@@ -515,49 +513,5 @@ public partial class Start : UserControl
             RemoteRCONPasswordTextbox.Visibility = Visibility.Collapsed;
             RemoteRCONPasswordBox.Visibility = Visibility.Visible;
         }
-    }
-
-    private static string? LookForMinecraftWorldFolder()
-    {
-        string initialPath = GetPreferredWorldBrowserPath();
-
-        OpenFolderDialog dialog = new()
-        {
-            Multiselect = false,
-            Title = "Select a Minecraft world folder.",
-            InitialDirectory = initialPath,
-            DefaultDirectory = initialPath,
-            FolderName = initialPath
-        };
-
-        bool? result = dialog.ShowDialog();
-        if (result != true)
-        {
-            return null;
-        }
-
-        string selectedPath = dialog.FolderName ?? string.Empty;
-        return string.IsNullOrWhiteSpace(selectedPath) ? null : selectedPath;
-    }
-
-    private static string GetPreferredWorldBrowserPath()
-    {
-        string minecraftSavesPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            ".minecraft",
-            "saves");
-
-        if (Directory.Exists(minecraftSavesPath))
-        {
-            return minecraftSavesPath;
-        }
-
-        string downloadsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Downloads");
-
-        return Directory.Exists(downloadsPath)
-            ? downloadsPath
-            : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
     }
 }

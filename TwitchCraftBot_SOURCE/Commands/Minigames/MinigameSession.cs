@@ -6,7 +6,7 @@ namespace TwitchCraftBot_V1;
 
 public static partial class MinigameManager
 {
-    private static void ResetAllMinigameStatesNoLock(BotMainHandler runtime)
+    private static void ResetStatesNoLock(BotMainHandler runtime)
     {
         if (ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chickenState))
         {
@@ -36,7 +36,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static bool TryBeginMinigame(BotMainHandler runtime, string kind, out int runID)
+    private static bool TryStartMinigame(BotMainHandler runtime, string kind, out int runID)
     {
         runID = 0;
 
@@ -45,11 +45,11 @@ public static partial class MinigameManager
 
         lock (MinigameGate)
         {
-            ActiveMinigameState state = GetActiveMinigameStateNoLock(runtime);
+            ActiveMinigameState state = GetActiveStateNoLock(runtime);
             if (!string.IsNullOrWhiteSpace(state.Kind))
                 return false;
 
-            ResetAllMinigameStatesNoLock(runtime);
+            ResetStatesNoLock(runtime);
             state.Kind = kind.Trim();
             state.RunID++;
             runID = state.RunID;
@@ -57,7 +57,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static bool IsActiveMinigame(BotMainHandler runtime, string kind, int runID)
+    private static bool IsMinigameActive(BotMainHandler runtime, string kind, int runID)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(kind) || runID <= 0)
             return false;
@@ -70,18 +70,18 @@ public static partial class MinigameManager
         }
     }
 
-    private static bool IsGuessNumberRoundActive(BotMainHandler runtime, int roundID)
+    private static bool IsGuessRoundActive(BotMainHandler runtime, int roundID)
     {
         if (runtime == null || roundID <= 0)
             return false;
 
         lock (MinigameGate)
         {
-            return IsGuessNumberRoundActiveNoLock(runtime, GetGuessNumberStateNoLock(runtime), roundID);
+            return IsGuessRoundActiveNoLock(runtime, GetGuessStateNoLock(runtime), roundID);
         }
     }
 
-    private static bool IsGuessNumberRoundActiveNoLock(BotMainHandler runtime, GuessNumberState state, int roundID)
+    private static bool IsGuessRoundActiveNoLock(BotMainHandler runtime, GuessNumberState state, int roundID)
     {
         return roundID > 0
                && ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState)
@@ -91,7 +91,7 @@ public static partial class MinigameManager
                && state.RoundID == roundID;
     }
 
-    private static bool IsWitherBattleBettingOpenNoLock(BotMainHandler runtime, WitherBattleState state)
+    private static bool IsWitherBettingOpenNoLock(BotMainHandler runtime, WitherBattleState state)
     {
         return ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState)
                && string.Equals(activeState.Kind, "WitherBattle", StringComparison.Ordinal)
@@ -113,7 +113,7 @@ public static partial class MinigameManager
                 return;
             }
 
-            ResetAllMinigameStatesNoLock(runtime);
+            ResetStatesNoLock(runtime);
             state.Kind = string.Empty;
         }
     }
@@ -127,15 +127,15 @@ public static partial class MinigameManager
 
         try
         {
-            await runtime.SendToChannelAsync(message, cancellationToken).ConfigureAwait(false);
+            await runtime.SendChatAsync(message, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            runtime.AddChatLogLine(ErrorHandling.FormatLogMessage("Minigame chat reply failed", ex));
+            runtime.AddChatLogLine(ErrorHandling.FormatLog("Minigame chat reply failed", ex));
         }
     }
 
-    private static async Task PlayMinigameSoundAsync(BotMainHandler runtime, string soundID, CancellationToken cancellationToken)
+    private static async Task PlaySoundAsync(BotMainHandler runtime, string soundID, CancellationToken cancellationToken)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(soundID))
             return;
@@ -150,11 +150,11 @@ public static partial class MinigameManager
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            runtime.AddServerLogLine(ErrorHandling.FormatLogMessage("Minigame sound playback failed", ex));
+            runtime.AddServerLogLine(ErrorHandling.FormatLog("Minigame sound playback failed", ex));
         }
     }
 
-    private static async Task ShowMinigameSubtitleAsync(BotMainHandler runtime, string subtitleText, CancellationToken cancellationToken)
+    private static async Task ShowSubtitleAsync(BotMainHandler runtime, string subtitleText, CancellationToken cancellationToken)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(subtitleText))
             return;
@@ -171,7 +171,7 @@ public static partial class MinigameManager
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            runtime.AddServerLogLine(ErrorHandling.FormatLogMessage("Minigame subtitle failed", ex));
+            runtime.AddServerLogLine(ErrorHandling.FormatLog("Minigame subtitle failed", ex));
         }
     }
 }

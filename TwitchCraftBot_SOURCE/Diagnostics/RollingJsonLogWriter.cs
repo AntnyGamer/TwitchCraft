@@ -49,13 +49,13 @@ internal sealed class RollingJsonLogWriter : IDisposable
 
             try
             {
-                EnsureWriterCore();
+                EnsureWriter();
                 long pendingBytes = _encoding.GetByteCount(line) + _newLineByteCount;
 
                 if (_currentBytes >= _maxBytes ||
                     (_currentBytes > 0 && pendingBytes > _maxBytes - _currentBytes))
                 {
-                    RotateCore();
+                    Rotate();
                 }
 
                 _writer!.WriteLine(line);
@@ -64,13 +64,13 @@ internal sealed class RollingJsonLogWriter : IDisposable
             }
             catch
             {
-                DisposeWriterCore();
+                CloseWriter();
                 return false;
             }
         }
     }
 
-    private void EnsureWriterCore()
+    private void EnsureWriter()
     {
         if (_writer != null)
             return;
@@ -81,7 +81,7 @@ internal sealed class RollingJsonLogWriter : IDisposable
 
         if (!_retentionCleaned)
         {
-            CleanupExcessRetainedFilesCore(directory);
+            CleanupOldLogs(directory);
             _retentionCleaned = true;
         }
 
@@ -93,14 +93,14 @@ internal sealed class RollingJsonLogWriter : IDisposable
         };
     }
 
-    private void RotateCore()
+    private void Rotate()
     {
-        DisposeWriterCore();
+        CloseWriter();
 
         if (_maxRetainedFiles == 0)
         {
             File.Delete(_logPath);
-            EnsureWriterCore();
+            EnsureWriter();
             return;
         }
 
@@ -108,17 +108,17 @@ internal sealed class RollingJsonLogWriter : IDisposable
         {
             string source = index == 1
                 ? _logPath
-                : GetRetainedLogPath(index - 1);
+                : GetLogPath(index - 1);
             if (!File.Exists(source))
                 continue;
 
-            File.Move(source, GetRetainedLogPath(index), true);
+            File.Move(source, GetLogPath(index), true);
         }
 
-        EnsureWriterCore();
+        EnsureWriter();
     }
 
-    private void CleanupExcessRetainedFilesCore(string? directory)
+    private void CleanupOldLogs(string? directory)
     {
         try
         {
@@ -148,10 +148,10 @@ internal sealed class RollingJsonLogWriter : IDisposable
         }
     }
 
-    private string GetRetainedLogPath(int index) =>
+    private string GetLogPath(int index) =>
         _logPath + ".old" + index.ToString(CultureInfo.InvariantCulture);
 
-    private void DisposeWriterCore()
+    private void CloseWriter()
     {
         try
         {
@@ -175,7 +175,7 @@ internal sealed class RollingJsonLogWriter : IDisposable
                 return;
 
             _disposed = true;
-            DisposeWriterCore();
+            CloseWriter();
         }
     }
 }

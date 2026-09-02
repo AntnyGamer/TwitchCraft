@@ -26,7 +26,7 @@ public sealed partial class BotMainHandler
     private readonly Lock _suppressedServerLogContextGate = new();
     private readonly Queue<string> _suppressedServerLogContextLines = new();
 
-    private async Task TrySendStopCommandAsync()
+    private async Task TryStopServerAsync()
     {
         using CancellationTokenSource timeoutCts = new(StopCommandTimeout);
         try
@@ -40,12 +40,12 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private async Task EnsureRemoteControllerConnectedAsync(BotConfig config, CancellationToken cancellationToken)
+    private async Task EnsureRconAsync(BotConfig config, CancellationToken cancellationToken)
     {
         using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(ManualCommandTimeout);
+        timeoutCts.CancelAfter(RCONTimeout);
 
-        string host = GetRemoteControllerHost(config);
+        string host = GetRconHost(config);
         _ = await MinecraftRCONClient.ExecuteQueryAsync(
             host,
             config.Server.RCON.Port,
@@ -56,13 +56,13 @@ public sealed partial class BotMainHandler
 
         _minecraftServerReady = true;
         _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" + config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
-        QueueInitialPlayerSnapshot();
-        QueueOnlinePlayerSnapshotRefresh();
-        QueueTrackedPlayerGamemodeRefreshForStatistics();
-        QueueTrackedPlayerDeathScoreRefreshForStatistics();
+        QueueFirstSnapshot();
+        QueueSnapshot();
+        QueueGamemode();
+        QueueDeathScore();
     }
 
-    internal async Task StartJavaServerAsync(BotConfig config, CancellationToken cancellationToken)
+    internal async Task StartServerAsync(BotConfig config, CancellationToken cancellationToken)
     {
         string jarPath = string.IsNullOrWhiteSpace(config.Server.JarPath)
             ? Path.Combine(config.Server.ServerDirectory, "server.jar")
@@ -72,13 +72,13 @@ public sealed partial class BotMainHandler
             throw new FileNotFoundException("Minecraft server jar was not found.", jarPath);
 
         Directory.CreateDirectory(config.Server.ServerDirectory);
-        ServerPropertyEditor.CleanupUnusedServerJars(config.Server.ServerDirectory, jarPath);
-        TryCopyServerIcon(config.Server.ServerDirectory);
-        await EnsureServerLogIsNotLockedAsync(config, cancellationToken).ConfigureAwait(false);
+        ServerPropertyEditor.CleanupServerJars(config.Server.ServerDirectory, jarPath);
+        CopyServerIcon(config.Server.ServerDirectory);
+        await UnlockLogAsync(config, cancellationToken).ConfigureAwait(false);
 
         Process process = new();
         process.StartInfo.FileName = config.Server.Java.ExecutablePath;
-        AddJavaArguments(process.StartInfo, config, jarPath);
+        AddJavaArgs(process.StartInfo, config, jarPath);
         process.StartInfo.WorkingDirectory = config.Server.ServerDirectory;
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardInput = true;
@@ -101,7 +101,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private async Task WatchServerProcessExitAsync(CancellationToken cancellationToken)
+    private async Task WatchServerAsync(CancellationToken cancellationToken)
     {
         Process? process = _javaServerProcess;
         if (process == null)
@@ -133,7 +133,7 @@ public sealed partial class BotMainHandler
             }
 
             _minecraftServerReady = false;
-            PauseCurrentSurvivalForStatistics();
+            PauseSurvival();
             _runtimeState = RuntimeState.Stopped;
 
             CancellationTokenSource? sessionCts = _sessionCts;
@@ -143,8 +143,8 @@ public sealed partial class BotMainHandler
                 _backgroundTasks.Clear();
             }
 
-            ResetIRCQueues();
-            MinigameManager.StopMinigameLoops(this, true);
+            ResetQueues();
+            MinigameManager.StopLoops(this, true);
 
             try
             {
@@ -162,9 +162,9 @@ public sealed partial class BotMainHandler
             {
             }
 
-            SafeCloseIRCSocket();
-            _tokenStore.TryExportReadableJson();
-            FlushStatisticsForShutdown();
+            CloseIrcSocket();
+            _tokenStore.TryExportJson();
+            FlushForShutdown();
             _javaServerProcess = null;
             try
             {
@@ -183,11 +183,9 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static void AddJavaArguments(ProcessStartInfo startInfo, BotConfig config, string jarPath)
+    private static void AddJavaArgs(ProcessStartInfo startInfo, BotConfig config, string jarPath)
     {
-        bool enableNativeAccess =
-            MinecraftVersionSupport.TryGetVersion(config.Server.MinecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo version)
-            && version.RequiredJDK >= 25;
+        bool enableNativeAccess = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion).RequiredJDK >= 25;
 
         startInfo.ArgumentList.Add("-Xmx" + config.Server.MemoryMaxGB.ToString(CultureInfo.InvariantCulture) + "G");
         startInfo.ArgumentList.Add("-Xms" + config.Server.MemoryMinGB.ToString(CultureInfo.InvariantCulture) + "G");
@@ -200,7 +198,7 @@ public sealed partial class BotMainHandler
         startInfo.ArgumentList.Add("nogui");
     }
 
-    private static void TryCopyServerIcon(string serverDirectory)
+    private static void CopyServerIcon(string serverDirectory)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory))
             return;
@@ -209,14 +207,14 @@ public sealed partial class BotMainHandler
         {
             string sourcePath = Path.Combine(AppContext.BaseDirectory, "Assets", "server-icon.png");
             if (!File.Exists(sourcePath))
-                sourcePath = Path.Combine(AppHelpers.GetExecutableDirectory(), "Assets", "server-icon.png");
+                sourcePath = Path.Combine(AppHelpers.GetAppDirectory(), "Assets", "server-icon.png");
 
             if (!File.Exists(sourcePath))
                 return;
 
             Directory.CreateDirectory(serverDirectory);
             string destinationPath = Path.Combine(serverDirectory, "server-icon.png");
-            if (File.Exists(destinationPath) && FilesHaveSameContent(sourcePath, destinationPath))
+            if (File.Exists(destinationPath) && FilesMatch(sourcePath, destinationPath))
                 return;
 
             File.Copy(sourcePath, destinationPath, true);
@@ -226,7 +224,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static bool FilesHaveSameContent(string firstPath, string secondPath)
+    private static bool FilesMatch(string firstPath, string secondPath)
     {
         FileInfo firstInfo = new(firstPath);
         FileInfo secondInfo = new(secondPath);

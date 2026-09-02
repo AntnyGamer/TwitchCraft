@@ -24,9 +24,11 @@ public partial class Setup : UserControl
     private bool _manifestLoadAttempted;
     private bool _manifestMissingWarningShown;
     private bool _setupInProgress;
+    private CancellationTokenSource? _authorizationCts;
+    private string _botToken = string.Empty;
+    private string _refreshToken = string.Empty;
+    private string _authorizedClientId = string.Empty;
     private CancellationTokenSource _setupLifetimeCts = new();
-    private readonly SecretTextBoxController _clientIDSecret;
-    private readonly SecretTextBoxController _botTokenSecret;
 
     private sealed class VersionOption(string ID, string label, int requiredJDK)
     {
@@ -48,10 +50,12 @@ public partial class Setup : UserControl
     public Setup()
     {
         InitializeComponent();
-        _clientIDSecret = new SecretTextBoxController(ClientIDPasswordBox, ClientIDTextbox, ClientIDCheckbox);
-        _botTokenSecret = new SecretTextBoxController(BotTokenPasswordBox, BotTokenTextbox, BotTokenCheckbox);
-        Loaded += Setup_Load;
-        Unloaded += Setup_Unloaded;
+        MCBindIPTextbox.TextChanged += Field_Changed;
+        TwitchUserTextbox.TextChanged += Field_Changed;
+        BotUserTextbox.TextChanged += Field_Changed;
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+        UpdateStartButton();
     }
 
     private static string GeneratePassword(int length)
@@ -84,7 +88,7 @@ public partial class Setup : UserControl
         return new string(result);
     }
 
-    private async void Setup_Load(object sender, RoutedEventArgs e)
+    private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         if (_setupLifetimeCts.IsCancellationRequested)
         {
@@ -95,8 +99,7 @@ public partial class Setup : UserControl
         try
         {
             await RefreshVersionsAsync(_setupLifetimeCts.Token);
-            _clientIDSecret.Hide();
-            _botTokenSecret.Hide();
+            UpdateStartButton();
         }
         catch (OperationCanceledException)
         {
@@ -107,29 +110,109 @@ public partial class Setup : UserControl
         }
     }
 
-    private void Setup_Unloaded(object sender, RoutedEventArgs e)
-        => _setupLifetimeCts.Cancel();
-
-    private async void MCVersionCheckbox_CheckedChanged(object sender, RoutedEventArgs e)
+    private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        CancelAuthorization();
+        _setupLifetimeCts.Cancel();
+    }
+
+    private void CancelAuthorization()
+    {
+        _authorizationCts?.Cancel();
+        _authorizationCts = null;
+    }
+
+    private void Version_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateJavaText();
+        UpdateStartButton();
+    }
+
+    private void Field_Changed(object sender, RoutedEventArgs e)
+        => UpdateStartButton();
+
+    private async void AuthorizeTwitch_Click(object sender, RoutedEventArgs e)
+    {
+        if (_authorizationCts != null)
+        {
+            AuthorizeTwitchButton.IsEnabled = false;
+            AuthorizeTwitchButton.Content = "Canceling...";
+            _authorizationCts.Cancel();
+            return;
+        }
+
+        string clientId = TwitchOAuthAuthorizer.TwitchCraftClientId;
+        if (!TwitchOAuthAuthorizer.TwitchCraftOAuthConfigured)
+        {
+            ErrorHandling.ShowAuthError(this, "This TwitchCraft build is missing TwitchCraft's public Twitch Client ID. The release maintainer must add it before publishing the build.");
+            return;
+        }
+
+        using CancellationTokenSource authorizationCts = new();
+        _authorizationCts = authorizationCts;
+        UpdateStartButton();
         try
         {
-            await RefreshVersionsAsync(_setupLifetimeCts.Token);
+            TwitchOAuthResult result = await TwitchOAuthAuthorizer.AuthorizeAsync(clientId, authorizationCts.Token);
+            if (!ReferenceEquals(_authorizationCts, authorizationCts))
+                return;
+            if (!result.IsSuccess)
+            {
+                ErrorHandling.ShowAuthError(this, result.Error);
+                return;
+            }
+
+            _botToken = result.Token;
+            _refreshToken = result.RefreshToken;
+            _authorizedClientId = clientId;
+            BotUserTextbox.Text = result.Login;
+            ErrorHandling.ShowAuthSuccess(this, result.Login, savedToConfig: false);
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
-            ErrorHandling.LogNonFatal("Minecraft version refresh failed", ex);
+            ErrorHandling.ShowAuthError(this, ex.Message);
+        }
+        finally
+        {
+            if (ReferenceEquals(_authorizationCts, authorizationCts))
+            {
+                _authorizationCts = null;
+                UpdateStartButton();
+            }
         }
     }
 
-    private void MCVersionDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        => UpdateJavaRequirementText();
+    private void UpdateStartButton()
+    {
+        string clientId = TwitchOAuthAuthorizer.TwitchCraftClientId;
+        AuthorizeTwitchButton.IsEnabled = !_setupInProgress;
+        if (_authorizationCts != null)
+        {
+            AuthorizeTwitchButton.Content = "Cancel Authorization";
+        }
+        else
+        {
+            bool isAuthorized = !string.IsNullOrWhiteSpace(_botToken)
+                && string.Equals(clientId, _authorizedClientId, StringComparison.Ordinal);
+            AuthorizeTwitchButton.Content = isAuthorized
+                ? "Reauthorize Twitch"
+                : "Authorize Twitch";
+        }
 
-    private void BotTokenHelpButton_Click(object sender, RoutedEventArgs e)
-        => ErrorHandling.ShowBotTokenHelp(this);
+        string? blockingReason = SetupInputValidator.GetBlockingReason(
+            GetVersionId(MCVersionDropdown),
+            ConfigurationStore.NormalizeBindIP(MCBindIPTextbox.Text),
+            clientId,
+            _authorizedClientId,
+            _botToken,
+            TwitchUserTextbox.Text,
+            BotUserTextbox.Text);
+        StartButton.IsEnabled = !_setupInProgress && _authorizationCts == null && blockingReason == null;
+        StartButton.ToolTip = blockingReason;
+    }
 
     private async Task LoadManifestAsync(CancellationToken cancellationToken)
     {
@@ -162,7 +245,7 @@ public partial class Setup : UserControl
             else if (!_manifestMissingWarningShown)
             {
                 _manifestMissingWarningShown = true;
-                ErrorHandling.ShowLocalManifestNotFound(this, path);
+                ErrorHandling.ShowMissingManifest(this, path);
             }
 
             await LoadOnlineManifestAsync(cancellationToken);
@@ -175,33 +258,26 @@ public partial class Setup : UserControl
         {
             _manifestLoadAttempted = false;
             _manifest = null;
-            ErrorHandling.ShowManifestLoadFailed(this, ex);
+            ErrorHandling.ShowManifestError(this, ex);
         }
     }
 
     private async Task LoadOnlineManifestAsync(CancellationToken cancellationToken)
     {
-        string json = await SetupHttpClient.GetStringAsync("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", cancellationToken);
+        string json = await SetupHttpClient.GetStringAsync(new Uri("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"), cancellationToken);
         _manifest = JObject.Parse(json);
         _manifestLoadAttempted = true;
     }
 
-    private static string GetSelectedVersionId(ComboBox comboBox)
+    private static string GetVersionId(ComboBox comboBox)
         => comboBox.SelectedItem is VersionOption option ? option.ID : (comboBox.Text ?? string.Empty).Trim();
 
-    private static string ResolveMinecraftVersionId(string versionID)
-        => MinecraftVersionSupport.TryGetVersion(versionID, out MinecraftVersionSupport.MinecraftVersionInfo resolvedVersion)
-            ? resolvedVersion.ID
-            : (versionID ?? string.Empty).Trim();
-
-    private void UpdateJavaRequirementText()
+    private void UpdateJavaText()
     {
-        JavaRequirementText.Text = MCVersionCheckbox.IsChecked == true && MCVersionDropdown.SelectedItem is VersionOption option
-            ? option.Group
-            : string.Empty;
+        JavaRequirementText.Text = MCVersionDropdown.SelectedItem is VersionOption option ? option.Group : string.Empty;
     }
 
-    private void SelectVersionById(string versionID)
+    private void SelectVersion(string versionID)
     {
         MCVersionDropdown.SelectedItem = string.IsNullOrWhiteSpace(versionID)
             ? null
@@ -211,73 +287,64 @@ public partial class Setup : UserControl
                         || string.Equals(option.Label, versionID, StringComparison.OrdinalIgnoreCase)
                     : item is string text && string.Equals(text, versionID, StringComparison.OrdinalIgnoreCase));
 
-        UpdateJavaRequirementText();
+        UpdateJavaText();
     }
 
-    private async Task RefreshVersionsAsync(CancellationToken cancellationToken)
+    private Task RefreshVersionsAsync(CancellationToken cancellationToken)
     {
-        string selectedBeforeRefresh = GetSelectedVersionId(MCVersionDropdown);
+        cancellationToken.ThrowIfCancellationRequested();
+        string selectedBeforeRefresh = GetVersionId(MCVersionDropdown);
 
-        if (MCVersionCheckbox.IsChecked == true)
-        {
-            CollectionViewSource supportedVersions = new() { Source = SupportedVersionOptions };
-            supportedVersions.GroupDescriptions.Add(new PropertyGroupDescription(nameof(VersionOption.Group)));
+        CollectionViewSource supportedVersions = new() { Source = SupportedVersionOptions };
+        supportedVersions.GroupDescriptions.Add(new PropertyGroupDescription(nameof(VersionOption.Group)));
 
-            MCVersionDropdown.ItemTemplate = (DataTemplate?)FindResource("VersionItemTemplate");
-            MCVersionDropdown.DisplayMemberPath = string.Empty;
-            MCVersionDropdown.SelectedValuePath = string.Empty;
-            MCVersionDropdown.ItemsSource = supportedVersions.View;
-        }
-        else
-        {
-            await LoadManifestAsync(cancellationToken);
+        MCVersionDropdown.ItemTemplate = (DataTemplate?)FindResource("VersionItemTemplate");
+        MCVersionDropdown.DisplayMemberPath = string.Empty;
+        MCVersionDropdown.SelectedValuePath = string.Empty;
+        MCVersionDropdown.ItemsSource = supportedVersions.View;
 
-            if (_manifest?["versions"] is not JArray versions)
-            {
-                MCVersionDropdown.ItemsSource = null;
-                MCVersionDropdown.SelectedItem = null;
-                MCVersionDropdown.IsEnabled = false;
-                UpdateJavaRequirementText();
-                return;
-            }
-
-            MCVersionDropdown.ItemTemplate = null;
-            MCVersionDropdown.DisplayMemberPath = string.Empty;
-            MCVersionDropdown.SelectedValuePath = string.Empty;
-            MCVersionDropdown.ItemsSource = versions.Select(v => (string?)v["id"]).OfType<string>().ToList();
-        }
-
-        SelectVersionById(selectedBeforeRefresh);
-
+        SelectVersion(selectedBeforeRefresh);
         if (MCVersionDropdown.SelectedItem == null)
-            SelectVersionById(DefaultMinecraftVersion);
-
+            SelectVersion(DefaultMinecraftVersion);
         if (MCVersionDropdown.SelectedItem == null && MCVersionDropdown.Items.Count > 0)
             MCVersionDropdown.SelectedItem = MCVersionDropdown.Items[0];
 
         MCVersionDropdown.IsEnabled = true;
-        UpdateJavaRequirementText();
+        UpdateJavaText();
+        UpdateStartButton();
+        return Task.CompletedTask;
     }
 
-    private async void StartButton_Click(object sender, RoutedEventArgs e)
+    private async void Start_Click(object sender, RoutedEventArgs e)
     {
-        string MCVersion = ResolveMinecraftVersionId(GetSelectedVersionId(MCVersionDropdown));
+        string selectedVersion = GetVersionId(MCVersionDropdown);
         string typedBindIP = MCBindIPTextbox.Text;
         string bindIP = ConfigurationStore.NormalizeBindIP(typedBindIP);
-        string clientID = _clientIDSecret.Text.Trim();
-        string botToken = _botTokenSecret.Text.Trim();
-        string channel = (TwitchUserTextbox.Text ?? string.Empty).Trim().ToLowerInvariant();
-        string botUser = (BotUserTextbox.Text ?? string.Empty).Trim().ToLowerInvariant();
+        string clientID = TwitchOAuthAuthorizer.TwitchCraftClientId;
+        string botToken = _botToken.Trim();
+        string refreshToken = _refreshToken.Trim();
+        _ = CommandUserHelper.TryNormalizeTwitchUser(TwitchUserTextbox.Text, out string channel);
+        _ = CommandUserHelper.TryNormalizeTwitchUser(BotUserTextbox.Text, out string botUser);
 
-        if (string.IsNullOrWhiteSpace(MCVersion) || string.IsNullOrWhiteSpace(bindIP) || botToken.Length == 0 || channel.Length == 0 || clientID.Length == 0)
+        if (!SetupInputValidator.CanStart(
+                selectedVersion,
+                bindIP,
+                clientID,
+                _authorizedClientId,
+                botToken,
+                channel,
+                botUser))
         {
-            ErrorHandling.ShowSetupRequiredFields(this);
+            ErrorHandling.ShowSetupIncomplete(this);
             return;
         }
 
-        if (ConfigurationStore.ShouldShowAdvancedBindIPWarning(typedBindIP) && ErrorHandling.ShowAdvancedBindIPWarning(this))
+        string minecraftVersion = MinecraftVersionSupport.GetVersion(selectedVersion).ID;
+
+        if (ConfigurationStore.ShouldWarnAboutBindIP(typedBindIP) && ErrorHandling.ConfirmBindIpReset(this))
         {
             MCBindIPTextbox.Text = "127.0.0.1";
+            UpdateStartButton();
             return;
         }
 
@@ -292,13 +359,13 @@ public partial class Setup : UserControl
 
         _setupInProgress = true;
         bool navigatedToStart = false;
-        StartButton.IsEnabled = false;
         StartButton.Content = "Starting...";
+        UpdateStartButton();
 
         try
         {
             CancellationToken cancellationToken = _setupLifetimeCts.Token;
-            await ErrorHandling.RunSetupActionAsync(this, async () =>
+            await ErrorHandling.RunSetupAsync(this, async () =>
             {
                 if (_manifest == null)
                     await LoadManifestAsync(cancellationToken);
@@ -306,7 +373,7 @@ public partial class Setup : UserControl
                 if (_manifest?["versions"] is not JArray versions)
                     throw new InvalidOperationException("Minecraft version metadata could not be loaded.");
 
-                JToken? version = versions.FirstOrDefault(v => string.Equals((string?)v["id"], MCVersion, StringComparison.OrdinalIgnoreCase));
+                JToken? version = versions.FirstOrDefault(v => string.Equals((string?)v["id"], minecraftVersion, StringComparison.OrdinalIgnoreCase));
                 if (version == null)
                 {
                     await LoadOnlineManifestAsync(cancellationToken);
@@ -314,7 +381,7 @@ public partial class Setup : UserControl
                     if (_manifest?["versions"] is not JArray onlineVersions)
                         throw new InvalidOperationException("Minecraft version metadata could not be loaded from Mojang.");
 
-                    version = onlineVersions.FirstOrDefault(v => string.Equals((string?)v["id"], MCVersion, StringComparison.OrdinalIgnoreCase))
+                    version = onlineVersions.FirstOrDefault(v => string.Equals((string?)v["id"], minecraftVersion, StringComparison.OrdinalIgnoreCase))
                         ?? throw new InvalidOperationException("The selected Minecraft version could not be found in Mojang's online manifest.");
                 }
 
@@ -322,10 +389,10 @@ public partial class Setup : UserControl
                     ?? throw new InvalidOperationException("The selected version did not include a detail manifest URL.");
                 Uri detailUri = CreateHttpsUri(detailUrl, "Minecraft version detail manifest");
 
-                TwitchCraftBot host = AppHelpers.GetParentBot(this)
+                TwitchCraftBot host = AppHelpers.GetBotWindow(this)
                     ?? throw new InvalidOperationException("Unable to find the main TwitchCraftBot window.");
 
-                JObject detail = await LoadVersionDetailAsync(MCVersion, detailUri, cancellationToken);
+                JObject detail = await LoadVersionAsync(minecraftVersion, detailUri, cancellationToken);
                 JToken server = detail["downloads"]?["server"]
                     ?? throw new InvalidOperationException("This Minecraft version does not expose a downloadable server.jar.");
 
@@ -337,27 +404,27 @@ public partial class Setup : UserControl
                 if (!serverSize.HasValue || serverSize.Value <= 0)
                     serverSize = null;
 
-                ConfigurationStore.CheckRootFolder();
+                ConfigurationStore.EnsureWorkDir();
                 string serverDir = Path.Combine(ConfigurationStore.WorkingDirectory, "MCServer");
-                string jarPath = Path.Combine(serverDir, $"twitchcraft-server-{MCVersion}.jar");
+                string jarPath = Path.Combine(serverDir, $"twitchcraft-server-{minecraftVersion}.jar");
                 Directory.CreateDirectory(serverDir);
 
                 int requiredJavaVersion = (int?)detail["javaVersion"]?["majorVersion"]
-                    ?? (MinecraftVersionSupport.TryGetVersion(MCVersion, out MinecraftVersionSupport.MinecraftVersionInfo fallbackVersion) ? fallbackVersion.RequiredJDK : 17);
-                (string javaExe, string javaHome) = await ResolveJavaExecutableAsync(requiredJavaVersion, cancellationToken);
+                    ?? MinecraftVersionSupport.GetVersion(minecraftVersion).RequiredJDK;
+                (string javaExe, string javaHome) = await FindJavaAsync(requiredJavaVersion, cancellationToken);
 
-                if (!ErrorHandling.ConfirmVerifyServerJar(this, MCVersion))
+                if (!ErrorHandling.ConfirmJarVerify(this, minecraftVersion))
                     return;
 
-                await CheckServerJarAsync(SetupHttpClient, serverUrl, jarPath, serverSha, serverSize, cancellationToken);
-                ErrorHandling.ShowVerificationMatched(this);
+                await EnsureServerJarAsync(SetupHttpClient, serverUrl, jarPath, serverSha, serverSize, cancellationToken);
+                ErrorHandling.ShowVerifySuccess(this);
 
-                ServerPropertyEditor.CleanupUnusedServerJars(serverDir, jarPath);
+                ServerPropertyEditor.CleanupServerJars(serverDir, jarPath);
 
-                BotConfig config = BuildConfig(MCVersion, serverDir, jarPath, bindIP, javaExe, javaHome, clientID, botToken, channel, botUser);
+                BotConfig config = BuildConfig(minecraftVersion, serverDir, jarPath, bindIP, javaExe, javaHome, clientID, botToken, refreshToken, channel, botUser);
                 ServerPropertyEditor.WriteInitialFiles(config);
                 ConfigurationStore.Save(config);
-                host.NavigateToStart();
+                host.ShowStart();
                 navigatedToStart = true;
             });
         }
@@ -366,19 +433,19 @@ public partial class Setup : UserControl
             _setupInProgress = false;
             if (!navigatedToStart)
             {
-                StartButton.IsEnabled = true;
                 StartButton.Content = "Start";
+                UpdateStartButton();
             }
         }
     }
 
-    private static BotConfig BuildConfig(string MCVersion, string serverDir, string jarPath, string bindIP, string javaExe, string javaHome, string clientID, string botToken, string channel, string botUser)
+    private static BotConfig BuildConfig(string minecraftVersion, string serverDir, string jarPath, string bindIP, string javaExe, string javaHome, string clientID, string botToken, string refreshToken, string channel, string botUser)
     {
         return new BotConfig
         {
             Server =
             {
-                MinecraftVersion = MCVersion,
+                MinecraftVersion = minecraftVersion,
                 ServerDirectory = serverDir,
                 JarPath = jarPath,
                 BindIP = bindIP,
@@ -390,13 +457,14 @@ public partial class Setup : UserControl
             {
                 ClientID = clientID,
                 BotToken = botToken,
+                RefreshToken = refreshToken,
                 StreamerName = channel,
                 BotName = botUser
             }
         };
     }
 
-    private async Task<(string JavaExe, string JavaHome)> ResolveJavaExecutableAsync(int javaVersion, CancellationToken cancellationToken)
+    private async Task<(string JavaExe, string JavaHome)> FindJavaAsync(int javaVersion, CancellationToken cancellationToken)
     {
         while (true)
         {
@@ -405,7 +473,7 @@ public partial class Setup : UserControl
             if (!string.IsNullOrWhiteSpace(javaExe))
                 return (javaExe, javaHome);
 
-            if (!ErrorHandling.ConfirmRetryMissingJava(this, javaVersion))
+            if (!ErrorHandling.ConfirmJavaRetry(this, javaVersion))
                 throw new OperationCanceledException("Setup cancelled by user (No Java).");
         }
     }

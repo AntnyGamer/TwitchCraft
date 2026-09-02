@@ -15,8 +15,8 @@ internal static partial class BotStatisticsStore
             return _connection;
         }
 
-        ConfigurationStore.CheckRootFolder();
-        FileSystemHelper.EnsureDirectoryForFile(DatabasePath);
+        ConfigurationStore.EnsureWorkDir();
+        FileSystemHelper.EnsureParentDir(DatabasePath);
 
         SqliteConnectionStringBuilder builder = new()
         {
@@ -98,18 +98,18 @@ internal static partial class BotStatisticsStore
         command.ExecuteNonQuery();
     }
 
-    private static SqliteCommand CreatePreparedCommandNoLock(string commandText)
+    private static SqliteCommand PrepareCommandNoLock(string commandText)
     {
         SqliteCommand command = GetConnectionNoLock().CreateCommand();
         command.CommandText = commandText;
         return command;
     }
 
-    private static void ExecuteIncrementCommandTotalsNoLock(SqliteTransaction transaction, long tokensSpent)
+    private static void AddCommandTotalsNoLock(SqliteTransaction transaction, long tokensSpent)
     {
         if (_incrementCommandTotalsCommand == null)
         {
-            _incrementCommandTotalsCommand = CreatePreparedCommandNoLock("""
+            _incrementCommandTotalsCommand = PrepareCommandNoLock("""
                 UPDATE GlobalStats
                 SET GameCommandsRun = GameCommandsRun + 1,
                     TokensSpent = TokensSpent + $tokensSpent
@@ -124,11 +124,11 @@ internal static partial class BotStatisticsStore
         _incrementCommandTotalsCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteIncrementCommandUseNoLock(SqliteTransaction transaction, string commandName)
+    private static void AddCommandUseNoLock(SqliteTransaction transaction, string commandName)
     {
         if (_incrementCommandUseCommand == null)
         {
-            _incrementCommandUseCommand = CreatePreparedCommandNoLock("""
+            _incrementCommandUseCommand = PrepareCommandNoLock("""
                 INSERT INTO CommandUseCounts (CommandName, Count)
                 VALUES ($commandName, 1)
                 ON CONFLICT(CommandName) DO UPDATE SET Count = Count + 1;
@@ -142,11 +142,11 @@ internal static partial class BotStatisticsStore
         _incrementCommandUseCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteUpsertViewerScoreNoLock(SqliteTransaction transaction, string username, long dangerousScore, long niceScore)
+    private static void SaveViewerScoreNoLock(SqliteTransaction transaction, string username, long dangerousScore, long niceScore)
     {
         if (_upsertViewerScoreCommand == null)
         {
-            _upsertViewerScoreCommand = CreatePreparedCommandNoLock("""
+            _upsertViewerScoreCommand = PrepareCommandNoLock("""
                 INSERT INTO ViewerScores (Username, DangerousScore, NiceScore)
                 VALUES ($username, $dangerousScore, $niceScore)
                 ON CONFLICT(Username) DO UPDATE SET
@@ -166,11 +166,11 @@ internal static partial class BotStatisticsStore
         _upsertViewerScoreCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteIncrementEffectsGivenNoLock(long effectsGiven)
+    private static void AddEffectsNoLock(long effectsGiven)
     {
         if (_incrementEffectsGivenCommand == null)
         {
-            _incrementEffectsGivenCommand = CreatePreparedCommandNoLock("UPDATE GlobalStats SET EffectsGiven = EffectsGiven + $effectsGiven WHERE ID = 1;");
+            _incrementEffectsGivenCommand = PrepareCommandNoLock("UPDATE GlobalStats SET EffectsGiven = EffectsGiven + $effectsGiven WHERE ID = 1;");
             _incrementEffectsGivenAmount = _incrementEffectsGivenCommand.Parameters.Add("$effectsGiven", SqliteType.Integer);
             _incrementEffectsGivenCommand.Prepare();
         }
@@ -179,21 +179,21 @@ internal static partial class BotStatisticsStore
         _incrementEffectsGivenCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteIncrementSessionsStartedNoLock()
+    private static void AddSessionNoLock()
     {
         if (_incrementSessionsStartedCommand == null)
         {
-            _incrementSessionsStartedCommand = CreatePreparedCommandNoLock("UPDATE GlobalStats SET SessionsStarted = SessionsStarted + 1 WHERE ID = 1;");
+            _incrementSessionsStartedCommand = PrepareCommandNoLock("UPDATE GlobalStats SET SessionsStarted = SessionsStarted + 1 WHERE ID = 1;");
             _incrementSessionsStartedCommand.Prepare();
         }
         _incrementSessionsStartedCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteSaveDeathScoreBaselineNoLock(SqliteTransaction? transaction, long deathScore)
+    private static void SaveDeathBaselineNoLock(SqliteTransaction? transaction, long deathScore)
     {
         if (_saveDeathScoreBaselineCommand == null)
         {
-            _saveDeathScoreBaselineCommand = CreatePreparedCommandNoLock("UPDATE GlobalStats SET LastDeathScore = $deathScore WHERE ID = 1;");
+            _saveDeathScoreBaselineCommand = PrepareCommandNoLock("UPDATE GlobalStats SET LastDeathScore = $deathScore WHERE ID = 1;");
             _saveDeathScoreBaselineValue = _saveDeathScoreBaselineCommand.Parameters.Add("$deathScore", SqliteType.Integer);
             _saveDeathScoreBaselineCommand.Prepare();
         }
@@ -203,11 +203,11 @@ internal static partial class BotStatisticsStore
         _saveDeathScoreBaselineCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteApplyDeathScoreNoLock(SqliteTransaction transaction, long deathCount, long deathScore, long survivedSeconds)
+    private static void UpdateDeathScoreNoLock(SqliteTransaction transaction, long deathCount, long deathScore, long survivedSeconds)
     {
         if (_applyDeathScoreCommand == null)
         {
-            _applyDeathScoreCommand = CreatePreparedCommandNoLock("""
+            _applyDeathScoreCommand = PrepareCommandNoLock("""
                 UPDATE GlobalStats
                 SET Deaths = Deaths + $deathCount,
                     LastDeathScore = $deathScore,
@@ -234,29 +234,29 @@ internal static partial class BotStatisticsStore
         _applyDeathScoreCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteClearCommandUseCountsNoLock(SqliteTransaction transaction)
+    private static void ClearCommandCountsNoLock(SqliteTransaction transaction)
     {
         if (_clearCommandUseCountsCommand == null)
         {
-            _clearCommandUseCountsCommand = CreatePreparedCommandNoLock("DELETE FROM CommandUseCounts;");
+            _clearCommandUseCountsCommand = PrepareCommandNoLock("DELETE FROM CommandUseCounts;");
             _clearCommandUseCountsCommand.Prepare();
         }
         _clearCommandUseCountsCommand.Transaction = transaction;
         _clearCommandUseCountsCommand.ExecuteNonQuery();
     }
 
-    private static void ExecuteClearViewerScoresNoLock(SqliteTransaction transaction)
+    private static void ClearScoresNoLock(SqliteTransaction transaction)
     {
         if (_clearViewerScoresCommand == null)
         {
-            _clearViewerScoresCommand = CreatePreparedCommandNoLock("DELETE FROM ViewerScores;");
+            _clearViewerScoresCommand = PrepareCommandNoLock("DELETE FROM ViewerScores;");
             _clearViewerScoresCommand.Prepare();
         }
         _clearViewerScoresCommand.Transaction = transaction;
         _clearViewerScoresCommand.ExecuteNonQuery();
     }
 
-    private static void DisposeCachedCommandsNoLock()
+    private static void DisposeCommandsNoLock()
     {
         DisposeCommand(ref _incrementCommandTotalsCommand);
         DisposeCommand(ref _incrementCommandUseCommand);
@@ -292,11 +292,11 @@ internal static partial class BotStatisticsStore
         }
     }
 
-    private static long GetLastDeathScoreNoLock(SqliteTransaction? transaction)
+    private static long GetDeathScoreNoLock(SqliteTransaction? transaction)
     {
         if (_getLastDeathScoreCommand == null)
         {
-            _getLastDeathScoreCommand = CreatePreparedCommandNoLock("SELECT LastDeathScore FROM GlobalStats WHERE ID = 1 LIMIT 1;");
+            _getLastDeathScoreCommand = PrepareCommandNoLock("SELECT LastDeathScore FROM GlobalStats WHERE ID = 1 LIMIT 1;");
             _getLastDeathScoreCommand.Prepare();
         }
 

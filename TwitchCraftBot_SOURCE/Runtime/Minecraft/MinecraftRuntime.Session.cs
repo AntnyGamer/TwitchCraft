@@ -21,6 +21,9 @@ public sealed partial class BotMainHandler
         config.Twitch ??= new TwitchConfig();
         config.Settings ??= new StartingProfile();
 
+        if (!MinecraftVersionSupport.TryGetVersion(config.Server.MinecraftVersion, out _))
+            throw new InvalidOperationException("Minecraft version '" + (config.Server.MinecraftVersion ?? string.Empty).Trim() + "' is not supported by this TwitchCraft build.");
+
         bool remoteController = config.Settings.RemoteControlEnabled;
 
         if (remoteController)
@@ -83,20 +86,31 @@ public sealed partial class BotMainHandler
         return port is >= 1 and <= 65535;
     }
 
-    private static string GetRemoteControllerHost(BotConfig config)
+    private static string GetRconHost(BotConfig config)
     {
         string host = (config.Server.RemoteHost ?? string.Empty).Trim();
         return host.Length == 0 ? "127.0.0.1" : host;
     }
 
-    private void ResetSessionState()
+    private void ResetSession()
     {
-        ResetIRCQueues();
+        ResetQueues();
+        _timedPlayerScaleController.ClearTracking();
 
         lock (_viewerGate)
         {
             _knownChatters = [];
             _viewerRewardSchedule = new(PlayerNameComparer);
+            _viewerLastChatActivity.Clear();
+        }
+
+        lock (_cooldownGate)
+        {
+            _channelCommandTimestamps.Clear();
+            _viewerCommandTimestamps.Clear();
+            _viewerCommandLimitNotices.Clear();
+            _customCommandLastUsedTicks.Clear();
+            _relayMessageTimestamps.Clear();
         }
 
         lock (_playerGate)
@@ -124,7 +138,7 @@ public sealed partial class BotMainHandler
             _pendingRespawnPositionRequests.Clear();
         }
 
-        CompleteOnlinePlayerSnapshotRequest(false);
+        CompleteSnapshot(false);
         lock (_serverProbeMarkerGate)
         {
             _pendingServerProbeMarkers.Clear();
@@ -132,7 +146,8 @@ public sealed partial class BotMainHandler
         }
 
         ClearLightningCooldown();
-        ClearGlobalGameCommandCooldown();
+        ClearScaleCooldowns();
+        ClearGlobalCooldown();
 
         Interlocked.Exchange(ref _playerSidebarRefreshQueued, 0);
         Interlocked.Exchange(ref _initialPlayerSnapshotQueued, 0);
@@ -146,12 +161,12 @@ public sealed partial class BotMainHandler
         Volatile.Write(ref _minecraftQueryUnavailableUntilTicks, 0);
         _minecraftServerReady = false;
 
-        _shellWindow?.ClearServerLogView();
-        _shellWindow?.ClearChatLogView();
-        _shellWindow?.DisplayNormalizedViewerList([]);
+        _shellWindow?.ClearServerLog();
+        _shellWindow?.ClearChatLog();
+        _shellWindow?.UpdateViewers([]);
     }
 
-    private void SafeStopProcess()
+    private void StopProcessSafe()
     {
         Process? process = _javaServerProcess;
         _javaServerProcess = null;
@@ -170,10 +185,10 @@ public sealed partial class BotMainHandler
         {
         }
 
-        SafeDisposeProcess(process);
+        DisposeProcessSafe(process);
     }
 
-    internal async Task SafeStopProcessAsync(bool waitBriefly)
+    internal async Task StopProcessSafeAsync(bool waitBriefly)
     {
         Process? process = _javaServerProcess;
         _javaServerProcess = null;
@@ -183,7 +198,7 @@ public sealed partial class BotMainHandler
         try
         {
             if (waitBriefly)
-                await WaitForProcessExitAsync(process, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                await WaitForProcessExitAsync(process, GracefulShutdownTimeout).ConfigureAwait(false);
         }
         catch
         {
@@ -201,7 +216,7 @@ public sealed partial class BotMainHandler
         {
         }
 
-        SafeDisposeProcess(process);
+        DisposeProcessSafe(process);
     }
 
     private static async Task WaitForProcessExitAsync(Process process, TimeSpan timeout)
@@ -236,7 +251,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static void SafeDisposeProcess(Process process)
+    private static void DisposeProcessSafe(Process process)
     {
         try
         {
@@ -247,13 +262,13 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void SafeSynchronousCleanup()
+    private void SafeCleanup()
     {
-        PauseCurrentSurvivalForStatistics();
+        PauseSurvival();
 
         try
         {
-            MinigameManager.StopMinigameLoops(this);
+            MinigameManager.StopLoops(this);
         }
         catch
         {
@@ -267,24 +282,22 @@ public sealed partial class BotMainHandler
         {
         }
 
-        SafeCloseIRCSocket();
-        SafeStopProcess();
+        CloseIrcSocket();
+        StopProcessSafe();
 
-        _tokenStore.TryExportReadableJson();
-        FlushStatisticsForShutdown();
-        CloseDataStoreConnections();
+        _tokenStore.TryExportJson();
+        FlushForShutdown();
+        CloseStores();
     }
 
-    private static string NormalizeUser(string? user) => CommandUserHelper.NormalizeUsername(user);
+    private static string NormalizeUser(string? user) => CommandUserHelper.NormalizeUser(user);
 
-    private List<string> GetKnownPlayersList()
+    private List<string> GetKnownPlayers()
     {
         lock (_playerGate)
         {
             return [.. _knownPlayers];
         }
     }
-
-    // ===== Minecraft command I/O and version helpers =====
 
 }

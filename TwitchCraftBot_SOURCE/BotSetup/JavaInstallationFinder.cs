@@ -15,14 +15,14 @@ internal static partial class JavaInstallationFinder
     public static (string JavaExe, string JavaHome) FindMatching(int javaVersion)
     {
         HashSet<string> seenJavaHomes = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string? candidate in GetJavaHomeCandidates())
+        foreach (string? candidate in GetJavaHomes())
         {
-            string javaHome = NormalizeJavaHomeCandidate(candidate);
+            string javaHome = CleanJavaHome(candidate);
             if (javaHome.Length == 0 || !seenJavaHomes.Add(javaHome))
                 continue;
 
             if (TryGetJavaExecutable(javaHome, out string javaExe)
-                && TryGetJavaMajorVersion(javaExe, out int major)
+                && TryGetJavaVersion(javaExe, out int major)
                 && major == javaVersion)
             {
                 return (javaExe, javaHome);
@@ -32,7 +32,7 @@ internal static partial class JavaInstallationFinder
         return (string.Empty, string.Empty);
     }
 
-    private static string NormalizeJavaHomeCandidate(string? path)
+    private static string CleanJavaHome(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
             return string.Empty;
@@ -52,20 +52,20 @@ internal static partial class JavaInstallationFinder
         }
     }
 
-    private static IEnumerable<string?> GetJavaHomeCandidates()
+    private static IEnumerable<string?> GetJavaHomes()
     {
         yield return Environment.GetEnvironmentVariable("JAVA_HOME");
         yield return Environment.GetEnvironmentVariable("JAVA_HOME", EnvironmentVariableTarget.User);
         yield return Environment.GetEnvironmentVariable("JAVA_HOME", EnvironmentVariableTarget.Machine);
 
-        foreach (string? home in GetPathJavaHomes())
+        foreach (string? home in GetPathHomes())
             yield return home;
 
-        foreach (string? home in GetCommonJavaHomes())
+        foreach (string? home in GetCommonHomes())
             yield return home;
     }
 
-    private static IEnumerable<string?> GetPathJavaHomes()
+    private static IEnumerable<string?> GetPathHomes()
     {
         string?[] pathValues =
         [
@@ -103,7 +103,7 @@ internal static partial class JavaInstallationFinder
         }
     }
 
-    private static IEnumerable<string?> GetCommonJavaHomes()
+    private static IEnumerable<string?> GetCommonHomes()
     {
         string[] roots =
         [
@@ -176,7 +176,7 @@ internal static partial class JavaInstallationFinder
         return false;
     }
 
-    private static bool TryGetJavaMajorVersion(string javaExe, out int major)
+    private static bool TryGetJavaVersion(string javaExe, out int major)
     {
         major = 0;
 

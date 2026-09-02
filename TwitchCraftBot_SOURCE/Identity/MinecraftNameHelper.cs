@@ -5,7 +5,7 @@ namespace TwitchCraftBot_V1;
 internal static class MinecraftNameHelper
 {
     internal static bool IsValidPlayerName(string? value)
-        => !string.IsNullOrEmpty(value) && IsValidPlayerNameSegment(value.AsSpan().Trim());
+        => !string.IsNullOrEmpty(value) && IsValidNameSegment(value.AsSpan().Trim());
 
     internal static bool TryNormalizePlayerName(string? value, out string normalized)
     {
@@ -14,7 +14,7 @@ internal static class MinecraftNameHelper
             return false;
 
         ReadOnlySpan<char> trimmed = value.AsSpan().Trim();
-        if (!IsValidPlayerNameSegment(trimmed))
+        if (!IsValidNameSegment(trimmed))
             return false;
 
         normalized = trimmed.Length == value.Length ? value : trimmed.ToString();
@@ -25,14 +25,14 @@ internal static class MinecraftNameHelper
     {
         normalized = string.Empty;
         value = value.Trim();
-        if (!IsValidPlayerNameSegment(value))
+        if (!IsValidNameSegment(value))
             return false;
 
         normalized = value.ToString();
         return true;
     }
 
-    private static bool IsValidPlayerNameSegment(ReadOnlySpan<char> value)
+    private static bool IsValidNameSegment(ReadOnlySpan<char> value)
     {
         if (value.Length is < 3 or > 16)
             return false;

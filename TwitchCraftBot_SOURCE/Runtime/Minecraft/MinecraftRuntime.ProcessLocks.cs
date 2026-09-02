@@ -11,16 +11,16 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private async Task EnsureServerLogIsNotLockedAsync(BotConfig config, CancellationToken cancellationToken)
+    private async Task UnlockLogAsync(BotConfig config, CancellationToken cancellationToken)
     {
         string latestLogPath = Path.Combine(config.Server.ServerDirectory, "logs", "latest.log");
         if (!IsFileLocked(latestLogPath))
             return;
 
-        if (!ErrorHandling.ConfirmCloseRunningJavaAndRetry(_shellWindow))
+        if (!ErrorHandling.ConfirmCloseJava(_shellWindow))
             return;
 
-        CloseLockingJavaProcesses(latestLogPath);
+        CloseLockingApps(latestLogPath);
         Stopwatch stopwatch = Stopwatch.StartNew();
         while (stopwatch.Elapsed < ServerLogUnlockWaitTimeout)
         {
@@ -50,9 +50,9 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static void CloseLockingJavaProcesses(string lockedFilePath)
+    private static void CloseLockingApps(string lockedFilePath)
     {
-        foreach (int processId in GetLockingProcessIds(lockedFilePath))
+        foreach (int processId in GetLockingPids(lockedFilePath))
         {
             try
             {
@@ -66,7 +66,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static unsafe IEnumerable<int> GetLockingProcessIds(string path)
+    private static unsafe IEnumerable<int> GetLockingPids(string path)
     {
         if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return [];
@@ -114,7 +114,7 @@ public sealed partial class BotMainHandler
                 for (int i = 0; i < actualProcessCount; i++)
                 {
                     RM_UNIQUE_PROCESS uniqueProcess = processes[i].Process;
-                    if (IsMatchingLiveProcess(uniqueProcess))
+                    if (MatchesProcess(uniqueProcess))
                         processIDs.Add(uniqueProcess.dwProcessId);
                 }
 
@@ -127,7 +127,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static bool IsMatchingLiveProcess(RM_UNIQUE_PROCESS uniqueProcess)
+    private static bool MatchesProcess(RM_UNIQUE_PROCESS uniqueProcess)
     {
         if (uniqueProcess.dwProcessId <= 0)
             return false;

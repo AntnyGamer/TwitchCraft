@@ -8,20 +8,10 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private async Task ClearPlayerSidebarAsync(CancellationToken cancellationToken)
+    private async Task ClearSidebarAsync(CancellationToken cancellationToken)
     {
-        if (!_minecraftServerReady)
-        {
-            lock (_playerGate)
-            {
-                _lastSidebarPlayers = [];
-                _playerSidebarInitialized = false;
-            }
-
-            return;
-        }
-
-        await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
+        if (_minecraftServerReady)
+            await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
 
         lock (_playerGate)
         {
@@ -30,7 +20,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static bool SamePlayers(List<string> players, List<string> previousPlayers)
+    private static bool PlayersMatch(List<string> players, List<string> previousPlayers)
     {
         int count = players.Count;
         if (count != previousPlayers.Count)
@@ -45,7 +35,7 @@ public sealed partial class BotMainHandler
         return true;
     }
 
-    private async Task RefreshPlayerSidebarAsync(CancellationToken cancellationToken)
+    private async Task RefreshSidebarAsync(CancellationToken cancellationToken)
     {
         if (!MultiplayerEnabled || !_minecraftServerReady)
             return;
@@ -60,7 +50,7 @@ public sealed partial class BotMainHandler
             if (_knownPlayers.Count == 0 && _lastSidebarPlayers.Count == 0)
                 return;
 
-            if (!needsInitialization && SamePlayers(_knownPlayers, _lastSidebarPlayers))
+            if (!needsInitialization && PlayersMatch(_knownPlayers, _lastSidebarPlayers))
                 return;
 
             players = _knownPlayers.Count == 0 ? [] : [.. _knownPlayers];
@@ -69,11 +59,11 @@ public sealed partial class BotMainHandler
 
         if (players.Count == 0)
         {
-            await ClearPlayerSidebarAsync(cancellationToken).ConfigureAwait(false);
+            await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        List<string> commands = BuildPlayerSidebarCommands(players, previousPlayers, needsInitialization, UsesInlineTextComponentSyntax);
+        List<string> commands = BuildSidebar(players, previousPlayers, needsInitialization, UsesInlineTextComponentSyntax);
         if (commands.Count == 0)
             return;
 
@@ -87,7 +77,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private static List<string> BuildPlayerSidebarCommands(List<string> players, List<string> previousPlayers, bool needsInitialization, bool usesInlineTextComponents)
+    private static List<string> BuildSidebar(List<string> players, List<string> previousPlayers, bool needsInitialization, bool usesInlineTextComponents)
     {
         const string objective = "tc_playerlist";
         const string healthObjective = "tc_health";
@@ -95,8 +85,8 @@ public sealed partial class BotMainHandler
         List<string> commands = new((needsInitialization ? 9 : 0) + previousPlayers.Count + players.Count);
         if (needsInitialization)
         {
-            string playerListDisplay = BuildScoreboardDisplayComponent("Player List:", usesInlineTextComponents);
-            string healthDisplay = BuildScoreboardDisplayComponent("Health", usesInlineTextComponents);
+            string playerListDisplay = BuildScoreboardText("Player List:", usesInlineTextComponents);
+            string healthDisplay = BuildScoreboardText("Health", usesInlineTextComponents);
 
             commands.Add("scoreboard objectives remove " + objective);
             commands.Add("scoreboard objectives remove " + healthObjective);
@@ -140,30 +130,30 @@ public sealed partial class BotMainHandler
         return commands;
     }
 
-    private static string BuildScoreboardDisplayComponent(string text, bool usesInlineTextComponents)
+    private static string BuildScoreboardText(string text, bool usesInlineTextComponents)
     {
         return usesInlineTextComponents
-            ? "{text:'" + MinecraftCommandBuilder.EscapeSnbtString(text) + "'}"
+            ? "{text:'" + MinecraftCommandBuilder.EscapeSnbt(text) + "'}"
             : "{\"text\":\"" + MinecraftCommandBuilder.EscapeJson(text) + "\"}";
     }
 
-    private void QueueInitialPlayerSnapshot()
+    private void QueueFirstSnapshot()
     {
-        if (!TryGetQueuedSessionToken(requireMultiplayer: true, out CancellationToken token) ||
+        if (!TryGetSessionToken(requireMultiplayer: true, out CancellationToken token) ||
             Interlocked.Exchange(ref _initialPlayerSnapshotQueued, 1) != 0)
         {
             return;
         }
 
-        RunQueuedSessionWork(
-            RefreshOnlinePlayerSnapshotNowAsync,
+        RunSessionWork(
+            RefreshSnapshotAsync,
             () => Interlocked.Exchange(ref _initialPlayerSnapshotQueued, 0),
             token: token);
     }
 
-    private void QueuePlayerSidebarRefresh()
+    private void QueueSidebarRefresh()
     {
-        if (!TryGetQueuedSessionToken(requireMultiplayer: true, out CancellationToken token))
+        if (!TryGetSessionToken(requireMultiplayer: true, out CancellationToken token))
             return;
 
         int previous = Interlocked.CompareExchange(ref _playerSidebarRefreshQueued, 1, 0);
@@ -173,12 +163,12 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        RunCoalescedQueuedSessionWork(
-            RefreshPlayerSidebarAsync,
+        RunCoalescedWork(
+            RefreshSidebarAsync,
             () => Interlocked.CompareExchange(ref _playerSidebarRefreshQueued, 0, 1) == 1,
             () => Interlocked.Exchange(ref _playerSidebarRefreshQueued, 1),
             () => Interlocked.Exchange(ref _playerSidebarRefreshQueued, 0),
-            onError: RecordPlayerSidebarRefreshFailure,
+            onError: LogSidebarError,
             token: token);
     }
 

@@ -40,7 +40,7 @@ Use `127.0.0.1` only when TwitchCraft and the remote-controlled server run on th
 - The configured Minecraft version must match the remote server closely enough for TwitchCraft's version-specific command syntax.
 - Command delivery uses RCON rather than local Java standard input.
 - Remote mode cannot manage the remote Java process or local server files.
-- Local-only administrator operations such as chat-driven ban/unban may be unavailable by design.
+- Local-only administrator operations (`!ban`, `!kick`, `!unban`, `!whitelistadd`, and `!whitelistremove`) are unavailable in Remote Control Mode.
 - Token refunds occur when a paid command cannot be dispatched successfully; a successful dispatch is not refunded merely because the in-game outcome was not visible.
 
 ## Troubleshooting

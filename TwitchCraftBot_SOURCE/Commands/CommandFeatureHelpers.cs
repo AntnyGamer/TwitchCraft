@@ -11,7 +11,6 @@ internal static class MinecraftItemRenameHelper
         string selector,
         string selectedItemData,
         string redeemerName,
-        bool usesItemComponents,
         bool usesInlineTextComponents,
         out string command,
         out string prettyItemName)
@@ -19,7 +18,7 @@ internal static class MinecraftItemRenameHelper
         command = string.Empty;
         prettyItemName = string.Empty;
 
-        if (!TryParseOuterCompound(selectedItemData, out List<string> topEntries))
+        if (!TryParseCompound(selectedItemData, out List<string> topEntries))
             return false;
 
         if (!TryGetField(topEntries, "id", out string rawItemId, out _))
@@ -29,61 +28,108 @@ internal static class MinecraftItemRenameHelper
         if (string.IsNullOrWhiteSpace(itemID) || string.Equals(itemID, "minecraft:air", StringComparison.OrdinalIgnoreCase))
             return false;
 
-        prettyItemName = GetPrettyItemName(itemID);
+        prettyItemName = GetItemName(itemID);
         string displayName = redeemerName + "'s " + prettyItemName;
         int count = ReadCount(topEntries);
 
-        if (usesItemComponents)
-        {
-            List<string> componentEntries = [];
-            if (TryGetField(topEntries, "components", out string componentsValue, out _))
-            {
-                if (!TryParseOuterCompound(componentsValue, out componentEntries))
-                    return false;
-            }
+        List<string> componentEntries = [];
+        if (TryGetField(topEntries, "components", out string componentsValue, out _) &&
+            !TryParseCompound(componentsValue, out componentEntries))
+            return false;
 
-            RemoveField(componentEntries, "minecraft:custom_name");
-            if (usesInlineTextComponents)
-                componentEntries.Add("\"minecraft:custom_name\":{text:'" + MinecraftCommandBuilder.EscapeSnbtString(displayName) + "'}");
-            else
-                componentEntries.Add("\"minecraft:custom_name\":\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
-
-            string componentSuffix = BuildComponentSuffix(componentEntries);
-            command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " + count.ToString(CultureInfo.InvariantCulture);
-            return true;
-        }
-
-        List<string> tagEntries = [];
-        if (TryGetField(topEntries, "tag", out string tagValue, out _))
-        {
-            if (!TryParseOuterCompound(tagValue, out tagEntries))
-                return false;
-        }
-
-        int displayIndex = FindFieldIndex(tagEntries, "display");
-        List<string> displayEntries = [];
-        if (displayIndex >= 0)
-        {
-            string displayValue = GetFieldValue(tagEntries[displayIndex]);
-            if (!TryParseOuterCompound(displayValue, out displayEntries))
-                return false;
-        }
-
-        RemoveField(displayEntries, "Name");
-        displayEntries.Insert(0, "Name:\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
-
-        string displayEntry = "display:{" + string.Join(",", displayEntries) + "}";
-        if (displayIndex >= 0)
-            tagEntries[displayIndex] = displayEntry;
+        RemoveField(componentEntries, "minecraft:custom_name");
+        if (usesInlineTextComponents)
+            componentEntries.Add("\"minecraft:custom_name\":{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'}");
         else
-            tagEntries.Add(displayEntry);
+            componentEntries.Add("\"minecraft:custom_name\":\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
 
-        string legacySuffix = tagEntries.Count == 0 ? string.Empty : "{" + string.Join(",", tagEntries) + "}";
-        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + legacySuffix + " " + count.ToString(CultureInfo.InvariantCulture);
+        string componentSuffix = BuildComponentSuffix(componentEntries);
+        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " + count.ToString(CultureInfo.InvariantCulture);
         return true;
     }
 
-    private static string GetPrettyItemName(string itemID)
+    internal static bool TryBuildEnchantCommand(
+        string selector,
+        string selectedItemData,
+        string enchantID,
+        int level,
+        bool usesFlattenedEnchantmentsComponent,
+        out string command,
+        out string prettyItemName)
+    {
+        command = string.Empty;
+        prettyItemName = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(selector) || string.IsNullOrWhiteSpace(enchantID) || level <= 0 ||
+            !TryParseCompound(selectedItemData, out List<string> topEntries) ||
+            !TryGetField(topEntries, "id", out string rawItemId, out _))
+        {
+            return false;
+        }
+
+        string itemID = Unquote(rawItemId).Trim();
+        if (itemID.Length == 0 || string.Equals(itemID, "minecraft:air", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        List<string> componentEntries = [];
+        if (TryGetField(topEntries, "components", out string componentsValue, out _) &&
+            !TryParseCompound(componentsValue, out componentEntries))
+        {
+            return false;
+        }
+
+        string normalizedEnchantID = enchantID.Trim();
+        if (normalizedEnchantID.StartsWith("minecraft:", StringComparison.OrdinalIgnoreCase))
+            normalizedEnchantID = normalizedEnchantID["minecraft:".Length..];
+        if (normalizedEnchantID.Length == 0)
+            return false;
+
+        string namespacedEnchantID = "minecraft:" + normalizedEnchantID;
+        int enchantmentsIndex = FindFieldIndex(componentEntries, "minecraft:enchantments");
+        List<string> enchantmentComponentEntries = [];
+        if (enchantmentsIndex >= 0)
+        {
+            string existingEnchantments = GetFieldValue(componentEntries[enchantmentsIndex]);
+            if (!TryParseCompound(existingEnchantments, out enchantmentComponentEntries))
+                return false;
+        }
+
+        if (usesFlattenedEnchantmentsComponent)
+        {
+            RemoveField(enchantmentComponentEntries, namespacedEnchantID);
+            enchantmentComponentEntries.Add("\"" + namespacedEnchantID + "\":" + level.ToString(CultureInfo.InvariantCulture));
+        }
+        else
+        {
+            int levelsIndex = FindFieldIndex(enchantmentComponentEntries, "levels");
+            List<string> levelEntries = [];
+            if (levelsIndex >= 0 &&
+                !TryParseCompound(GetFieldValue(enchantmentComponentEntries[levelsIndex]), out levelEntries))
+                return false;
+
+            RemoveField(levelEntries, namespacedEnchantID);
+            levelEntries.Add("\"" + namespacedEnchantID + "\":" + level.ToString(CultureInfo.InvariantCulture));
+            string levelsEntry = "levels:{" + string.Join(",", levelEntries) + "}";
+            if (levelsIndex >= 0)
+                enchantmentComponentEntries[levelsIndex] = levelsEntry;
+            else
+                enchantmentComponentEntries.Insert(0, levelsEntry);
+        }
+
+        string enchantmentsEntry = "\"minecraft:enchantments\":{" + string.Join(",", enchantmentComponentEntries) + "}";
+        if (enchantmentsIndex >= 0)
+            componentEntries[enchantmentsIndex] = enchantmentsEntry;
+        else
+            componentEntries.Add(enchantmentsEntry);
+
+        int count = ReadCount(topEntries);
+        prettyItemName = GetItemName(itemID);
+        command = "item replace entity " + selector + " weapon.mainhand with " + itemID +
+            BuildComponentSuffix(componentEntries) + " " + count.ToString(CultureInfo.InvariantCulture);
+        return true;
+    }
+
+    internal static string GetItemName(string itemID)
     {
         string normalized = itemID.Trim();
         int colonIndex = normalized.IndexOf(':');
@@ -93,7 +139,7 @@ internal static class MinecraftItemRenameHelper
         return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.Replace('_', ' '));
     }
 
-    private static bool TryParseOuterCompound(string value, out List<string> entries)
+    private static bool TryParseCompound(string value, out List<string> entries)
     {
         entries = [];
 
@@ -121,7 +167,7 @@ internal static class MinecraftItemRenameHelper
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
-            if (UpdateNestedState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
+            if (UpdateState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
                 continue;
 
             if (c == ',' && braceDepth == 0 && bracketDepth == 0 && parenDepth == 0)
@@ -158,7 +204,7 @@ internal static class MinecraftItemRenameHelper
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
-            if (UpdateNestedState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
+            if (UpdateState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
                 continue;
 
             if (c == ':' && braceDepth == 0 && bracketDepth == 0 && parenDepth == 0)
@@ -168,7 +214,7 @@ internal static class MinecraftItemRenameHelper
         return -1;
     }
 
-    private static bool UpdateNestedState(
+    private static bool UpdateState(
         char c,
         ref int braceDepth,
         ref int bracketDepth,
@@ -247,7 +293,7 @@ internal static class MinecraftItemRenameHelper
     {
         for (int i = 0; i < entries.Count; i++)
         {
-            if (FieldNameMatches(entries[i], fieldName))
+            if (NameMatches(entries[i], fieldName))
                 return i;
         }
 
@@ -261,7 +307,7 @@ internal static class MinecraftItemRenameHelper
             entries.RemoveAt(index);
     }
 
-    private static bool FieldNameMatches(string entry, string fieldName)
+    private static bool NameMatches(string entry, string fieldName)
     {
         int colonIndex = FindTopLevelColon(entry);
         if (colonIndex <= 0)
@@ -277,7 +323,7 @@ internal static class MinecraftItemRenameHelper
         return colonIndex >= 0 ? entry[(colonIndex + 1)..].Trim() : string.Empty;
     }
 
-    private static string ConvertComponentEntryToItemSyntax(string entry)
+    private static string ToItemSyntax(string entry)
     {
         int colonIndex = FindTopLevelColon(entry);
         if (colonIndex <= 0)
@@ -297,7 +343,7 @@ internal static class MinecraftItemRenameHelper
             if (i > 0)
                 builder.Append(',');
 
-            builder.Append(ConvertComponentEntryToItemSyntax(componentEntries[i]));
+            builder.Append(ToItemSyntax(componentEntries[i]));
         }
 
         builder.Append(']');
@@ -330,7 +376,7 @@ internal static class MinecraftItemRenameHelper
 
 internal static class MinecraftCommandFeatureBuilder
 {
-    public static List<string> BuildScaredCommands(string selector, Random random, bool usesInlineTextComponents)
+    public static List<string> BuildScared(string selector, Random random, bool usesInlineTextComponents)
     {
         ArgumentNullException.ThrowIfNull(random);
 
@@ -356,14 +402,44 @@ internal static class MinecraftCommandFeatureBuilder
         return commands;
     }
 
-    public static List<string> BuildSlaughterCommands(string selector, string mobLootGameRuleName) =>
+    public static List<string> BuildSlaughter(string selector, string mobLootGameRuleName) =>
     [
         "gamerule " + mobLootGameRuleName + " false",
         "execute at " + selector + " run kill @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:item,type=!minecraft:experience_orb,distance=..30]",
         "gamerule " + mobLootGameRuleName + " true"
     ];
 
-    public static List<string> BuildJohnnyCommands(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+    public static List<string> BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+        => BuildPursuer(
+            selector,
+            random,
+            usesInlineTextComponents,
+            usesModernEntityAttributeNbt,
+            "vindicator",
+            "Johnny",
+            "tc_johnny",
+            string.Empty);
+
+    public static List<string> BuildChargedCreeper(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+        => BuildPursuer(
+            selector,
+            random,
+            usesInlineTextComponents,
+            usesModernEntityAttributeNbt,
+            "creeper",
+            "Charged Creeper",
+            "tc_charged_creeper",
+            "powered:1b,");
+
+    private static List<string> BuildPursuer(
+        string selector,
+        Random random,
+        bool usesInlineTextComponents,
+        bool usesModernEntityAttributeNbt,
+        string entityId,
+        string displayName,
+        string entityTag,
+        string additionalNbt)
     {
         ArgumentNullException.ThrowIfNull(random);
 
@@ -374,19 +450,20 @@ internal static class MinecraftCommandFeatureBuilder
             2 => (0, 15),
             _ => (0, -15)
         };
-        string johnnySelector = "@e[tag=tc_johnny_new,sort=nearest,limit=1,distance=..150]";
+        string newEntityTag = entityTag + "_new";
+        string entitySelector = "@e[tag=" + newEntityTag + ",sort=nearest,limit=1,distance=..150]";
         string followRangeData = usesModernEntityAttributeNbt
             ? "attributes:[{id:'minecraft:follow_range',base:75.0}]"
             : "Attributes:[{Name:\"generic.follow_range\",Base:75.0}]";
         string summonData = usesInlineTextComponents
-            ? "{CustomName:{text:'Johnny'},CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b,Tags:['tc_johnny','tc_johnny_new']," + followRangeData + "}"
-            : "{CustomName:'{\"text\":\"Johnny\"}',CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b,Tags:[\"tc_johnny\",\"tc_johnny_new\"]," + followRangeData + "}";
+            ? "{CustomName:{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'},CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:['" + entityTag + "','" + newEntityTag + "']," + followRangeData + "}"
+            : "{CustomName:'{\"text\":\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\"}',CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:[\"" + entityTag + "\",\"" + newEntityTag + "\"]," + followRangeData + "}";
 
         return
         [
-            "execute at " + selector + " run summon minecraft:vindicator ~" + offsetX.ToString(CultureInfo.InvariantCulture) + " ~100 ~" + offsetZ.ToString(CultureInfo.InvariantCulture) + " " + summonData,
-            "execute at " + selector + " as " + johnnySelector + " run effect give @s minecraft:glowing 255 0 true",
-            "execute at " + selector + " as " + johnnySelector + " run tag @s remove tc_johnny_new"
+            "execute at " + selector + " run summon minecraft:" + entityId + " ~" + offsetX.ToString(CultureInfo.InvariantCulture) + " ~100 ~" + offsetZ.ToString(CultureInfo.InvariantCulture) + " " + summonData,
+            "execute at " + selector + " as " + entitySelector + " run effect give @s minecraft:glowing 255 0 true",
+            "execute at " + selector + " as " + entitySelector + " run tag @s remove " + newEntityTag
         ];
     }
 

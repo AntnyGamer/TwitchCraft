@@ -8,12 +8,27 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
+    internal Task<bool> ApplyTimedScaleAsync(
+        IReadOnlyList<string> playerNames,
+        double scale,
+        TimeSpan duration,
+        Func<IReadOnlyList<string>, CancellationToken, Task<bool>> dispatchInitialCommands,
+        CancellationToken cancellationToken)
+        => _timedPlayerScaleController.ApplyAsync(
+            playerNames,
+            scale,
+            UsesModernAttributeIds,
+            UsesInlineTextComponentSyntax,
+            duration,
+            dispatchInitialCommands,
+            cancellationToken);
+
     public Task SendTellrawAsync(string selector, string message, string color, bool bold, CancellationToken cancellationToken)
         => SendServerCommandAsync(
             MinecraftCommandBuilder.Tellraw(string.IsNullOrWhiteSpace(selector) ? "@a" : selector, message, color, bold, UsesInlineTextComponentSyntax),
             cancellationToken);
 
-    public bool HasOtherKnownPlayer(string excludedPlayerName)
+    public bool HasOtherPlayer(string excludedPlayerName)
     {
         if (!MinecraftNameHelper.TryNormalizePlayerName(excludedPlayerName, out string excludedName))
             return false;
@@ -30,7 +45,7 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    public Task SendTellrawToOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
+    public Task TellrawOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
     {
         if (!MultiTargetingEnabled || target == null || string.IsNullOrWhiteSpace(message) || target.PlayerCount != 1)
             return Task.CompletedTask;
@@ -38,10 +53,10 @@ public sealed partial class BotMainHandler
         if (!MinecraftNameHelper.TryNormalizePlayerName(target.MinecraftName, out string excludedName))
             return Task.CompletedTask;
 
-        if (!HasOtherKnownPlayer(excludedName))
+        if (!HasOtherPlayer(excludedName))
             return Task.CompletedTask;
 
-        string selector = MinecraftCommandBuilder.AllExceptPlayerSelector(excludedName);
+        string selector = MinecraftCommandBuilder.EveryoneExceptSelector(excludedName);
         return SendTellrawAsync(selector, message, color, bold, cancellationToken);
     }
 
@@ -78,62 +93,30 @@ public sealed partial class BotMainHandler
 
     public string CurrentMinecraftVersion => _currentMinecraftVersion;
 
-    private bool TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo versionInfo)
+    private MinecraftVersionSupport.MinecraftVersionInfo GetMinecraftVersion()
     {
         string version = CurrentMinecraftVersion;
         if (!string.Equals(_cachedMinecraftFeatureVersion, version, StringComparison.OrdinalIgnoreCase))
         {
-            _cachedMinecraftFeatureInfo = MinecraftVersionSupport.TryGetVersion(version, out MinecraftVersionSupport.MinecraftVersionInfo resolved)
-                ? resolved
-                : null;
+            _cachedMinecraftFeatureInfo = MinecraftVersionSupport.GetVersion(version);
             _cachedMinecraftFeatureVersion = version;
         }
 
-        if (_cachedMinecraftFeatureInfo != null)
-        {
-            versionInfo = _cachedMinecraftFeatureInfo;
-            return true;
-        }
-
-        versionInfo = null!;
-        return false;
+        return _cachedMinecraftFeatureInfo
+            ?? throw new InvalidOperationException("Minecraft version information is unavailable.");
     }
 
-    public bool UsesItemComponentsSyntax
-    {
-        get
-        {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.UsesItemComponents;
-        }
-    }
+    public bool UsesInlineTextComponentSyntax => GetMinecraftVersion().UsesInlineTextComponents;
 
-    public bool UsesInlineTextComponentSyntax
-    {
-        get
-        {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.UsesInlineTextComponents;
-        }
-    }
+    public bool UsesModernEntityAttributeNbt => GetMinecraftVersion().DataPackFormatMajor >= 48;
 
-    public bool UsesModernEntityAttributeNbt
-    {
-        get
-        {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.DataPackFormatMajor >= 48;
-        }
-    }
+    public bool UsesModernAttributeIds => GetMinecraftVersion().DataPackFormatMajor >= 57;
 
-    public bool UsesNamespacedGameRules
-    {
-        get
-        {
-            return TryGetCurrentMinecraftVersionInfo(out MinecraftVersionSupport.MinecraftVersionInfo version)
-                && version.UsesNamespacedGameRules;
-        }
-    }
+    public bool SupportsMaceEnchantments => GetMinecraftVersion().DataPackFormatMajor >= 48;
+
+    public bool UsesFlattenedEnchantmentsComponent => GetMinecraftVersion().DataPackFormatMajor >= 71;
+
+    public bool UsesNamespacedGameRules => GetMinecraftVersion().UsesNamespacedGameRules;
 
     public string MobLootGameRuleName => UsesNamespacedGameRules ? "minecraft:mob_drops" : "doMobLoot";
 

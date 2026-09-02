@@ -17,7 +17,7 @@ If you find a security issue, please report it privately to the project owner.
 
 Security issues may include:
 
-* Exposed Twitch bot tokens
+* Exposed Twitch access or refresh tokens
 * Exposed RCON passwords
 * Exposed configuration files
 * Viewer token database leaks
@@ -48,7 +48,7 @@ If a vulnerability is confirmed, a patched version may be released, and the issu
 
 ## User Responsibility
 
-Users are responsible for keeping their own Twitch tokens, RCON passwords, configuration files, databases, and Minecraft server files private.
+Users are responsible for keeping their Twitch authorization tokens, RCON passwords, configuration files, databases, and Minecraft server files private.
 
 Do not upload or share the following unless specifically requested through a private reporting method:
 
@@ -57,7 +57,7 @@ Do not upload or share the following unless specifically requested through a pri
 * `statistics.db`
 * `.db`, `.db-shm`, or `.db-wal` files
 * `.bak` files
-* Twitch bot tokens
+* Twitch access or refresh tokens
 * RCON passwords
 * Personal Minecraft server files
 

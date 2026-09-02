@@ -7,67 +7,62 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchCraftBot_V1.BotSetup;
 
 namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private void ClearViewerRoster()
+    private void ClearRoster()
     {
         List<string> emptyChatters = [];
         lock (_viewerGate)
         {
             _knownChatters = emptyChatters;
             _viewerRewardSchedule.Clear();
+            _viewerLastChatActivity.Clear();
         }
 
-        _shellWindow?.DisplayNormalizedViewerList(emptyChatters);
+        _shellWindow?.UpdateViewers(emptyChatters);
     }
 
-    private async Task RunPassiveRewardLoopAsync(CancellationToken cancellationToken)
+    private async Task RunPassiveRewardsAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (!(_activeConfig?.Settings.PassiveTokenEarningEnabled ?? true))
+            if (_activeConfig?.Settings.PassiveTokenEarningEnabled ?? true)
             {
-                try
+                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                List<string>? rewarded = null;
+
+                lock (_viewerGate)
                 {
-                    await Task.Delay(5000, cancellationToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-
-                continue;
-            }
-
-            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            List<string>? rewarded = null;
-
-            lock (_viewerGate)
-            {
-                for (int i = 0; i < _knownChatters.Count; i++)
-                {
-                    string chatter = _knownChatters[i];
-                    if (string.IsNullOrWhiteSpace(chatter))
-                        continue;
-
-                    if (!_viewerRewardSchedule.TryGetValue(chatter, out long nextAt))
+                    for (int i = 0; i < _knownChatters.Count; i++)
                     {
-                        _viewerRewardSchedule[chatter] = now + Random.Shared.Next(30, 61);
-                    }
-                    else if (nextAt <= now)
-                    {
-                        _viewerRewardSchedule[chatter] = now + Random.Shared.Next(30, 61);
-                        (rewarded ??= []).Add(chatter);
+                        string chatter = _knownChatters[i];
+                        if (string.IsNullOrWhiteSpace(chatter))
+                            continue;
+
+                        if (!IsRewardEligibleNoLock(chatter, now))
+                        {
+                            _viewerRewardSchedule.Remove(chatter);
+                            continue;
+                        }
+
+                        if (!_viewerRewardSchedule.TryGetValue(chatter, out long nextAt))
+                        {
+                            _viewerRewardSchedule[chatter] = now + GetPayoutDelay();
+                        }
+                        else if (nextAt <= now)
+                        {
+                            _viewerRewardSchedule[chatter] = now + GetPayoutDelay();
+                            (rewarded ??= []).Add(chatter);
+                        }
                     }
                 }
-            }
 
-            if (rewarded is { Count: > 0 })
-            {
-                _tokenStore.AdjustBalances(rewarded, 1);
+                if (rewarded is { Count: > 0 })
+                    AwardTokens(rewarded, PassiveTokensPerPayout);
             }
 
             try
@@ -81,63 +76,74 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private async Task RunViewerRosterLoopAsync(CancellationToken cancellationToken)
+    private async Task RunChatRosterAsync(CancellationToken cancellationToken)
     {
-        if (_activeConfig?.Twitch == null)
+        TwitchConfig? twitch = _activeConfig?.Twitch;
+        if (twitch == null ||
+            string.IsNullOrWhiteSpace(twitch.ClientID) ||
+            string.IsNullOrWhiteSpace(twitch.BotToken) ||
+            string.IsNullOrWhiteSpace(twitch.StreamerName))
         {
-            ClearViewerRoster();
-            return;
-        }
-
-        string botToken = NormalizeTwitchToken(_activeConfig.Twitch.BotToken);
-        string bearerHeader = TwitchTokenHelper.BuildBearerHeader(botToken);
-        if (string.IsNullOrWhiteSpace(_activeConfig.Twitch.ClientID) ||
-            string.IsNullOrWhiteSpace(botToken) ||
-            string.IsNullOrWhiteSpace(_activeConfig.Twitch.StreamerName))
-        {
-            ClearViewerRoster();
+            ClearRoster();
             return;
         }
 
         try
         {
             int consecutiveFailures = 0;
-            bool shouldResolveUserIds = true;
+            string resolvedToken = string.Empty;
             string moderatorId = string.Empty;
             string broadcasterID = string.Empty;
-            TimeSpan refreshDelay = TimeSpan.FromSeconds(30);
+            TimeSpan refreshDelay = TimeSpan.FromSeconds(ViewerRosterRefreshIntervalSeconds);
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                TwitchConfig? currentTwitch = _activeConfig?.Twitch;
+                if (currentTwitch == null)
+                {
+                    ClearRoster();
+                    return;
+                }
+
+                string clientId = (currentTwitch.ClientID ?? string.Empty).Trim();
+                string streamerName = (currentTwitch.StreamerName ?? string.Empty).Trim();
+                string botToken = NormalizeToken(currentTwitch.BotToken);
+                string bearerHeader = TwitchTokenHelper.BuildBearerHeader(botToken);
+                if (clientId.Length == 0 || streamerName.Length == 0 || botToken.Length == 0)
+                {
+                    ClearRoster();
+                    return;
+                }
+
                 try
                 {
-                    if (shouldResolveUserIds)
+                    if (!string.Equals(resolvedToken, botToken, StringComparison.Ordinal))
                     {
-                        string botName = await ResolveAndPersistBotNameAsync(botToken, cancellationToken).ConfigureAwait(false);
+                        string botName = await ResolveBotAsync(botToken, cancellationToken).ConfigureAwait(false);
                         if (string.IsNullOrWhiteSpace(botName))
                         {
-                            ClearViewerRoster();
+                            ClearRoster();
                             _shellWindow?.AddChatLogLine("Unable to resolve bot login for the viewer roster.");
                             return;
                         }
 
-                        string[] userIDs = await ResolveTwitchUserIdsAsync(
+                        string[] userIDs = await ResolveUsersAsync(
                             botName,
-                            _activeConfig.Twitch.StreamerName,
-                            _activeConfig.Twitch.ClientID,
+                            streamerName,
+                            clientId,
                             botToken,
                             cancellationToken).ConfigureAwait(false);
 
                         if (userIDs.Length != 2)
                         {
-                            ClearViewerRoster();
+                            ClearRoster();
                             _shellWindow?.AddChatLogLine("Viewer roster setup failed: Twitch user IDs could not be resolved for the bot/channel.");
                             return;
                         }
 
                         moderatorId = userIDs[0];
                         broadcasterID = userIDs[1];
-                        shouldResolveUserIds = false;
+                        resolvedToken = botToken;
                     }
 
                     List<string> viewers = [];
@@ -149,17 +155,17 @@ public sealed partial class BotMainHandler
                             + "&moderator_id=" + moderatorId
                             + "&first=100";
 
-                        if (!string.IsNullOrWhiteSpace(cursor))
+                        if (cursor is { Length: > 0 })
                             URL += "&after=" + Uri.EscapeDataString(cursor);
 
                         using HttpRequestMessage request = new(HttpMethod.Get, URL);
                         request.Headers.TryAddWithoutValidation("Authorization", bearerHeader);
-                        request.Headers.TryAddWithoutValidation("Client-Id", _activeConfig.Twitch.ClientID);
+                        request.Headers.TryAddWithoutValidation("Client-Id", clientId);
 
                         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-                        if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                        if (response.StatusCode == HttpStatusCode.Unauthorized)
                         {
-                            shouldResolveUserIds = true;
+                            resolvedToken = string.Empty;
                             throw new HttpRequestException("Viewer roster authorization failed.", null, response.StatusCode);
                         }
 
@@ -171,9 +177,9 @@ public sealed partial class BotMainHandler
 
                         response.EnsureSuccessStatusCode();
                         string JSON = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                        cursor = ParseViewerRosterPage(JSON, viewers);
+                        cursor = ParseRosterPage(JSON, viewers);
                     }
-                    while (!string.IsNullOrWhiteSpace(cursor));
+                    while (cursor is { Length: > 0 });
 
                     SortedListHelper.SortAndDeduplicate(viewers, StringComparer.OrdinalIgnoreCase);
 
@@ -201,26 +207,34 @@ public sealed partial class BotMainHandler
                     }
 
                     consecutiveFailures = 0;
-                    refreshDelay = TimeSpan.FromSeconds(30);
+                    refreshDelay = TimeSpan.FromSeconds(ViewerRosterRefreshIntervalSeconds);
                     if (viewerList != null)
-                        _shellWindow?.DisplayNormalizedViewerList(viewerList);
+                        _shellWindow?.UpdateViewers(viewerList);
                 }
                 catch (OperationCanceledException)
                 {
                     break;
                 }
-                catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized || ex.StatusCode == HttpStatusCode.Forbidden)
+                catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     consecutiveFailures++;
-                    shouldResolveUserIds = true;
-                    ClearViewerRoster();
-                    _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Viewer roster authorization failed", ex));
+                    resolvedToken = string.Empty;
+                    ClearRoster();
+                    if (await TryRefreshAuthAsync(botToken, cancellationToken).ConfigureAwait(false))
+                    {
+                        consecutiveFailures = 0;
+                        refreshDelay = TimeSpan.FromSeconds(1);
+                    }
+                    else
+                    {
+                        _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Viewer roster authorization failed", ex));
+                    }
                 }
                 catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
                 {
                     consecutiveFailures++;
                     if (consecutiveFailures >= 3)
-                        ClearViewerRoster();
+                        ClearRoster();
 
                     _shellWindow?.AddChatLogLine("Viewer roster rate limited; retrying in " + Math.Ceiling(refreshDelay.TotalSeconds).ToString(CultureInfo.InvariantCulture) + "s.");
                 }
@@ -229,10 +243,10 @@ public sealed partial class BotMainHandler
                     consecutiveFailures++;
                     if (consecutiveFailures >= 3)
                     {
-                        ClearViewerRoster();
+                        ClearRoster();
                     }
 
-                    _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Viewer roster refresh failed", ex));
+                    _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Viewer roster refresh failed", ex));
                 }
 
                 await Task.Delay(refreshDelay, cancellationToken).ConfigureAwait(false);
@@ -243,8 +257,8 @@ public sealed partial class BotMainHandler
         }
         catch (Exception ex)
         {
-            ClearViewerRoster();
-            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Viewer roster setup failed", ex));
+            ClearRoster();
+            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Viewer roster setup failed", ex));
         }
     }
 
@@ -263,9 +277,9 @@ public sealed partial class BotMainHandler
         return fallback;
     }
 
-    private static async Task<string[]> ResolveTwitchUserIdsAsync(string botName, string streamerName, string clientID, string token, CancellationToken cancellationToken)
+    private static async Task<string[]> ResolveUsersAsync(string botName, string streamerName, string clientID, string token, CancellationToken cancellationToken)
     {
-        string normalizedToken = NormalizeTwitchToken(token);
+        string normalizedToken = NormalizeToken(token);
 
         string URL = "https://api.twitch.tv/helix/users?login=" + Uri.EscapeDataString(botName) + "&login=" + Uri.EscapeDataString(streamerName);
         using HttpRequestMessage request = new(HttpMethod.Get, URL);
@@ -275,10 +289,10 @@ public sealed partial class BotMainHandler
         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         string JSON = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        return ParseResolvedUserIds(JSON, botName, streamerName);
+        return ParseUserIds(JSON, botName, streamerName);
     }
 
-    internal static string? ParseViewerRosterPage(string json, List<string> viewers)
+    internal static string? ParseRosterPage(string json, List<string> viewers)
     {
         using StringReader textReader = new(json);
         using JsonTextReader reader = new(textReader);
@@ -337,7 +351,7 @@ public sealed partial class BotMainHandler
         return cursor;
     }
 
-    internal static string[] ParseResolvedUserIds(string json, string botName, string streamerName)
+    internal static string[] ParseUserIds(string json, string botName, string streamerName)
     {
         string botID = string.Empty;
         string broadcasterID = string.Empty;
@@ -389,7 +403,7 @@ public sealed partial class BotMainHandler
         return botID.Length == 0 || broadcasterID.Length == 0 ? [] : [botID, broadcasterID];
     }
 
-    public List<string> GetKnownChattersSnapshot()
+    public List<string> GetChattersSnapshot()
     {
         lock (_viewerGate)
         {

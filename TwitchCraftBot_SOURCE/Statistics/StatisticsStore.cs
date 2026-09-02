@@ -35,18 +35,18 @@ internal static partial class BotStatisticsStore
     private static SqliteCommand? _clearCommandUseCountsCommand;
     private static SqliteCommand? _clearViewerScoresCommand;
 
-    public static BotLifetimeStatistics LoadGlobalOnly()
+    public static BotLifetimeStatistics LoadGlobal()
     {
         lock (IoGate)
         {
             try
             {
-                return LoadGlobalOnlyCore(GetConnectionNoLock());
+                return LoadGlobalCore(GetConnectionNoLock());
             }
             catch (Exception ex)
             {
                 ErrorHandling.LogNonFatal("Failed to load statistics database", ex);
-                ErrorHandling.ShowStatisticsLoadWarning();
+                ErrorHandling.ShowStatsWarning();
                 return new BotLifetimeStatistics();
             }
         }
@@ -58,7 +58,7 @@ internal static partial class BotStatisticsStore
         {
             try
             {
-                DisposeCachedCommandsNoLock();
+                DisposeCommandsNoLock();
                 _connection?.Dispose();
             }
             catch (Exception ex)
@@ -73,13 +73,13 @@ internal static partial class BotStatisticsStore
         }
     }
 
-    public static bool TryExportReadableJson()
+    public static bool TryExportJson()
     {
         try
         {
             lock (IoGate)
             {
-                ExportReadableJsonCore(GetConnectionNoLock());
+                ExportJsonCore(GetConnectionNoLock());
             }
 
             return true;
@@ -91,7 +91,7 @@ internal static partial class BotStatisticsStore
         }
     }
 
-    public static bool ApplyGameCommandDeltaNormalized(string commandName, long tokensSpent, string normalizedViewer, long dangerousScore, long niceScore)
+    public static bool ApplyCommandDelta(string commandName, long tokensSpent, string normalizedViewer, long dangerousScore, long niceScore)
     {
         long safeDangerousScore = Math.Max(0L, dangerousScore);
         long safeNiceScore = Math.Max(0L, niceScore);
@@ -99,7 +99,7 @@ internal static partial class BotStatisticsStore
             ? normalizedViewer
             : string.Empty;
 
-        return ApplyGameCommandDeltaCore(
+        return ApplyCommandDeltaCore(
             commandName ?? string.Empty,
             Math.Max(0L, tokensSpent),
             safeViewer,
@@ -107,7 +107,7 @@ internal static partial class BotStatisticsStore
             safeNiceScore);
     }
 
-    private static bool ApplyGameCommandDeltaCore(string command, long safeTokensSpent, string normalizedViewer, long safeDangerousScore, long safeNiceScore)
+    private static bool ApplyCommandDeltaCore(string command, long safeTokensSpent, string normalizedViewer, long safeDangerousScore, long safeNiceScore)
     {
         try
         {
@@ -116,16 +116,16 @@ internal static partial class BotStatisticsStore
                 SqliteConnection connection = GetConnectionNoLock();
                 using SqliteTransaction transaction = connection.BeginTransaction();
 
-                ExecuteIncrementCommandTotalsNoLock(transaction, safeTokensSpent);
+                AddCommandTotalsNoLock(transaction, safeTokensSpent);
 
                 if (command.Length > 0)
                 {
-                    ExecuteIncrementCommandUseNoLock(transaction, command);
+                    AddCommandUseNoLock(transaction, command);
                 }
 
                 if (normalizedViewer.Length > 0 && (safeDangerousScore > 0 || safeNiceScore > 0))
                 {
-                    ExecuteUpsertViewerScoreNoLock(transaction, normalizedViewer, safeDangerousScore, safeNiceScore);
+                    SaveViewerScoreNoLock(transaction, normalizedViewer, safeDangerousScore, safeNiceScore);
                 }
 
                 transaction.Commit();
@@ -140,7 +140,7 @@ internal static partial class BotStatisticsStore
         }
     }
 
-    public static bool ApplyEffectsGivenDelta(long effectsGiven)
+    public static bool ApplyEffectsDelta(long effectsGiven)
     {
         long safeEffects = Math.Max(0L, effectsGiven);
         if (safeEffects <= 0)
@@ -152,7 +152,7 @@ internal static partial class BotStatisticsStore
         {
             lock (IoGate)
             {
-                ExecuteIncrementEffectsGivenNoLock(safeEffects);
+                AddEffectsNoLock(safeEffects);
             }
 
             return true;
@@ -164,13 +164,13 @@ internal static partial class BotStatisticsStore
         }
     }
 
-    public static bool ApplySessionStartedDelta()
+    public static bool ApplySessionDelta()
     {
         try
         {
             lock (IoGate)
             {
-                ExecuteIncrementSessionsStartedNoLock();
+                AddSessionNoLock();
             }
 
             return true;
@@ -182,7 +182,7 @@ internal static partial class BotStatisticsStore
         }
     }
 
-    public static bool SaveDeathScoreBaseline(long deathScore)
+    public static bool SaveDeathBaseline(long deathScore)
     {
         long safeDeathScore = Math.Max(0L, deathScore);
 
@@ -190,7 +190,7 @@ internal static partial class BotStatisticsStore
         {
             lock (IoGate)
             {
-                ExecuteSaveDeathScoreBaselineNoLock(null, safeDeathScore);
+                SaveDeathBaselineNoLock(null, safeDeathScore);
             }
 
             return true;
@@ -214,13 +214,13 @@ internal static partial class BotStatisticsStore
             {
                 SqliteConnection connection = GetConnectionNoLock();
                 using SqliteTransaction transaction = connection.BeginTransaction();
-                long lastDeathScore = GetLastDeathScoreNoLock(transaction);
+                long lastDeathScore = GetDeathScoreNoLock(transaction);
 
                 if (safeDeathScore <= lastDeathScore)
                 {
                     if (safeDeathScore < lastDeathScore)
                     {
-                        ExecuteSaveDeathScoreBaselineNoLock(transaction, safeDeathScore);
+                        SaveDeathBaselineNoLock(transaction, safeDeathScore);
                     }
 
                     transaction.Commit();
@@ -228,7 +228,7 @@ internal static partial class BotStatisticsStore
                 }
 
                 deathCount = safeDeathScore - lastDeathScore;
-                ExecuteApplyDeathScoreNoLock(transaction, deathCount, safeDeathScore, safeSurvivedSeconds);
+                UpdateDeathScoreNoLock(transaction, deathCount, safeDeathScore, safeSurvivedSeconds);
 
                 transaction.Commit();
             }
@@ -249,7 +249,7 @@ internal static partial class BotStatisticsStore
         {
             lock (IoGate)
             {
-                ClearAllCore(GetConnectionNoLock());
+                ClearCore(GetConnectionNoLock());
             }
 
             return true;
@@ -263,7 +263,7 @@ internal static partial class BotStatisticsStore
 
     public static (string DangerousViewer, string NiceViewer) GetTopViewers(string excludedViewer)
     {
-        string normalizedExcludedViewer = CommandUserHelper.NormalizeUsername(excludedViewer);
+        string normalizedExcludedViewer = CommandUserHelper.NormalizeUser(excludedViewer);
         string excludedClause = normalizedExcludedViewer.Length == 0 ? string.Empty : "AND Username <> $excludedViewer";
 
         lock (IoGate)

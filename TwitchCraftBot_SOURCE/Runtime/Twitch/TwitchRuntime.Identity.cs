@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -11,68 +12,167 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private async Task<string> ResolveAndPersistBotNameAsync(string token, CancellationToken cancellationToken)
+    private async Task<BotConfig> EnsureAuthAsync(
+        BotConfig config,
+        CancellationToken cancellationToken)
     {
-        string normalizedToken = NormalizeTwitchToken(token);
-        string resolvedBotName;
-
-        lock (_botIdentityCacheGate)
+        if (TwitchOAuthAuthorizer.TwitchCraftOAuthConfigured &&
+            !string.Equals(config.Twitch.ClientID, TwitchOAuthAuthorizer.TwitchCraftClientId, StringComparison.Ordinal))
         {
-            resolvedBotName = string.Equals(_cachedBotToken, normalizedToken, StringComparison.Ordinal)
-                ? _cachedBotName
-                : string.Empty;
+            throw new InvalidOperationException(
+                "The saved Twitch authorization belongs to a different Twitch application. " +
+                "Open Settings → Dangerous → Reauthorize Twitch, then start TwitchCraft again.");
         }
+
+        string token = NormalizeToken(config.Twitch.BotToken);
+        if (token.Length == 0)
+            return config;
+
+        _lastTwitchValidationUtc = DateTime.UtcNow;
+        try
+        {
+            string login = await ValidateBotAsync(token, cancellationToken).ConfigureAwait(false);
+            if (login.Length > 0)
+                config.Twitch.BotName = login;
+            return config;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            TwitchOAuthResult refreshed = await TwitchOAuthAuthorizer.RefreshAsync(
+                config.Twitch.ClientID,
+                config.Twitch.RefreshToken,
+                cancellationToken).ConfigureAwait(false);
+
+            if (!refreshed.IsSuccess && TwitchOAuthAuthorizer.IsClientSecretFailure(refreshed.Error))
+            {
+                throw new InvalidOperationException(
+                    "Twitch authorization expired, but Twitch rejected a secretless refresh. " +
+                    "TwitchCraft's Twitch Developer application must be set to Client Type: Public. " + refreshed.Error, ex);
+            }
+
+            if (!refreshed.IsSuccess && TwitchOAuthAuthorizer.ShouldUseDeviceAuth(refreshed.Error))
+            {
+                throw new InvalidOperationException(
+                    "Twitch authorization needs to be renewed. Open Settings → Dangerous → Reauthorize Twitch, then start TwitchCraft again. " +
+                    refreshed.Error,
+                    ex);
+            }
+
+            if (!refreshed.IsSuccess)
+            {
+                throw new InvalidOperationException(
+                    "Twitch authorization expired and could not be renewed. Open Settings → Dangerous → Authorize Twitch. " +
+                    refreshed.Error,
+                    ex);
+            }
+
+            config.Twitch = SaveAuth(config.Twitch.ClientID, token, refreshed);
+            return config;
+        }
+    }
+
+    private async Task<bool> TryRefreshAuthAsync(
+        string rejectedToken,
+        CancellationToken cancellationToken)
+    {
+        string normalizedRejectedToken = NormalizeToken(rejectedToken);
+        await _twitchTokenRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            TwitchConfig? twitch = _activeConfig?.Twitch;
+            if (twitch == null)
+                return false;
+
+            string currentToken = NormalizeToken(twitch.BotToken);
+            if (currentToken.Length > 0 &&
+                !string.Equals(currentToken, normalizedRejectedToken, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            TwitchOAuthResult refreshed = await TwitchOAuthAuthorizer.RefreshAsync(
+                twitch.ClientID,
+                twitch.RefreshToken,
+                cancellationToken).ConfigureAwait(false);
+            if (!refreshed.IsSuccess)
+            {
+                _shellWindow?.AddChatLogLine("Twitch authorization could not be renewed automatically: " + refreshed.Error);
+                return false;
+            }
+
+            SaveAuth(twitch.ClientID, normalizedRejectedToken, refreshed);
+            _shellWindow?.AddChatLogLine("Twitch authorization renewed automatically.");
+            return true;
+        }
+        finally
+        {
+            _twitchTokenRefreshGate.Release();
+        }
+    }
+
+    private TwitchConfig SaveAuth(string clientId, string expectedToken, TwitchOAuthResult refreshed)
+    {
+        lock (_configPersistenceGate)
+        {
+            BotConfig persisted = ConfigurationStore.Update(config =>
+            {
+                if (!string.Equals(config.Twitch.ClientID, clientId, StringComparison.Ordinal) || !string.Equals(NormalizeToken(config.Twitch.BotToken), expectedToken, StringComparison.Ordinal))
+                    return;
+
+                config.Twitch.BotToken = refreshed.Token;
+                config.Twitch.RefreshToken = refreshed.RefreshToken;
+                config.Twitch.BotName = refreshed.Login;
+            });
+
+            if (_activeConfig != null &&
+                string.Equals(_activeConfig.Twitch.ClientID, clientId, StringComparison.Ordinal) && string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), expectedToken, StringComparison.Ordinal) && string.Equals(NormalizeToken(persisted.Twitch.BotToken), NormalizeToken(refreshed.Token), StringComparison.Ordinal))
+            {
+                BotConfig active = CloneConfig(_activeConfig);
+                active.Twitch.BotToken = refreshed.Token;
+                active.Twitch.RefreshToken = refreshed.RefreshToken;
+                active.Twitch.BotName = refreshed.Login;
+                SetConfig(active);
+            }
+            return persisted.Twitch;
+        }
+    }
+
+    private async Task<string> ResolveBotAsync(string token, CancellationToken cancellationToken)
+    {
+        string normalizedToken = NormalizeToken(token);
+        TwitchConfig? twitch = _activeConfig?.Twitch;
+        string resolvedBotName = string.Equals(NormalizeToken(twitch?.BotToken), normalizedToken, StringComparison.Ordinal)
+            ? NormalizeUser(twitch?.BotName)
+            : string.Empty;
 
         if (resolvedBotName.Length == 0)
         {
             await _botIdentityResolveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                lock (_botIdentityCacheGate)
-                {
-                    resolvedBotName = string.Equals(_cachedBotToken, normalizedToken, StringComparison.Ordinal)
-                        ? _cachedBotName
-                        : string.Empty;
-                }
-
-                if (resolvedBotName.Length == 0)
-                {
-                    resolvedBotName = await GetValidatedBotNameAsync(normalizedToken, cancellationToken).ConfigureAwait(false);
-
-                    if (resolvedBotName.Length > 0)
-                    {
-                        lock (_botIdentityCacheGate)
-                        {
-                            _cachedBotToken = normalizedToken;
-                            _cachedBotName = resolvedBotName;
-                        }
-                    }
-                }
+                twitch = _activeConfig?.Twitch;
+                resolvedBotName = string.Equals(NormalizeToken(twitch?.BotToken), normalizedToken, StringComparison.Ordinal)
+                    ? NormalizeUser(twitch?.BotName)
+                    : await ValidateBotAsync(normalizedToken, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
                 _botIdentityResolveGate.Release();
             }
+
+            if (resolvedBotName.Length == 0)
+                return string.Empty;
         }
 
-        if (resolvedBotName.Length == 0)
-        {
-            return resolvedBotName;
-        }
-
-        bool configAlreadyCurrent = _activeConfig?.Twitch != null
-            && string.Equals(_currentBotName, resolvedBotName, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(NormalizeTwitchToken(_activeConfig.Twitch.BotToken), normalizedToken, StringComparison.Ordinal);
-
-        if (!configAlreadyCurrent)
-        {
-            PersistResolvedBotIdentity(normalizedToken, resolvedBotName);
-        }
+        twitch = _activeConfig?.Twitch;
+        if (!string.Equals(NormalizeUser(twitch?.BotName), resolvedBotName, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(NormalizeToken(twitch?.BotToken), normalizedToken, StringComparison.Ordinal))
+            SaveBot(normalizedToken, resolvedBotName);
 
         return resolvedBotName;
     }
 
-    private void PersistResolvedBotIdentity(string normalizedToken, string resolvedBotName)
+    private void SaveBot(string normalizedToken, string resolvedBotName)
     {
         try
         {
@@ -82,40 +182,36 @@ public sealed partial class BotMainHandler
                 {
                     configToUpdate.Twitch ??= new BotSetup.TwitchConfig();
 
-                    if (string.Equals(NormalizeUser(configToUpdate.Twitch.BotName), resolvedBotName, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(NormalizeTwitchToken(configToUpdate.Twitch.BotToken), normalizedToken, StringComparison.Ordinal))
+                    if (!string.Equals(NormalizeToken(configToUpdate.Twitch.BotToken), normalizedToken, StringComparison.Ordinal)
+                        || string.Equals(NormalizeUser(configToUpdate.Twitch.BotName), resolvedBotName, StringComparison.OrdinalIgnoreCase))
                     {
                         return;
                     }
 
                     configToUpdate.Twitch.BotName = resolvedBotName;
-                    configToUpdate.Twitch.BotToken = normalizedToken;
                 });
 
                 if (_activeConfig != null)
                 {
                     BotConfig activeConfig = CloneConfig(_activeConfig);
-                    activeConfig.Twitch.ClientID = config.Twitch.ClientID;
-                    activeConfig.Twitch.BotName = config.Twitch.BotName;
-                    activeConfig.Twitch.BotToken = config.Twitch.BotToken;
-                    activeConfig.Twitch.StreamerName = config.Twitch.StreamerName;
-                    SetActiveConfig(activeConfig);
+                    activeConfig.Twitch = config.Twitch;
+                    SetConfig(activeConfig);
                 }
                 else
                 {
-                    SetActiveConfig(config);
+                    SetConfig(config);
                 }
             }
         }
         catch (Exception ex)
         {
-            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("Failed to save bot token identity", ex));
+            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Failed to save bot token identity", ex));
         }
     }
 
-    private static async Task<string> GetValidatedBotNameAsync(string token, CancellationToken cancellationToken)
+    private static async Task<string> ValidateBotAsync(string token, CancellationToken cancellationToken)
     {
-        string normalizedToken = NormalizeTwitchToken(token);
+        string normalizedToken = NormalizeToken(token);
 
         using HttpRequestMessage request = new(HttpMethod.Get, "https://id.twitch.tv/oauth2/validate");
         request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildValidateHeader(normalizedToken));
@@ -123,10 +219,10 @@ public sealed partial class BotMainHandler
         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         string JSON = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        return ParseValidatedBotLogin(JSON);
+        return ParseLogin(JSON);
     }
 
-    internal static string ParseValidatedBotLogin(string json)
+    internal static string ParseLogin(string json)
     {
         using StringReader textReader = new(json);
         using JsonTextReader reader = new(textReader);
@@ -141,14 +237,14 @@ public sealed partial class BotMainHandler
             }
 
             return reader.TokenType == JsonToken.String
-                ? CommandUserHelper.NormalizeUsername(reader.Value as string)
+                ? CommandUserHelper.NormalizeUser(reader.Value as string)
                 : string.Empty;
         }
 
         return string.Empty;
     }
 
-    private void SafeCloseIRCSocket(TcpClient? socketToClose = null)
+    private void CloseIrcSocket(TcpClient? socketToClose = null)
     {
         TcpClient? socket = socketToClose ?? _IRCSocket;
         if (socket == null)
@@ -165,7 +261,5 @@ public sealed partial class BotMainHandler
         {
         }
     }
-
-    // ===== Twitch chat output =====
 
 }

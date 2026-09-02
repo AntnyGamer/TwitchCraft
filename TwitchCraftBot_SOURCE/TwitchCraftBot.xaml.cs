@@ -27,37 +27,37 @@ public partial class TwitchCraftBot : Window
         Runtime = new BotMainHandler(Shell);
 
         DataContext = Shell;
-        Runtime.InitializeWindow(this);
+        Runtime.AttachWindow(this);
 
-        SourceInitialized += TwitchCraftBot_SourceInitialized;
-        Loaded += TwitchCraftBot_Loaded;
-        Closing += TwitchCraftBot_Closing;
-        Shell.PropertyChanged += Shell_PropertyChanged;
+        SourceInitialized += OnSourceInitialized;
+        Loaded += OnLoaded;
+        Closing += OnClosing;
+        Shell.PropertyChanged += OnShellPropertyChanged;
     }
 
     public AppShellViewModel Shell { get; }
 
     public BotMainHandler Runtime { get; }
 
-    public void NavigateToStart() => Shell.Navigate(ShellPage.Start);
+    public void ShowStart() => Shell.Navigate(ShellPage.Start);
 
-    public void NavigateToHelp() => Shell.Navigate(ShellPage.Help);
+    public void ShowHelp() => Shell.Navigate(ShellPage.Help);
 
-    public void NavigateToSettings() => Shell.Navigate(ShellPage.Settings);
+    public void ShowSettings() => Shell.Navigate(ShellPage.Settings);
 
-    public void NavigateToStatistics() => Shell.Navigate(ShellPage.Statistics);
+    public void ShowStatistics() => Shell.Navigate(ShellPage.Statistics);
 
-    public BotStatisticsSnapshot GetStatisticsSnapshot(CancellationToken cancellationToken = default) => Runtime.GetStatisticsSnapshot(cancellationToken);
+    public BotStatisticsSnapshot GetStatsSnapshot(CancellationToken cancellationToken = default) => Runtime.GetStatsSnapshot(cancellationToken);
 
-    public Task ResetStatisticsAsync() => Runtime.ResetAllStatisticsAsync();
+    public Task ResetStatisticsAsync() => Runtime.ResetAllAsync();
 
-    public Task BeginLaunchAsync() => Runtime.StartMainHandlerAsync();
+    public Task StartAsync() => Runtime.StartAsync();
 
-    public Task Reset() => Runtime.Reset();
+    public Task ResetAsync() => Runtime.ResetAsync();
 
-    public Task Restart() => Runtime.Restart();
+    public Task RestartAsync() => Runtime.RestartAsync();
 
-    public void RestartAfterConfigDelete()
+    public void RestartAfterReset()
     {
         _restartAfterClose = true;
         Close();
@@ -65,24 +65,24 @@ public partial class TwitchCraftBot : Window
 
     public Task PauseAsync() => Runtime.PauseAsync();
 
-    public Task<bool> ExecuteMinecraftCommandAsync(string command) => Runtime.ExecuteMinecraftCommandAsync(command);
+    public Task<bool> RunMinecraftCommandAsync(string command) => Runtime.RunMinecraftCommandAsync(command);
 
     public void AddServerLogLine(string line) => Main.AddServerLogLine(line);
 
-    public void ClearServerLogView() => Main.ClearServerLogView();
+    public void ClearServerLog() => Main.ClearServerLog();
 
     public void AddChatLogLine(string line) => Main.AddChatLogLine(line);
 
-    public void ClearChatLogView() => Main.ClearChatLogView();
+    public void ClearChatLog() => Main.ClearChatLog();
 
-    public void DisplayNormalizedViewerList(List<string> viewers) => Main.DisplayNormalizedViewerList(viewers);
+    public void UpdateViewers(List<string> viewers) => Main.UpdateViewers(viewers);
 
-    private void TwitchCraftBot_SourceInitialized(object? sender, EventArgs e)
+    private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        _ = Dispatcher.BeginInvoke(ApplyInitialClientSize, DispatcherPriority.Loaded);
+        _ = Dispatcher.BeginInvoke(SetInitialSize, DispatcherPriority.Loaded);
     }
 
-    private void ApplyInitialClientSize()
+    private void SetInitialSize()
     {
         if (_initialClientSizeApplied)
         {
@@ -114,9 +114,9 @@ public partial class TwitchCraftBot : Window
         MinHeight = Height;
     }
 
-    private void TwitchCraftBot_Loaded(object? sender, RoutedEventArgs e)
+    private void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        ConfigurationStore.CheckRootFolder();
+        ConfigurationStore.EnsureWorkDir();
 
         try
         {
@@ -136,10 +136,10 @@ public partial class TwitchCraftBot : Window
             Shell.Navigate(ShellPage.Setup);
         }
 
-        ApplyCurrentPageToFrameState();
+        ApplyPageState();
     }
 
-    private async void TwitchCraftBot_Closing(object? sender, CancelEventArgs e)
+    private async void OnClosing(object? sender, CancelEventArgs e)
     {
         if (_shutdownAlreadyHandled)
         {
@@ -150,7 +150,7 @@ public partial class TwitchCraftBot : Window
         e.Cancel = true;
         _shutdownAlreadyHandled = true;
 
-        bool stopped = await Runtime.BeginShutdownAsync();
+        bool stopped = await Runtime.ShutdownAsync();
         if (!stopped)
         {
             _shutdownAlreadyHandled = false;
@@ -162,7 +162,7 @@ public partial class TwitchCraftBot : Window
         {
             try
             {
-                AppHelpers.OpenShellTarget(executablePath, AppContext.BaseDirectory);
+                AppHelpers.OpenTarget(executablePath, AppContext.BaseDirectory);
             }
             catch (Exception ex)
             {
@@ -170,20 +170,20 @@ public partial class TwitchCraftBot : Window
             }
         }
 
-        SourceInitialized -= TwitchCraftBot_SourceInitialized;
-        Loaded -= TwitchCraftBot_Loaded;
-        Closing -= TwitchCraftBot_Closing;
-        Shell.PropertyChanged -= Shell_PropertyChanged;
+        SourceInitialized -= OnSourceInitialized;
+        Loaded -= OnLoaded;
+        Closing -= OnClosing;
+        Shell.PropertyChanged -= OnShellPropertyChanged;
         UIThread.BeginInvoke(Close);
     }
 
-    private void Shell_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnShellPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (!_shutdownAlreadyHandled)
-            ApplyCurrentPageToFrameState();
+            ApplyPageState();
     }
 
-    private void ApplyCurrentPageToFrameState()
+    private void ApplyPageState()
     {
         if (_shutdownAlreadyHandled)
         {
@@ -197,20 +197,20 @@ public partial class TwitchCraftBot : Window
                 return;
             }
 
-            SetFrameVisibility(Setup, Shell.IsSetupVisible);
-            SetFrameVisibility(Start, Shell.IsLaunchVisible);
-            SetFrameVisibility(Main, Shell.IsConsoleVisible);
-            SetFrameVisibility(Help, Shell.IsHelpVisible);
-            SetFrameVisibility(Settings, Shell.IsSettingsVisible);
-            SetFrameVisibility(Statistics, Shell.IsStatisticsVisible);
+            SetPageVisibility(Setup, Shell.IsSetupVisible);
+            SetPageVisibility(Start, Shell.IsLaunchVisible);
+            SetPageVisibility(Main, Shell.IsConsoleVisible);
+            SetPageVisibility(Help, Shell.IsHelpVisible);
+            SetPageVisibility(Settings, Shell.IsSettingsVisible);
+            SetPageVisibility(Statistics, Shell.IsStatisticsVisible);
 
             if (Shell.IsLaunchVisible)
             {
-                Start.RefreshFromConfig();
+                Start.RefreshConfig();
             }
         });
     }
 
-    private static void SetFrameVisibility(Control control, bool isVisible)
+    private static void SetPageVisibility(Control control, bool isVisible)
         => control.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
 }

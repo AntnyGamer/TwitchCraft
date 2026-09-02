@@ -15,7 +15,11 @@ internal sealed class TemporaryDirectory : IDisposable
 
     public void Dispose()
     {
-        const int MaxAttempts = 3;
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        const int MaxAttempts = 10;
+        Exception? lastException = null;
         for (int attempt = 1; attempt <= MaxAttempts; attempt++)
         {
             try
@@ -27,18 +31,16 @@ internal sealed class TemporaryDirectory : IDisposable
             {
                 return;
             }
-            catch (Exception ex) when (
-                attempt < MaxAttempts &&
-                ex is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                Thread.Sleep(50 * attempt);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(
-                    $"Unable to clean up temporary test directory '{Path}': {ex.Message}");
-                return;
+                lastException = ex;
+                if (attempt < MaxAttempts)
+                    Thread.Sleep(50 * attempt);
             }
         }
+
+        throw new IOException(
+            $"Unable to clean up temporary test directory '{Path}'.",
+            lastException);
     }
 }

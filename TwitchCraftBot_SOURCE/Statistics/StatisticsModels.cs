@@ -7,6 +7,8 @@ public sealed class BotStatisticsSnapshot
 {
     public bool StatisticsEnabled { get; set; } = true;
     public long SessionGameCommandsRun { get; set; }
+    public long SessionDangerousCommandsRun { get; set; }
+    public long SessionNiceCommandsRun { get; set; }
     public string SessionMostUsedCommand { get; set; } = string.Empty;
     public long SessionTokensSpent { get; set; }
     public long SessionEffectsGiven { get; set; }
@@ -29,7 +31,7 @@ public sealed class BotStatisticsSnapshot
 
 internal static class StatisticNameHelper
 {
-    public static string NormalizeCommandName(string? commandName)
+    public static string CleanCommandName(string? commandName)
     {
         if (string.IsNullOrEmpty(commandName))
             return string.Empty;
@@ -52,7 +54,7 @@ internal static class StatisticNameHelper
 
         return start > end
             ? string.Empty
-            : ParsedCommand.ToLowerInvariantSegment(commandName, start, end - start + 1);
+            : ParsedCommand.LowerSegment(commandName, start, end - start + 1);
     }
 }
 
@@ -68,10 +70,10 @@ internal class BotCommandStatisticsBucket
         GameCommandsRun = Math.Max(0L, GameCommandsRun);
         TokensSpent = Math.Max(0L, TokensSpent);
         EffectsGiven = Math.Max(0L, EffectsGiven);
-        CommandUseCounts = NormalizeCommandMap(CommandUseCounts);
+        CommandUseCounts = NormalizeCommands(CommandUseCounts);
     }
 
-    protected static Dictionary<string, long> NormalizeCommandMap(Dictionary<string, long>? source)
+    protected static Dictionary<string, long> NormalizeCommands(Dictionary<string, long>? source)
     {
         if (source == null)
         {
@@ -82,38 +84,13 @@ internal class BotCommandStatisticsBucket
 
         foreach (KeyValuePair<string, long> pair in source)
         {
-            string command = StatisticNameHelper.NormalizeCommandName(pair.Key);
+            string command = StatisticNameHelper.CleanCommandName(pair.Key);
             if (command.Length == 0 || pair.Value <= 0)
             {
                 continue;
             }
 
             normalized[command] = normalized.TryGetValue(command, out long current)
-                ? current + pair.Value
-                : pair.Value;
-        }
-
-        return normalized;
-    }
-
-    protected static Dictionary<string, long> NormalizeScoreMap(Dictionary<string, long>? source)
-    {
-        if (source == null)
-        {
-            return new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        Dictionary<string, long> normalized = new(source.Count, StringComparer.OrdinalIgnoreCase);
-
-        foreach (KeyValuePair<string, long> pair in source)
-        {
-            string viewer = CommandUserHelper.NormalizeUsername(pair.Key);
-            if (viewer.Length == 0 || pair.Value <= 0)
-            {
-                continue;
-            }
-
-            normalized[viewer] = normalized.TryGetValue(viewer, out long current)
                 ? current + pair.Value
                 : pair.Value;
         }
@@ -134,13 +111,6 @@ internal sealed class BotSessionStatistics : BotCommandStatisticsBucket
     public bool DeathScoreBaselineSet { get; set; }
     public int? LastDeathScore { get; set; }
     public long Deaths { get; set; }
-
-    public override void Normalize()
-    {
-        base.Normalize();
-        DangerousViewerScores = NormalizeScoreMap(DangerousViewerScores);
-        NiceViewerScores = NormalizeScoreMap(NiceViewerScores);
-    }
 }
 
 internal sealed class BotLifetimeStatistics : BotCommandStatisticsBucket

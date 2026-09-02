@@ -21,7 +21,7 @@ internal sealed class MinecraftWorldImportPlan
 
 internal static class MinecraftWorldImporter
 {
-    public static bool IsMinecraftWorldFolder(string path)
+    public static bool IsWorldFolder(string path)
     {
         return !string.IsNullOrWhiteSpace(path)
             && Directory.Exists(path)
@@ -48,13 +48,13 @@ internal static class MinecraftWorldImporter
         };
     }
 
-    public static void ReplaceWorldSafely(MinecraftWorldImportPlan plan, Action? finishImport = null)
+    public static void ReplaceWorld(MinecraftWorldImportPlan plan, Action? finishImport = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
         Directory.CreateDirectory(plan.ServerDirectory);
-        TwitchCraftBot_V1.FileSystemHelper.TryDeleteDirectory(plan.StagingWorldPath);
-        TwitchCraftBot_V1.FileSystemHelper.TryDeleteDirectory(plan.BackupWorldPath);
+        TwitchCraftBot_V1.FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
+        TwitchCraftBot_V1.FileSystemHelper.DeleteDirectorySafe(plan.BackupWorldPath);
 
         TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(plan.SourceWorldPath, plan.StagingWorldPath, skipReparsePoints: true);
 
@@ -70,14 +70,14 @@ internal static class MinecraftWorldImporter
 
             Directory.Move(plan.StagingWorldPath, plan.DestinationWorldPath);
             finishImport?.Invoke();
-            TwitchCraftBot_V1.FileSystemHelper.TryDeleteDirectory(plan.BackupWorldPath);
+            TwitchCraftBot_V1.FileSystemHelper.DeleteDirectorySafe(plan.BackupWorldPath);
         }
         catch (Exception ex)
         {
             try
             {
                 if (!destinationExisted || backupCreated)
-                    TwitchCraftBot_V1.FileSystemHelper.TryDeleteDirectory(plan.DestinationWorldPath);
+                    TwitchCraftBot_V1.FileSystemHelper.DeleteDirectorySafe(plan.DestinationWorldPath);
 
                 if (backupCreated && Directory.Exists(plan.BackupWorldPath))
                 {
@@ -86,13 +86,13 @@ internal static class MinecraftWorldImporter
             }
             catch (Exception restoreEx)
             {
-                TwitchCraftBot_V1.FileSystemHelper.TryDeleteDirectory(plan.StagingWorldPath);
+                TwitchCraftBot_V1.FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
                 throw new IOException(
                     "World import failed, and the previous world could not be restored automatically. Backup folder: " + plan.BackupWorldPath,
                     restoreEx);
             }
 
-            TwitchCraftBot_V1.FileSystemHelper.TryDeleteDirectory(plan.StagingWorldPath);
+            TwitchCraftBot_V1.FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
             throw new IOException(
                 backupCreated
                     ? "World import failed. The previous world was restored from backup."

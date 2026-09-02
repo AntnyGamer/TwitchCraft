@@ -9,18 +9,16 @@
 3. If the log file reaches 1 MB in size, previous log entries will be moved to files called:
 
    * `TwitchCraftBot.log.old1` through `TwitchCraftBot.log.old4`
-4. Only a maximum of 6 MB of log data can be stored
+4. Up to five log files are retained: the current file and four older files, each limited to about 1 MB
 5. Review the log before sharing it, as error information may contain private or personal information
 
 ## INVALID TOKEN OR LONG ERROR ON STARTUP
 
-1. Repeat the steps in the Getting A Bot Token section in the README
-2. Paste the token into `config.json` at:
-
-   * `AppData --> Roaming --> TwitchCraftBot --> config.json`
-3. Replace:
-
-   * `"BotToken": "INSERT_TOKEN_HERE"`
+1. Open **Settings → Dangerous → Authorize Twitch**
+2. Approve Twitch device authorization again in the browser
+3. Do not paste a token into `config.json`; TwitchCraft saves and renews its hidden authorization automatically
+4. TwitchCraft uses its built-in public Twitch application; do not create a developer application or add a Client ID, Client Secret, or localhost redirect
+5. If the error says this build is missing TwitchCraft's public Client ID, reinstall a complete official build
 
 ## JAVA OR SERVER JAR ERROR
 
@@ -39,9 +37,13 @@
 
 ## START BUTTON IS DISABLED
 
-1. Hover over the disabled Start button
-2. Read the tooltip telling you why TwitchCraft cannot start yet
-3. Make sure:
+On the Setup screen:
+
+1. Hover over the disabled **Start** button and read the tooltip
+2. Select a Minecraft version and enter a valid bind IP and Twitch channel name
+3. Select **Authorize Twitch** and wait for the authorized bot account to appear
+
+On the Start screen, make sure:
 
    * Your Minecraft username is entered and valid
    * The server address / port is valid
@@ -109,7 +111,7 @@
 ## VIEWER LIST OR PLAYER LIST NOT UPDATING
 
 1. Make sure the bot is a moderator in your Twitch chat
-2. If Twitch chatters stop updating, repeat the bot token setup steps
+2. If Twitch chatters or follow rewards stop updating, open **Settings → Dangerous → Authorize Twitch** and approve Twitch authorization again
 3. If Minecraft players stop updating, restart the Minecraft server and TwitchCraft
 4. If you manually edited `server.properties`, make sure it contains:
 
@@ -196,8 +198,8 @@
 
    * `AppData --> Roaming --> TwitchCraftBot --> config.json`
 3. Check for missing commas, missing quotes, or extra brackets
-4. If you are not sure what changed, restore a backup of `config.json`
-5. If there is no backup, run Setup again to recreate the config file
+4. If you are not sure what changed, restore `config.json` and `viewer_tokens.db` from the same timestamped folder under `TwitchCraftBot\backups`
+5. If there is no complete automatic backup, run Setup again to recreate the config file
 
 ## TWITCHCRAFT OR MINECRAFT SERVER IS LAGGING OR LOW FPS
 

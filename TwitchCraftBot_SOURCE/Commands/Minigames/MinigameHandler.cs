@@ -10,13 +10,13 @@ public static partial class MinigameManager
 {
     // ===== Minigame runners =====
 
-    private static void RefundAllChickenRunBets(BotMainHandler runtime)
+    private static void RefundChickenBets(BotMainHandler runtime)
     {
         List<KeyValuePair<string, int>>? refunds = null;
 
         lock (MinigameGate)
         {
-            ChickenRunState state = GetChickenRunStateNoLock(runtime);
+            ChickenRunState state = GetChickenStateNoLock(runtime);
             state.BettingOpen = false;
             state.Running = false;
             if (state.Bets.Count > 0)
@@ -28,13 +28,13 @@ public static partial class MinigameManager
             runtime.AdjustTokens(refunds); //Chicken Run Refund
     }
 
-    private static void RefundAllWitherBattleBets(BotMainHandler runtime)
+    private static void RefundWitherBets(BotMainHandler runtime)
     {
         List<KeyValuePair<string, int>>? refunds = null;
 
         lock (MinigameGate)
         {
-            WitherBattleState state = GetWitherBattleStateNoLock(runtime);
+            WitherBattleState state = GetWitherStateNoLock(runtime);
             state.BettingOpen = false;
             state.Running = false;
             state.CurrentHealth = 0;
@@ -82,7 +82,7 @@ public static partial class MinigameManager
     private static string MaxBetMessage(string game)
         => "the max " + game + " bet is " + FormatTokens(MaxMinigameBetPerPlayer) + ".";
 
-    internal static async Task<bool> TrySayBetFailureAsync(
+    internal static async Task<bool> ReplyBetErrorAsync(
         MinigameBetUpdateResult result,
         string sender,
         string game,

@@ -9,11 +9,11 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    private void HandleRemoteQueryResponse(string response)
+    private void HandleRconResponse(string response)
     {
         if (!response.Contains('\n') && !response.Contains('\r'))
         {
-            HandleRemoteQueryResponseLine(response);
+            HandleRconLine(response);
             return;
         }
 
@@ -21,25 +21,25 @@ public sealed partial class BotMainHandler
         string? line;
         while ((line = reader.ReadLine()) != null)
         {
-            HandleRemoteQueryResponseLine(line);
+            HandleRconLine(line);
         }
     }
 
-    private void HandleRemoteQueryResponseLine(string line)
+    private void HandleRconLine(string line)
     {
         if (string.IsNullOrWhiteSpace(line))
             return;
 
         ServerLogLineFlags flags = new(line);
         if (flags.HasEntityData)
-            HandleEntityDataLine(line);
-        else if (flags.HasGameMode && TryHandlePlayerGamemodeLine(line, out string playerName, out int gameType))
-            HandlePlayerGamemodeResult(playerName, gameType);
+            HandleEntity(line);
+        else if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
+            HandleGamemode(playerName, gameType);
 
-        RecordServerLineForStatistics(line, flags.HasTcDeaths);
+        RecordLine(line, flags.HasTcDeaths);
     }
 
-    private async Task ReadServerOutputAsync(CancellationToken cancellationToken)
+    internal async Task ReadOutputAsync(CancellationToken cancellationToken)
     {
         Process? process = _javaServerProcess;
         if (process == null)
@@ -53,7 +53,7 @@ public sealed partial class BotMainHandler
                 if (line == null)
                     break;
 
-                if (TryHandleServerProbeMarkerLine(line))
+                if (TryHandleProbe(line))
                     continue;
 
                 ServerLogLineFlags flags = new(line);
@@ -62,32 +62,32 @@ public sealed partial class BotMainHandler
 
                 if (flags.HasEntityData)
                 {
-                    HandleEntityDataLine(line);
+                    HandleEntity(line);
                 }
                 else if (flags.HasGameMode)
                 {
-                    if (TryHandlePlayerGamemodeLine(line, out string playerName, out int gameType))
-                        HandlePlayerGamemodeResult(playerName, gameType);
+                    if (TryHandleGamemode(line, out string playerName, out int gameType))
+                        HandleGamemode(playerName, gameType);
                 }
 
                 bool mightContainCommandError = line.Contains("command", StringComparison.OrdinalIgnoreCase)
                     || line.Contains("execute", StringComparison.OrdinalIgnoreCase)
                     || line.Contains("error", StringComparison.OrdinalIgnoreCase);
-                bool isCommandParserError = mightContainCommandError && IsCommandParserErrorLine(line);
-                bool isUnexpectedCommandError = mightContainCommandError && IsUnexpectedCommandErrorLine(line);
-                bool isMinecraftCommandErrorContext = mightContainCommandError && IsMinecraftCommandErrorContextLine(line);
-                bool isSidebarObjectiveIssue = IsSidebarObjectiveIssueLine(
+                bool isCommandParserError = mightContainCommandError && IsParserError(line);
+                bool isUnexpectedCommandError = mightContainCommandError && IsUnexpectedError(line);
+                bool isMinecraftCommandErrorContext = mightContainCommandError && IsErrorContext(line);
+                bool isSidebarObjectiveIssue = IsSidebarErrorLine(
                     line,
                     flags,
                     isCommandParserError,
                     isUnexpectedCommandError,
                     isMinecraftCommandErrorContext);
 
-                HandleServerReadyState(line);
-                RecoverSidebarInitializationFromServerLine(isSidebarObjectiveIssue);
-                RecordServerLineForStatistics(line, flags.HasTcDeaths);
+                HandleReadyState(line);
+                RestoreSidebar(isSidebarObjectiveIssue);
+                RecordLine(line, flags.HasTcDeaths);
 
-                bool showCommandErrorContext = TryConsumeServerCommandErrorContextLine();
+                bool showCommandErrorContext = TryConsumeError();
                 if (isCommandParserError)
                 {
                     Interlocked.Exchange(ref _serverCommandErrorContextLines, 1);
@@ -97,20 +97,20 @@ public sealed partial class BotMainHandler
                     Interlocked.Exchange(ref _serverCommandErrorContextLines, 8);
                 }
 
-                bool suppressServerLogLine = ShouldSuppressServerLogLine(
+                bool suppressServerLogLine = ShouldHideLogLine(
                     line,
                     flags,
                     isCommandParserError,
                     isUnexpectedCommandError,
                     isMinecraftCommandErrorContext,
                     isSidebarObjectiveIssue);
-                bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldSuppressOnlinePlayersLogLine(line);
+                bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
                 bool shouldShowLogLine = showCommandErrorContext ||
                     (!suppressServerLogLine && !suppressOnlinePlayersLogLine);
 
                 if (isUnexpectedCommandError && shouldShowLogLine)
                 {
-                    ShowSuppressedServerLogContextLines();
+                    ShowHiddenContext();
                 }
 
                 if (shouldShowLogLine)
@@ -119,10 +119,10 @@ public sealed partial class BotMainHandler
                 }
                 else if (suppressServerLogLine && !flags.HasEntityData)
                 {
-                    RememberSuppressedServerLogContextLine(line);
+                    SaveHiddenContext(line);
                 }
 
-                CaptureOnlinePlayers(line);
+                CapturePlayers(line);
             }
         }
         catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
@@ -130,15 +130,20 @@ public sealed partial class BotMainHandler
         }
         catch (Exception ex)
         {
-            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLogMessage("Server output reader failed", ex));
+            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Server output reader failed", ex));
         }
     }
 
-    private async Task ReadServerErrorAsync(CancellationToken cancellationToken)
+    private async Task ReadErrorAsync(CancellationToken cancellationToken)
     {
         Process? process = _javaServerProcess;
         if (process == null)
             return;
+
+        MinecraftStderrFilter filter = new();
+        Exception? readerFailure = null;
+
+        void ShowStderrLine(string line) => _shellWindow?.AddServerLogLine("[stderr] " + line);
 
         try
         {
@@ -148,7 +153,7 @@ public sealed partial class BotMainHandler
                 if (line == null)
                     break;
 
-                _shellWindow?.AddServerLogLine("[stderr] " + line);
+                filter.ProcessLine(line, ShowStderrLine);
             }
         }
         catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
@@ -156,24 +161,28 @@ public sealed partial class BotMainHandler
         }
         catch (Exception ex)
         {
-            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLogMessage("Server error reader failed", ex));
+            readerFailure = ex;
         }
+
+        filter.Flush(ShowStderrLine);
+        if (readerFailure != null)
+            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Server error reader failed", readerFailure));
     }
 
-    private async Task RunPlayerRosterLoopAsync(CancellationToken cancellationToken)
+    private async Task RunRosterAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
                 if (MultiTargetingEnabled)
-                    QueueOnlinePlayerSnapshotRefresh();
+                    QueueSnapshot();
 
                 if (MultiplayerEnabled)
-                    await RefreshPlayerSidebarAsync(cancellationToken).ConfigureAwait(false);
+                    await RefreshSidebarAsync(cancellationToken).ConfigureAwait(false);
 
-                QueueTrackedPlayerGamemodeRefreshForStatistics();
-                QueueTrackedPlayerDeathScoreRefreshForStatistics();
+                QueueGamemode();
+                QueueDeathScore();
             }
             catch (OperationCanceledException)
             {
@@ -181,7 +190,7 @@ public sealed partial class BotMainHandler
             }
             catch (Exception ex)
             {
-                RecordPlayerSidebarRefreshFailure(ex);
+                LogSidebarError(ex);
             }
 
             try
@@ -202,7 +211,7 @@ public sealed partial class BotMainHandler
 
         lock (_playerGate)
         {
-            int index = FindSortedPlayerIndex(_knownPlayers, normalizedPlayer);
+            int index = FindPlayerIndex(_knownPlayers, normalizedPlayer);
             if (index >= 0)
                 return false;
 
@@ -212,7 +221,7 @@ public sealed partial class BotMainHandler
         }
 
         if (MultiplayerEnabled)
-            QueuePlayerSidebarRefresh();
+            QueueSidebarRefresh();
 
         return true;
     }
@@ -224,7 +233,7 @@ public sealed partial class BotMainHandler
 
         lock (_playerGate)
         {
-            int index = FindSortedPlayerIndex(_knownPlayers, normalizedPlayer);
+            int index = FindPlayerIndex(_knownPlayers, normalizedPlayer);
             if (index < 0)
                 return false;
 
@@ -241,12 +250,12 @@ public sealed partial class BotMainHandler
         }
 
         if (MultiplayerEnabled)
-            QueuePlayerSidebarRefresh();
+            QueueSidebarRefresh();
 
         return true;
     }
 
-    private void CaptureOnlinePlayers(string line)
+    private void CapturePlayers(string line)
     {
         if (string.IsNullOrEmpty(line) ||
             (!line.Contains("game", StringComparison.OrdinalIgnoreCase) &&
@@ -258,17 +267,17 @@ public sealed partial class BotMainHandler
         int joinedMarker = line.IndexOf(" joined the game", StringComparison.OrdinalIgnoreCase);
         if (joinedMarker >= 0)
         {
-            string joinedPlayer = ExtractPlayerEventName(line, joinedMarker);
+            string joinedPlayer = GetPlayerName(line, joinedMarker);
             if (joinedPlayer.Length > 0)
             {
                 if (!AddKnownPlayer(joinedPlayer) && MultiplayerEnabled)
-                    QueuePlayerSidebarRefresh();
+                    QueueSidebarRefresh();
 
-                RemoveSpectatorPlayer(joinedPlayer);
+                RemoveSpectator(joinedPlayer);
 
-                RecordPlayerJoinForStatistics(joinedPlayer);
-                QueueTrackedPlayerGamemodeRefreshForStatistics(joinedPlayer);
-                QueueOnlinePlayerSnapshotRefresh();
+                RecordPlayerJoin(joinedPlayer);
+                QueueGamemode(joinedPlayer);
+                QueueSnapshot();
             }
 
             return;
@@ -277,26 +286,26 @@ public sealed partial class BotMainHandler
         int leftMarker = line.IndexOf(" left the game", StringComparison.OrdinalIgnoreCase);
         if (leftMarker >= 0)
         {
-            string leftPlayer = ExtractPlayerEventName(line, leftMarker);
+            string leftPlayer = GetPlayerName(line, leftMarker);
             if (leftPlayer.Length > 0)
             {
                 if (!RemoveKnownPlayer(leftPlayer) && MultiplayerEnabled)
-                    QueuePlayerSidebarRefresh();
+                    QueueSidebarRefresh();
 
-                RemoveSpectatorPlayer(leftPlayer);
+                RemoveSpectator(leftPlayer);
 
-                RecordPlayerLeaveForStatistics(leftPlayer);
-                QueueOnlinePlayerSnapshotRefresh();
+                RecordPlayerLeave(leftPlayer);
+                QueueSnapshot();
             }
 
             return;
         }
 
-        if (!TryParsePlayerListResponse(line, false, out List<string> players))
+        if (!TryParseList(line, false, out List<string> players))
             return;
 
-        ApplyOnlinePlayerSnapshot(players);
-        CompleteOnlinePlayerSnapshotRequest(true);
+        ApplySnapshot(players);
+        CompleteSnapshot(true);
     }
 
 }

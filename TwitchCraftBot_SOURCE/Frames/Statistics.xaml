@@ -30,7 +30,7 @@
                 </Rectangle.Fill>
             </Rectangle>
 
-        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"><Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True"><Button Width="100" Height="30" Content="Back" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="BackButton_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"><Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True"><Button Width="100" Height="30" Content="Back" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Back_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
             <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="0,18,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <TextBlock.Effect>
@@ -71,10 +71,14 @@
                     <TextBlock Grid.Row="4" Grid.Column="1" x:Name="SessionEffectsText" Text="0" Style="{StaticResource StatValueText}" />
 
                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
-                    <TextBlock Grid.Row="5" Grid.Column="1" x:Name="SessionDangerousText" Text="None yet" Style="{StaticResource StatValueText}" />
+                    <Viewbox Grid.Row="5" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock x:Name="SessionDangerousText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
+                    </Viewbox>
 
                     <TextBlock Grid.Row="6" Grid.Column="0" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
-                    <TextBlock Grid.Row="6" Grid.Column="1" x:Name="SessionNicestText" Text="None yet" Style="{StaticResource StatValueText}" />
+                    <Viewbox Grid.Row="6" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock x:Name="SessionNicestText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
+                    </Viewbox>
 
                     <TextBlock Grid.Row="7" Grid.Column="0" Text="Deaths" Style="{StaticResource StatLabelText}" />
                     <TextBlock Grid.Row="7" Grid.Column="1" x:Name="SessionDeathsText" Text="0" Style="{StaticResource StatValueText}" />
@@ -119,10 +123,14 @@
                     <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TotalEffectsText" Text="0" Style="{StaticResource StatValueText}" />
 
                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
-                    <TextBlock Grid.Row="5" Grid.Column="1" x:Name="TotalDangerousText" Text="None yet" Style="{StaticResource StatValueText}" />
+                    <Viewbox Grid.Row="5" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock x:Name="TotalDangerousText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
+                    </Viewbox>
 
                     <TextBlock Grid.Row="6" Grid.Column="0" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
-                    <TextBlock Grid.Row="6" Grid.Column="1" x:Name="TotalNicestText" Text="None yet" Style="{StaticResource StatValueText}" />
+                    <Viewbox Grid.Row="6" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock x:Name="TotalNicestText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
+                    </Viewbox>
 
                     <TextBlock Grid.Row="7" Grid.Column="0" Text="Deaths" Style="{StaticResource StatLabelText}" />
                     <TextBlock Grid.Row="7" Grid.Column="1" x:Name="TotalDeathsText" Text="0" Style="{StaticResource StatValueText}" />

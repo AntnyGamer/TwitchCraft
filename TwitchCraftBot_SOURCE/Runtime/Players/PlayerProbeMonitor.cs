@@ -22,7 +22,7 @@ public sealed partial class BotMainHandler
     private bool _spectatorSnapshotInitialized;
     private int _spectatorStateRefreshQueued;
 
-    private async Task<TResult> QueryPlayerProbeAsync<TResult>(
+    private async Task<TResult> QueryPlayerAsync<TResult>(
         string playerName,
         Lock gate,
         Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
@@ -49,8 +49,8 @@ public sealed partial class BotMainHandler
         {
             if (createdWaiter)
             {
-                void CompleteProbe() => CompletePlayerProbe(playerName, gate, pendingRequests, waiter, default!);
-                _ = SendPlayerProbeAsync(sendProbe, CompleteProbe, _sessionCts?.Token ?? CancellationToken.None);
+                void CompleteProbe() => CompletePlayer(playerName, gate, pendingRequests, waiter, default!);
+                _ = SendPlayerQueryAsync(sendProbe, CompleteProbe, _sessionCts?.Token ?? CancellationToken.None);
             }
 
             return await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -61,7 +61,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal static void CompletePlayerProbe<TResult>(
+    internal static void CompletePlayer<TResult>(
         string playerName,
         Lock gate,
         Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
@@ -77,7 +77,7 @@ public sealed partial class BotMainHandler
         waiter.TrySetResult(result);
     }
 
-    private static async Task<bool> SendPlayerProbeAsync(
+    private static async Task<bool> SendPlayerQueryAsync(
         Func<Action, CancellationToken, Task<bool>> sendProbe,
         Action completeProbe,
         CancellationToken cancellationToken)
@@ -95,20 +95,20 @@ public sealed partial class BotMainHandler
         return false;
     }
 
-    public Task<string?> QuerySelectedItemDataAsync(string playerName, CancellationToken cancellationToken)
+    public Task<string?> QueryItemAsync(string playerName, CancellationToken cancellationToken)
     {
-        string selector = MinecraftCommandBuilder.PlayerSelectorLimitOne(playerName);
-        return QueryPlayerProbeAsync<string?>(
+        string selector = MinecraftCommandBuilder.SinglePlayerSelector(playerName);
+        return QueryPlayerAsync<string?>(
             playerName,
             _selectedItemProbeGate,
             _pendingSelectedItemRequests,
-            (complete, ct) => SendInternalProbeCommandAsync("data get entity " + selector + " SelectedItem", complete, ct),
+            (complete, ct) => SendProbeAsync("data get entity " + selector + " SelectedItem", complete, ct),
             cancellationToken);
     }
 
-    public async Task<Dictionary<string, string?>> QuerySelectedItemDataBatchAsync(List<string> players, CancellationToken cancellationToken)
+    public async Task<Dictionary<string, string?>> QueryItemsAsync(List<string> players, CancellationToken cancellationToken)
     {
-        players = SortedListHelper.NormalizeMinecraftPlayerNames(players, PlayerNameComparer);
+        players = SortedListHelper.NormalizePlayerNames(players, PlayerNameComparer);
         Dictionary<string, string?> results = new(players.Count, PlayerNameComparer);
         if (players.Count == 0)
             return results;
@@ -142,17 +142,17 @@ public sealed partial class BotMainHandler
                 string[] commands = new string[createdWaiterPlayers.Count];
                 for (int i = 0; i < createdWaiterPlayers.Count; i++)
                 {
-                    commands[i] = "data get entity " + MinecraftCommandBuilder.PlayerSelectorLimitOne(createdWaiterPlayers[i]) + " SelectedItem";
+                    commands[i] = "data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(createdWaiterPlayers[i]) + " SelectedItem";
                 }
 
-                await SendPlayerProbeAsync(
-                    (complete, ct) => SendInternalProbeCommandsAsync(commands, complete, ct),
+                await SendPlayerQueryAsync(
+                    (complete, ct) => SendProbesAsync(commands, complete, ct),
                     () =>
                     {
                         foreach (string player in createdWaiterPlayers)
                         {
                             if (waiters.TryGetValue(player, out TaskCompletionSource<string?>? waiter))
-                                CompletePlayerProbe(player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiter, null);
+                                CompletePlayer(player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiter, null);
                         }
                     },
                     _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -180,18 +180,18 @@ public sealed partial class BotMainHandler
         return results;
     }
 
-    private Task<bool> QueryPlayerRespawnPositionAsync(string playerName, CancellationToken cancellationToken)
+    private Task<bool> QueryRespawnAsync(string playerName, CancellationToken cancellationToken)
     {
-        string selector = "@a[name=\"" + MinecraftCommandBuilder.EscapeSelectorValue(playerName) + "\",limit=1,gamemode=!spectator,nbt={DeathTime:0s}]";
-        return QueryPlayerProbeAsync(
+        string selector = "@a[name=\"" + MinecraftCommandBuilder.EscapeSelector(playerName) + "\",limit=1,gamemode=!spectator,nbt={DeathTime:0s}]";
+        return QueryPlayerAsync(
             playerName,
             _respawnPositionProbeGate,
             _pendingRespawnPositionRequests,
-            (complete, ct) => SendInternalProbeCommandAsync("data get entity " + selector + " Pos", complete, ct),
+            (complete, ct) => SendProbeAsync("data get entity " + selector + " Pos", complete, ct),
             cancellationToken);
     }
 
-    private Dictionary<string, TaskCompletionSource<int?>> CreateGameTypeBatchWaiters(List<string> players)
+    private Dictionary<string, TaskCompletionSource<int?>> CreateGamemodeWaiters(List<string> players)
     {
         Dictionary<string, TaskCompletionSource<int?>> waiters = new(players.Count, PlayerNameComparer);
         lock (_spectatorProbeGate)
@@ -213,7 +213,7 @@ public sealed partial class BotMainHandler
         return waiters;
     }
 
-    private static Task WaitForGameTypeBatchAsync(Dictionary<string, TaskCompletionSource<int?>> waiters, CancellationToken cancellationToken)
+    private static Task WaitForGamemodesAsync(Dictionary<string, TaskCompletionSource<int?>> waiters, CancellationToken cancellationToken)
     {
         if (waiters.Count == 0)
             return Task.CompletedTask;
@@ -226,10 +226,10 @@ public sealed partial class BotMainHandler
         return Task.WhenAll(tasks).WaitAsync(cancellationToken);
     }
 
-    private async Task RefreshSpectatorStatesAsync(List<string> players, CancellationToken cancellationToken)
+    private async Task RefreshSpectatorsAsync(List<string> players, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        players = SortedListHelper.NormalizeMinecraftPlayerNames(players, PlayerNameComparer);
+        players = SortedListHelper.NormalizePlayerNames(players, PlayerNameComparer);
 
         await _spectatorRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -252,19 +252,19 @@ public sealed partial class BotMainHandler
                     return;
             }
 
-            Dictionary<string, TaskCompletionSource<int?>> waiters = CreateGameTypeBatchWaiters(players);
+            Dictionary<string, TaskCompletionSource<int?>> waiters = CreateGamemodeWaiters(players);
             bool refreshCompleted = false;
             HashSet<string> nextSpectators;
-            if (await SendPlayerProbeAsync(
-                (complete, ct) => SendInternalProbeCommandsAsync(SpectatorGameTypeProbeCommands, complete, ct),
+            if (await SendPlayerQueryAsync(
+                (complete, ct) => SendProbesAsync(SpectatorGameTypeProbeCommands, complete, ct),
                 () =>
                 {
                     foreach (KeyValuePair<string, TaskCompletionSource<int?>> entry in waiters)
-                        CompletePlayerProbe(entry.Key, _spectatorProbeGate, _pendingGameTypeRequests, entry.Value, default);
+                        CompletePlayer(entry.Key, _spectatorProbeGate, _pendingGameTypeRequests, entry.Value, default);
                 },
                 _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false))
             {
-                await WaitForGameTypeBatchAsync(waiters, cancellationToken).ConfigureAwait(false);
+                await WaitForGamemodesAsync(waiters, cancellationToken).ConfigureAwait(false);
                 refreshCompleted = true;
             }
 
@@ -323,11 +323,11 @@ public sealed partial class BotMainHandler
         }
     }
 
-    public async Task<List<string>> GetOnlinePlayersAsync(CancellationToken cancellationToken)
+    public async Task<List<string>> GetPlayersAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        List<string> online = await RefreshOnlinePlayersAsync(cancellationToken).ConfigureAwait(false);
+        List<string> online = await RefreshPlayersAsync(cancellationToken).ConfigureAwait(false);
 
         bool hasSpectatorSnapshot;
         bool spectatorSnapshotIsFresh;
@@ -339,17 +339,17 @@ public sealed partial class BotMainHandler
 
         if (!hasSpectatorSnapshot)
         {
-            await RefreshSpectatorStatesAsync(online, cancellationToken).ConfigureAwait(false);
+            await RefreshSpectatorsAsync(online, cancellationToken).ConfigureAwait(false);
         }
         else if (!spectatorSnapshotIsFresh)
         {
-            QueueSpectatorStateRefresh(online, cancellationToken);
+            QueueSpectators(online, cancellationToken);
         }
 
-        return GetTargetablePlayersFromSpectatorSnapshot(online);
+        return GetTargets(online);
     }
 
-    private List<string> GetTargetablePlayersFromSpectatorSnapshot(List<string> online)
+    private List<string> GetTargets(List<string> online)
     {
         lock (_spectatorProbeGate)
         {
@@ -367,18 +367,18 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private void QueueSpectatorStateRefresh(List<string> players, CancellationToken cancellationToken)
+    private void QueueSpectators(List<string> players, CancellationToken cancellationToken)
     {
         CancellationToken refreshToken = _sessionCts?.Token ?? cancellationToken;
         if (refreshToken.IsCancellationRequested || Interlocked.CompareExchange(ref _spectatorStateRefreshQueued, 1, 0) != 0)
             return;
 
         List<string> snapshot = [.. players];
-        TrackSessionBackgroundTask(Task.Run(async () =>
+        TrackTask(Task.Run(async () =>
         {
             try
             {
-                await RefreshSpectatorStatesAsync(snapshot, refreshToken).ConfigureAwait(false);
+                await RefreshSpectatorsAsync(snapshot, refreshToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -394,7 +394,7 @@ public sealed partial class BotMainHandler
         }, CancellationToken.None));
     }
 
-    private void RemoveSpectatorPlayer(string playerName)
+    private void RemoveSpectator(string playerName)
     {
         lock (_spectatorProbeGate)
         {

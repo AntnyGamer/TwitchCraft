@@ -3,7 +3,7 @@
 TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI.
 
 ```text
-Twitch IRC over TLS
+Twitch OAuth, Helix, EventSub, and IRC
         ↓
 TwitchRuntime: connection, queues, parsing, identity
         ↓
@@ -39,7 +39,7 @@ The supplied source is already split into focused partial files. Future work sho
 3. The user selects local or remote mode and a starting profile.
 4. The bot runtime initializes token/statistics stores and Twitch identity.
 5. Local mode prepares the server directory, locates Java, and starts the Java process; remote mode verifies RCON.
-6. Twitch IRC connects over TLS, authenticates, joins the configured channel, and starts bounded processing queues.
+6. TwitchCraft renews its locally stored device authorization when needed, then Twitch IRC connects over TLS, joins the configured channel, and starts bounded processing queues. Helix and EventSub provide viewer-roster and follow data.
 7. Player monitoring and optional minigame/statistics loops start after Minecraft readiness.
 
 ## Command execution
@@ -59,7 +59,8 @@ Local mode owns Java process startup, output/error readers, server preparation, 
 
 ## Persistence
 
-- `config.json` uses normalized models, temporary-file writes, replacement fallback, and a backup.
+- `config.json` uses normalized models, temporary-file writes, and replacement fallback.
+- Automatic timestamped backups pair `config.json` with a consistent SQLite copy of `viewer_tokens.db` and prune complete sets according to configured retention.
 - Viewer balances use SQLite with a readable JSON export.
 - Statistics use SQLite with aggregate/viewer JSON exports.
 - Database operations use synchronization and parameterized statements.
@@ -67,8 +68,8 @@ Local mode owns Java process startup, output/error readers, server preparation, 
 
 ## Shutdown and recovery
 
-Cancellation tokens stop background loops. Local mode requests graceful server shutdown before forceful process cleanup. RCON and network clients disconnect, background tasks are observed, stores are flushed/disposed, and the diagnostic writer closes on application exit. Unexpected exceptions are captured for diagnostics while user-facing dialogs remain concise.
+Cancellation tokens stop background loops. Local mode requests graceful server shutdown using the configured timeout before forceful process cleanup. RCON and network clients disconnect, background tasks are observed, stores are flushed/disposed, and the diagnostic writer closes on application exit. Unexpected exceptions are captured for diagnostics while user-facing dialogs remain concise.
 
 ## Testability direction
 
-Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, and paid-command transaction semantics without UI automation or a Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.
+Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The transaction coordinator is an internal delegate-based seam rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.

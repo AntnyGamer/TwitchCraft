@@ -7,7 +7,7 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    internal static string NormalizeOutgoingChannelMessage(string message)
+    internal static string CleanChannelMessage(string message)
     {
         if (string.IsNullOrEmpty(message))
             return string.Empty;
@@ -47,7 +47,7 @@ public sealed partial class BotMainHandler
         });
     }
 
-    internal static string TruncateUtf8ToByteCount(string message, int maxBytes)
+    internal static string TruncateUtf8(string message, int maxBytes)
     {
         if (maxBytes <= 0 || message.Length == 0)
             return string.Empty;
@@ -87,7 +87,7 @@ public sealed partial class BotMainHandler
         return message[..length];
     }
 
-    public async Task SendToChannelAsync(string message, CancellationToken cancellationToken)
+    public async Task SendChatAsync(string message, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -107,8 +107,8 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        string safeMessage = NormalizeOutgoingChannelMessage(message);
-        safeMessage = TruncateUtf8ToByteCount(safeMessage, maxMessageBytes);
+        string safeMessage = CleanChannelMessage(ApplyPrefix(message, CommandPrefix));
+        safeMessage = TruncateUtf8(safeMessage, maxMessageBytes);
 
         if (safeMessage.Length == 0)
         {
@@ -117,7 +117,7 @@ public sealed partial class BotMainHandler
 
         try
         {
-            await SendIRCLineAsync(writer, string.Concat(channelPrefix, safeMessage), cancellationToken).ConfigureAwait(false);
+            await SendIrcLineAsync(writer, string.Concat(channelPrefix, safeMessage), cancellationToken).ConfigureAwait(false);
         }
         catch (ObjectDisposedException)
         {
@@ -125,8 +125,21 @@ public sealed partial class BotMainHandler
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLogMessage("IRC write failed", ex));
+            _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("IRC write failed", ex));
         }
     }
+
+    internal Task SendReplyAsync(
+        string message,
+        BotResponseKind kind,
+        CancellationToken cancellationToken)
+        => BotResponseVerbositySettings.ShouldSend(BotResponseVerbosity, kind)
+            ? SendChatAsync(
+                FormatReply(
+                    message,
+                    _currentCommandSender.Value ?? string.Empty,
+                    _activeConfig?.Settings.MentionViewersInBotReplies == true),
+                cancellationToken)
+            : Task.CompletedTask;
 
 }

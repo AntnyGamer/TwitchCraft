@@ -5,11 +5,90 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-namespace TwitchCraftBot_V1.BotSetup;
+namespace TwitchCraftBot_V1;
 
 internal sealed partial class TokenHandler
 {
-    private bool EnsureViewerLoadedNoLock(string normalized)
+    public IReadOnlyList<KeyValuePair<string, int>> GetTopBalances(int limit)
+    {
+        if (limit <= 0)
+            return [];
+
+        limit = Math.Min(limit, 100);
+        lock (_gate)
+        {
+            try
+            {
+                SqliteConnection connection = GetConnectionNoLock();
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = "SELECT Username, Balance FROM TokenBalances WHERE Balance > 0 ORDER BY Balance DESC, Username COLLATE NOCASE ASC LIMIT $limit;";
+                command.Parameters.AddWithValue("$limit", limit);
+
+                List<KeyValuePair<string, int>> result = new(limit);
+                using SqliteDataReader reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    string username = Normalize(reader.GetString(0));
+                    int balance = ClampBalance(reader.GetInt64(1));
+                    if (username.Length > 0 && balance > 0)
+                        result.Add(new KeyValuePair<string, int>(username, balance));
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to load token leaderboard", ex);
+                return [];
+            }
+        }
+    }
+
+    public TokenRankResult? GetRank(string user)
+    {
+        string normalized = Normalize(user);
+        if (normalized.Length == 0)
+            return null;
+
+        lock (_gate)
+        {
+            try
+            {
+                SqliteConnection connection = GetConnectionNoLock();
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = """
+                    SELECT Username, Balance, Position
+                    FROM (
+                        SELECT Username,
+                               Balance,
+                               ROW_NUMBER() OVER (ORDER BY Balance DESC, Username COLLATE NOCASE ASC) AS Position
+                        FROM TokenBalances
+                        WHERE Balance > 0
+                    )
+                    WHERE Username = $username COLLATE NOCASE;
+                    """;
+                command.Parameters.AddWithValue("$username", normalized);
+
+                using SqliteDataReader reader = command.ExecuteReader();
+                if (!reader.Read())
+                    return null;
+
+                string username = Normalize(reader.GetString(0));
+                int balance = ClampBalance(reader.GetInt64(1));
+                long rank = reader.GetInt64(2);
+                return username.Length == 0 || balance <= 0 || rank <= 0
+                    ? null
+                    : new TokenRankResult(username, balance, rank > int.MaxValue ? int.MaxValue : (int)rank);
+            }
+            catch (Exception ex)
+            {
+                TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to load token rank", ex);
+                return null;
+            }
+        }
+    }
+
+    private bool EnsureLoadedNoLock(string normalized)
     {
         if (_loadedUsers.Contains(normalized))
         {
@@ -18,21 +97,22 @@ internal sealed partial class TokenHandler
 
         try
         {
-            _ = GetConnectionNoLock();
+            SqliteConnection connection = GetConnectionNoLock();
             if (_selectBalanceCommand == null)
             {
-                _selectBalanceCommand = CreatePreparedCommandNoLock("SELECT Balance FROM TokenBalances WHERE Username = $username;");
+                _selectBalanceCommand = connection.CreateCommand();
+                _selectBalanceCommand.CommandText = "SELECT Balance FROM TokenBalances WHERE Username = $username;";
                 _selectBalanceUsername = _selectBalanceCommand.Parameters.Add("$username", SqliteType.Text);
                 _selectBalanceCommand.Prepare();
             }
 
             _selectBalanceUsername!.Value = normalized;
             object? balance = _selectBalanceCommand.ExecuteScalar();
-            SetCachedBalanceNoLock(
+            SetCacheNoLock(
                 normalized,
                 balance is null || balance == DBNull.Value
                     ? 0
-                    : ClampTokenBalance(Convert.ToInt64(balance, CultureInfo.InvariantCulture)));
+                    : ClampBalance(Convert.ToInt64(balance, CultureInfo.InvariantCulture)));
 
             _loadedUsers.Add(normalized);
             return true;
@@ -44,24 +124,20 @@ internal sealed partial class TokenHandler
         }
     }
 
-    private bool EnsureViewersLoadedNoLock(List<string> users)
+    private bool EnsureManyLoadedNoLock(IReadOnlyCollection<string> users)
     {
-        List<string> toLoad = new(users.Count);
+        List<string>? toLoad = null;
         foreach (string normalized in users)
         {
             if (!string.IsNullOrEmpty(normalized) && !_loadedUsers.Contains(normalized))
-                toLoad.Add(normalized);
+                (toLoad ??= new List<string>(users.Count)).Add(normalized);
         }
 
-        if (toLoad.Count == 0)
-        {
+        if (toLoad == null)
             return true;
-        }
 
         if (toLoad.Count == 1)
-        {
-            return EnsureViewerLoadedNoLock(toLoad[0]);
-        }
+            return EnsureLoadedNoLock(toLoad[0]);
 
         try
         {
@@ -70,7 +146,7 @@ internal sealed partial class TokenHandler
             for (int startIndex = 0; startIndex < toLoad.Count; startIndex += batchSize)
             {
                 int count = Math.Min(batchSize, toLoad.Count - startIndex);
-                LoadViewerBalanceBatchNoLock(connection, toLoad, startIndex, count);
+                LoadBalancesNoLock(connection, toLoad, startIndex, count);
             }
 
             return true;
@@ -82,7 +158,7 @@ internal sealed partial class TokenHandler
         }
     }
 
-    private void LoadViewerBalanceBatchNoLock(SqliteConnection connection, List<string> users, int startIndex, int count)
+    private void LoadBalancesNoLock(SqliteConnection connection, List<string> users, int startIndex, int count)
     {
         using SqliteCommand command = connection.CreateCommand();
         StringBuilder query = new("SELECT Username, Balance FROM TokenBalances WHERE Username IN (", 64 + count * 8);
@@ -106,7 +182,7 @@ internal sealed partial class TokenHandler
                 if (username.Length == 0)
                     continue;
 
-                SetCachedBalanceNoLock(username, ClampTokenBalance(reader.GetInt64(1)));
+                SetCacheNoLock(username, ClampBalance(reader.GetInt64(1)));
                 _loadedUsers.Add(username);
             }
         }
@@ -115,18 +191,18 @@ internal sealed partial class TokenHandler
         {
             string username = users[startIndex + i];
             if (!_loadedUsers.Contains(username))
-                SetCachedBalanceNoLock(username, 0);
+                SetCacheNoLock(username, 0);
 
             _loadedUsers.Add(username);
         }
     }
 
-    private bool SaveChangedBalanceNoLock(string normalized, int balance)
+    private bool SaveChangedNoLock(string normalized, int balance)
     {
         try
         {
             SqliteConnection connection = GetConnectionNoLock();
-            SaveSingleBalanceNoLock(connection, normalized, balance);
+            SaveOneNoLock(connection, normalized, balance);
             return true;
         }
         catch (Exception ex)
@@ -136,14 +212,14 @@ internal sealed partial class TokenHandler
         }
     }
 
-    private bool SaveChangedBalancesNoLock(Dictionary<string, int> changedUsers)
+    private bool SaveChangesNoLock(Dictionary<string, int> changedUsers)
     {
         try
         {
             SqliteConnection connection = GetConnectionNoLock();
             using SqliteTransaction transaction = connection.BeginTransaction();
-            using SqliteCommand upsert = CreateUpsertBalanceCommand(connection, transaction);
-            using SqliteCommand delete = CreateDeleteBalanceCommand(connection, transaction);
+            using SqliteCommand upsert = CreateUpsertCommand(connection, transaction);
+            using SqliteCommand delete = CreateDeleteCommand(connection, transaction);
             upsert.Prepare();
             delete.Prepare();
 
@@ -160,13 +236,52 @@ internal sealed partial class TokenHandler
         }
     }
 
-    private void SaveSingleBalanceNoLock(SqliteConnection connection, string normalized, int balance)
+    private int SaveOneByOneNoLock(
+        Dictionary<string, int> changedUsers,
+        Dictionary<string, int> originalBalances)
+    {
+        int savedCount = 0;
+        SqliteConnection connection;
+        try
+        {
+            connection = GetConnectionNoLock();
+        }
+        catch (Exception ex)
+        {
+            TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to retry viewer token balances individually", ex);
+            return 0;
+        }
+
+        foreach (KeyValuePair<string, int> pair in changedUsers)
+        {
+            try
+            {
+                SaveOneNoLock(connection, pair.Key, pair.Value);
+                SetCacheNoLock(pair.Key, pair.Value);
+                savedCount++;
+            }
+            catch (Exception ex)
+            {
+                if (originalBalances.TryGetValue(pair.Key, out int originalBalance))
+                    SetCacheNoLock(pair.Key, originalBalance);
+
+                // Recreate prepared commands after a failed statement before
+                // continuing with the rest of the roster.
+                DisposeCommandsNoLock();
+                TwitchCraftBot_V1.ErrorHandling.LogNonFatal("Failed to retry a viewer token balance", ex);
+            }
+        }
+
+        return savedCount;
+    }
+
+    private void SaveOneNoLock(SqliteConnection connection, string normalized, int balance)
     {
         if (balance <= 0)
         {
             if (_deleteBalanceCommand == null)
             {
-                _deleteBalanceCommand = CreateDeleteBalanceCommand(connection, null);
+                _deleteBalanceCommand = CreateDeleteCommand(connection, null);
                 _deleteBalanceUsername = _deleteBalanceCommand.Parameters[0];
                 _deleteBalanceCommand.Prepare();
             }
@@ -178,7 +293,7 @@ internal sealed partial class TokenHandler
 
         if (_upsertBalanceCommand == null)
         {
-            _upsertBalanceCommand = CreateUpsertBalanceCommand(connection, null);
+            _upsertBalanceCommand = CreateUpsertCommand(connection, null);
             _upsertBalanceUsername = _upsertBalanceCommand.Parameters[0];
             _upsertBalanceValue = _upsertBalanceCommand.Parameters[1];
             _upsertBalanceCommand.Prepare();
@@ -189,7 +304,7 @@ internal sealed partial class TokenHandler
         _upsertBalanceCommand.ExecuteNonQuery();
     }
 
-    private static SqliteCommand CreateUpsertBalanceCommand(SqliteConnection connection, SqliteTransaction? transaction)
+    private static SqliteCommand CreateUpsertCommand(SqliteConnection connection, SqliteTransaction? transaction)
     {
         SqliteCommand command = connection.CreateCommand();
         command.Transaction = transaction;
@@ -199,7 +314,7 @@ internal sealed partial class TokenHandler
         return command;
     }
 
-    private static SqliteCommand CreateDeleteBalanceCommand(SqliteConnection connection, SqliteTransaction? transaction)
+    private static SqliteCommand CreateDeleteCommand(SqliteConnection connection, SqliteTransaction? transaction)
     {
         SqliteCommand command = connection.CreateCommand();
         command.Transaction = transaction;
@@ -222,13 +337,13 @@ internal sealed partial class TokenHandler
         upsert.ExecuteNonQuery();
     }
 
-    private void ExportReadableJsonNoLock()
+    private void ExportJsonNoLock()
     {
         string exportDirectory = JSONExportWriter.GetExportDirectory(_dbPath);
         Directory.CreateDirectory(exportDirectory);
-        JSONExportWriter.WriteReadMe(exportDirectory);
+        JSONExportWriter.WriteReadme(exportDirectory);
 
-        JSONExportWriter.WriteJsonExportAtomic(
+        JSONExportWriter.WriteJsonAtomic(
             Path.Combine(exportDirectory, "viewer_tokens.json"),
             writer =>
             {
@@ -244,7 +359,7 @@ internal sealed partial class TokenHandler
                 while (reader.Read())
                 {
                     string username = Normalize(reader.GetString(0));
-                    int balance = ClampTokenBalance(reader.GetInt64(1));
+                    int balance = ClampBalance(reader.GetInt64(1));
                     if (username.Length == 0 || balance <= 0)
                     {
                         continue;
@@ -259,14 +374,7 @@ internal sealed partial class TokenHandler
             });
     }
 
-    private SqliteCommand CreatePreparedCommandNoLock(string commandText)
-    {
-        SqliteCommand command = GetConnectionNoLock().CreateCommand();
-        command.CommandText = commandText;
-        return command;
-    }
-
-    private void DisposePreparedCommandsNoLock()
+    private void DisposeCommandsNoLock()
     {
         DisposeCommand(ref _selectBalanceCommand);
         DisposeCommand(ref _upsertBalanceCommand);
@@ -298,7 +406,7 @@ internal sealed partial class TokenHandler
             return _connection;
         }
 
-        FileSystemHelper.EnsureDirectoryForFile(_dbPath);
+        FileSystemHelper.EnsureParentDir(_dbPath);
 
         SqliteConnectionStringBuilder builder = new()
         {
@@ -339,6 +447,12 @@ internal sealed partial class TokenHandler
                     Balance INTEGER NOT NULL CHECK (Balance >= 0)
                 );
                 CREATE INDEX IF NOT EXISTS IX_TokenBalances_Balance ON TokenBalances (Balance DESC, Username COLLATE NOCASE ASC);
+                CREATE TABLE IF NOT EXISTS RewardedFollows (
+                    TwitchUserID TEXT PRIMARY KEY,
+                    Username TEXT NOT NULL COLLATE NOCASE,
+                    FollowedAtUtc TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS IX_RewardedFollows_Username ON RewardedFollows (Username COLLATE NOCASE ASC);
                 """;
             command.ExecuteNonQuery();
             _schemaInitialized = true;

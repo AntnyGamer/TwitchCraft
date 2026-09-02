@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -11,6 +10,25 @@ namespace TwitchCraftBot_V1.Frames;
 
 public partial class Settings : UserControl
 {
+    private enum NumericComboBoxInputMode
+    {
+        UnsignedInteger,
+        SignedInteger,
+        Decimal
+    }
+
+    private enum SettingsCategory
+    {
+        Commands,
+        CustomCommands,
+        Economy,
+        Gameplay,
+        ChatDisplay,
+        Performance,
+        Server,
+        Dangerous
+    }
+
     private const int MaxRamGB = 256;
     private const double DefaultGlobalCooldownSeconds = 10.0;
     private static readonly (double Seconds, string Label)[] GlobalCooldownOptions =
@@ -27,10 +45,32 @@ public partial class Settings : UserControl
         (60.0, "60s"),
         (120.0, "120s")
     ];
+    private static readonly (double Multiplier, string Label)[] CommandCostMultiplierOptions =
+    [
+        (0.0, "0x"),
+        (0.5, "0.5x"),
+        (0.75, "0.75x"),
+        (1.0, "1x"),
+        (1.25, "1.25x"),
+        (1.5, "1.5x"),
+        (2.0, "2x"),
+        (3.0, "3x")
+    ];
+    private static readonly int[] FollowRewardAmountOptions = [25, 50, 100, 200, 500, 1000];
+    private static readonly string[] ResponseVerbosityOptions =
+    [
+        BotResponseVerbositySettings.Normal,
+        BotResponseVerbositySettings.Reduced,
+        BotResponseVerbositySettings.EssentialOnly
+    ];
 
-    private bool _initializing;
+    private bool _initializing = true;
+    private SettingsCategory _currentCategory = SettingsCategory.Commands;
+    private bool _updatingCustomValueControls;
     private readonly SemaphoreSlim _settingsSaveGate = new(1, 1);
     private CancellationTokenSource? _ramSaveDebounceCts;
+    private CancellationTokenSource? _tokenAuthorizationCts;
+    private bool _hasSavedTwitchAuthorization;
 
     private static bool IsAsciiDigitsOnly(string? value)
     {
@@ -47,14 +87,30 @@ public partial class Settings : UserControl
     public Settings()
     {
         InitializeComponent();
-        DataObject.AddPastingHandler(MinRamTextBox, NumericTextbox_Pasting);
-        DataObject.AddPastingHandler(MaxRamTextBox, NumericTextbox_Pasting);
-        ShowSettingsPage(GeneralSettingsPage, GeneralCategoryButton);
-        Loaded += Settings_Loaded;
-        Unloaded += (_, _) => CancelRamSaveDebounce();
+        DataObject.AddPastingHandler(MinRamTextBox, Ram_Pasting);
+        DataObject.AddPastingHandler(MaxRamTextBox, Ram_Pasting);
+        AddPrefixOptions(CommandPrefixTextBox);
+        AddPrefixOptions(SecondaryCommandPrefixTextBox);
+
+        ComboBox[] numericDropdowns =
+        [
+            ViewerCommandLimitDropdown, ChannelCommandLimitDropdown, GlobalCooldownSecondsDropdown,
+            PassivePayoutAmountDropdown, PassivePayoutMinimumDropdown, PassivePayoutMaximumDropdown,
+            RecentChatWindowDropdown, MaximumTokenBalanceDropdown, CommandCostMultiplierDropdown,
+            FollowRewardAmountDropdown, RelayRateDropdown, MaxTwitchLogLinesDropdown,
+            MaxMinecraftLogLinesDropdown, GameplayQueueDropdown, ViewDistanceDropdown,
+            SimulationDistanceDropdown, EntityBroadcastRangeDropdown, NetworkCompressionDropdown,
+            RconTimeoutDropdown
+        ];
+        foreach (ComboBox dropdown in numericDropdowns)
+            SetupNumericBox(dropdown);
+
+        ShowPage(CommandsSettingsPage, CommandsCategoryButton, SettingsCategory.Commands);
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
-    private void CancelRamSaveDebounce()
+    private void CancelRamSave()
     {
         CancellationTokenSource? debounceCts = _ramSaveDebounceCts;
         _ramSaveDebounceCts = null;
@@ -67,35 +123,165 @@ public partial class Settings : UserControl
         }
     }
 
-    private void NumbersOnly_PreviewTextInput(object sender, TextCompositionEventArgs args)
-        => args.Handled = !IsAsciiDigitsOnly(args.Text);
-
-    private void NumericTextbox_Pasting(object sender, DataObjectPastingEventArgs args)
+    private void Ram_PreviewTextInput(object sender, TextCompositionEventArgs args)
     {
-        if (!IsAsciiDigitsOnly(args.DataObject.GetData(typeof(string)) as string))
-            args.CancelCommand();
+        if (sender is not TextBox textBox)
+        {
+            args.Handled = true;
+            return;
+        }
+
+        args.Handled = !IsValidRamText(BuildTextCandidate(textBox, args.Text));
     }
 
-    private void Settings_Loaded(object sender, RoutedEventArgs e)
+    private void Ram_Pasting(object sender, DataObjectPastingEventArgs args)
     {
-        try
+        if (sender is not TextBox textBox ||
+            args.DataObject.GetData(typeof(string)) is not string pastedText ||
+            !IsValidRamText(BuildTextCandidate(textBox, pastedText)))
         {
-            if (AppHelpers.GetParentBot(this) is null)
+            args.CancelCommand();
+        }
+    }
+
+    private static string BuildTextCandidate(TextBox textBox, string insertedText)
+    {
+        string current = textBox.Text ?? string.Empty;
+        int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
+        int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
+        return current.Remove(start, length).Insert(start, insertedText);
+    }
+
+    private static bool IsValidRamText(string candidate)
+    {
+        if (!IsAsciiDigitsOnly(candidate))
+            return false;
+
+        return int.TryParse(candidate, out int value) && value <= MaxRamGB;
+    }
+
+    private void SetupNumericBox(ComboBox dropdown)
+    {
+        dropdown.PreviewTextInput += NumericBox_PreviewTextInput;
+        dropdown.GotKeyboardFocus += NumericBox_GotFocus;
+        DataObject.AddPastingHandler(dropdown, NumericBox_Pasting);
+    }
+
+    private void NumericBox_GotFocus(object sender, KeyboardFocusChangedEventArgs args)
+    {
+        if (sender is not ComboBox dropdown)
+            return;
+
+        dropdown.ApplyTemplate();
+        if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is TextBox editor)
+            editor.SelectAll();
+    }
+
+    private void NumericBox_PreviewTextInput(object sender, TextCompositionEventArgs args)
+    {
+        if (sender is not ComboBox dropdown)
+            return;
+
+        string candidate = BuildNumberCandidate(dropdown, args.Text);
+        args.Handled = !IsValidNumberText(candidate, GetNumberMode(dropdown));
+    }
+
+    private void NumericBox_Pasting(object sender, DataObjectPastingEventArgs args)
+    {
+        if (sender is not ComboBox dropdown)
+            return;
+
+        if (args.DataObject.GetData(typeof(string)) is not string pastedText ||
+            !IsValidNumberText(
+                BuildNumberCandidate(dropdown, pastedText),
+                GetNumberMode(dropdown)))
+        {
+            args.CancelCommand();
+        }
+    }
+
+    private static string BuildNumberCandidate(ComboBox dropdown, string insertedText)
+    {
+        dropdown.ApplyTemplate();
+        if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is not TextBox editor)
+            return (dropdown.Text ?? string.Empty) + insertedText;
+
+        string current = editor.Text ?? string.Empty;
+        int start = Math.Clamp(editor.SelectionStart, 0, current.Length);
+        int length = Math.Clamp(editor.SelectionLength, 0, current.Length - start);
+        return current.Remove(start, length).Insert(start, insertedText);
+    }
+
+    private NumericComboBoxInputMode GetNumberMode(ComboBox dropdown)
+    {
+        if (ReferenceEquals(dropdown, GlobalCooldownSecondsDropdown) ||
+            ReferenceEquals(dropdown, CommandCostMultiplierDropdown))
+        {
+            return NumericComboBoxInputMode.Decimal;
+        }
+
+        return ReferenceEquals(dropdown, NetworkCompressionDropdown)
+            ? NumericComboBoxInputMode.SignedInteger
+            : NumericComboBoxInputMode.UnsignedInteger;
+    }
+
+    private static bool IsValidNumberText(string text, NumericComboBoxInputMode mode)
+    {
+        if (text.Length == 0)
+            return true;
+
+        int index = 0;
+        if (mode == NumericComboBoxInputMode.SignedInteger && text[0] == '-')
+        {
+            index = 1;
+            if (text.Length == 1)
+                return true;
+        }
+
+        bool decimalPointSeen = false;
+        for (; index < text.Length; index++)
+        {
+            char character = text[index];
+            if (character >= '0' && character <= '9')
+                continue;
+
+            if (mode == NumericComboBoxInputMode.Decimal && character == '.' && !decimalPointSeen)
             {
-                return;
+                decimalPointSeen = true;
+                continue;
             }
 
-            CheckMinigameCooldownItems();
-            CheckGlobalCooldownItems();
+            return false;
+        }
 
+        return true;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        _hasSavedTwitchAuthorization = false;
+        ResetAuthButton();
+        try
+        {
             BotConfig config = ConfigurationStore.Load();
+            _hasSavedTwitchAuthorization = HasTwitchAuth(config);
+            ResetAuthButton();
+
+            if (AppHelpers.GetBotWindow(this) is null)
+                return;
+
+            AddMinigameOptions();
+            AddCooldownOptions();
+            AddEconomyOptions();
+            AddMainOptions();
+            AddExtraOptions();
 
             _initializing = true;
-            LoadSettingsIntoControls(config.Settings, config.Server);
+            LoadSettings(config.Settings, config.Server);
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowSettingsLoadFailed(this, ex);
+            ErrorHandling.ShowSettingsLoadError(this, ex);
         }
         finally
         {
@@ -103,51 +289,120 @@ public partial class Settings : UserControl
         }
     }
 
-    private void GeneralCategory_Click(object sender, RoutedEventArgs e)
-        => ShowSettingsPage(GeneralSettingsPage, GeneralCategoryButton);
-
-    private void GameplayCategory_Click(object sender, RoutedEventArgs e)
-        => ShowSettingsPage(GameplaySettingsPage, GameplayCategoryButton);
-
-    private void DangerousCategory_Click(object sender, RoutedEventArgs e)
-        => ShowSettingsPage(DangerousSettingsPage, DangerousCategoryButton);
-
-    private void ShowSettingsPage(Grid page, Button selectedButton)
+    private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        GeneralSettingsPage.Visibility = Visibility.Collapsed;
+        CancelRamSave();
+        CancelAuthorization();
+        ResetAuthButton();
+    }
+
+    private void CancelAuthorization()
+    {
+        _tokenAuthorizationCts?.Cancel();
+        _tokenAuthorizationCts = null;
+    }
+
+    private void ResetAuthButton()
+    {
+        AuthorizeTwitchButton.IsEnabled = true;
+        AuthorizeTwitchButton.Content = _tokenAuthorizationCts != null
+            ? "Cancel Authorization"
+            : _hasSavedTwitchAuthorization
+                ? "Reauthorize Twitch"
+                : "Authorize Twitch";
+    }
+
+    private static bool HasTwitchAuth(BotConfig config)
+        => !string.IsNullOrWhiteSpace(config.Twitch.BotToken)
+            && string.Equals(
+                (config.Twitch.ClientID ?? string.Empty).Trim(),
+                TwitchOAuthAuthorizer.TwitchCraftClientId,
+                StringComparison.Ordinal);
+
+    private void Gameplay_Click(object sender, RoutedEventArgs e)
+        => ShowPage(GameplaySettingsPage, GameplayCategoryButton, SettingsCategory.Gameplay);
+
+    private void Commands_Click(object sender, RoutedEventArgs e)
+        => ShowPage(CommandsSettingsPage, CommandsCategoryButton, SettingsCategory.Commands);
+
+    private void CustomCommands_Click(object sender, RoutedEventArgs e)
+        => ShowPage(CustomCommandsSettingsPage, CustomCommandsCategoryButton, SettingsCategory.CustomCommands);
+
+    private void Economy_Click(object sender, RoutedEventArgs e)
+        => ShowPage(EconomySettingsPage, EconomyCategoryButton, SettingsCategory.Economy);
+
+    private void ChatDisplay_Click(object sender, RoutedEventArgs e)
+        => ShowPage(ChatDisplaySettingsPage, ChatDisplayCategoryButton, SettingsCategory.ChatDisplay);
+
+    private void Performance_Click(object sender, RoutedEventArgs e)
+        => ShowPage(PerformanceSettingsPage, PerformanceCategoryButton, SettingsCategory.Performance);
+
+    private void Server_Click(object sender, RoutedEventArgs e)
+        => ShowPage(ServerSettingsPage, ServerCategoryButton, SettingsCategory.Server);
+
+    private void Dangerous_Click(object sender, RoutedEventArgs e)
+        => ShowPage(DangerousSettingsPage, DangerousCategoryButton, SettingsCategory.Dangerous);
+
+    private void ShowPage(Grid page, Button selectedButton, SettingsCategory category)
+    {
+        _currentCategory = category;
+        CommandsSettingsPage.Visibility = Visibility.Collapsed;
+        CustomCommandsSettingsPage.Visibility = Visibility.Collapsed;
         GameplaySettingsPage.Visibility = Visibility.Collapsed;
+        EconomySettingsPage.Visibility = Visibility.Collapsed;
+        ChatDisplaySettingsPage.Visibility = Visibility.Collapsed;
+        PerformanceSettingsPage.Visibility = Visibility.Collapsed;
+        ServerSettingsPage.Visibility = Visibility.Collapsed;
         DangerousSettingsPage.Visibility = Visibility.Collapsed;
         page.Visibility = Visibility.Visible;
 
-        GeneralCategoryButton.FontWeight = FontWeights.Normal;
+        CommandsCategoryButton.FontWeight = FontWeights.Normal;
+        CustomCommandsCategoryButton.FontWeight = FontWeights.Normal;
         GameplayCategoryButton.FontWeight = FontWeights.Normal;
+        EconomyCategoryButton.FontWeight = FontWeights.Normal;
+        ChatDisplayCategoryButton.FontWeight = FontWeights.Normal;
+        PerformanceCategoryButton.FontWeight = FontWeights.Normal;
+        ServerCategoryButton.FontWeight = FontWeights.Normal;
         DangerousCategoryButton.FontWeight = FontWeights.Normal;
         selectedButton.FontWeight = FontWeights.Bold;
 
-        GeneralCategoryButton.Opacity = 0.78;
+        CommandsCategoryButton.Opacity = 0.78;
+        CustomCommandsCategoryButton.Opacity = 0.78;
         GameplayCategoryButton.Opacity = 0.78;
+        EconomyCategoryButton.Opacity = 0.78;
+        ChatDisplayCategoryButton.Opacity = 0.78;
+        PerformanceCategoryButton.Opacity = 0.78;
+        ServerCategoryButton.Opacity = 0.78;
         DangerousCategoryButton.Opacity = 0.78;
         selectedButton.Opacity = 1;
     }
 
-    private void LoadSettingsIntoControls(StartingProfile settings, ServerConfig server)
+    private void LoadSettings(StartingProfile settings, ServerConfig server)
     {
         MinigamesCheckbox.IsChecked = settings.MinigamesEnabled;
         string cooldownText = settings.MinigameCooldown.ToString();
         MinigameCooldownDropdown.SelectedItem = cooldownText;
         MinigameCooldownDropdown.Text = cooldownText;
         PassiveTokensCheckbox.IsChecked = settings.PassiveTokenEarningEnabled;
+        ResponseVerbosityDropdown.SelectedItem = ConfigurationStore.NormalizeVerbosity(settings.BotResponseVerbosity);
+        SetCostMultiplier(settings.CommandCostMultiplier);
+        FollowRewardsCheckbox.IsChecked = settings.AutomaticFollowRewardsEnabled;
+        SetFollowReward(settings.FollowRewardAmount);
+        UpdateFollowReward(settings.AutomaticFollowRewardsEnabled);
+        BitRewardsCheckbox.IsChecked = settings.AutomaticBitRewardsEnabled;
         NonCommandChatRelayCheckbox.IsChecked = settings.NonCommandChatRelayEnabled;
         ModeratorCommandsCheckbox.IsChecked = settings.ModeratorsCanUseStreamerCommands;
         GlobalCooldownCheckbox.IsChecked = settings.GlobalGameCommandCooldownEnabled;
-        SetGlobalCooldownSecondsDropdown(settings.GlobalGameCommandCooldownSeconds);
-        UpdateGlobalCooldownSecondsVisibility(settings.GlobalGameCommandCooldownEnabled);
+        SetGlobalCooldown(settings.GlobalGameCommandCooldownSeconds);
+        UpdateGlobalCooldown(settings.GlobalGameCommandCooldownEnabled);
         StatisticsEnabledCheckbox.IsChecked = settings.StatisticsEnabled;
         PVPCheckbox.IsChecked = settings.MultiplayerPVPEnabled;
         HardcoreCheckbox.IsChecked = settings.HardcoreEnabled;
-        SelectDifficulty(settings.Difficulty);
+        SetDifficulty(settings.Difficulty);
         MinRamTextBox.Text = server.MemoryMinGB.ToString();
         MaxRamTextBox.Text = server.MemoryMaxGB.ToString();
+        LoadMainSettings(settings);
+        LoadExtraSettings(settings);
     }
 
     private async void Back_Click(object sender, RoutedEventArgs e)
@@ -156,41 +411,83 @@ public partial class Settings : UserControl
             int.TryParse(MaxRamTextBox.Text, out int maxRam) &&
             minRam > maxRam)
         {
-            ErrorHandling.ShowRamValuesWillNotSave(this);
+            ErrorHandling.ShowInvalidRam(this);
             return;
         }
 
-        if (TryGetRamValues(out int validMinRAM, out int validMaxRAM))
+        if (TryGetRam(out int validMinRAM, out int validMaxRAM))
         {
-            CancelRamSaveDebounce();
-            await UpdateConfigAsync(config =>
+            CancelRamSave();
+            await SaveConfigAsync(config =>
             {
                 config.Server.MemoryMinGB = validMinRAM;
                 config.Server.MemoryMaxGB = validMaxRAM;
             });
         }
 
+        CancelAuthorization();
         AppHelpers.NavigateBack(this);
     }
 
-    private void OpenGetBotToken_Click(object sender, RoutedEventArgs e)
+    private async void AuthorizeTwitch_Click(object sender, RoutedEventArgs e)
     {
+        if (_tokenAuthorizationCts != null)
+        {
+            AuthorizeTwitchButton.IsEnabled = false;
+            AuthorizeTwitchButton.Content = "Canceling...";
+            _tokenAuthorizationCts.Cancel();
+            return;
+        }
+
+        if (!TwitchOAuthAuthorizer.TwitchCraftOAuthConfigured)
+        {
+            ErrorHandling.ShowAuthError(this, "This TwitchCraft build is missing TwitchCraft's public Twitch Client ID. The release maintainer must add it before publishing the build.");
+            return;
+        }
+
+        using CancellationTokenSource authorizationCts = new();
+        _tokenAuthorizationCts = authorizationCts;
+        ResetAuthButton();
         try
         {
-            string exeDirectory = AppHelpers.GetExecutableDirectory();
-            string getBotTokenPath = Path.Combine(exeDirectory, "GetBotToken.exe");
-
-            if (!File.Exists(getBotTokenPath))
+            TwitchOAuthResult result = await TwitchOAuthAuthorizer.AuthorizeAsync(TwitchOAuthAuthorizer.TwitchCraftClientId, authorizationCts.Token);
+            if (!ReferenceEquals(_tokenAuthorizationCts, authorizationCts))
+                return;
+            if (!result.IsSuccess)
             {
-                ErrorHandling.ShowGetBotTokenNotFound(this, getBotTokenPath);
+                ErrorHandling.ShowAuthError(this, result.Error);
                 return;
             }
 
-            AppHelpers.OpenShellTarget(getBotTokenPath, exeDirectory);
+            BotConfig updated = ConfigurationStore.Update(config =>
+            {
+                config.Twitch.ClientID = TwitchOAuthAuthorizer.TwitchCraftClientId;
+                config.Twitch.BotToken = result.Token;
+                config.Twitch.RefreshToken = result.RefreshToken;
+                config.Twitch.BotName = result.Login;
+            });
+            _hasSavedTwitchAuthorization = true;
+            AuthorizeTwitchButton.IsEnabled = false;
+            AuthorizeTwitchButton.Content = "Applying Twitch...";
+            if (AppHelpers.GetBotWindow(this) is TwitchCraftBot parent)
+                await parent.Runtime.ApplySettingsAsync(updated);
+
+            ErrorHandling.ShowAuthSuccess(this, result.Login, savedToConfig: true);
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowOpenGetBotTokenFailed(this, ex);
+            ErrorHandling.ShowAuthError(this, ex.Message);
+        }
+        finally
+        {
+            if (ReferenceEquals(_tokenAuthorizationCts, authorizationCts))
+            {
+                _tokenAuthorizationCts = null;
+                ResetAuthButton();
+            }
         }
     }
 
@@ -198,9 +495,9 @@ public partial class Settings : UserControl
     {
         try
         {
-            if (AppHelpers.GetParentBot(this) is not TwitchCraftBot parent)
+            if (AppHelpers.GetBotWindow(this) is not TwitchCraftBot parent)
             {
-                ErrorHandling.ShowMainWindowNotFound(this);
+                ErrorHandling.ShowMainWindowError(this);
                 return;
             }
 
@@ -210,21 +507,21 @@ public partial class Settings : UserControl
             }
 
             ConfigurationStore.DeleteConfigFiles();
-            parent.RestartAfterConfigDelete();
+            parent.RestartAfterReset();
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowDeleteConfigFailed(this, ex);
+            ErrorHandling.ShowDeleteConfigError(this, ex);
         }
     }
 
-    private async void MinigamesCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await UpdateBoolSettingIfReadyAsync(
+    private async void Minigames_Changed(object sender, RoutedEventArgs e)
+        => await UpdateBoolAsync(
             MinigamesCheckbox.IsChecked == true,
             static (config, enabled) => config.Settings.MinigamesEnabled = enabled,
             refreshMinigameLoops: true);
 
-    private async void MinigameCooldownDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void MinigameCooldown_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_initializing)
         {
@@ -239,56 +536,135 @@ public partial class Settings : UserControl
             return;
         }
 
-        await UpdateConfigAsync(config => config.Settings.MinigameCooldown = minutes);
+        await SaveConfigAsync(config => config.Settings.MinigameCooldown = minutes);
     }
 
-    private async void PassiveTokensCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await UpdateBoolSettingIfReadyAsync(
+    private async void PassiveTokens_Changed(object sender, RoutedEventArgs e)
+        => await UpdateBoolAsync(
             PassiveTokensCheckbox.IsChecked == true,
             static (config, enabled) => config.Settings.PassiveTokenEarningEnabled = enabled);
 
-    private async void NonCommandChatRelayCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await UpdateBoolSettingIfReadyAsync(
+    private async void Verbosity_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_initializing && ResponseVerbosityDropdown.SelectedItem is string verbosity)
+            await SaveConfigAsync(config => config.Settings.BotResponseVerbosity = verbosity);
+    }
+
+    private async void CostMultiplier_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_initializing && !_updatingCustomValueControls && CommandCostMultiplierDropdown.SelectedItem is string)
+            await SaveCostMultiplierAsync();
+    }
+
+    private async void CostMultiplier_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveCostMultiplierAsync();
+
+    private async Task SaveCostMultiplierAsync()
+    {
+        if (_initializing || _updatingCustomValueControls)
+            return;
+
+        if (!TryReadDouble(CommandCostMultiplierDropdown, CommandCostMultiplierOptions, 0.0, 5.0, out double multiplier))
+        {
+            SetCostMultiplier(ConfigurationStore.Load().Settings.CommandCostMultiplier);
+            return;
+        }
+
+        SetCostMultiplier(multiplier);
+        await SaveConfigAsync(config => config.Settings.CommandCostMultiplier = multiplier);
+    }
+
+    private async void FollowRewards_Changed(object sender, RoutedEventArgs e)
+    {
+        bool enabled = FollowRewardsCheckbox.IsChecked == true;
+        UpdateFollowReward(enabled);
+        await UpdateBoolAsync(
+            enabled,
+            static (config, value) => config.Settings.AutomaticFollowRewardsEnabled = value);
+    }
+
+    private async void FollowReward_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_initializing && !_updatingCustomValueControls && FollowRewardAmountDropdown.SelectedItem is string)
+            await SaveFollowRewardAsync();
+    }
+
+    private async void FollowReward_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveFollowRewardAsync();
+
+    private async Task SaveFollowRewardAsync()
+    {
+        if (_initializing || _updatingCustomValueControls)
+            return;
+
+        if (!TryReadInt(FollowRewardAmountDropdown, 1, 1_000_000, out int amount))
+        {
+            SetFollowReward(ConfigurationStore.Load().Settings.FollowRewardAmount);
+            return;
+        }
+
+        SetFollowReward(amount);
+        await SaveConfigAsync(config => config.Settings.FollowRewardAmount = amount);
+    }
+
+    private async void BitRewards_Changed(object sender, RoutedEventArgs e)
+        => await UpdateBoolAsync(
+            BitRewardsCheckbox.IsChecked == true,
+            static (config, enabled) => config.Settings.AutomaticBitRewardsEnabled = enabled);
+
+    private async void ChatRelay_Changed(object sender, RoutedEventArgs e)
+        => await UpdateBoolAsync(
             NonCommandChatRelayCheckbox.IsChecked == true,
             static (config, enabled) => config.Settings.NonCommandChatRelayEnabled = enabled);
 
-    private async void ModeratorCommandsCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await UpdateBoolSettingIfReadyAsync(
+    private async void ModeratorCommands_Changed(object sender, RoutedEventArgs e)
+        => await UpdateBoolAsync(
             ModeratorCommandsCheckbox.IsChecked == true,
             static (config, enabled) => config.Settings.ModeratorsCanUseStreamerCommands = enabled);
 
-    private async void GlobalCooldownCheckbox_Changed(object sender, RoutedEventArgs e)
+    private async void GlobalCooldown_Changed(object sender, RoutedEventArgs e)
     {
         bool enabled = GlobalCooldownCheckbox.IsChecked == true;
-        if (enabled && GlobalCooldownSecondsDropdown.SelectedItem is not string)
-            SetGlobalCooldownSecondsDropdown(DefaultGlobalCooldownSeconds);
+        if (enabled && !TryReadDouble(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, 0.1, 120.0, out _))
+            SetGlobalCooldown(DefaultGlobalCooldownSeconds);
 
-        UpdateGlobalCooldownSecondsVisibility(enabled);
+        UpdateGlobalCooldown(enabled);
         if (!_initializing)
-        {
-            await UpdateConfigAsync(config =>
-            {
-                config.Settings.GlobalGameCommandCooldownEnabled = enabled;
-                if (enabled && !TryGetGlobalCooldownLabel(config.Settings.GlobalGameCommandCooldownSeconds, out _))
-                    config.Settings.GlobalGameCommandCooldownSeconds = DefaultGlobalCooldownSeconds;
-            });
-        }
+            await SaveConfigAsync(config => config.Settings.GlobalGameCommandCooldownEnabled = enabled);
     }
 
-    private async void GlobalCooldownSecondsDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void CooldownTime_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (!_initializing && TryGetSelectedGlobalCooldownSeconds(out double seconds))
-            await UpdateConfigAsync(config => config.Settings.GlobalGameCommandCooldownSeconds = seconds);
+        if (!_initializing && !_updatingCustomValueControls && GlobalCooldownSecondsDropdown.SelectedItem is string)
+            await SaveGlobalCooldownAsync();
     }
 
-    private async void StatisticsEnabledCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await UpdateBoolSettingIfReadyAsync(
+    private async void CooldownTime_LostFocus(object sender, RoutedEventArgs e)
+        => await SaveGlobalCooldownAsync();
+
+    private async Task SaveGlobalCooldownAsync()
+    {
+        if (_initializing || _updatingCustomValueControls)
+            return;
+
+        if (!TryReadDouble(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, 0.1, 120.0, out double seconds))
+        {
+            SetGlobalCooldown(ConfigurationStore.Load().Settings.GlobalGameCommandCooldownSeconds);
+            return;
+        }
+
+        SetGlobalCooldown(seconds);
+        await SaveConfigAsync(config => config.Settings.GlobalGameCommandCooldownSeconds = seconds);
+    }
+
+    private async void Statistics_Changed(object sender, RoutedEventArgs e)
+        => await UpdateBoolAsync(
             StatisticsEnabledCheckbox.IsChecked == true,
             static (config, enabled) => config.Settings.StatisticsEnabled = enabled);
 
     private async void ResetStats_Click(object sender, RoutedEventArgs e)
     {
-        if (!ErrorHandling.ConfirmResetStatistics(this) || AppHelpers.GetParentBot(this) is not TwitchCraftBot parent)
+        if (!ErrorHandling.ConfirmStatsReset(this) || AppHelpers.GetBotWindow(this) is not TwitchCraftBot parent)
             return;
 
         Button? button = sender as Button;
@@ -300,7 +676,7 @@ public partial class Settings : UserControl
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowResetStatisticsFailed(this, ex);
+            ErrorHandling.ShowStatsResetError(this, ex);
         }
         finally
         {
@@ -308,16 +684,16 @@ public partial class Settings : UserControl
         }
     }
 
-    private async void PVPCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await SaveGameplaySettingsAsync();
+    private async void Pvp_Changed(object sender, RoutedEventArgs e)
+        => await SaveGameplayAsync();
 
-    private async void HardcoreCheckbox_Changed(object sender, RoutedEventArgs e)
-        => await SaveGameplaySettingsAsync();
+    private async void Hardcore_Changed(object sender, RoutedEventArgs e)
+        => await SaveGameplayAsync();
 
-    private async void DifficultyDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        => await SaveGameplaySettingsAsync();
+    private async void Difficulty_Changed(object sender, SelectionChangedEventArgs e)
+        => await SaveGameplayAsync();
 
-    private async Task SaveGameplaySettingsAsync()
+    private async Task SaveGameplayAsync()
     {
         if (_initializing || DifficultyDropdown == null)
         {
@@ -328,23 +704,23 @@ public partial class Settings : UserControl
         bool hardcoreEnabled = HardcoreCheckbox.IsChecked != false;
         string difficulty = ConfigurationStore.NormalizeDifficulty((DifficultyDropdown.SelectedItem as ComboBoxItem)?.Content as string);
 
-        await UpdateConfigAsync(
+        await SaveConfigAsync(
             config =>
             {
                 config.Settings.MultiplayerPVPEnabled = PVPEnabled;
                 config.Settings.HardcoreEnabled = hardcoreEnabled;
                 config.Settings.Difficulty = difficulty;
             },
-            beforeSave: ApplyLocalStartProfile);
+            beforeSave: ApplyLocalProfile);
     }
 
-    private static void ApplyLocalStartProfile(BotConfig config)
+    private static void ApplyLocalProfile(BotConfig config)
     {
         if (!config.Settings.RemoteControlEnabled)
-            ServerPropertyEditor.ApplyStartProfile(config);
+            ServerPropertyEditor.ApplyProfile(config);
     }
 
-    private async void RamTextBox_Changed(object sender, TextChangedEventArgs e)
+    private async void Ram_Changed(object sender, TextChangedEventArgs e)
     {
         if (_initializing)
         {
@@ -359,12 +735,12 @@ public partial class Settings : UserControl
         {
             await Task.Delay(500, debounceCts.Token);
 
-            if (!ReferenceEquals(_ramSaveDebounceCts, debounceCts) || !TryGetRamValues(out int minRam, out int maxRam))
+            if (!ReferenceEquals(_ramSaveDebounceCts, debounceCts) || !TryGetRam(out int minRam, out int maxRam))
             {
                 return;
             }
 
-            await UpdateConfigAsync(config =>
+            await SaveConfigAsync(config =>
             {
                 config.Server.MemoryMinGB = minRam;
                 config.Server.MemoryMaxGB = maxRam;
@@ -384,6 +760,145 @@ public partial class Settings : UserControl
         }
     }
 
+    private async void ResetCategory_Click(object sender, RoutedEventArgs e)
+    {
+        SettingsCategory category = _currentCategory;
+        if (!ErrorHandling.ConfirmResetCategory(this, GetCategoryName(category)))
+            return;
+
+        StartingProfile defaults = new();
+        ServerConfig defaultServer = new();
+        CancelRamSave();
+
+        Action<BotConfig>? beforeSave = category is SettingsCategory.Gameplay or SettingsCategory.Server
+            ? ApplyLocalProfile
+            : null;
+        await SaveConfigAsync(
+            config => ResetCategory(category, defaults, defaultServer, config),
+            beforeSave: beforeSave,
+            refreshMinigameLoops: category == SettingsCategory.Gameplay);
+
+        ReloadAfterReset();
+    }
+
+    private void ReloadAfterReset()
+    {
+        try
+        {
+            BotConfig saved = ConfigurationStore.Load();
+            _initializing = true;
+            LoadSettings(saved.Settings, saved.Server);
+        }
+        catch (Exception ex)
+        {
+            ErrorHandling.ShowResetDefaultsError(this, ex);
+        }
+        finally
+        {
+            _initializing = false;
+        }
+    }
+
+    private static string GetCategoryName(SettingsCategory category) => category switch
+    {
+        SettingsCategory.CustomCommands => "Custom Commands",
+        SettingsCategory.ChatDisplay => "Chat & Display",
+        SettingsCategory.Performance => "Performance & Data",
+        SettingsCategory.Server => "Minecraft Server",
+        _ => category.ToString()
+    };
+
+    private static void ResetCategory(
+        SettingsCategory category,
+        StartingProfile defaults,
+        ServerConfig defaultServer,
+        BotConfig config)
+    {
+        StartingProfile settings = config.Settings;
+        switch (category)
+        {
+            case SettingsCategory.Commands:
+                settings.CommandPrefix = defaults.CommandPrefix;
+                settings.SecondaryCommandPrefix = defaults.SecondaryCommandPrefix;
+                settings.ViewerCommandsPaused = defaults.ViewerCommandsPaused;
+                settings.ModeratorsCanUseStreamerCommands = defaults.ModeratorsCanUseStreamerCommands;
+                settings.ViewerCommandLimitPerMinute = defaults.ViewerCommandLimitPerMinute;
+                settings.ChannelCommandLimitPerMinute = defaults.ChannelCommandLimitPerMinute;
+                settings.GlobalGameCommandCooldownEnabled = defaults.GlobalGameCommandCooldownEnabled;
+                settings.GlobalGameCommandCooldownSeconds = defaults.GlobalGameCommandCooldownSeconds;
+                settings.ShowExactCooldownRemaining = defaults.ShowExactCooldownRemaining;
+                settings.BotResponseVerbosity = defaults.BotResponseVerbosity;
+                settings.RespondToUnknownCommands = defaults.RespondToUnknownCommands;
+                settings.MentionViewersInBotReplies = defaults.MentionViewersInBotReplies;
+                break;
+
+            case SettingsCategory.CustomCommands:
+                settings.CommandCustomizations.Clear();
+                break;
+
+            case SettingsCategory.Economy:
+                settings.PassiveTokenEarningEnabled = defaults.PassiveTokenEarningEnabled;
+                settings.PassiveTokensPerPayout = defaults.PassiveTokensPerPayout;
+                settings.PassiveTokenPayoutMinimumSeconds = defaults.PassiveTokenPayoutMinimumSeconds;
+                settings.PassiveTokenPayoutMaximumSeconds = defaults.PassiveTokenPayoutMaximumSeconds;
+                settings.PassiveRewardsRequireRecentChat = defaults.PassiveRewardsRequireRecentChat;
+                settings.PassiveRecentChatWindowMinutes = defaults.PassiveRecentChatWindowMinutes;
+                settings.MaximumTokenBalance = defaults.MaximumTokenBalance;
+                settings.AutomaticFollowRewardsEnabled = defaults.AutomaticFollowRewardsEnabled;
+                settings.FollowRewardAmount = defaults.FollowRewardAmount;
+                settings.AutomaticBitRewardsEnabled = defaults.AutomaticBitRewardsEnabled;
+                settings.CommandCostMultiplier = defaults.CommandCostMultiplier;
+                break;
+
+            case SettingsCategory.Gameplay:
+                settings.MinigamesEnabled = defaults.MinigamesEnabled;
+                settings.MinigameCooldown = defaults.MinigameCooldown;
+                settings.HardcoreEnabled = defaults.HardcoreEnabled;
+                settings.Difficulty = defaults.Difficulty;
+                settings.MultiplayerPVPEnabled = defaults.MultiplayerPVPEnabled;
+                settings.AllowAllPlayerTarget = defaults.AllowAllPlayerTarget;
+                settings.AllowRandomPlayerTarget = defaults.AllowRandomPlayerTarget;
+                break;
+
+            case SettingsCategory.ChatDisplay:
+                settings.NonCommandChatRelayEnabled = defaults.NonCommandChatRelayEnabled;
+                settings.IncludeRelayTimestamps = defaults.IncludeRelayTimestamps;
+                settings.MinecraftRelayTextColor = defaults.MinecraftRelayTextColor;
+                settings.MinecraftRelayMessagesPerSecond = defaults.MinecraftRelayMessagesPerSecond;
+                settings.ShowConnectionHealth = defaults.ShowConnectionHealth;
+                break;
+
+            case SettingsCategory.Performance:
+                settings.LowResourceModeEnabled = defaults.LowResourceModeEnabled;
+                settings.PauseUIUpdatesWhenMinimized = defaults.PauseUIUpdatesWhenMinimized;
+                settings.ViewerRosterRefreshIntervalSeconds = defaults.ViewerRosterRefreshIntervalSeconds;
+                settings.MaxVisibleTwitchLogLines = defaults.MaxVisibleTwitchLogLines;
+                settings.MaxVisibleMinecraftLogLines = defaults.MaxVisibleMinecraftLogLines;
+                settings.MaxGameplayCommandQueue = defaults.MaxGameplayCommandQueue;
+                settings.StatisticsEnabled = defaults.StatisticsEnabled;
+                settings.SQLiteOptimizeIntervalHours = defaults.SQLiteOptimizeIntervalHours;
+                settings.AutomaticBackupsEnabled = defaults.AutomaticBackupsEnabled;
+                settings.AutomaticBackupIntervalHours = defaults.AutomaticBackupIntervalHours;
+                settings.AutomaticBackupRetentionCount = defaults.AutomaticBackupRetentionCount;
+                break;
+
+            case SettingsCategory.Server:
+                settings.ViewDistance = defaults.ViewDistance;
+                settings.SimulationDistance = defaults.SimulationDistance;
+                settings.EntityBroadcastRangePercentage = defaults.EntityBroadcastRangePercentage;
+                settings.NetworkCompressionThreshold = defaults.NetworkCompressionThreshold;
+                settings.RCONTimeoutSeconds = defaults.RCONTimeoutSeconds;
+                settings.GracefulShutdownTimeoutSeconds = defaults.GracefulShutdownTimeoutSeconds;
+                settings.EmptyServerShutdownDelayMinutes = defaults.EmptyServerShutdownDelayMinutes;
+                break;
+
+            case SettingsCategory.Dangerous:
+                config.Server.MemoryMinGB = defaultServer.MemoryMinGB;
+                config.Server.MemoryMaxGB = defaultServer.MemoryMaxGB;
+                break;
+        }
+    }
+
     private async void ResetDefaults_Click(object sender, RoutedEventArgs e)
     {
         StartingProfile defaults = new();
@@ -391,36 +906,28 @@ public partial class Settings : UserControl
 
         try
         {
-            if (AppHelpers.GetParentBot(this) is null)
-            {
+            if (AppHelpers.GetBotWindow(this) is null || !ErrorHandling.ConfirmResetDefaults(this))
                 return;
-            }
 
-            if (!ErrorHandling.ConfirmResetDefaults(this))
-            {
-                return;
-            }
-
-            CancelRamSaveDebounce();
-            _initializing = true;
-            LoadSettingsIntoControls(defaults, defaultServer);
+            CancelRamSave();
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowResetDefaultsFailed(this, ex);
+            ErrorHandling.ShowResetDefaultsError(this, ex);
             return;
         }
-        finally
-        {
-            _initializing = false;
-        }
 
-        await UpdateConfigAsync(
+        await SaveConfigAsync(
             config =>
             {
                 config.Settings.MinigamesEnabled = defaults.MinigamesEnabled;
                 config.Settings.MinigameCooldown = defaults.MinigameCooldown;
                 config.Settings.PassiveTokenEarningEnabled = defaults.PassiveTokenEarningEnabled;
+                config.Settings.AutomaticFollowRewardsEnabled = defaults.AutomaticFollowRewardsEnabled;
+                config.Settings.FollowRewardAmount = defaults.FollowRewardAmount;
+                config.Settings.AutomaticBitRewardsEnabled = defaults.AutomaticBitRewardsEnabled;
+                config.Settings.CommandCostMultiplier = defaults.CommandCostMultiplier;
+                config.Settings.BotResponseVerbosity = defaults.BotResponseVerbosity;
                 config.Settings.NonCommandChatRelayEnabled = defaults.NonCommandChatRelayEnabled;
                 config.Settings.ModeratorsCanUseStreamerCommands = defaults.ModeratorsCanUseStreamerCommands;
                 config.Settings.GlobalGameCommandCooldownEnabled = defaults.GlobalGameCommandCooldownEnabled;
@@ -429,24 +936,28 @@ public partial class Settings : UserControl
                 config.Settings.MultiplayerPVPEnabled = defaults.MultiplayerPVPEnabled;
                 config.Settings.HardcoreEnabled = defaults.HardcoreEnabled;
                 config.Settings.Difficulty = defaults.Difficulty;
+                CopyMainSettings(defaults, config.Settings);
+                CopyExtraSettings(defaults, config.Settings);
                 config.Server.MemoryMinGB = defaultServer.MemoryMinGB;
                 config.Server.MemoryMaxGB = defaultServer.MemoryMaxGB;
             },
-            beforeSave: ApplyLocalStartProfile,
+            beforeSave: ApplyLocalProfile,
             refreshMinigameLoops: true);
+
+        ReloadAfterReset();
     }
 
-    private Task UpdateBoolSettingIfReadyAsync(bool enabled, Action<BotConfig, bool> update, bool refreshMinigameLoops = false)
+    private Task UpdateBoolAsync(bool enabled, Action<BotConfig, bool> update, bool refreshMinigameLoops = false)
         => _initializing
             ? Task.CompletedTask
-            : UpdateConfigAsync(config => update(config, enabled), refreshMinigameLoops: refreshMinigameLoops);
+            : SaveConfigAsync(config => update(config, enabled), refreshMinigameLoops: refreshMinigameLoops);
 
-    private async Task UpdateConfigAsync(Action<BotConfig> update, Action<BotConfig>? beforeSave = null, bool refreshMinigameLoops = false)
+    private async Task SaveConfigAsync(Action<BotConfig> update, Action<BotConfig>? beforeSave = null, bool refreshMinigameLoops = false)
     {
         await _settingsSaveGate.WaitAsync();
         try
         {
-            TwitchCraftBot? parent = AppHelpers.GetParentBot(this);
+            TwitchCraftBot? parent = AppHelpers.GetBotWindow(this);
             if (parent is null)
             {
                 return;
@@ -456,23 +967,20 @@ public partial class Settings : UserControl
             bool activeRemoteControlEnabled = parent.Runtime.RemoteControlEnabled;
             bool activeRequireOnlineMode = parent.Runtime.RequireOnlineMode;
 
-            BotConfig savedConfig = await Task.Run(() =>
+            BotConfig savedConfig = await Task.Run(() => ConfigurationStore.Update(config =>
             {
-                BotConfig config = ConfigurationStore.Load();
                 update(config);
                 config.Settings.MultiplayerEnabled = activeMultiplayerEnabled;
                 config.Settings.RemoteControlEnabled = activeRemoteControlEnabled;
                 config.Settings.RequireOnlineMode = activeRequireOnlineMode;
                 beforeSave?.Invoke(config);
-                ConfigurationStore.Save(config);
-                return config;
-            });
+            }));
 
-            await parent.Runtime.ApplySavedConfigAsync(savedConfig, refreshMinigameLoops);
+            await parent.Runtime.ApplySettingsAsync(savedConfig, refreshMinigameLoops, preserveTwitchAuth: true);
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowSaveSettingsFailed(this, ex);
+            ErrorHandling.ShowSaveSettingsError(this, ex);
         }
         finally
         {
@@ -480,7 +988,7 @@ public partial class Settings : UserControl
         }
     }
 
-    private void CheckMinigameCooldownItems()
+    private void AddMinigameOptions()
     {
         if (MinigameCooldownDropdown.Items.Count > 0)
         {
@@ -493,7 +1001,7 @@ public partial class Settings : UserControl
         }
     }
 
-    private void CheckGlobalCooldownItems()
+    private void AddCooldownOptions()
     {
         if (GlobalCooldownSecondsDropdown.Items.Count > 0)
         {
@@ -504,51 +1012,41 @@ public partial class Settings : UserControl
             GlobalCooldownSecondsDropdown.Items.Add(label);
     }
 
-    private void SetGlobalCooldownSecondsDropdown(double seconds)
+    private void AddEconomyOptions()
     {
-        if (!TryGetGlobalCooldownLabel(seconds, out string label))
-            _ = TryGetGlobalCooldownLabel(DefaultGlobalCooldownSeconds, out label);
+        if (ResponseVerbosityDropdown.Items.Count == 0)
+            foreach (string option in ResponseVerbosityOptions)
+                ResponseVerbosityDropdown.Items.Add(option);
 
-        GlobalCooldownSecondsDropdown.SelectedItem = label;
+        if (CommandCostMultiplierDropdown.Items.Count == 0)
+            foreach ((double _, string label) in CommandCostMultiplierOptions)
+                CommandCostMultiplierDropdown.Items.Add(label);
+
+        if (FollowRewardAmountDropdown.Items.Count == 0)
+            foreach (int amount in FollowRewardAmountOptions)
+                FollowRewardAmountDropdown.Items.Add(amount.ToString());
     }
 
-    private static bool TryGetGlobalCooldownLabel(double seconds, out string label)
-    {
-        foreach ((double optionSeconds, string optionLabel) in GlobalCooldownOptions)
-        {
-            if (seconds == optionSeconds)
-            {
-                label = optionLabel;
-                return true;
-            }
-        }
+    private void SetCostMultiplier(double multiplier)
+        => SetDoubleValue(CommandCostMultiplierDropdown, CommandCostMultiplierOptions, multiplier);
 
-        label = string.Empty;
-        return false;
+    private void SetFollowReward(int amount)
+        => SetTextValue(
+            FollowRewardAmountDropdown,
+            amount.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    private void UpdateFollowReward(bool enabled)
+    {
+        FollowRewardAmountDropdown?.IsEnabled = enabled;
     }
 
-    private bool TryGetSelectedGlobalCooldownSeconds(out double seconds)
-    {
-        if (GlobalCooldownSecondsDropdown.SelectedItem is string selectedLabel)
-        {
-            foreach ((double optionSeconds, string optionLabel) in GlobalCooldownOptions)
-            {
-                if (string.Equals(selectedLabel, optionLabel, StringComparison.Ordinal))
-                {
-                    seconds = optionSeconds;
-                    return true;
-                }
-            }
-        }
+    private void SetGlobalCooldown(double seconds)
+        => SetDoubleValue(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, seconds);
 
-        seconds = 0.0;
-        return false;
-    }
-
-    private void UpdateGlobalCooldownSecondsVisibility(bool visible)
+    private void UpdateGlobalCooldown(bool visible)
         => GlobalCooldownSecondsDropdown.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
 
-    private bool TryGetRamValues(out int minRam, out int maxRam)
+    private bool TryGetRam(out int minRam, out int maxRam)
     {
         minRam = 0;
         maxRam = 0;
@@ -571,7 +1069,7 @@ public partial class Settings : UserControl
         return true;
     }
 
-    private void SelectDifficulty(string? difficulty)
+    private void SetDifficulty(string? difficulty)
     {
         DifficultyDropdown.SelectedIndex = ConfigurationStore.NormalizeDifficulty(difficulty) switch
         {

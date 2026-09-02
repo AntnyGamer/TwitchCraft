@@ -18,11 +18,15 @@ internal readonly struct ParsedCommand
     }
 
     public static ParsedCommand Parse(string payload)
+        => Parse(payload, "!");
+
+    public static ParsedCommand Parse(string payload, string prefix)
     {
-        if (string.IsNullOrEmpty(payload) || payload[0] != '!')
+        if (string.IsNullOrEmpty(payload) || string.IsNullOrEmpty(prefix) ||
+            !payload.StartsWith(prefix, StringComparison.Ordinal))
             return default;
 
-        int start = 1;
+        int start = prefix.Length;
         int end = payload.Length - 1;
         while (start <= end && char.IsWhiteSpace(payload[start]))
             start++;
@@ -34,14 +38,14 @@ internal readonly struct ParsedCommand
 
         int nameEnd = payload.IndexOf(' ', start, end - start + 1);
         if (nameEnd < 0)
-            return new ParsedCommand(ToLowerInvariantSegment(payload, start, end - start + 1));
+            return new ParsedCommand(LowerSegment(payload, start, end - start + 1));
 
         return new ParsedCommand(
-            ToLowerInvariantSegment(payload, start, nameEnd - start),
-            SplitArguments(payload.AsSpan(nameEnd + 1, end - nameEnd)));
+            LowerSegment(payload, start, nameEnd - start),
+            SplitArgs(payload.AsSpan(nameEnd + 1, end - nameEnd)));
     }
 
-    internal static string ToLowerInvariantSegment(string value, int start, int length)
+    internal static string LowerSegment(string value, int start, int length)
     {
         if (length <= 0)
             return string.Empty;
@@ -49,7 +53,7 @@ internal readonly struct ParsedCommand
         bool needsLowercase = false;
         for (int i = 0; i < length; i++)
         {
-            if (CommandUserHelper.ToLowerInvariantFast(value[start + i]) != value[start + i])
+            if (CommandUserHelper.LowerFast(value[start + i]) != value[start + i])
             {
                 needsLowercase = true;
                 break;
@@ -62,11 +66,11 @@ internal readonly struct ParsedCommand
         return string.Create(length, (Value: value, Start: start), static (destination, state) =>
         {
             for (int i = 0; i < destination.Length; i++)
-                destination[i] = CommandUserHelper.ToLowerInvariantFast(state.Value[state.Start + i]);
+                destination[i] = CommandUserHelper.LowerFast(state.Value[state.Start + i]);
         });
     }
 
-    private static string[] SplitArguments(ReadOnlySpan<char> args)
+    private static string[] SplitArgs(ReadOnlySpan<char> args)
     {
         int count = 0;
         int firstStart = -1;

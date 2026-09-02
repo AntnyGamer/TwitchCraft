@@ -4,22 +4,22 @@ namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
 {
-    internal void PauseCurrentSurvivalForStatistics()
+    internal void PauseSurvival()
     {
         DateTime now = DateTime.UtcNow;
         lock (_statisticsGate)
         {
-            PauseCurrentLifeNoLock(now);
+            PauseLifeNoLock(now);
         }
     }
 
-    internal void SetCurrentStatisticCommandName(string? commandName)
+    internal void SetStatsCommand(string? commandName)
     {
-        string normalizedCommand = StatisticNameHelper.NormalizeCommandName(commandName);
+        string normalizedCommand = StatisticNameHelper.CleanCommandName(commandName);
         _currentStatisticCommandName.Value = normalizedCommand.Length == 0 ? null : normalizedCommand;
     }
 
-    internal void RecordCurrentGameAffectingCommandForStatistics(string sender, int tokensSpent = 0)
+    internal void RecordCommand(string sender, int tokensSpent = 0)
     {
         if (!StatisticsEnabled)
         {
@@ -33,16 +33,16 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        EnsureStatisticsLoaded();
+        EnsureLoaded();
 
-        string viewer = CommandUserHelper.NormalizeUsername(sender);
+        string viewer = CommandUserHelper.NormalizeUser(sender);
         bool isEffectCommand = string.Equals(command, "effect", StringComparison.OrdinalIgnoreCase);
         int dangerousScore = (statisticFlags & ChatCommandStatisticFlags.Dangerous) != 0 && !isEffectCommand ? 1 : 0;
         int niceScore = (statisticFlags & ChatCommandStatisticFlags.Nice) != 0 && !isEffectCommand ? 1 : 0;
-        bool viewerCountsForRanking = viewer.Length > 0 && !IsStreamerViewerNormalized(viewer);
+        bool viewerCountsForRanking = viewer.Length > 0 && !IsStreamer(viewer);
         long normalizedTokensSpent = Math.Max(0L, tokensSpent);
 
-        bool databaseUpdated = BotStatisticsStore.ApplyGameCommandDeltaNormalized(
+        bool databaseUpdated = BotStatisticsStore.ApplyCommandDelta(
             command,
             normalizedTokensSpent,
             viewerCountsForRanking ? viewer : string.Empty,
@@ -60,20 +60,20 @@ public sealed partial class BotMainHandler
             _totalStatistics.GameCommandsRun++;
             _sessionStatistics.TokensSpent += normalizedTokensSpent;
             _totalStatistics.TokensSpent += normalizedTokensSpent;
-            AddViewerScore(_sessionStatistics.CommandUseCounts, command, 1);
-            AddViewerScore(_totalStatistics.CommandUseCounts, command, 1);
+            AddScore(_sessionStatistics.CommandUseCounts, command, 1);
+            AddScore(_totalStatistics.CommandUseCounts, command, 1);
 
             if (viewerCountsForRanking)
             {
-                AddViewerScore(_sessionStatistics.DangerousViewerScores, viewer, dangerousScore);
-                AddViewerScore(_sessionStatistics.NiceViewerScores, viewer, niceScore);
+                AddScore(_sessionStatistics.DangerousViewerScores, viewer, dangerousScore);
+                AddScore(_sessionStatistics.NiceViewerScores, viewer, niceScore);
             }
 
-            MarkStatisticsLeaderboardDirtyNoLock();
+            MarkLeaderboardDirty();
         }
     }
 
-    internal void RecordEffectsGivenForStatistics(int count, bool streamerReceivedEffect)
+    internal void RecordEffects(int count, bool streamerReceivedEffect)
     {
         if (!StatisticsEnabled || !streamerReceivedEffect)
         {
@@ -86,9 +86,9 @@ public sealed partial class BotMainHandler
             return;
         }
 
-        EnsureStatisticsLoaded();
+        EnsureLoaded();
 
-        if (!BotStatisticsStore.ApplyEffectsGivenDelta(effectsReceivedByStreamer))
+        if (!BotStatisticsStore.ApplyEffectsDelta(effectsReceivedByStreamer))
         {
             return;
         }
@@ -100,16 +100,16 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void RecordSessionStartedForStatistics()
+    internal void RecordSession()
     {
         if (!StatisticsEnabled)
         {
             return;
         }
 
-        EnsureStatisticsLoaded();
+        EnsureLoaded();
 
-        if (!BotStatisticsStore.ApplySessionStartedDelta())
+        if (!BotStatisticsStore.ApplySessionDelta())
         {
             return;
         }
@@ -120,17 +120,10 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void RecordPlayerJoinForStatistics(string playerName)
+    internal void RecordPlayerJoin(string playerName)
     {
-        if (!StatisticsEnabled)
-        {
+        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
             return;
-        }
-
-        if (!ShouldTrackSurvivalPlayer(playerName))
-        {
-            return;
-        }
 
         DateTime now = DateTime.UtcNow;
         lock (_statisticsGate)
@@ -145,37 +138,23 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal void RecordPlayerLeaveForStatistics(string playerName)
+    internal void RecordPlayerLeave(string playerName)
     {
-        if (!StatisticsEnabled)
-        {
+        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
             return;
-        }
-
-        if (!ShouldTrackSurvivalPlayer(playerName))
-        {
-            return;
-        }
 
         DateTime now = DateTime.UtcNow;
         lock (_statisticsGate)
         {
-            PauseCurrentLifeNoLock(now);
+            PauseLifeNoLock(now);
             _sessionStatistics.CurrentPlayerIsSpectator = false;
         }
     }
 
-    internal void RecordTrackedPlayerGamemodeForStatistics(string playerName, int gameType)
+    internal void RecordGamemode(string playerName, int gameType)
     {
-        if (!StatisticsEnabled)
-        {
+        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
             return;
-        }
-
-        if (!ShouldTrackSurvivalPlayer(playerName))
-        {
-            return;
-        }
 
         DateTime now = DateTime.UtcNow;
         bool shouldRefreshRespawnPosition;
@@ -185,7 +164,7 @@ public sealed partial class BotMainHandler
 
             if (gameType == 3)
             {
-                PauseCurrentLifeNoLock(now);
+                PauseLifeNoLock(now);
                 _sessionStatistics.CurrentPlayerIsSpectator = true;
                 return;
             }
@@ -198,14 +177,14 @@ public sealed partial class BotMainHandler
             }
         }
 
-        QueueTrackedPlayerDeathScoreRefreshForStatistics(playerName);
+        QueueDeathScore(playerName);
         if (shouldRefreshRespawnPosition)
-            QueueTrackedPlayerRespawnPositionRefreshForStatistics(playerName);
+            QueueRespawn(playerName);
     }
 
-    internal void RecordTrackedPlayerRespawnPositionForStatistics(string playerName)
+    internal void RecordRespawn(string playerName)
     {
-        if (!StatisticsEnabled || !ShouldTrackSurvivalPlayer(playerName))
+        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
         {
             return;
         }
@@ -224,9 +203,9 @@ public sealed partial class BotMainHandler
         }
     }
 
-    private bool ShouldRefreshTrackedPlayerRespawnPositionForStatistics(string playerName)
+    private bool NeedsRespawnRefresh(string playerName)
     {
-        if (!StatisticsEnabled || !ShouldTrackSurvivalPlayer(playerName))
+        if (!StatisticsEnabled || !ShouldTrackPlayer(playerName))
         {
             return false;
         }
@@ -237,12 +216,7 @@ public sealed partial class BotMainHandler
         }
     }
 
-    internal bool IsTrackingSurvivalPlayer(string playerName)
-    {
-        return ShouldTrackSurvivalPlayer(playerName);
-    }
-
-    private bool IsStreamerViewerNormalized(string normalizedViewer)
+    private bool IsStreamer(string normalizedViewer)
     {
         return normalizedViewer.Length > 0
             && _currentStreamerName.Length > 0
