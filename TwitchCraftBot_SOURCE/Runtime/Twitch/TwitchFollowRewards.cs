@@ -223,8 +223,14 @@ public sealed partial class BotMainHandler
                             botToken,
                             cancellationToken).ConfigureAwait(false);
 
-                        if (status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                        if (status == HttpStatusCode.Unauthorized)
                             return new(null, AuthorizationRejected: true);
+
+                        if (status == HttpStatusCode.Forbidden)
+                        {
+                            _shellWindow?.AddChatLogLine("Follow rewards are off because the bot account lacks follower permission or moderator status.");
+                            return new(null, AuthorizationRejected: false, Stop: true);
+                        }
                     }
                     break;
 

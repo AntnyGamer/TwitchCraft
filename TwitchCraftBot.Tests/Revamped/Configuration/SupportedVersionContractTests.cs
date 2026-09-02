@@ -25,14 +25,13 @@ public sealed class SupportedVersionContractTests
     }
 
     [Theory]
-    [InlineData("1.20.5", false, false, true, false, false, false)]
-    [InlineData("1.21.2", true, false, true, false, false, true)]
-    [InlineData("1.21.11", true, true, true, true, true, true)]
+    [InlineData("1.20.5", false, false, false, false, false)]
+    [InlineData("1.21.2", true, false, false, false, true)]
+    [InlineData("1.21.11", true, true, true, true, true)]
     public void VersionFeatures_ChangeAtSupportedBoundaries(
         string id,
         bool singularFunctionDirectories,
         bool serverSettingGameRules,
-        bool itemComponents,
         bool inlineTextComponents,
         bool namespacedGameRules,
         bool supportsInfested)
@@ -40,7 +39,6 @@ public sealed class SupportedVersionContractTests
         Assert.True(MinecraftVersionSupport.TryGetVersion(id, out var version));
         Assert.Equal(singularFunctionDirectories, version.UsesSingularFunctionDirectories);
         Assert.Equal(serverSettingGameRules, version.UsesServerSettingGameRules);
-        Assert.Equal(itemComponents, version.UsesItemComponents);
         Assert.Equal(inlineTextComponents, version.UsesInlineTextComponents);
         Assert.Equal(namespacedGameRules, version.UsesNamespacedGameRules);
         Assert.Equal(supportsInfested, MinecraftVersionSupport.SupportsStatusEffect(id, "infested"));

@@ -35,7 +35,7 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Security policy](SECURITY.md)
 * [AI Assistance Disclosure](docs/NOTE.md)
 
-External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation.
+External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
 
 ## 1. Requirements
 
@@ -61,7 +61,7 @@ For Minecraft versions **26.1–26.2.0**:
 
 ## 3. Bot Account Setup
 
-* In order for TwitchCraft to function, you need to hook a Twitch account to the application
+* In order for TwitchCraft to function, you need to connect a Twitch account to the application
 * Do not use your main Twitch account for the bot if possible
 * You will need to be signed into your bot account on Twitch
 * Having 2FA enabled is recommended
@@ -102,7 +102,7 @@ For Minecraft versions **26.1–26.2.0**:
 
 ## 6. Settings & Customization
 
-TwitchCraft includes a Settings menu that lets you customize how the bot, Minecraft server, commands, tokens, statistics, backups, and other features behave.
+TwitchCraft includes a Settings menu that lets you customize how the bot, Minecraft server, commands, tokens, statistics, backups, and other features behave
 
 **Settings include:**
 
@@ -134,7 +134,7 @@ TwitchCraft includes a Settings menu that lets you customize how the bot, Minecr
 
 ## 8. Multiplayer (Optional)
 
-Enabling multiplayer in TwitchCraft does not automatically make your server publicly reachable.
+Enabling multiplayer in TwitchCraft does not automatically make your server publicly reachable
 
 These steps work for most routers, but menu names and settings may vary:
 
@@ -166,7 +166,7 @@ These steps work for most routers, but menu names and settings may vary:
 
 ## 9. Remote Control Mode (Optional)
 
-Remote Control Mode lets TwitchCraft control an already-running Minecraft server instead of starting its own local server.
+Remote Control Mode lets TwitchCraft control an already-running Minecraft server instead of starting its own local server
 
 **Use this mode if:**
 
@@ -296,7 +296,7 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 
 ## 14. Troubleshooting
 
-Troubleshooting has moved to a document for long-term use and dynamic updating.
+Troubleshooting has moved to a document for long-term use and dynamic updating
 
 * [Troubleshooting guide](docs/TROUBLESHOOTING.md)
 
@@ -305,7 +305,7 @@ Troubleshooting has moved to a document for long-term use and dynamic updating.
 * TwitchCraft website: https://antnygamer.wixsite.com/twitchcraft
 * TwitchCraft commands: https://rentry.co/bot-commands
 * TwitchCraft trailer: https://www.youtube.com/watch?v=HM2Um3Uf1hk
-* TwitchCraft setup tutorial: https://bit.ly/twitchcraft-tutorial (outdated)
+* TwitchCraft setup tutorial: https://bit.ly/tutorial-twitchcraft
 * TwitchCraft troubleshooting: https://bit.ly/troubleshooting-twitchcraft
 
 ## 16. Other Info
@@ -316,6 +316,6 @@ Troubleshooting has moved to a document for long-term use and dynamic updating.
 
 ---
 
-TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft.
+TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
 
-**README version 1.8.0.0 — August 31, 2026**
+**README version 1.8.0.0 — September 1, 2026**

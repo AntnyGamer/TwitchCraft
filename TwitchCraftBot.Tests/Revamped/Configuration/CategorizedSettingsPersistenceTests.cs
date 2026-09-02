@@ -131,17 +131,32 @@ public sealed class CategorizedSettingsPersistenceTests
     }
 
     [Fact]
-    public void Deserialize_FlatLegacySettingsDoNotOverrideCategorizedDefaults()
+    public void CategoryMap_CoversEveryPersistedSettingExactlyOnce()
     {
-        const string json = """
-            { "CommandPrefix": "?", "Difficulty": "Hard", "AutomaticBackupRetentionCount": 20 }
-            """;
+        string[] categorized = StartingProfileJsonConverter.CategoryOrder
+            .SelectMany(category => category.Properties)
+            .ToArray();
 
-        StartingProfile profile = Assert.IsType<StartingProfile>(
-            JsonConvert.DeserializeObject<StartingProfile>(json, SerializerSettings));
+        Assert.Equal(categorized.Length, categorized.Distinct(StringComparer.OrdinalIgnoreCase).Count());
 
-        Assert.Equal("!", profile.CommandPrefix);
-        Assert.Equal("Medium", profile.Difficulty);
-        Assert.Equal(3, profile.AutomaticBackupRetentionCount);
+        string[] intentionallyUncategorized =
+        [
+            nameof(StartingProfile.MultiplayerEnabled),
+            nameof(StartingProfile.RemoteControlEnabled),
+            nameof(StartingProfile.RequireOnlineMode)
+        ];
+
+        string[] expected = typeof(StartingProfile).GetProperties()
+            .Where(property => property.CanRead && property.CanWrite)
+            .Select(property => property.Name)
+            .Except(intentionallyUncategorized, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        string[] actual = categorized
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        Assert.Equal(expected, actual);
     }
 }

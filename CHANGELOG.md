@@ -1,615 +1,349 @@
 # Changelog
 
-All notable changes to this project are documented here. This project follows a Keep a Changelog-style structure, and version numbers should match the application metadata and release tags.
+All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
-## [Unreleased]
+## [1.8.0.0] - 2026-09-01
 
-### Changed
-
-* Removed unnecessary thread-pool wrappers from already-asynchronous session loops, reducing startup/background scheduling overhead while keeping blocking maintenance and worker isolation intact.
-* `config.json` now writes Settings in the same categorized, top-to-bottom order as the Settings screen.
-* `server.properties` now separates preserved user-editable properties from TwitchCraft-managed Gameplay, Minecraft Server, and Server Startup & Connection properties.
-* Added regression coverage for complete live-roster token awards, command-registry consistency, and isolation of applied nested settings.
-* Pre-sized copied and normalized command-customization dictionaries to avoid unnecessary internal growth while applying settings.
-* Consolidated overlapping regression tests and expanded real runtime/RCON integration coverage while preserving meaningful assertions, leaving 280 focused test cases.
-
-### Fixed
-
-* Expired saved Twitch authorizations that can no longer be refreshed now start a fresh device authorization instead of ending startup with a client-secret error; confidential applications receive explicit Public-client guidance.
-
-## [1.8.0.0] - 2026-08-28
-
-### Added
-
-* Added categorized General, Commands, Custom Commands, Economy, Gameplay, Chat & Display, Performance, Minecraft Server, and Dangerous settings pages.
-* Added a generated Custom Commands page for enabling/disabling every registered command and replacing its built-in cooldown with a per-viewer cooldown.
-* Added per-viewer command rate limits, a configurable recent-chat eligibility window, and automatic local config/token-database backups with configurable retention.
-* Added performance controls for a low-resource preset, minimized UI updates, separate Twitch/Minecraft log limits, viewer-roster refresh timing, relay throughput, gameplay queue depth, RCON timeouts, and SQLite optimization timing.
-* Added managed Minecraft view distance, simulation distance, entity broadcast range, network compression threshold, and empty-server pause-delay settings.
-* Added configurable primary/secondary command prefixes, viewer mentions, cooldown detail, unknown-command replies, viewer-command pausing, passive payout amount/timing/activity requirements, maximum balances, channel-wide command limits, all/random targeting controls, relay timestamps/colors, and live connection-health indicators.
-* Added saved Economy settings for bot-response verbosity, command-cost multiplier, automatic follow rewards and reward amount, and automatic Bit rewards.
-* Added `!enchant [target]`, which forces a random enchantment at a random valid level onto any held item, permits incompatible/conflicting combinations, and still charges for an empty hand.
-* Added automatic 100-token rewards for new Twitch followers, paid once per Twitch account with persistent duplicate protection.
-* Added Twitch bot-token authorization directly inside the Setup and Settings screens.
-* Added `!turnaround`, `!chargedcreeper`, `!kick`, `!whitelistadd`, and `!whitelistremove` commands.
-* Added Twitch-only `!tokenleaderboard`, `!followreward`, and `!commandstats` commands.
-* Added `!tokenrank [twitch-user]` to show an exact token-leaderboard position and balance.
-* Added `!tiny [target]` and `!giant [target]`, with version-aware scale attribute syntax and guarded 30-second restoration for every supported Minecraft version.
-
-### Changed
-
-* Passive payout amount, follower reward amount, maximum balance, per-viewer rate limit, and channel-wide rate limit now keep preset dropdowns while accepting validated custom values.
-* Passive payout timing now uses editable minimum/maximum dropdowns from 10 to 900 seconds and chooses a fresh random delay inside the configured range for every payout.
-* Automatic backups now default to enabled, run periodically and during clean shutdown, and retain a selectable 1, 3, 5, 10, or 20 complete backup sets (three by default).
-* Graceful Minecraft shutdown now has a selectable 3–60 second timeout.
-* Bit rewards remain an exact one token per Bit when enabled.
-* Supported Minecraft versions now start at 1.20.5.
-* Long viewer names in the Statistics screen now scale down to fit instead of being cut off.
-* The bot-token authorization scope now includes follower access for Twitch EventSub follow rewards.
-* Twitch authorization now uses Twitch's device flow, requires no specific localhost redirect, stores renewable credentials, and automatically renews expired access when possible.
-* Setup now keeps **Start** disabled until all required values and the current Client ID authorization are valid.
-* `!chargedcreeper` now behaves like `!johnny`: it sends a persistent glowing pursuer from a distance and displays a red warning title.
-* `!enchant` now uses the standard yellow in-game command notification color.
-* `!tiny` and `!giant` now each have a five-minute global cooldown and show a small red warning three seconds before restoring normal size.
-
-### Removed
-
-* Removed the standalone `GetBotToken.exe`; Twitch authorization now happens entirely inside TwitchCraft.
-* Removed the bot-token textbox from Setup; authorization credentials are handled internally.
-
-### Fixed
-
-* `!givetokens all` now verifies bulk updates against the complete live viewer roster and reports any unchanged balances.
-* Leaving and reopening Settings now cancels any pending Twitch authorization and restores the Dangerous-section button label immediately.
-* Hid the known four-line JOML `sun.misc.Unsafe` deprecation notice from the displayed Minecraft stderr log without suppressing other warnings.
-* Fixed the 1.8.0.0 source package so it builds cleanly with the Twitch command-customization type in scope.
+- Completely redesigned and greatly expanded Settings with many new command, economy, chat, performance, backup, and Minecraft server options
+- Added per-command customization, customizable command prefixes, rate limits, and cooldown controls
+- Added many new Twitch and Minecraft commands and expanded token/economy features
+- Replaced the separate bot-token setup tool with built-in Twitch authorization and automatic token refreshing
+- Added automatic config and token database backups
+- Improved Twitch, Minecraft, RCON, viewer tracking, logging, and server startup/shutdown handling
+- Dropped support for Minecraft versions older than 1.20.5
+- Added many new tests, increasing the test suite from 200 to 275 total
+- Updated README and documentation
+- Minor UI and usability improvements
+- Minor bug fixes
+- Minor security and performance improvements
 
 ## [1.7.1.3] - 2026-08-16
 
-### Added
-
-* Expanded the high-value automated test suite to 200 tests.
-
-### Changed
-
-* Kept cryptographic randomness for chance-based token transfers and minigame outcomes while using ordinary randomness for cosmetic gameplay behavior and passive reward scheduling.
-* Preserved existing custom and unmanaged `server.properties` values during server setup.
-* Updated `Microsoft.Data.Sqlite` to 10.0.11 and `SQLitePCLRaw.bundle_e_sqlite3` to 3.0.5.
-
-### Fixed
-
-* Missing or incomplete bundled `locateplayers` datapack files now produce a logged warning and warning popup without aborting startup or world import.
-* Prevented one canceled caller from canceling or removing a shared player probe still in use by other callers.
-* Serialized IRC queue generations during resets to prevent old and new queue workers from overlapping.
-* Improved world-import rollback so setup failures do not leave the imported world in a partially configured state.
-
-### Security
-
-* Restricted Windows Restart Manager DLL resolution to `System32`.
+- Added many new tests, now 200 total
+- Made randomness even more random when necessary
+- Preserved existing custom and unmanaged server.properties values during server setup
+- Improved world importing
+- Updated NuGet packages
+- Updated README
+- Minor bug fixes
+- Minor security and performance improvements
 
 ## [1.7.1.2] - 2026-07-23
 
-### Added
-
-* Added automated tests, GitHub Actions build validation, and code coverage artifacts.
-* Added project documentation and contributor templates.
-* Added custom redirect port support and account confirmation to GetBotToken.
-* Added new helpers for commands, configuration, diagnostics, minigames, statistics, and runtime features.
-
-### Changed
-
-* Updated and reorganized the TwitchCraft source code.
-* Updated SQLite components and improved diagnostic logging.
-
-### Fixed
-
-* Fixed paid-command refunds, cooldown release, and statistics recording after failed dispatches.
-* Fixed application version reporting and in-session log rotation.
+- Completely overhauled the internal structure of TwitchCraft
+- Secured command and diagnostic handling
+- Logs now support up to 5MB of data
+- Improved GetBotToken.exe
+- Minor security, stability, and performance improvements
 
 ## [1.7.1.1] - 2026-07-18
 
-### Changed
-
-* Updated .NET and SQLite components.
-* Improved error logging.
-* Added minor performance optimizations.
-
-### Security
-
-* Added minor security and stability improvements.
+- Updated .NET and SQLite components
+- Improved error logging
+- Minor performance optimizations
+- Minor security and stability improvements
 
 ## [1.7.1] - 2026-07-04
 
-### Added
-
-* Published TwitchCraft's source code.
-* Added a setting that allows the streamer to disable Twitch chat relay into Minecraft.
-
-### Changed
-
-* Overhauled the Settings page.
-* Improved Remote Control Mode safety and security.
-* Improved Minecraft `.jar` download safety and verification.
-* Added many performance improvements.
-
-### Fixed
-
-* Fixed minor bugs.
-
-### Security
-
-* Added other minor safety and security updates.
-
-### Removed
-
-* Removed unused effect amplifiers.
+- Published TwitchCraft's source code
+- Added a new setting that allows the streamer to turn off chat relay into Minecraft from Twitch
+- Overhauled Settings page
+- Improved Remote Control Mode safety and security
+- Improved Minecraft .jar downloading safety and verification
+- Removed unused effect amplifiers
+- Many performance improvements
+- Minor bug fixes
+- Other minor safety and security updates
 
 ## [1.7.0.2] - 2026-06-22
 
-### Changed
-
-* Updated death tracking.
-* Improved shutdown handling.
-* Moved `statistics.json` to the exports folder.
-* Improved `!ban` and `!unban` command handling.
-* Updated NuGet packages.
-* Added multiple performance optimizations, especially for Remote Control Mode.
-* Applied minor code updates.
-
-### Fixed
-
-* Fixed `server.properties` editing.
+- HOTFIX: server.properties can properly be edited now
+- Updated death tracking
+- Improved shutdown handling
+- statistics.json has been moved to exports folder
+- Improved !ban and !unban command handling
+- Updated NuGet packages
+- Multiple performance optimizations, especially for Remote Control Mode
+- Minor code updates
 
 ## [1.7.0.1] - 2026-06-18
 
-### Added
-
-* Added a custom cooldown-time option for the global command cooldown setting.
-
-### Changed
-
-* Added minor performance optimizations.
-
-### Fixed
-
-* Fixed Death and Time Survived statistics so they track and save properly.
-* Fixed Chicken Run and Wither Battle so they no longer award extra tokens.
-* Fixed maximum-second Chicken Run bets so they can win.
-* Fixed a numbering issue in `README.txt`.
+- HOTFIX: Death and Time Survived statistics now track and save properly
+- HOTFIX: Chicken Run and Wither Battle minigames no longer give extra tokens
+- HOTFIX: Max second bets on Chicken Run can now win
+- HOTFIX: Fixed numbering issue in the README.txt
+- You can now chose a custom cooldown time for the global command cooldown setting
+- Minor performance optimizations
 
 ## [1.7.0] - 2026-06-18
 
-### Added
-
-* Added Remote Control Mode with RCON support, allowing two or more streamers' chats to control one Minecraft server.
-* Added support for different bind IPs, including VPN, IPv6, and localhost.
-
-### Changed
-
-* Failed paid commands no longer activate the global cooldown.
-* Updated the UI.
-* Updated the README and moved troubleshooting into a separate document.
-* Stopped overwriting server properties that TwitchCraft does not use, allowing settings such as view distance to be lowered on low-end devices.
-* Improved startup and shutdown handling.
-* Added many performance improvements.
-
-### Fixed
-
-* Fixed many bugs.
-
-### Security
-
-* Slightly improved security.
+- Added Remote Control Mode with RCON support (2+ streamers' chats can now control one Minecraft server)
+- Added support for different Bind IPs (VPN, IPv6, localhost)
+- Failed paid commands no longer activate the global cooldown
+- Updated UI
+- Updated README and moved troubleshooting to a separate document
+- Server properties unused by TwitchCraft are no longer overwritten (so you can now lower certain settings like view distance if you are on a low-end device)
+- Startup/shutdown handling improved
+- Many bug fixes
+- Many performance improvements
+- Slightly improved security
 
 ## [1.6.1] - 2026-06-16
 
-### Added
-
-* Added support for Minecraft version 26.2.
-* Enabled Minecraft querying.
-
-### Changed
-
-* Improved Java detection.
-* Updated the README.
-* Clarified that the server address is the bind IP.
-* Added heavy code optimizations.
-
-### Fixed
-
-* Added heavy bug fixes.
+- Added support for Minecraft version 26.2
+- Improved Java detection
+- Enabled Minecraft querying
+- Updated README
+- Clarified that server address is the Bind IP
+- Heavy bug fixes
+- Heavy code optimizations
 
 ## [1.6.0.1] - 2026-06-05
 
-### Changed
-
-* TwitchCraft now sends users to the Start screen instead of directly to the Main screen during initial setup.
-* Improved Bits-to-Tokens handling.
-* Applied minor code updates.
-
-### Fixed
-
-* Fixed all-time statistics.
-* Fixed minor bugs.
+- HOTFIX: All-time stats are now properly working
+- TwitchCraft now sends you to the Start screen instead of directly into the Main screen when first setting up the bot.
+- Improved bits to tokens handling
+- Fixed minor bugs
+- Minor code updates
 
 ## [1.6.0] - 2026-06-03
 
-### Added
-
-* Added a Statistics page.
-* Added session and all-time statistics tracking.
-* Added tracking for commands run, coins spent, effects received, deaths, time survived, nicest viewer, and most dangerous viewer.
-* Added SQLite database storage for viewer tokens.
-* Added SQLite database storage for statistics.
-* Added readable JSON exports for tokens and statistics.
-* Added safer world importing with staging and backup handling.
-* Added better server-port validation.
-
-### Changed
-
-* Improved Twitch chat queue handling for better performance under load.
-* Improved player targeting and multiplayer player detection.
-* Improved streamer death tracking.
-* Cleaned up and simplified parts of the project structure.
-* Added many performance improvements.
-
-### Fixed
-
-* Fixed many bugs.
-
-### Security
-
-* Added security fixes.
+- Added a new Statistics page
+- Added session and all-time statistics tracking
+- Added tracking for commands run, coins spent, effects received, deaths, time survived, nicest viewer, and most dangerous viewer
+- Added SQLite database storage for viewer tokens
+- Added SQLite database storage for statistics
+- Added readable JSON exports for tokens and statistics
+- Added safer world importing with staging and backup handling
+- Improved Twitch chat queue handling for better performance under load
+- Improved player targeting and multiplayer player detection
+- Improved death tracking for the streamer
+- Cleaned up and simplified parts of the project structure
+- Added better validation for server ports
+- Security fixes
+- MANY bug fixes and performance fixes
 
 ## [1.5.1] - 2026-05-01
 
-### Changed
-
-* Added an online fallback when the local version manifest is outdated.
-* Restarted the executable instead of completely shutting down after config deletion.
-* Updated scrolling for the Client ID and Bot Token setup text boxes.
-* Allowed setup to be edited again after selecting **No** during Java verification.
-* Slightly updated RCON password generation.
-* Set Minecraft 26.1.2 as the preferred version.
-* Updated `GetBotToken.exe`.
-* Updated the README.
-* Added numerous performance improvements, especially under heavier load.
-
-### Fixed
-
-* Fixed Chicken Run's in-game text so it displays when first announced.
-* Fixed and improved `!lightning`, `!switchmilk`, `!ban`, and `!unban`.
-* Fixed numerous bugs.
-
-### Removed
-
-* Removed redundant and unused code.
+- Fixed Chicken Run in-game text to display when it's first announced
+- When your local version manifest is out of date, an online fallback is now used
+- When deleting your config, the .exe is now restarted instead of completely shut down
+- Updated scrolling for Client ID and Bot Token setup textboxes
+- Clicking "No" on java verification now allows you to re-edit setup
+- Fixed and improved multiple commands (!lightning, !switchmilk, !ban, !unban)
+- Slightly updated RCON password generation
+- 26.1.2 is now treated as the preferred version
+- Updated GetBotToken.exe
+- Updated README
+- Numerous performance upgrades, especially for heavier overload
+- Numerous bug fixes
+- Removed redundant and unused code
 
 ## [1.5.0.2] - 2026-04-09
 
-### Added
+- HOTFIX: Tightened and secured minigame handling to prevent wrong minigame display
+- HOTFIX: !insult command now works again
+- Added support for Minecraft version 26.1.2
+- Johnny now glows
+- Added a “Scaredy Cat!” title/subtitle to the !scared command
+- Minor code update
 
-* Added support for Minecraft version 26.1.2.
-* Made Johnny glow.
-* Added a **Scaredy Cat!** title and subtitle to the `!scared` command.
+## [1.5.0.1] - 2026-04-06
 
-### Changed
+- HOTFIX: !slaughter no longer deletes items
+- Updated 2 command prices: !givelight (5 --> 3 tokens) and !clear (120 --> 125 tokens)
+- Minor adjustments to !johnny command
+- Fixed stale viewer list bug
+- Minor README update
 
-* Applied a minor code update.
+## [1.5.0] - 2026-04-05
 
-### Fixed
-
-* Tightened minigame handling to prevent the wrong minigame from being displayed.
-* Fixed the `!insult` command.
+- Added version support from 1.21.5-->26.1.1
+- Added 5 new commands (!slaughter, !rename, !johnny, !scared, !xp)
+- Upgraded !givetokens and !removetokens commands (now works with all, random, self)
+- The bot now prompts you to close any stale javaw.exe processes
+- Added "Infested" and "Trial Omen" effects to effect list
+- The Minecraft username textbox no longer disappears after inputting a name for the first time
+- The bot now warns you if you input an invalid Minecraft username
+- Upgraded Twitch IRC and token handling
+- A small text now appears on screen when a minigame is about to start
+- Improved startup and shutdown speeds
+- Updated the README to reflect new version support
+- Removed unused code
+- Many small code updates, optimizations, and bug fixes
 
 ## [1.4.5.1] - 2026-04-02
 
-### Changed
-
-* Swapped the positions of Client ID and Bot Token on the Setup page.
-* Applied minor code updates and optimizations.
-
-### Fixed
-
-* Fixed minigame cooldown saving.
-* Fixed shutdown after deleting the config.
-* Restricted Guess the Number guesses to the proper range.
-* Fixed minor bugs.
-
-### Removed
-
-* Removed unused bot code.
+- HOTFIX: Minigame cooldowns now save correctly
+- HOTFIX: The bot now shuts down after deleting the config
+- Swapped position of Client ID and Bot Token on Setup page
+- You can now only guess numbers in the proper range for the Guess The Number minigame
+- Removed unused code from the bot
+- Minor code updates, optimizations, and bug fixes
 
 ## [1.4.5] - 2026-04-02
 
-### Changed
-
-* Old `server.jar` files are now deleted when changing versions to save storage.
-* Config deletion now retains the `.bak` file for reference.
-* Applied minor code updates and optimizations.
-
-### Fixed
-
-* Fixed the Minecraft username text box incorrectly disappearing.
-* Fixed `GetBotToken.exe` sending the Bot Token to localhost.
-* Fixed minor bugs.
+- The Minecraft username textbox no longer incorrectly disappears
+- Old server.jar files are now wiped when changing versions to save storage
+- GetBotToken.exe should now correctly send your Bot Token to localhost
+- Deleting your config now keeps the .bak file for user reference
+- Minor code updates, bug fixes, and optimizations
 
 ## [1.4.4] - 2026-04-02
 
-### Changed
-
-* Overhauled the README.
-* Resetting settings to defaults now applies non-game settings in real time.
-* Improved error handling.
-* Applied minor code updates and optimizations.
-
-### Fixed
-
-* Fixed the `!mlg` command in the Nether.
+- Fixed !mlg command in the nether
+- Overhauled the README
+- Resetting settings to defaults now applies non-game settings in real-time
+- Improved error handling
+- Minor code updates and optimizations
 
 ## [1.4.3.1] - 2026-03-27
 
-### Changed
-
-* Restricted minimum and maximum RAM settings to numeric input.
-* Applied minor code updates and optimizations.
-
-### Fixed
-
-* Made the MLG command work in the Nether with slightly altered effects.
-* Fixed the `!gambletokens` usage message.
+- MLG command now works in the nether (with slightly altered effects)
+- You can now only type numbers into min and max RAM settings
+- Usage message for !gambletokens now displays the correct command
+- Minor code updates and optimizations
 
 ## [1.4.3] - 2026-03-22
 
-### Changed
-
-* Removed silent errors from much of the code.
-* Improved Java detection.
-* Updated `README.txt`.
-* Added minor code optimizations.
-
-### Fixed
-
-* Fixed minor bugs.
+- Removed silent errors on much of the code
+- Improved Java detection
+- Updated README.txt
+- Minor bug fixes
+- Minor code optimizations
 
 ## [1.4.2] - 2026-03-21
 
-### Added
-
-* Added a **Reset to Defaults** button to the Settings page.
-
-### Changed
-
-* Changed the LocatePlayers datapack so it only loads in multiplayer worlds.
-* Added minor code optimizations.
-
-### Fixed
-
-* Fixed the minigame cooldown setting.
-* Fixed minor bugs.
+- Added "Reset to Defaults" button on Settings page
+- Changing minigame cooldown in settings now actually works
+- Locateplayers datapack now only loads on multiplayer worlds
+- Minor bug fixes
+- Minor code optimizations
 
 ## [1.4.1.2] - 2026-03-19
 
-### Changed
-
-* Reduced the viewer-list refresh interval from 60 seconds to 30 seconds.
-* Added minor code optimizations.
-
-### Fixed
-
-* Fixed minor bugs.
-
-### Security
-
-* Updated and secured IRC handling.
+- Updated and secured IRC handling
+- Reduced viewer list refresh time from 60 to 30 seconds
+- Minor bug fixes
+- Minor code optimizations
 
 ## [1.4.1.1] - 2026-03-17
 
-### Changed
-
-* Limited Twitch and Minecraft logs to 250 lines each, with older lines removed automatically.
-* Added minor code optimizations.
-
-### Fixed
-
-* Fixed a potential issue with the multiplayer PVP setting not saving.
-* Fixed minor bugs.
+- HOTFIX: Fixed potential issue with multiplayer PVP setting not saving
+- Twitch and Minecraft logs are now limited at 250 lines each, older lines will be removed
+- Minor bug fixes
+- Minor code optimizations
 
 ## [1.4.1] - 2026-03-17
 
-### Added
-
-* Added support for Minecraft versions 1.20.5 through 1.21.4.
-* Added grouped Minecraft version selection based on JDK requirements.
-* Added dynamic JDK requirement text to the Setup page.
-* Added support for newer mobs on supported versions.
-* Added an icon for `GetBotToken.exe`.
-
-### Changed
-
-* Improved Java detection and version handling.
-* Improved datapack installation and cross-version compatibility.
-* Updated datapack handling for differences between Minecraft 1.20.x and 1.21.x.
-* Improved world and player naming handling.
-* Improved minigame logic.
-* Cleaned up repeated configuration, settings, and helper code.
-* Improved chat/output stability and viewer handling.
-* Added minor cleanup, compatibility improvements, and optimizations.
-
-### Fixed
-
-* Added minor fixes.
+- Added support for Minecraft versions 1.20.5 through 1.21.4
+- Added grouped Minecraft version selection by JDK requirement
+- Added dynamic JDK requirement text on the setup page
+- Improved Java detection and version handling
+- Added support for newer mobs on supported versions
+- Improved datapack installation and cross-version compatibility
+- Updated datapack handling for 1.20.x and 1.21.x differences
+- Improved world and player naming handling
+- Improved minigame logic
+- Added an icon for GetBotToken.exe
+- Cleaned up repeated config, settings, and helper code
+- Improved chat/output stability and viewer handling
+- Minor cleanup, fixes, compatibility improvements, and optimizations
 
 ## [1.4.0.1] - 2026-03-16
 
-### Changed
-
-* Updated the README for improved readability and clarified that any Java 17.x version works with TwitchCraft.
-* Applied minor updates to `config.json`.
-
-### Fixed
-
-* Fixed the **unknown scoreboard objective** message appearing in the Minecraft log.
-
-### Removed
-
-* Removed Minecraft 1.20.5 and 1.20.6 from the supported-version list.
+- HOTFIX: Removed 1.20.5 and 1.20.6 as supported versions (reupload fix)
+- Fixed "unknown scoreboard objective" appearing in Minecraft log
+- Updated README for enhanced readability and specification that any Java 17.x version works with the bot
+- Minor updates to config.json (reupload fix)
 
 ## [1.4.0] - 2026-03-15
 
-### Added
-
-* Added settings for minigame cooldown, difficulty, Hardcore mode, PVP, and minimum and maximum RAM.
-* Added a separate Settings page.
-* Added access to `GetBotToken.exe` through the main application.
-* Added a Help button next to **Bot Token** on the Setup page.
-
-### Changed
-
-* Updated `GetBotToken.exe`.
-* Updated and fixed minigames.
-* Updated the multiplayer player-list leaderboard.
-* Applied minor code updates and optimizations.
-
-### Fixed
-
-* Fixed minor bugs.
+- Added MULTIPLE new settings (cooldown between minigames, difficulty, hardcore, PVP, and min and max RAM)
+- Added a separate page for Settings
+- Updated GetBotToken.exe
+- Added the ability to access GetBotToken.exe through the main bot
+- Minor updates and fixes to minigames
+- Updated multiplayer player list leaderboard
+- Added help button next to "Bot Token:" on setup page
+- Minor code updates and optimizations
+- Minor bug fixes
 
 ## [1.3.1] - 2026-03-15
 
-### Changed
-
-* Updated `GetBotToken.exe`.
-* Prevented the minigame timer from resetting during world resets.
-* Increased the `!night` command cost from 5 to 15 tokens.
-* Applied minor code updates.
-
-### Fixed
-
-* Fixed the Minecraft name displayed in singleplayer command replies.
-* Potentially fixed the fireworks command.
-* Fixed minor bugs.
+- Updated GetBotToken.exe
+- Fixed incorrect display of Minecraft name on singleplayer in replies to commands
+- Potentially fixed firework command
+- The timer between minigames now doesn't reset with world resets
+- Adjusted !night command cost from 5-->15 tokens
+- Minor code updates
+- Minor bug fixes
 
 ## [1.3.0] - 2026-03-14
 
-### Added
-
-* Added world importing.
-* Added an option allowing Twitch moderators to use commands normally restricted to the streamer.
-* Added an optional 10-second cooldown for gameplay-affecting commands.
-* Added persistence for passive-token and minigame enablement settings.
-
-### Changed
-
-* Updated the Help tab UI.
-* Added minor code optimizations.
-
-### Fixed
-
-* Fixed bugs.
+- Added an import world feature
+- Added the ability to allow your Twitch moderators to use typically streamer-only commands
+- Added the ability to place a 10 second cooldown on all game-effecting commands
+- Passive token and minigame enabling choices now persist after closing the bot
+- Updated the UI of the Help tab
+- Bug fixes
+- Minor code optimizations
 
 ## [1.2.2.1] - 2026-03-12
 
-### Changed
-
-* Applied minor code-formatting updates.
-
-### Fixed
-
-* Fixed TNT exploding immediately.
+- HOTFIX: Fixed TNT immediately exploding
+- Minor code formatting updates
 
 ## [1.2.2] - 2026-03-07
 
-### Added
-
-* Added an internet fallback for the version manifest.
-
-### Changed
-
-* Applied minor design updates.
-* Slightly reduced the file size.
-
-### Fixed
-
-* Fixed disabling passive-token earning.
-* Fixed minor bugs.
+- Disabling passive token earning actually works now
+- Added internet fallback for version manifest
+- Minor bug fixes
+- Minor design updates
+- Slightly reduced file size
 
 ## [1.2.1] - 2026-03-07
 
-### Changed
-
-* Added many code optimizations.
-* Heavily updated token logic to address token issues.
-* Updated the README.
-* Slightly reduced the file size.
+- Many code optimizations
+- Heavily updated token logic (to try to fix bug)
+- Updated README
+- Slightly reduced file size
 
 ## [1.2.0] - 2026-03-06
 
-### Added
-
-* Added a minigame enable/disable checkbox to the Help window.
-* Added sound effects when minigames start.
-* Added weighted Chicken Run payouts.
-
-### Changed
-
-* Upgraded `GetBotToken.exe` while heavily reducing its file size.
-* Chicken Run now cancels when nobody places a bet.
-* Improved singleplayer command messages to use the streamer name.
-* Lowered `player-idle-timeout` to 500 minutes.
-
-### Fixed
-
-* Added other minor changes and fixes.
+- Upgraded GetBotToken.exe while heavily decreasing file size
+- Added minigame enable/disable checkbox in Help window
+- Added sound effects when minigames start
+- Added weighted payouts for Chicken Run
+- Chicken Run now cancels if nobody bets
+- Improved singleplayer command messages (uses streamer name)
+- Lowered player-idle-timeout to 500 minutes
+- Other minor changes and fixes
 
 ## [1.1.1] - 2026-03-05
 
-### Changed
-
-* Upgraded the codebase to C# 14.
-* Added other minor changes.
-
-### Fixed
-
-* Fixed tokens being wiped unexpectedly.
-* Fixed `javaw.exe` continuing to run after shutdown.
-* Fixed bugs.
+- Upgraded code to C#14
+- Fixed tokens getting wiped randomly
+- Fixed javaw.eve running after shutdown
+- Bug fixes
+- Other minor changes
 
 ## [1.1.0] - 2026-03-04
 
-### Added
-
-* Added health bars to the player list.
-* Added a new server icon.
-
-### Changed
-
-* Upgraded TwitchCraft to .NET 10.
-* Updated the teleport command.
-* Added other changes.
-
-### Fixed
-
-* Fixed gameplay commands affecting spectators.
-* Fixed bugs.
+- Fixed commands working on spectator
+- Upgraded to .NET 10
+- Added health bars on player list
+- Bug fixes
+- Updated teleport command
+- Added new icon for the server
+- Other changes
 
 ## [1.0.1] - 2026-03-03
 
-### Added
-
-* Added support for Minecraft versions 1.20, 1.20.1, and 1.20.2.
-
-### Changed
-
-* Added minor optimizations.
-
-### Fixed
-
-* Fixed the executable icon.
-* Added minor fixes.
+- Added support for Minecraft versions 1.20, 1.20.1, and 1.20.2
+- Fixed the icon of the .EXE
+- Minor optimizations and fixes
 
 ## [1.0.0] - 2026-03-03
 
-### Added
-
-* Initial TwitchCraft release.
+- Initial TwitchCraft release.

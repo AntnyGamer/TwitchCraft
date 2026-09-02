@@ -38,14 +38,33 @@ public sealed partial class BotMainHandler
     private static readonly UTF8Encoding IRCUtf8NoBom = new(false);
     private static readonly TimeSpan IRCShutdownPartTimeout = TimeSpan.FromSeconds(1);
     private static readonly long IRCCommandOverflowNoticeIntervalTicks = TimeSpan.FromSeconds(30).Ticks;
+    private readonly HashSet<string> _IRCMessageIds = new(StringComparer.Ordinal);
+    private readonly Queue<string> _IRCMessageIdOrder = new();
+    private readonly Queue<long> _IRCChatSendTimes = new(100);
 
     private static string NormalizeToken(string? token) => TwitchTokenHelper.NormalizeAccessToken(token);
 
     private async Task SendIrcLineAsync(StreamWriter writer, string line, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(line))
+        if (string.IsNullOrWhiteSpace(line) || !ReferenceEquals(writer, _IRCWriter))
             return;
 
+        long sendDelay = 0;
+        if (line.StartsWith("PRIVMSG ", StringComparison.Ordinal))
+        {
+            lock (_IRCChatSendTimes)
+            {
+                long now = Environment.TickCount64;
+                long sendAt = _IRCChatSendTimes.Count < 100
+                    ? now
+                    : Math.Max(now, _IRCChatSendTimes.Dequeue() + 30_000);
+                _IRCChatSendTimes.Enqueue(sendAt);
+                sendDelay = sendAt - now;
+            }
+        }
+
+        if (sendDelay > 0)
+            await Task.Delay(TimeSpan.FromMilliseconds(sendDelay), cancellationToken).ConfigureAwait(false);
         await _IRCWriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -286,6 +305,15 @@ public sealed partial class BotMainHandler
 
                     string sender = message.SenderLogin;
                     string payload = message.Trailing;
+                    if (message.Id.Length > 0)
+                    {
+                        if (!_IRCMessageIds.Add(message.Id))
+                            continue;
+
+                        _IRCMessageIdOrder.Enqueue(message.Id);
+                        if (_IRCMessageIdOrder.Count > 4096)
+                            _IRCMessageIds.Remove(_IRCMessageIdOrder.Dequeue());
+                    }
 
                     _shellWindow?.AddChatLogLine(
                         sender.Length == 0 || payload.Length == 0
@@ -342,7 +370,7 @@ public sealed partial class BotMainHandler
                     }
                 }
             }
-            catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
             {
                 if (!await TryRefreshAuthAsync(botToken, cancellationToken).ConfigureAwait(false))
                     _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("IRC authorization failed", ex));

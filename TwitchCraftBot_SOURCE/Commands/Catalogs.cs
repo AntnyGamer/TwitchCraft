@@ -124,10 +124,10 @@ internal static class Catalogs
     public static List<string> BuildLoot(string? minecraftVersion = null)
         => string.IsNullOrWhiteSpace(minecraftVersion)
             ? [.. BaseLootTables]
-            : [.. BaseLootTables, .. MinecraftVersionSupport.GetExtraLootIds(minecraftVersion)];
+            : [.. BaseLootTables, .. MinecraftVersionSupport.GetVersion(minecraftVersion).AdditionalLootTableIDs];
 
     public static List<string> BuildMobs(string? minecraftVersion = null)
         => string.IsNullOrWhiteSpace(minecraftVersion)
             ? [.. BaseMobs]
-            : [.. BaseMobs, .. MinecraftVersionSupport.GetExtraMobIds(minecraftVersion)];
+            : [.. BaseMobs, .. MinecraftVersionSupport.GetVersion(minecraftVersion).AdditionalMobIDs];
 }

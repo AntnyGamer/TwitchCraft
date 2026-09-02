@@ -7,7 +7,7 @@ public sealed class IrcFrameParserTests
     [Fact]
     public void TryParse_ExtractsModeratorBitsSenderAndMessage()
     {
-        const string line = "@badges=moderator/1;color=#fff;mod=1;bits=250 :SomeUser!someuser@host PRIVMSG #channel :!Heal Player";
+        const string line = "@badges=moderator/1;color=#fff;mod=1;bits=250;id=abc-123 :SomeUser!someuser@host PRIVMSG #channel :!Heal Player";
 
         IRCMessage message = new();
         bool result = message.TryParse(line);
@@ -16,7 +16,7 @@ public sealed class IrcFrameParserTests
         Assert.Equal("PRIVMSG", message.Command);
         Assert.Equal("someuser", message.SenderLogin);
         Assert.Equal("!Heal Player", message.Trailing);
-        Assert.Equal(250, message.Bits);
+        Assert.Equal((250, "abc-123"), (message.Bits, message.Id));
         Assert.True(message.IsModerator);
     }
 

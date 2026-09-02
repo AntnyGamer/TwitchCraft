@@ -5,6 +5,7 @@ namespace TwitchCraftBot_V1;
 internal sealed class IRCMessage
 {
     public int Bits { get; private set; }
+    public string Id { get; private set; } = string.Empty;
 
     public bool IsModerator { get; private set; }
 
@@ -79,6 +80,7 @@ internal sealed class IRCMessage
     private void Reset()
     {
         Bits = 0;
+        Id = string.Empty;
         IsModerator = false;
         Command = string.Empty;
         SenderLogin = string.Empty;
@@ -103,18 +105,20 @@ internal sealed class IRCMessage
                     int valueStart = equals + 1;
                     int valueLength = end - valueStart;
 
-                    if (keyLength == 4 && TagKeyEquals(line, start, keyLength, "bits"))
+                    if (keyLength == 2 && TagKeyEquals(line, start, "id"))
+                        message.Id = line.Substring(valueStart, valueLength);
+                    else if (keyLength == 4 && TagKeyEquals(line, start, "bits"))
                     {
                         int bits = ParsePositiveIntTag(line, valueStart, valueLength);
                         if (bits > 0)
                             message.Bits = bits;
                     }
-                    else if (keyLength == 3 && TagKeyEquals(line, start, keyLength, "mod"))
+                    else if (keyLength == 3 && TagKeyEquals(line, start, "mod"))
                     {
                         if (valueLength == 1 && line[valueStart] == '1')
                             message.IsModerator = true;
                     }
-                    else if (keyLength == 6 && TagKeyEquals(line, start, keyLength, "badges"))
+                    else if (keyLength == 6 && TagKeyEquals(line, start, "badges"))
                     {
                         if (valueLength > 0 && line.IndexOf("moderator/", valueStart, valueLength, StringComparison.OrdinalIgnoreCase) >= 0)
                             message.IsModerator = true;
@@ -126,11 +130,8 @@ internal sealed class IRCMessage
         }
     }
 
-    private static bool TagKeyEquals(string line, int start, int length, string expected)
+    private static bool TagKeyEquals(string line, int start, string expected)
     {
-        if (length != expected.Length)
-            return false;
-
         for (int i = 0; i < expected.Length; i++)
         {
             char actual = line[start + i];

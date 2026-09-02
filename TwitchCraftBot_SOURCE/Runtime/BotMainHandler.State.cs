@@ -198,8 +198,6 @@ public sealed partial class BotMainHandler
 
     public static int SecureRandomInt(int minimum, int exclusiveMaximum) => RandomNumberGenerator.GetInt32(minimum, exclusiveMaximum);
 
-    public static double SecureRandomDouble() => RandomNumberGenerator.GetInt32(int.MaxValue) / (double)int.MaxValue;
-
     public static bool SecureRandomChance(double probability)
         => probability >= 1 || (probability > 0 && RandomNumberGenerator.GetInt32(int.MaxValue) < probability * int.MaxValue);
 

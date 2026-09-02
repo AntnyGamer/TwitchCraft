@@ -163,7 +163,7 @@ public sealed partial class BotMainHandler
                         request.Headers.TryAddWithoutValidation("Client-Id", clientId);
 
                         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-                        if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                        if (response.StatusCode == HttpStatusCode.Unauthorized)
                         {
                             resolvedToken = string.Empty;
                             throw new HttpRequestException("Viewer roster authorization failed.", null, response.StatusCode);
@@ -215,7 +215,7 @@ public sealed partial class BotMainHandler
                 {
                     break;
                 }
-                catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized || ex.StatusCode == HttpStatusCode.Forbidden)
+                catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     consecutiveFailures++;
                     resolvedToken = string.Empty;

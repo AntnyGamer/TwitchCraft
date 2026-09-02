@@ -36,7 +36,7 @@ public sealed partial class BotMainHandler
                 config.Twitch.BotName = login;
             return config;
         }
-        catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
         {
             TwitchOAuthResult refreshed = await TwitchOAuthAuthorizer.RefreshAsync(
                 config.Twitch.ClientID,

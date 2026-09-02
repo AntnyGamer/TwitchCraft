@@ -106,8 +106,6 @@ public sealed partial class BotMainHandler
             ?? throw new InvalidOperationException("Minecraft version information is unavailable.");
     }
 
-    public bool UsesItemComponentsSyntax => GetMinecraftVersion().UsesItemComponents;
-
     public bool UsesInlineTextComponentSyntax => GetMinecraftVersion().UsesInlineTextComponents;
 
     public bool UsesModernEntityAttributeNbt => GetMinecraftVersion().DataPackFormatMajor >= 48;

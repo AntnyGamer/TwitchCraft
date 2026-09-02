@@ -11,7 +11,6 @@ internal static class MinecraftItemRenameHelper
         string selector,
         string selectedItemData,
         string redeemerName,
-        bool usesItemComponents,
         bool usesInlineTextComponents,
         out string command,
         out string prettyItemName)
@@ -33,49 +32,19 @@ internal static class MinecraftItemRenameHelper
         string displayName = redeemerName + "'s " + prettyItemName;
         int count = ReadCount(topEntries);
 
-        if (usesItemComponents)
-        {
-            List<string> componentEntries = [];
-            if (TryGetField(topEntries, "components", out string componentsValue, out _) &&
-                !TryParseCompound(componentsValue, out componentEntries))
-                return false;
-
-            RemoveField(componentEntries, "minecraft:custom_name");
-            if (usesInlineTextComponents)
-                componentEntries.Add("\"minecraft:custom_name\":{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'}");
-            else
-                componentEntries.Add("\"minecraft:custom_name\":\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
-
-            string componentSuffix = BuildComponentSuffix(componentEntries);
-            command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " + count.ToString(CultureInfo.InvariantCulture);
-            return true;
-        }
-
-        List<string> tagEntries = [];
-        if (TryGetField(topEntries, "tag", out string tagValue, out _) &&
-            !TryParseCompound(tagValue, out tagEntries))
+        List<string> componentEntries = [];
+        if (TryGetField(topEntries, "components", out string componentsValue, out _) &&
+            !TryParseCompound(componentsValue, out componentEntries))
             return false;
 
-        int displayIndex = FindFieldIndex(tagEntries, "display");
-        List<string> displayEntries = [];
-        if (displayIndex >= 0)
-        {
-            string displayValue = GetFieldValue(tagEntries[displayIndex]);
-            if (!TryParseCompound(displayValue, out displayEntries))
-                return false;
-        }
-
-        RemoveField(displayEntries, "Name");
-        displayEntries.Insert(0, "Name:\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
-
-        string displayEntry = "display:{" + string.Join(",", displayEntries) + "}";
-        if (displayIndex >= 0)
-            tagEntries[displayIndex] = displayEntry;
+        RemoveField(componentEntries, "minecraft:custom_name");
+        if (usesInlineTextComponents)
+            componentEntries.Add("\"minecraft:custom_name\":{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'}");
         else
-            tagEntries.Add(displayEntry);
+            componentEntries.Add("\"minecraft:custom_name\":\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
 
-        string legacySuffix = tagEntries.Count == 0 ? string.Empty : "{" + string.Join(",", tagEntries) + "}";
-        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + legacySuffix + " " + count.ToString(CultureInfo.InvariantCulture);
+        string componentSuffix = BuildComponentSuffix(componentEntries);
+        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " + count.ToString(CultureInfo.InvariantCulture);
         return true;
     }
 

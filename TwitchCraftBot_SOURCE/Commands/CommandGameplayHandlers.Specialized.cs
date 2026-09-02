@@ -394,7 +394,7 @@ public static partial class CommandList
                 if (string.IsNullOrWhiteSpace(selectedItemData))
                     continue;
                 string singleSelector = MinecraftCommandBuilder.PlayerSelector(playerName);
-                if (!MinecraftItemRenameHelper.TryBuildRenameCommand(singleSelector, selectedItemData, sender, runtime.UsesItemComponentsSyntax, runtime.UsesInlineTextComponentSyntax, out string renameCommand, out string currentPrettyItemName))
+                if (!MinecraftItemRenameHelper.TryBuildRenameCommand(singleSelector, selectedItemData, sender, runtime.UsesInlineTextComponentSyntax, out string renameCommand, out string currentPrettyItemName))
                     continue;
                 renameCommands.Add(renameCommand);
                 renamedPlayers.Add(playerName);

@@ -36,7 +36,7 @@ public sealed partial class BotMainHandler
                                 SaveBot(token, login);
                             _lastTwitchValidationUtc = DateTime.UtcNow;
                         }
-                        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+                        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         { if (await TryRefreshAuthAsync(token, cancellationToken).ConfigureAwait(false)) _lastTwitchValidationUtc = DateTime.UtcNow; }
                     }
                 }
