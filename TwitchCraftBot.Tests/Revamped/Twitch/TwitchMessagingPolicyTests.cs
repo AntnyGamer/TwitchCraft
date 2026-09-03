@@ -70,6 +70,22 @@ public sealed class TwitchMessagingPolicyTests
     }
 
     [Theory]
+    [InlineData("Normal", nameof(BotResponseKind.Confirmation), true)]
+    [InlineData("Reduced", nameof(BotResponseKind.Confirmation), false)]
+    [InlineData("Reduced", nameof(BotResponseKind.Announcement), true)]
+    [InlineData("Essential Only", nameof(BotResponseKind.Essential), true)]
+    [InlineData("Essential Only", nameof(BotResponseKind.Announcement), false)]
+    public void ResponseVerbosity_SendsOnlyTheConfiguredResponseKinds(
+        string verbosity,
+        string kind,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            BotResponseVerbositySettings.ShouldSend(verbosity, Enum.Parse<BotResponseKind>(kind)));
+    }
+
+    [Theory]
     [InlineData(5, 0.5, 3)]
     [InlineData(10, 1.0, 10)]
     [InlineData(10, 1.5, 15)]

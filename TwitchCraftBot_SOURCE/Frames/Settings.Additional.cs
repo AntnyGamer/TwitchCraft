@@ -118,7 +118,7 @@ public partial class Settings
 
             TextBlock name = new()
             {
-                Text = "!" + commandName,
+                Text = commandName,
                 VerticalAlignment = VerticalAlignment.Center,
                 FontFamily = new FontFamily("Cascadia Mono"),
                 FontSize = 14,

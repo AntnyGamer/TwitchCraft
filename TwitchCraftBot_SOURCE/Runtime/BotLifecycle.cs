@@ -272,7 +272,7 @@ public sealed partial class BotMainHandler
             ValidateConfig(config);
             SetConfig(config);
             RefreshCatalogs();
-            Tokens.Load();
+            Tokens.Load(config.Settings.MaximumTokenBalance);
             Statistics.Load();
             Interlocked.Exchange(ref _serverExitExpected, 0);
             ResetSession();
@@ -300,7 +300,7 @@ public sealed partial class BotMainHandler
             TrackTask(RunChatRosterAsync(token));
             TrackTask(RunRosterAsync(token));
             TrackTask(RunPassiveRewardsAsync(token));
-            TrackTask(RunFollowRewardsAsync(token));
+            await RefreshFollowRewardsAsync().ConfigureAwait(false);
             TrackTask(Task.Run(() => _dataMaintenance.RunAsync(token), token));
             TrackTask(RunEmptyShutdownAsync(token));
 
@@ -359,6 +359,7 @@ public sealed partial class BotMainHandler
             }
 
             _runtimeState = RuntimeState.Stopping;
+            await RefreshFollowRewardsAsync().ConfigureAwait(false);
             _minecraftServerReady = false;
             Interlocked.Exchange(ref _serverExitExpected, 1);
             ResetQueues();

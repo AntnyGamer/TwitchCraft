@@ -291,7 +291,7 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 * If you want to change the Twitch account used by your bot, reauthorize TwitchCraft with the new bot account
 * Changing the bot account does not delete `viewer_tokens.db` or `statistics.db`
 * If you delete `config.json`, you must set up TwitchCraft again
-* After doing this, restart TwitchCraft
+* Reauthorization switches the bot account immediately
 * If you have a saved world on the TwitchCraft Minecraft server, it may be affected
 
 ## 14. Troubleshooting

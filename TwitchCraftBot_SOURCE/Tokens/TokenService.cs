@@ -31,21 +31,21 @@ public sealed class TokenService
         => amount > 0 && _store.TrySpend(user, amount);
 
     public int Adjust(string user, int delta)
-        => delta == 0 ? 0 : _store.AdjustBalance(user, delta);
+        => delta == 0 ? 0 : _store.AdjustBalance(user, delta, MaximumBalance);
 
     public int Adjust(IEnumerable<string> users, int delta)
     {
         ArgumentNullException.ThrowIfNull(users);
         return delta == 0 || IsEmptyCollection(users)
             ? 0
-            : _store.AdjustBalances(users, delta);
+            : _store.AdjustBalances(users, delta, MaximumBalance);
     }
 
     public void Adjust(IEnumerable<KeyValuePair<string, int>> changes)
     {
         ArgumentNullException.ThrowIfNull(changes);
         if (!IsEmptyCollection(changes))
-            _store.AdjustBalances(changes);
+            _store.AdjustBalances(changes, MaximumBalance);
     }
 
     public int Award(string user, int amount)
@@ -80,11 +80,12 @@ public sealed class TokenService
             out awardedAmount,
             MaximumBalance);
 
-    internal void Load() => _store.Load();
+    internal void Load(int maximumBalance) { _store.Load(); _store.ApplyMaximumBalance(maximumBalance); }
 
     internal bool TryBackup(string destinationPath) => _store.TryBackup(destinationPath);
 
     internal bool TryOptimize() => _store.TryOptimize();
+    internal void ApplyMaximumBalance(int maximumBalance) => _store.ApplyMaximumBalance(maximumBalance);
 
     internal bool TryExportJson() => _store.TryExportJson();
 

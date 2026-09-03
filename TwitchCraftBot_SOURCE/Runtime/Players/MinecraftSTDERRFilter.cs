@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TwitchCraftBot_V1;
 
-internal sealed class MinecraftStderrFilter
+internal sealed class MinecraftSTDERRFilter
 {
     private const string DeprecationHeader = "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called";
     private const string JomlCallerPrefix = "WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.joml.MemUtil$MemUtilUnsafe";

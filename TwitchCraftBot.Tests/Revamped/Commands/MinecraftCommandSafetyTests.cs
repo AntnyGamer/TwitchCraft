@@ -34,6 +34,21 @@ public sealed class MinecraftCommandSafetyTests
         Assert.Equal(expected, MinecraftCommandBuilder.EscapeSelector(value));
     }
 
+    [Theory]
+    [InlineData(null, false, "")]
+    [InlineData("ab", false, "")]
+    [InlineData("abcdefghijklmnopq", false, "")]
+    [InlineData("bad-name", false, "")]
+    [InlineData(" Player_1 ", true, "Player_1")]
+    public void TryNormalizePlayerName_EnforcesMinecraftNameRules(
+        string? value,
+        bool expectedResult,
+        string expectedNormalized)
+    {
+        Assert.Equal(expectedResult, MinecraftNameHelper.TryNormalizePlayerName(value, out string normalized));
+        Assert.Equal(expectedNormalized, normalized);
+    }
+
     [Fact]
     public void Tellraw_UsesEscapedTextComponentRequiredByMinecraftVersion()
     {

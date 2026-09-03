@@ -140,14 +140,16 @@ public sealed partial class BotMainHandler
         {
             BotConfig activeConfig = CloneConfig(config);
             ConfigurationStore.NormalizeRuntime(activeConfig);
-            bool minigamesEnabledChanged = false;
-            bool passiveScheduleChanged = false;
+            bool minigamesEnabledChanged = false, passiveScheduleChanged = false, followRewardsChanged = false, twitchAuthChanged = false, maximumBalanceNeedsClamp = false;
 
             lock (_configPersistenceGate)
             {
                 if (_activeConfig != null)
                 {
                     minigamesEnabledChanged = _activeConfig.Settings.MinigamesEnabled != activeConfig.Settings.MinigamesEnabled;
+                    followRewardsChanged = _activeConfig.Settings.AutomaticFollowRewardsEnabled != activeConfig.Settings.AutomaticFollowRewardsEnabled;
+                    twitchAuthChanged = !preserveTwitchAuth && !string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), NormalizeToken(activeConfig.Twitch.BotToken), StringComparison.Ordinal);
+                    maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 && (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
                     passiveScheduleChanged =
                         _activeConfig.Settings.PassiveTokenPayoutMinimumSeconds != activeConfig.Settings.PassiveTokenPayoutMinimumSeconds ||
                         _activeConfig.Settings.PassiveTokenPayoutMaximumSeconds != activeConfig.Settings.PassiveTokenPayoutMaximumSeconds ||
@@ -169,6 +171,9 @@ public sealed partial class BotMainHandler
 
             if (!activeConfig.Settings.GlobalGameCommandCooldownEnabled)
                 Commands.ClearGlobalCooldown();
+            if (maximumBalanceNeedsClamp && _runtimeState == RuntimeState.Running) Tokens.ApplyMaximumBalance(activeConfig.Settings.MaximumTokenBalance);
+            if (twitchAuthChanged) CloseIrcSocket();
+            if (twitchAuthChanged || followRewardsChanged) await RefreshFollowRewardsAsync().ConfigureAwait(false);
 
             if (passiveScheduleChanged)
             {
@@ -210,6 +215,17 @@ public sealed partial class BotMainHandler
         {
             MinigameManager.StartLoops(this, token);
         }
+    }
+
+    private async Task RefreshFollowRewardsAsync()
+    {
+        CancellationTokenSource? oldCts = _followRewardsCts; Task? oldTask = _followRewardsTask;
+        _followRewardsCts = null; _followRewardsTask = null; oldCts?.Cancel();
+        if (oldTask != null) await oldTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        oldCts?.Dispose();
+        if (!AutomaticFollowRewardsEnabled || _runtimeState != RuntimeState.Running || _sessionCts == null) return;
+        _followRewardsCts = CancellationTokenSource.CreateLinkedTokenSource(_sessionCts.Token);
+        _followRewardsTask = RunFollowRewardsAsync(_followRewardsCts.Token); TrackTask(_followRewardsTask);
     }
 
     private void RefreshCatalogs()

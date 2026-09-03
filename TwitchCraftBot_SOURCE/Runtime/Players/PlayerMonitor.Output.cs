@@ -140,7 +140,7 @@ public sealed partial class BotMainHandler
         if (process == null)
             return;
 
-        MinecraftStderrFilter filter = new();
+        MinecraftSTDERRFilter filter = new();
         Exception? readerFailure = null;
 
         void ShowStderrLine(string line) => _shellWindow?.AddServerLogLine("[stderr] " + line);

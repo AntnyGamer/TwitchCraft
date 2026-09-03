@@ -33,7 +33,8 @@ public sealed partial class BotMainHandler
     private readonly DataMaintenance _dataMaintenance;
     private TwitchCraftBot? _shellWindow;
     private Process? _javaServerProcess;
-    private CancellationTokenSource? _sessionCts;
+    private CancellationTokenSource? _sessionCts, _followRewardsCts;
+    private Task? _followRewardsTask;
     private BotConfig? _activeConfig;
     private RuntimeState _runtimeState;
     private Dictionary<string, long> _viewerRewardSchedule;

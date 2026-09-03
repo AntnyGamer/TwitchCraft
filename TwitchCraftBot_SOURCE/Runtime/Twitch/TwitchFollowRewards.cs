@@ -20,25 +20,12 @@ public sealed partial class BotMainHandler
 
     private async Task RunFollowRewardsAsync(CancellationToken cancellationToken)
     {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested && !AutomaticFollowRewardsEnabled)
-                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
-        }
-
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-
         TwitchConfig? twitch = _activeConfig?.Twitch;
-        if (twitch == null)
-            return;
+        if (twitch == null) return;
         string clientId = (twitch.ClientID ?? string.Empty).Trim();
         string botToken;
         string streamerName = NormalizeUser(twitch.StreamerName);
-        if (clientId.Length == 0 || streamerName.Length == 0)
-            return;
+        if (clientId.Length == 0 || streamerName.Length == 0) return;
         try
         {
         ResolveFollowUsers:

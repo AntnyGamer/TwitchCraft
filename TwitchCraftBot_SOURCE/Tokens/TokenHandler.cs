@@ -83,6 +83,17 @@ internal sealed partial class TokenHandler(string path)
         }
     }
 
+    internal void ApplyMaximumBalance(int maximumBalance)
+    {
+        if (maximumBalance <= 0) return;
+        lock (_gate)
+        {
+            using SqliteCommand command = GetConnectionNoLock().CreateCommand();
+            command.CommandText = "UPDATE TokenBalances SET Balance = $maximum WHERE Balance > $maximum;";
+            command.Parameters.AddWithValue("$maximum", maximumBalance);
+            if (command.ExecuteNonQuery() > 0) { _balances.Clear(); _loadedUsers.Clear(); }
+        }
+    }
     public int GetBalance(string user)
     {
         string normalized = Normalize(user);

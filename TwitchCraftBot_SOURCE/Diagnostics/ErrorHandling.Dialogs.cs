@@ -99,7 +99,7 @@ internal static partial class ErrorHandling
     public static void ShowAuthSuccess(object? source, string login, bool savedToConfig)
     {
         string action = savedToConfig
-            ? "The renewable authorization was saved automatically. It will be used the next time the bot starts."
+            ? "The renewable authorization was saved and applied automatically."
             : "The renewable authorization and bot name were filled in automatically. You can continue setup.";
         ShowInfo(source, "Twitch Authorization", "Authorized Twitch account: " + login + "\n\n" + action);
     }
