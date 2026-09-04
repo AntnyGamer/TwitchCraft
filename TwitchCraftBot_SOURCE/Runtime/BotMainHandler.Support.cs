@@ -159,7 +159,7 @@ public sealed partial class BotMainHandler
                     activeConfig.Settings.MultiplayerEnabled = _activeConfig.Settings.MultiplayerEnabled;
                     activeConfig.Settings.RemoteControlEnabled = _activeConfig.Settings.RemoteControlEnabled;
                     activeConfig.Settings.RequireOnlineMode = _activeConfig.Settings.RequireOnlineMode;
-                    if (_activeConfig.Settings.RemoteControlEnabled || _runtimeState != RuntimeState.Stopped)
+                    if (_runtimeState != RuntimeState.Stopped)
                         (activeConfig.Server.RCON.Port, activeConfig.Server.RCON.Password) = (_activeConfig.Server.RCON.Port, _activeConfig.Server.RCON.Password);
                     if (preserveTwitchAuth)
                     {

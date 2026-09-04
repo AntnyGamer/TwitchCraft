@@ -35,7 +35,7 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Security policy](SECURITY.md)
 * [AI Assistance Disclosure](docs/NOTE.md)
 
-External tutorials and short links later in this guide are supplemental mirrors.If they disagree with this repository, use the repository-local documentation
+External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
 
 ## 1. Requirements
 

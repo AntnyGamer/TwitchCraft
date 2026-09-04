@@ -162,7 +162,7 @@ All notable changes to this project are documented here. Release entries are lis
 
 - Added version support from 1.21.5 through 26.1.1
 - Added 5 new commands (!slaughter, !rename, !johnny, !scared, !xp)
-- Upgraded !givetokens and !removetokens commands (now work with all, random, self)
+- Upgraded !givetokens and !removetokens commands (now works with all, random, self)
 - The bot now prompts you to close any stale javaw.exe processes
 - Added "Infested" and "Trial Omen" effects to effect list
 - The Minecraft username textbox no longer disappears after inputting a name for the first time
