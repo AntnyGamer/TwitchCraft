@@ -55,9 +55,7 @@ public sealed partial class StatisticsService
                 _cachedStatisticsLeaderboardVersion = versionToRefresh;
                 return BuildSnapshotNoLock(now);
             }
-
         }
-
     }
 
     internal void FlushForShutdown()
@@ -178,7 +176,7 @@ public sealed partial class StatisticsService
             && string.Equals(player, streamerMinecraftName, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string GetTopCommand(Dictionary<string, long> commandUseCounts)
+    private string GetTopCommand(Dictionary<string, long> commandUseCounts)
     {
         if (commandUseCounts == null || commandUseCounts.Count == 0)
         {
@@ -206,10 +204,9 @@ public sealed partial class StatisticsService
                 bestCount = pair.Value;
                 bestCommand = command;
             }
-
         }
 
-        return bestCommand.Length == 0 ? string.Empty : "!" + bestCommand;
+        return bestCommand.Length == 0 ? string.Empty : _commandPrefix + bestCommand;
     }
 
     private static void AddScore(Dictionary<string, long> scores, string viewer, long amount)
@@ -254,7 +251,6 @@ public sealed partial class StatisticsService
                 bestScore = pair.Value;
                 bestViewer = viewer;
             }
-
         }
 
         return bestViewer;
@@ -282,7 +278,6 @@ public sealed partial class StatisticsService
                 playerName = candidate;
                 return true;
             }
-
         }
 
         const string missingPrefix = "Can't get value of ";
@@ -298,9 +293,7 @@ public sealed partial class StatisticsService
                     deathScore = 0;
                     return true;
                 }
-
             }
-
         }
 
         return false;
@@ -348,7 +341,6 @@ public sealed partial class StatisticsService
             {
                 return afterColon;
             }
-
         }
 
         return trimmed;

@@ -59,6 +59,7 @@ public sealed class StartingProfile
 
     public bool MultiplayerEnabled { get; set; }
     public bool MultiplayerPVPEnabled { get; set; }
+    public bool WhitelistEnabled { get; set; }
     public bool RemoteControlEnabled { get; set; }
     public bool RequireOnlineMode { get; set; } = true;
     public bool HardcoreEnabled { get; set; } = true;
@@ -86,7 +87,7 @@ public sealed class StartingProfile
     public int PassiveTokenPayoutMinimumSeconds { get; set; } = 30;
     public int PassiveTokenPayoutMaximumSeconds { get; set; } = 60;
     public int MaximumTokenBalance { get; set; }
-    public bool PassiveRewardsRequireRecentChat { get; set; }
+    public bool PassiveRewardsRequireActivity { get; set; }
     public int ChannelCommandLimitPerMinute { get; set; }
     public bool AllowAllPlayerTarget { get; set; } = true;
     public bool AllowRandomPlayerTarget { get; set; } = true;
@@ -94,7 +95,7 @@ public sealed class StartingProfile
     public string MinecraftRelayTextColor { get; set; } = "white";
     public bool ShowConnectionHealth { get; set; }
     public int ViewerCommandLimitPerMinute { get; set; }
-    public int PassiveRecentChatWindowMinutes { get; set; } = 10;
+    public int PassiveActivityWindowMinutes { get; set; } = 10;
     public bool AutomaticBackupsEnabled { get; set; } = true;
     public int AutomaticBackupIntervalHours { get; set; } = 24;
     public int AutomaticBackupRetentionCount { get; set; } = DefaultAutomaticBackupRetentionCount;

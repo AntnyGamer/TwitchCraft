@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+
 namespace TwitchCraftBot_V1;
 
 public static partial class CommandList
@@ -397,7 +398,17 @@ public static partial class CommandList
                 ct).ConfigureAwait(false);
             return null;
         }
-        async Task<bool> SendPricedAsync(ResolvedTarget target, string sender, int baseCost, Func<ResolvedTarget, IEnumerable<string>> buildCommands, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
+        async Task<bool> SendPricedAsync(
+            ResolvedTarget target,
+            string sender,
+            int baseCost,
+            Func<ResolvedTarget, IEnumerable<string>> buildCommands,
+            CancellationToken ct,
+            string? targetMessage = null,
+            string? othersMessage = null,
+            string color = DefaultCommandTextColor,
+            bool bold = true,
+            string? othersColor = null)
         {
             int cost = runtime.Commands.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedAsync(sender, cost, () => buildCommands(target), ct).ConfigureAwait(false))
@@ -408,7 +419,17 @@ public static partial class CommandList
                 await NotifyOthersAsync(target, othersMessage, othersColor ?? color, bold, ct).ConfigureAwait(false);
             return true;
         }
-        async Task<bool> SendPricedAsync(ResolvedTarget target, string sender, int baseCost, string command, CancellationToken ct, string? targetMessage = null, string? othersMessage = null, string color = DefaultCommandTextColor, bool bold = true, string? othersColor = null)
+        async Task<bool> SendPricedAsync(
+            ResolvedTarget target,
+            string sender,
+            int baseCost,
+            string command,
+            CancellationToken ct,
+            string? targetMessage = null,
+            string? othersMessage = null,
+            string color = DefaultCommandTextColor,
+            bool bold = true,
+            string? othersColor = null)
         {
             int cost = runtime.Commands.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedAsync(sender, cost, command, ct).ConfigureAwait(false))
@@ -451,7 +472,12 @@ public static partial class CommandList
             if (await SendPricedAsync(target, sender, baseCost, command, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
                 await ConfirmAsync(channelMessage, ct).ConfigureAwait(false);
         }
-        void AddTargetCommand(string commandName, Func<ResolvedTarget, string, CancellationToken, Task> execute, ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None, bool checkGameCooldown = true, int minimumTokenCost = 0)
+        void AddTargetCommand(
+            string commandName,
+            Func<ResolvedTarget, string, CancellationToken, Task> execute,
+            ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None,
+            bool checkGameCooldown = true,
+            int minimumTokenCost = 0)
         {
             AddCommand(commandName, async (args, sender, ct) =>
             {

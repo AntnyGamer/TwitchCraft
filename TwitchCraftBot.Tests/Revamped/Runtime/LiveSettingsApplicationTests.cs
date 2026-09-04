@@ -60,7 +60,7 @@ public sealed class LiveSettingsApplicationTests
         config.Settings.PassiveTokensPerPayout = 5;
         config.Settings.PassiveTokenPayoutMinimumSeconds = 60;
         config.Settings.PassiveTokenPayoutMaximumSeconds = 60;
-        config.Settings.PassiveRewardsRequireRecentChat = true;
+        config.Settings.PassiveRewardsRequireActivity = true;
 
         try
         {
@@ -124,8 +124,8 @@ public sealed class LiveSettingsApplicationTests
             Path.Combine(directory.Path, "viewer_tokens.db"));
         BotConfig config = new();
         config.Settings.ViewerCommandLimitPerMinute = 2;
-        config.Settings.PassiveRewardsRequireRecentChat = true;
-        config.Settings.PassiveRecentChatWindowMinutes = 2;
+        config.Settings.PassiveRewardsRequireActivity = true;
+        config.Settings.PassiveActivityWindowMinutes = 2;
         config.Settings.MinecraftRelayMessagesPerSecond = 2;
         config.Settings.LowResourceModeEnabled = true;
         config.Settings.MaxVisibleTwitchLogLines = 500;

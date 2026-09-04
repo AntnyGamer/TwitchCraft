@@ -23,6 +23,8 @@ public sealed class CategorizedSettingsPersistenceTests
         Assert.Null(root.SelectToken(nameof(StartingProfile.MultiplayerEnabled)));
         Assert.Null(root.SelectToken(nameof(StartingProfile.RemoteControlEnabled)));
         Assert.Null(root.SelectToken(nameof(StartingProfile.RequireOnlineMode)));
+        Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveRewardsRequireActivity)]);
+        Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveActivityWindowMinutes)]);
     }
 
     [Theory]
@@ -85,7 +87,7 @@ public sealed class CategorizedSettingsPersistenceTests
     }
 
     [Fact]
-    public void Deserialize_CategoryAndPropertyNamesAreCaseInsensitiveAndUnknownDataIsIgnored()
+    public void Deserialize_IsCaseInsensitiveAndIgnoresUnknownData()
     {
         const string json = """
             {

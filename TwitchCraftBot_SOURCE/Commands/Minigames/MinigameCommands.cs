@@ -24,13 +24,13 @@ public static partial class MinigameManager
                 return;
             }
 
-            if (!int.TryParse(args[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int firstValue) || firstValue <= 0)
+            if (!int.TryParse(args[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int tokenAmount) || tokenAmount <= 0)
             {
                 await sayToChannel(sender + ", please enter a valid token amount.", ct).ConfigureAwait(false);
                 return;
             }
 
-            if (!int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int secondValue) || secondValue <= 0)
+            if (!int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int betSeconds) || betSeconds <= 0)
             {
                 await sayToChannel(sender + ", please enter a valid second value.", ct).ConfigureAwait(false);
                 return;
@@ -57,17 +57,6 @@ public static partial class MinigameManager
             {
                 await sayToChannel(sender + ", Chicken Run betting is not open right now.", ct).ConfigureAwait(false);
                 return;
-            }
-
-            int tokenAmount = firstValue;
-            int betSeconds = secondValue;
-
-            if ((tokenAmount > MaxMinigameBetPerPlayer || betSeconds < minSeconds || betSeconds > maxSeconds) &&
-                firstValue >= minSeconds && firstValue <= maxSeconds &&
-                secondValue <= MaxMinigameBetPerPlayer)
-            {
-                betSeconds = firstValue;
-                tokenAmount = secondValue;
             }
 
             if (tokenAmount > MaxMinigameBetPerPlayer)

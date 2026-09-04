@@ -32,8 +32,9 @@ TwitchCraft uses its built-in public Twitch application. You do not create a Twi
 3. Open `TwitchCraft.exe`.
 4. Enter the Minecraft version and streamer/channel name. Select **Authorize Twitch** to connect and fill the bot account automatically.
 5. Leave the bind address at its default unless you understand the networking implications.
-6. Optionally import an existing world before starting.
-7. Once every required setup value is valid, **Start** becomes available. Select it and wait for the server-ready message.
+6. Once every required setup value is valid, **Start** becomes available. Select it. TwitchCraft verifies and prepares the local server files, then opens the Start screen.
+
+On the Start screen, enter the streamer's Minecraft username, choose whether to enable multiplayer and Online Mode, optionally import a world, then select **Start** and wait for the server-ready message.
 
 For the local server, join `127.0.0.1` from the same computer. See [MULTIPLAYER.md](MULTIPLAYER.md) before exposing the game server to other players.
 

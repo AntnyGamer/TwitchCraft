@@ -9,7 +9,7 @@ namespace TwitchCraftBot.Tests.Revamped.Authentication;
 public sealed class AuthorizationUiLifecycleTests
 {
     [Fact]
-    public void LeavingAndReopeningSettingsRestoresAuthorizeButtonImmediately()
+    public void SettingsReopen_RestoresAuthorizeButtonImmediately()
     {
         Exception? failure = null;
         Thread thread = new(() =>

@@ -36,6 +36,7 @@ public sealed partial class BotMainHandler
     private CancellationTokenSource? _sessionCts, _followRewardsCts;
     private Task? _followRewardsTask;
     private BotConfig? _activeConfig;
+    private string? _nextLocalRconPassword;
     private RuntimeState _runtimeState;
     private Dictionary<string, long> _viewerRewardSchedule;
     private List<string> _knownChatters;
@@ -166,7 +167,6 @@ public sealed partial class BotMainHandler
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => SafeCleanup();
         }
-
         catch
         {
         }
@@ -175,11 +175,9 @@ public sealed partial class BotMainHandler
         {
             AppDomain.CurrentDomain.UnhandledException += (s, e) => SafeCleanup();
         }
-
         catch
         {
         }
-
     }
 
     internal void TrackTask(Task task) => _backgroundTaskTracker.Track(task);
@@ -199,19 +197,13 @@ public sealed partial class BotMainHandler
 
     public bool RequireOnlineMode => _activeConfig?.Settings.RequireOnlineMode != false;
 
+    internal void StageLocalRconPassword(string password) => Interlocked.Exchange(ref _nextLocalRconPassword, password);
+
     public bool MultiTargetingEnabled => MultiplayerEnabled || RemoteControlEnabled;
 
     public bool MinigamesEnabled => _activeConfig?.Settings.MinigamesEnabled == true;
 
-    public int MinigameCooldown
-    {
-        get
-        {
-            int minutes = _activeConfig?.Settings.MinigameCooldown ?? 15;
-            return minutes is < 2 or > 30 ? 15 : minutes;
-        }
-
-    }
+    public int MinigameCooldown => _activeConfig?.Settings.MinigameCooldown ?? 15;
 
     private void SetConfig(BotConfig config)
     {
@@ -237,7 +229,7 @@ public sealed partial class BotMainHandler
             : string.Empty;
         _currentMinecraftVersion = (config.Server.MinecraftVersion ?? string.Empty).Trim();
         Commands.SetContext(config, _currentDefaultMinecraftPlayer);
-        Statistics.SetContext(config.Settings.StatisticsEnabled, _currentStreamerName, _currentStreamerMinecraftName);
+        Statistics.SetContext(config.Settings.StatisticsEnabled, _currentStreamerName, _currentStreamerMinecraftName, _currentCommandPrefix);
     }
 
     public string DefaultMinecraftPlayer => _currentDefaultMinecraftPlayer;

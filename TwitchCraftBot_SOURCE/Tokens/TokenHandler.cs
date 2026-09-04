@@ -94,6 +94,7 @@ internal sealed partial class TokenHandler(string path)
             if (command.ExecuteNonQuery() > 0) { _balances.Clear(); _loadedUsers.Clear(); }
         }
     }
+
     public int GetBalance(string user)
     {
         string normalized = Normalize(user);

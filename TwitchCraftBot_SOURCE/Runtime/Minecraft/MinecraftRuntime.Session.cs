@@ -299,5 +299,4 @@ public sealed partial class BotMainHandler
             return [.. _knownPlayers];
         }
     }
-
 }

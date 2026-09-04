@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraftBot_V1.BotSetup;
+
 namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
@@ -100,34 +101,28 @@ public sealed partial class BotMainHandler
                             socket = replacement;
                             outcome = await replacementListener.ConfigureAwait(false);
                         }
-
                         catch (Exception) when (!cancellationToken.IsCancellationRequested && socket.State == WebSocketState.Open)
                         {
                             replacement.Dispose();
                             await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
                             continue;
                         }
-
                         finally
                         {
                             handoff.Cancel();
                             await drain.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
                         }
-
                     }
                 }
-
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     break;
                 }
-
                 catch (Exception ex)
                 {
                     _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Twitch follow listener disconnected", ex));
                     outcome = default;
                 }
-
                 finally
                 {
                     socket.Dispose();
@@ -141,23 +136,20 @@ public sealed partial class BotMainHandler
                         continue;
 
                     _shellWindow?.AddChatLogLine(
-                        "Follow rewards are off because Twitch authorization could not be renewed or lacks follower permission. Open Settings → Dangerous → Authorize Twitch once to update it.");
+                        "Follow rewards are off because Twitch authorization could not be renewed or lacks follower permission. Open Settings --> Dangerous --> Authorize Twitch once to update it.");
                     return;
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
             }
         }
-
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
-
         catch (Exception ex)
         {
             _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Follow rewards could not start", ex));
         }
-
     }
 
     private async Task<FollowSocketOutcome> RunFollowSocketAsync(
@@ -182,7 +174,6 @@ public sealed partial class BotMainHandler
             {
                 root = JObject.Parse(message);
             }
-
             catch (JsonException ex)
             {
                 ErrorHandling.LogNonFatal("Twitch EventSub returned invalid JSON", ex);
@@ -220,7 +211,6 @@ public sealed partial class BotMainHandler
                             _shellWindow?.AddChatLogLine("Follow rewards are off because the bot account lacks follower permission or moderator status.");
                             return new(null, AuthorizationRejected: false, Stop: true);
                         }
-
                     }
 
                     break;
@@ -239,7 +229,6 @@ public sealed partial class BotMainHandler
                     _shellWindow?.AddChatLogLine("Twitch revoked the follow subscription: " + reason + ".");
                     return new(null, AuthorizationRejected: reason == "authorization_revoked", Stop: reason != "authorization_revoked");
             }
-
         }
 
         return default;
@@ -262,14 +251,11 @@ public sealed partial class BotMainHandler
                     await RewardFollowerAsync(notification, cancellationToken).ConfigureAwait(false);
                 }
             }
-
             catch (JsonException ex)
             {
                 ErrorHandling.LogNonFatal("Twitch EventSub returned invalid JSON during reconnect", ex);
             }
-
         }
-
     }
 
     private async Task RewardFollowerAsync(FollowNotification notification, CancellationToken cancellationToken)
@@ -304,14 +290,7 @@ public sealed partial class BotMainHandler
         => _activeConfig?.Settings.AutomaticFollowRewardsEnabled ?? true;
 
     internal int FollowRewardAmount
-    {
-        get
-        {
-            int amount = _activeConfig?.Settings.FollowRewardAmount ?? DefaultFollowRewardAmount;
-            return amount is >= 1 and <= 1_000_000 ? amount : DefaultFollowRewardAmount;
-        }
-
-    }
+        => _activeConfig?.Settings.FollowRewardAmount ?? DefaultFollowRewardAmount;
 
     private static async Task<HttpStatusCode> SubscribeToFollowsAsync(
         string sessionId,
@@ -335,7 +314,6 @@ public sealed partial class BotMainHandler
                 method = "websocket",
                 session_id = sessionId
             }
-
         };
 
         using HttpRequestMessage request = new(HttpMethod.Post, "https://api.twitch.tv/helix/eventsub/subscriptions");
@@ -377,17 +355,14 @@ public sealed partial class BotMainHandler
                     return Encoding.UTF8.GetString(message.GetBuffer(), 0, checked((int)message.Length));
             }
         }
-
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             throw new TimeoutException("Twitch EventSub stopped sending keepalive messages.");
         }
-
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
-
     }
 
     internal static bool TryParseFollow(JObject root, out FollowNotification notification)
@@ -429,7 +404,6 @@ public sealed partial class BotMainHandler
                 followedAt = new DateTimeOffset(dateTime.ToUniversalTime());
                 return true;
             }
-
         }
 
         return DateTimeOffset.TryParse(

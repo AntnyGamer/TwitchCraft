@@ -14,7 +14,7 @@
 
 ## INVALID TOKEN OR LONG ERROR ON STARTUP
 
-1. Open **Settings → Dangerous → Authorize Twitch**
+1. Open **Settings --> Dangerous --> Reauthorize Twitch** (or **Authorize Twitch** if no authorization is currently saved)
 2. Approve Twitch device authorization again in the browser
 3. Do not paste a token into `config.json`; TwitchCraft saves and renews its hidden authorization automatically
 4. TwitchCraft uses its built-in public Twitch application; do not create a developer application or add a Client ID, Client Secret, or localhost redirect
@@ -32,8 +32,8 @@
    * `"ExecutablePath"`
    * `"ServerDirectory"`
    * `"JarPath"`
-5. If the `server.jar` download fails, check your internet connection and run Setup again
-6. If the downloaded server jar fails verification, delete the bad `server.jar` and download it again
+5. If the Minecraft server JAR download fails, check your internet connection and run Setup again
+6. If the downloaded server JAR fails verification, delete the bad `twitchcraft-server-VERSION.jar` file from the `MCServer` folder and run Setup again
 
 ## START BUTTON IS DISABLED
 
@@ -46,7 +46,7 @@ On the Setup screen:
 On the Start screen, make sure:
 
    * Your Minecraft username is entered and valid
-   * The server address / port is valid
+   * In Remote Control Mode, the remote host and RCON port are valid and an RCON password is entered
    * A world import is not still running
    * TwitchCraft is not already starting
 
@@ -111,7 +111,7 @@ On the Start screen, make sure:
 ## VIEWER LIST OR PLAYER LIST NOT UPDATING
 
 1. Make sure the bot is a moderator in your Twitch chat
-2. If Twitch chatters or follow rewards stop updating, open **Settings → Dangerous → Authorize Twitch** and approve Twitch authorization again
+2. If Twitch chatters or follow rewards stop updating, open **Settings --> Dangerous --> Reauthorize Twitch** (or **Authorize Twitch** if no authorization is currently saved) and approve Twitch authorization again
 3. If Minecraft players stop updating, restart the Minecraft server and TwitchCraft
 4. If you manually edited `server.properties`, make sure it contains:
 
@@ -124,7 +124,7 @@ On the Start screen, make sure:
 
 1. Enable Multiplayer before pressing Start
 2. Remember that Multiplayer does not stay enabled after reopening TwitchCraft
-3. Give other people your public IP address or server domain, not `localhost` or `127.0.0.1`
+3. Give trusted players the deliberately configured public endpoint, server domain, or VPN/tunnel address—not `localhost` or `127.0.0.1`
 4. Port forward the Minecraft server port in your router if needed
 5. Allow `java.exe` and `javaw.exe` through Windows Firewall
 6. Make sure the port you give people, if needed, matches the Port setting in TwitchCraft
@@ -181,7 +181,7 @@ On the Start screen, make sure:
    * Do not change the wording of common Minecraft messages, such as join, leave, and death messages
 7. For tokens:
 
-   * Make sure passive token earning is enabled if viewers are not gaining passive coins
+   * Make sure passive token earning is enabled if viewers are not gaining passive tokens
 
 ## SETTINGS DO NOT STAY ENABLED AFTER REOPENING
 
@@ -205,7 +205,7 @@ On the Start screen, make sure:
 
 1. Open Task Manager
 2. Close any background applications that are using high amounts of CPU, GPU, or RAM
-3. Find the Dangerous Settings within TwitchCraft and lower the minimum and maximum RAM
+3. Open **Settings --> Dangerous** and lower the minimum and maximum RAM
 4. Lower your in-game Minecraft settings, such as render distance and graphics
 5. If you are still experiencing lag or low FPS, open `server.properties` at:
 

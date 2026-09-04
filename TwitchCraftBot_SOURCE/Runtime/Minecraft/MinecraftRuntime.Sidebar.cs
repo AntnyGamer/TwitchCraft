@@ -171,5 +171,4 @@ public sealed partial class BotMainHandler
             onError: LogSidebarError,
             token: token);
     }
-
 }

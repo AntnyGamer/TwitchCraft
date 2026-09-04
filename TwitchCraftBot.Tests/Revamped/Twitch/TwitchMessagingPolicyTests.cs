@@ -38,7 +38,7 @@ public sealed class TwitchMessagingPolicyTests
     [Theory]
     [InlineData("NightBot", "mybot", false)]
     [InlineData("mybot", "MyBot", true)]
-    public void IsIgnoredIrcUser_RecognizesServicesAndTheSeparateBotAccount(
+    public void IsIgnoredUser_RecognizesServicesAndSeparateBotAccount(
         string sender,
         string botName,
         bool separateBotAccount)
@@ -50,7 +50,7 @@ public sealed class TwitchMessagingPolicyTests
     [InlineData(1000, 2000)]
     [InlineData(8000, 15000)]
     [InlineData(15000, 15000)]
-    public void GetNextIrcReconnectDelayMilliseconds_DoublesAndCapsBackoff(
+    public void GetReconnectDelayMs_DoublesAndCapsBackoff(
         int currentDelay,
         int expected)
     {

@@ -5,7 +5,7 @@ namespace TwitchCraftBot.Tests.Revamped.Commands;
 public sealed class PaidDispatchAtomicityTests
 {
     [Fact]
-    public async Task SuccessfulPaidCommand_ChargesOnceDispatchesOnceAndRecordsStatisticsOnce()
+    public async Task SuccessfulPaidCommand_ChargesDispatchesAndRecordsOnce()
     {
         TransactionHarness harness = new();
         harness.DispatchOverride = _ =>
@@ -28,7 +28,7 @@ public sealed class PaidDispatchAtomicityTests
     }
 
     [Fact]
-    public async Task FailedPaidCommandDispatch_RefundsExactlyOnceReportsFailureAndRecordsNoStatistics()
+    public async Task FailedPaidCommand_RefundsOnceReportsFailureAndSkipsStatistics()
     {
         TransactionHarness harness = new();
         harness.DispatchOverride = _ =>
@@ -52,7 +52,7 @@ public sealed class PaidDispatchAtomicityTests
     }
 
     [Fact]
-    public async Task ExceptionWhileBuildingPaidCommandBatch_RefundsOnceAndReleasesCooldown()
+    public async Task PaidCommandBuildFailure_RefundsOnceAndReleasesCooldown()
     {
         TransactionHarness harness = new()
         {

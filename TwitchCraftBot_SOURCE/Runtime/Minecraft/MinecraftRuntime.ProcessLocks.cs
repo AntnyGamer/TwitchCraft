@@ -216,5 +216,4 @@ public sealed partial class BotMainHandler
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("rstrtmgr.dll", EntryPoint = "RmEndSession")]
     private static partial int RMEndSession(uint sessionHandle);
-
 }

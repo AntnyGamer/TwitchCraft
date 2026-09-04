@@ -463,5 +463,4 @@ internal sealed partial class TokenHandler
             throw;
         }
     }
-
 }

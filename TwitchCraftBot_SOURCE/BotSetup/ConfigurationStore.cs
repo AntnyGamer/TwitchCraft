@@ -38,7 +38,6 @@ public sealed partial class ConfigurationStore
         AppFolderName);
     private static readonly string ConfigPathValue = Path.Combine(WorkingDirectoryPath, ConfigFileName);
     private static readonly string ConfigTempPathValue = ConfigPathValue + ".tmp";
-    private static readonly string ConfigBackupPathValue = ConfigPathValue + ".bak";
     private static readonly string ViewerTokensPathValue = Path.Combine(WorkingDirectoryPath, ViewerTokensFileName);
     private static readonly string BackupsDirectoryPath = Path.Combine(WorkingDirectoryPath, BackupsFolderName);
 
@@ -69,7 +68,6 @@ public sealed partial class ConfigurationStore
         {
             TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigPath);
             TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigTempPathValue);
-            TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
         }
     }
 
@@ -91,7 +89,6 @@ public sealed partial class ConfigurationStore
             {
                 Normalize(loaded);
                 ResetStartMode(loaded);
-                TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
                 return loaded;
             }
         }
@@ -151,13 +148,11 @@ public sealed partial class ConfigurationStore
         if (ConfigMatches(json))
         {
             TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(tempPath);
-            TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
             return;
         }
 
         File.WriteAllText(tempPath, json, Utf8NoBom);
         TwitchCraftBot_V1.FileSystemHelper.ReplaceFile(tempPath, ConfigPath, null, "Atomic config save failed; falling back to copy");
-        TwitchCraftBot_V1.FileSystemHelper.DeleteFileSafe(ConfigBackupPathValue);
     }
 
     private static string SerializeConfig(BotConfig config)

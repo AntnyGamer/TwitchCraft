@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraftBot_V1.BotSetup;
+
 namespace TwitchCraftBot_V1;
 
 public sealed partial class BotMainHandler
@@ -34,11 +35,9 @@ public sealed partial class BotMainHandler
             if (_javaServerProcess is { HasExited: false })
                 await Task.Delay(500, timeoutCts.Token).ConfigureAwait(false);
         }
-
         catch
         {
         }
-
     }
 
     private async Task EnsureRconAsync(BotConfig config, CancellationToken cancellationToken)
@@ -91,13 +90,11 @@ public sealed partial class BotMainHandler
             process.Start();
             _javaServerProcess = process;
         }
-
         catch
         {
             process.Dispose();
             throw;
         }
-
     }
 
     private async Task WatchServerAsync(CancellationToken cancellationToken)
@@ -110,7 +107,6 @@ public sealed partial class BotMainHandler
         {
             await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         }
-
         catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
         {
             return;
@@ -146,7 +142,6 @@ public sealed partial class BotMainHandler
             {
                 sessionCts?.Cancel();
             }
-
             catch
             {
             }
@@ -155,7 +150,6 @@ public sealed partial class BotMainHandler
             {
                 sessionCts?.Dispose();
             }
-
             catch
             {
             }
@@ -168,7 +162,6 @@ public sealed partial class BotMainHandler
             {
                 process.Dispose();
             }
-
             catch
             {
             }
@@ -176,12 +169,10 @@ public sealed partial class BotMainHandler
             _shellWindow?.AddServerLogLine("Minecraft server process exited unexpectedly. TwitchCraft was stopped.");
             UIThread.BeginInvoke(() => _shellModel.Navigate(ShellPage.Start));
         }
-
         finally
         {
             _lifecycleGate.Release();
         }
-
     }
 
     private static void AddJavaArgs(ProcessStartInfo startInfo, BotConfig config, string jarPath)
@@ -203,38 +194,34 @@ public sealed partial class BotMainHandler
             return;
         try
         {
-            string sourcePath = Path.Combine(AppContext.BaseDirectory, "Assets", "server-icon.png");
-            if (!File.Exists(sourcePath))
-                sourcePath = Path.Combine(AppHelpers.GetAppDirectory(), "Assets", "server-icon.png");
-
-            if (!File.Exists(sourcePath))
+            using Stream? source = typeof(BotMainHandler).Assembly.GetManifestResourceStream("TwitchCraft.server-icon.png");
+            if (source == null)
                 return;
+
             Directory.CreateDirectory(serverDirectory);
             string destinationPath = Path.Combine(serverDirectory, "server-icon.png");
-            if (File.Exists(destinationPath) && FilesMatch(sourcePath, destinationPath))
+            if (File.Exists(destinationPath) && FilesMatch(source, destinationPath))
                 return;
 
-            File.Copy(sourcePath, destinationPath, true);
+            source.Position = 0;
+            using FileStream destination = File.Create(destinationPath);
+            source.CopyTo(destination);
         }
-
         catch
         {
         }
-
     }
 
-    private static bool FilesMatch(string firstPath, string secondPath)
+    private static bool FilesMatch(Stream firstStream, string secondPath)
     {
-        FileInfo firstInfo = new(firstPath);
         FileInfo secondInfo = new(secondPath);
-        if (firstInfo.Length != secondInfo.Length)
+        if (firstStream.Length != secondInfo.Length)
             return false;
 
         byte[] firstBuffer = ArrayPool<byte>.Shared.Rent(8192);
         byte[] secondBuffer = ArrayPool<byte>.Shared.Rent(8192);
         try
         {
-            using FileStream firstStream = new(firstPath, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.SequentialScan);
             using FileStream secondStream = new(secondPath, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.SequentialScan);
             while (true)
             {
@@ -249,12 +236,10 @@ public sealed partial class BotMainHandler
                     return false;
             }
         }
-
         finally
         {
             ArrayPool<byte>.Shared.Return(firstBuffer);
             ArrayPool<byte>.Shared.Return(secondBuffer);
         }
-
     }
 }

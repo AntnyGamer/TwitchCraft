@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+
 namespace TwitchCraftBot_V1;
 
 public static partial class CommandList
@@ -354,8 +355,8 @@ public static partial class CommandList
                     target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
             }
 
-            string playerName = GetPlayerName(target).Trim();
-            return MinecraftNameHelper.IsValidPlayerName(playerName) ? [playerName] : [];
+            string playerName = GetPlayerName(target);
+            return playerName.Length > 0 ? [playerName] : [];
         }
         async Task RenameAsync(string[]? args, string sender, CancellationToken ct)
         {
@@ -370,8 +371,8 @@ public static partial class CommandList
             }
             else
             {
-                string playerName = GetPlayerName(target).Trim();
-                if (!MinecraftNameHelper.IsValidPlayerName(playerName))
+                string playerName = GetPlayerName(target);
+                if (playerName.Length == 0)
                 {
                     await SayAsync(sender + ", that player could not be resolved for !rename.", ct).ConfigureAwait(false);
                     return;
@@ -467,7 +468,7 @@ public static partial class CommandList
                 _ => ("minecraft:lava_bucket", "a lava bucket")
             };
             string singleMilkTargetName = GetPlayerName(target);
-            if (target.PlayerCount == 1 && !IsEveryone(target) && !MinecraftNameHelper.IsValidPlayerName(singleMilkTargetName))
+            if (target.PlayerCount == 1 && !IsEveryone(target) && singleMilkTargetName.Length == 0)
             {
                 await SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct).ConfigureAwait(false);
                 return;

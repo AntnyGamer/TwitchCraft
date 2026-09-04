@@ -22,18 +22,8 @@ public sealed partial class BotMainHandler
         if (start > end)
             return string.Empty;
 
-        bool hasLineBreak = false;
-        for (int i = start; i <= end; i++)
-        {
-            char c = message[i];
-            if (c == '\r' || c == '\n')
-            {
-                hasLineBreak = true;
-                break;
-            }
-        }
-
         int length = end - start + 1;
+        bool hasLineBreak = message.AsSpan(start, length).IndexOfAny('\r', '\n') >= 0;
         if (!hasLineBreak)
             return start == 0 && length == message.Length ? message : message.Substring(start, length);
 
@@ -141,5 +131,4 @@ public sealed partial class BotMainHandler
                     _activeConfig?.Settings.MentionViewersInBotReplies == true),
                 cancellationToken)
             : Task.CompletedTask;
-
 }

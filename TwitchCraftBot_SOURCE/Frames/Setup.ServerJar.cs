@@ -162,5 +162,4 @@ public partial class Setup : UserControl
         if (!ServerJarMatches(filePath, expectedSha, expectedSize))
             throw new InvalidOperationException("The downloaded server jar did not match the expected size or SHA-1 checksum.");
     }
-
 }

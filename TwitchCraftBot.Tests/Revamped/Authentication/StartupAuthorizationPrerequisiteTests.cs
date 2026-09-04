@@ -5,7 +5,7 @@ namespace TwitchCraftBot.Tests.Revamped.Authentication;
 public sealed class StartupAuthorizationPrerequisiteTests
 {
     [Fact]
-    public void CanStartOnlyAfterEveryRequiredFieldAndCurrentAuthorizationAreValid()
+    public void CanStart_RequiresValidFieldsAndAuthorization()
     {
         Assert.True(SetupInputValidator.CanStart(
             "1.21.8",
@@ -25,7 +25,7 @@ public sealed class StartupAuthorizationPrerequisiteTests
     [InlineData("1.21.8", "127.0.0.1", "client-id", "client-id", "", "streamer", "bot")]
     [InlineData("1.21.8", "127.0.0.1", "client-id", "client-id", "access-token", "bad channel", "bot")]
     [InlineData("1.21.8", "127.0.0.1", "client-id", "client-id", "access-token", "streamer", "")]
-    public void CannotStartWhenARequiredValueIsMissingOrInvalid(
+    public void CanStart_RejectsMissingOrInvalidRequiredValues(
         string version,
         string bindIp,
         string clientId,

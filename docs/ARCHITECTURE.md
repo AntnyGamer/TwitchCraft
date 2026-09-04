@@ -30,7 +30,7 @@ BotMainHandler (application coordinator)
 - `Tokens/` — `TokenService`, viewer-token accounting, SQLite persistence, and JSON export
 - `Frames/` — WPF pages and their event logic
 - `Assets/` — images, icon, server icon, and locate-players datapack
-- `TwitchCraftBot.Tests/` — non-UI behavioral regression tests
+- `TwitchCraftBot.Tests/` — behavioral regression tests, including focused WPF state tests
 
 `BotMainHandler` exposes the focused components through `runtime.Commands`, `runtime.Tokens`, and `runtime.Statistics`. Twitch, Minecraft, and player-monitor code remain coordinated partials for now; move them behind similarly focused ownership boundaries incrementally rather than adding more state to the coordinator.
 
@@ -38,9 +38,9 @@ BotMainHandler (application coordinator)
 
 1. WPF starts and installs global exception handlers.
 2. The application checks its `%APPDATA%\TwitchCraftBot` working directory and loads normalized configuration.
-3. The user selects local or remote mode and a starting profile.
+3. The user selects local or remote mode and the session-specific Start options.
 4. The bot runtime initializes token/statistics stores and Twitch identity.
-5. Local mode prepares the server directory, locates Java, and starts the Java process; remote mode verifies RCON.
+5. Local mode prepares the server directory and starts the Java process detected during setup; remote mode verifies RCON.
 6. TwitchCraft renews its locally stored device authorization when needed, then Twitch IRC connects over TLS, joins the configured channel, and starts bounded processing queues. Helix and EventSub provide viewer-roster and follow data.
 7. Player monitoring and optional minigame/statistics loops start after Minecraft readiness.
 
@@ -85,4 +85,4 @@ Cancellation tokens stop background loops. Local mode requests graceful server s
 
 ## Testability direction
 
-Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, application-version metadata, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The runtime uses explicit construction and narrow callback seams rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.
+Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The runtime uses explicit construction and narrow callback seams rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.

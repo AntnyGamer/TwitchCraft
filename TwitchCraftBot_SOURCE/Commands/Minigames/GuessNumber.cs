@@ -115,5 +115,4 @@ public static partial class MinigameManager
             }
         }
     }
-
 }

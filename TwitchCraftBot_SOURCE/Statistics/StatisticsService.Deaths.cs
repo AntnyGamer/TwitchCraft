@@ -134,5 +134,4 @@ public sealed partial class StatisticsService
         _sessionStatistics.CurrentLifeHasStarted = true;
         _sessionStatistics.CurrentLifeWaitingForRespawn = true;
     }
-
 }

@@ -8,6 +8,7 @@ internal static class DatapackInstaller
 {
     private static readonly UTF8Encoding Utf8NoBom = new(false);
     private const string DatapackName = "locateplayers";
+    private const string EmbeddedDatapackPrefix = "TwitchCraft.locateplayers/";
     private const string DatapackDescription = "Locate players command for TwitchCraft";
     private const string DatapackWarningContext = "Locateplayers datapack installation failed; TwitchCraft will continue without it";
 
@@ -28,9 +29,16 @@ internal static class DatapackInstaller
         if (string.IsNullOrWhiteSpace(serverDirectory))
             return true;
 
-        string sourceDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", DatapackName);
         string destinationDirectory = Path.Combine(ServerPropertyEditor.GetWorldDirectory(serverDirectory, levelName), "datapacks", DatapackName);
-        return TrySyncDatapack(sourceDirectory, destinationDirectory, minecraftVersion, ReportWarning);
+        try
+        {
+            SyncEmbeddedFiles(destinationDirectory, minecraftVersion);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or InvalidDataException)
+        {
+            return ReportFailure(ex, ReportWarning);
+        }
     }
 
     internal static bool TrySyncDatapack(
@@ -66,25 +74,60 @@ internal static class DatapackInstaller
         string destinationDirectory,
         string minecraftVersion)
     {
+        (string functionDirectoryName, bool rewriteCommands) = PrepareDestination(destinationDirectory, minecraftVersion);
+        string namespaceDirectory = Path.Combine(destinationDirectory, "data", DatapackName);
+        string minecraftTagsDirectory = Path.Combine(destinationDirectory, "data", "minecraft", "tags");
+
+        TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(functionSource, Path.Combine(namespaceDirectory, functionDirectoryName), skipReparsePoints: true);
+        TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(tagSource, Path.Combine(minecraftTagsDirectory, functionDirectoryName), skipReparsePoints: true);
+
+        if (rewriteCommands)
+            RewriteCommands(destinationDirectory);
+    }
+
+    private static void SyncEmbeddedFiles(string destinationDirectory, string minecraftVersion)
+    {
+        (string functionDirectoryName, bool rewriteCommands) = PrepareDestination(destinationDirectory, minecraftVersion);
+        bool foundResource = false;
+
+        foreach (string resourceName in typeof(DatapackInstaller).Assembly.GetManifestResourceNames())
+        {
+            if (!resourceName.StartsWith(EmbeddedDatapackPrefix, StringComparison.Ordinal))
+                continue;
+
+            foundResource = true;
+            string relativePath = resourceName[EmbeddedDatapackPrefix.Length..].Replace('\\', '/');
+            if (functionDirectoryName == "function")
+                relativePath = relativePath.Replace("/functions/", "/function/", StringComparison.Ordinal);
+
+            string destinationPath = Path.Combine(destinationDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            using Stream source = typeof(DatapackInstaller).Assembly.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidDataException("Embedded locateplayers datapack resource is missing: " + resourceName);
+            using FileStream destination = File.Create(destinationPath);
+            source.CopyTo(destination);
+        }
+
+        if (!foundResource)
+            throw new InvalidDataException("Embedded locateplayers datapack resources are missing.");
+        if (rewriteCommands)
+            RewriteCommands(destinationDirectory);
+    }
+
+    private static (string FunctionDirectoryName, bool RewriteCommands) PrepareDestination(string destinationDirectory, string minecraftVersion)
+    {
         Directory.CreateDirectory(destinationDirectory);
         File.WriteAllText(Path.Combine(destinationDirectory, "pack.mcmeta"), BuildPackMetadata(minecraftVersion), Utf8NoBom);
 
         string namespaceDirectory = Path.Combine(destinationDirectory, "data", DatapackName);
         string minecraftTagsDirectory = Path.Combine(destinationDirectory, "data", "minecraft", "tags");
-
         ResetDirectory(Path.Combine(namespaceDirectory, "functions"));
         ResetDirectory(Path.Combine(namespaceDirectory, "function"));
         ResetDirectory(Path.Combine(minecraftTagsDirectory, "functions"));
         ResetDirectory(Path.Combine(minecraftTagsDirectory, "function"));
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(minecraftVersion);
-        string functionDirectoryName = version.UsesSingularFunctionDirectories ? "function" : "functions";
-
-        TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(functionSource, Path.Combine(namespaceDirectory, functionDirectoryName), skipReparsePoints: true);
-        TwitchCraftBot_V1.FileSystemHelper.CopyDirectory(tagSource, Path.Combine(minecraftTagsDirectory, functionDirectoryName), skipReparsePoints: true);
-
-        if (version.UsesInlineTextComponents)
-            RewriteCommands(destinationDirectory);
+        return (version.UsesSingularFunctionDirectories ? "function" : "functions", version.UsesInlineTextComponents);
     }
 
     private static bool ReportFailure(Exception exception, Action<string, Exception> reportWarning)
@@ -184,5 +227,4 @@ internal static class DatapackInstaller
 
         item.Attributes = attributes & ~FileAttributes.ReadOnly;
     }
-
 }

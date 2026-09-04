@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -56,36 +55,6 @@ public partial class Setup : UserControl
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         UpdateStartButton();
-    }
-
-    private static string GeneratePassword(int length)
-    {
-        if (length < 4)
-            throw new ArgumentOutOfRangeException(nameof(length), "Length must be at least 4.");
-
-        const string lower = "abcdefghijkmnopqrstuvwxyz";
-        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-        const string digits = "123456789";
-        const string symbols = "!@$%^&*-_=+?.";
-        const string pool = lower + upper + digits + symbols;
-        char[] result = new char[length];
-        int pos = 0;
-
-        result[pos++] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
-        result[pos++] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
-        result[pos++] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
-        result[pos++] = symbols[RandomNumberGenerator.GetInt32(symbols.Length)];
-
-        for (; pos < result.Length; pos++)
-            result[pos] = pool[RandomNumberGenerator.GetInt32(pool.Length)];
-
-        for (int i = result.Length - 1; i > 0; i--)
-        {
-            int j = RandomNumberGenerator.GetInt32(i + 1);
-            (result[i], result[j]) = (result[j], result[i]);
-        }
-
-        return new string(result);
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -204,7 +173,7 @@ public partial class Setup : UserControl
 
         string? blockingReason = SetupInputValidator.GetBlockingReason(
             GetVersionId(MCVersionDropdown),
-            ConfigurationStore.NormalizeBindIP(MCBindIPTextbox.Text),
+            MCBindIPTextbox.Text,
             clientId,
             _authorizedClientId,
             _botToken,
@@ -348,12 +317,6 @@ public partial class Setup : UserControl
             return;
         }
 
-        if (!ConfigurationStore.IsValidBindIP(bindIP))
-        {
-            ErrorHandling.ShowInvalidBindIP(this, bindIP);
-            return;
-        }
-
         if (_setupInProgress)
             return;
 
@@ -439,7 +402,18 @@ public partial class Setup : UserControl
         }
     }
 
-    private static BotConfig BuildConfig(string minecraftVersion, string serverDir, string jarPath, string bindIP, string javaExe, string javaHome, string clientID, string botToken, string refreshToken, string channel, string botUser)
+    private static BotConfig BuildConfig(
+        string minecraftVersion,
+        string serverDir,
+        string jarPath,
+        string bindIP,
+        string javaExe,
+        string javaHome,
+        string clientID,
+        string botToken,
+        string refreshToken,
+        string channel,
+        string botUser)
     {
         return new BotConfig
         {
@@ -450,7 +424,7 @@ public partial class Setup : UserControl
                 JarPath = jarPath,
                 BindIP = bindIP,
                 PreviousBindIP = bindIP,
-                RCON = { Password = GeneratePassword(32) },
+                RCON = { Password = ConfigurationStore.GenerateRconPassword() },
                 Java = { ExecutablePath = javaExe, HomeDirectory = javaHome }
             },
             Twitch =
@@ -477,5 +451,4 @@ public partial class Setup : UserControl
                 throw new OperationCanceledException("Setup cancelled by user (No Java).");
         }
     }
-
 }

@@ -55,6 +55,7 @@ public sealed partial class BotMainHandler
             {
                 MultiplayerEnabled = source.Settings.MultiplayerEnabled,
                 MultiplayerPVPEnabled = source.Settings.MultiplayerPVPEnabled,
+                WhitelistEnabled = source.Settings.WhitelistEnabled,
                 RemoteControlEnabled = source.Settings.RemoteControlEnabled,
                 HardcoreEnabled = source.Settings.HardcoreEnabled,
                 Difficulty = source.Settings.Difficulty,
@@ -82,7 +83,7 @@ public sealed partial class BotMainHandler
                 PassiveTokenPayoutMinimumSeconds = source.Settings.PassiveTokenPayoutMinimumSeconds,
                 PassiveTokenPayoutMaximumSeconds = source.Settings.PassiveTokenPayoutMaximumSeconds,
                 MaximumTokenBalance = source.Settings.MaximumTokenBalance,
-                PassiveRewardsRequireRecentChat = source.Settings.PassiveRewardsRequireRecentChat,
+                PassiveRewardsRequireActivity = source.Settings.PassiveRewardsRequireActivity,
                 ChannelCommandLimitPerMinute = source.Settings.ChannelCommandLimitPerMinute,
                 AllowAllPlayerTarget = source.Settings.AllowAllPlayerTarget,
                 AllowRandomPlayerTarget = source.Settings.AllowRandomPlayerTarget,
@@ -90,7 +91,7 @@ public sealed partial class BotMainHandler
                 MinecraftRelayTextColor = source.Settings.MinecraftRelayTextColor,
                 ShowConnectionHealth = source.Settings.ShowConnectionHealth,
                 ViewerCommandLimitPerMinute = source.Settings.ViewerCommandLimitPerMinute,
-                PassiveRecentChatWindowMinutes = source.Settings.PassiveRecentChatWindowMinutes,
+                PassiveActivityWindowMinutes = source.Settings.PassiveActivityWindowMinutes,
                 AutomaticBackupsEnabled = source.Settings.AutomaticBackupsEnabled,
                 AutomaticBackupIntervalHours = source.Settings.AutomaticBackupIntervalHours,
                 AutomaticBackupRetentionCount = source.Settings.AutomaticBackupRetentionCount,
@@ -153,11 +154,13 @@ public sealed partial class BotMainHandler
                     passiveScheduleChanged =
                         _activeConfig.Settings.PassiveTokenPayoutMinimumSeconds != activeConfig.Settings.PassiveTokenPayoutMinimumSeconds ||
                         _activeConfig.Settings.PassiveTokenPayoutMaximumSeconds != activeConfig.Settings.PassiveTokenPayoutMaximumSeconds ||
-                        _activeConfig.Settings.PassiveRewardsRequireRecentChat != activeConfig.Settings.PassiveRewardsRequireRecentChat ||
-                        _activeConfig.Settings.PassiveRecentChatWindowMinutes != activeConfig.Settings.PassiveRecentChatWindowMinutes;
+                        _activeConfig.Settings.PassiveRewardsRequireActivity != activeConfig.Settings.PassiveRewardsRequireActivity ||
+                        _activeConfig.Settings.PassiveActivityWindowMinutes != activeConfig.Settings.PassiveActivityWindowMinutes;
                     activeConfig.Settings.MultiplayerEnabled = _activeConfig.Settings.MultiplayerEnabled;
                     activeConfig.Settings.RemoteControlEnabled = _activeConfig.Settings.RemoteControlEnabled;
                     activeConfig.Settings.RequireOnlineMode = _activeConfig.Settings.RequireOnlineMode;
+                    if (_activeConfig.Settings.RemoteControlEnabled || _runtimeState != RuntimeState.Stopped)
+                        (activeConfig.Server.RCON.Port, activeConfig.Server.RCON.Password) = (_activeConfig.Server.RCON.Port, _activeConfig.Server.RCON.Password);
                     if (preserveTwitchAuth)
                     {
                         activeConfig.Twitch.BotToken = _activeConfig.Twitch.BotToken;
@@ -180,7 +183,7 @@ public sealed partial class BotMainHandler
                 lock (_viewerGate)
                 {
                     _viewerRewardSchedule.Clear();
-                    if (!activeConfig.Settings.PassiveRewardsRequireRecentChat)
+                    if (!activeConfig.Settings.PassiveRewardsRequireActivity)
                         _viewerLastChatActivity.Clear();
                 }
             }
@@ -189,7 +192,6 @@ public sealed partial class BotMainHandler
             {
                 RefreshMinigames(activeConfig.Settings.MinigamesEnabled);
             }
-
         }
         finally
         {

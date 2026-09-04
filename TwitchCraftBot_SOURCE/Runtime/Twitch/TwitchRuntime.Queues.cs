@@ -289,5 +289,4 @@ public sealed partial class BotMainHandler
             _currentCommandSender.Value = null;
         }
     }
-
 }

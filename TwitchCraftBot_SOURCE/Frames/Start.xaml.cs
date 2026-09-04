@@ -63,7 +63,6 @@ public partial class Start : UserControl
             window.PreviewKeyDown -= Start_PreviewKeyDown;
             window.PreviewKeyDown += Start_PreviewKeyDown;
         }
-
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -72,7 +71,6 @@ public partial class Start : UserControl
         {
             window.PreviewKeyDown -= Start_PreviewKeyDown;
         }
-
     }
 
     private void Start_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -86,13 +84,13 @@ public partial class Start : UserControl
             return;
         }
 
+        ClearRconPassword();
         if (!_remoteControllerUnlocked)
         {
             _multiplayerBeforeRemoteControl = MultiplayerCheckbox.IsChecked == true;
             _remoteControllerUnlocked = true;
             MultiplayerCheckbox.IsChecked = false;
         }
-
         else
         {
             _remoteControllerUnlocked = false;
@@ -132,14 +130,12 @@ public partial class Start : UserControl
             string RCONPortText = config.Server.RCON.Port.ToString();
             if (!string.Equals(RemoteRCONPortTextbox.Text, RCONPortText, StringComparison.Ordinal))
                 RemoteRCONPortTextbox.Text = RCONPortText;
-            if (!string.Equals(GetRconPassword(), config.Server.RCON.Password, StringComparison.Ordinal))
-                SetRconPassword(config.Server.RCON.Password);
+            ClearRconPassword();
             if (!string.Equals(MCUserTextbox.Text, config.Identity.StreamerMinecraftName, StringComparison.Ordinal))
                 MCUserTextbox.Text = config.Identity.StreamerMinecraftName;
             _showMinecraftUsernameUntilStart = !MinecraftNameHelper.IsValidPlayerName(MCUserTextbox.Text);
             UpdateMultiplayer();
         }
-
         catch
         {
             MCVersion.Text = "Config found, but it could not be read.";
@@ -147,7 +143,6 @@ public partial class Start : UserControl
             _showMinecraftUsernameUntilStart = true;
             UpdateMultiplayer();
         }
-
     }
 
     private async void Start_Click(object sender, RoutedEventArgs e)
@@ -183,18 +178,15 @@ public partial class Start : UserControl
 
             await parent.StartAsync();
         }
-
         catch (Exception ex)
         {
             ErrorHandling.ShowStartupError(this, "Failed to start TwitchCraft.\n\n" + ex.Message);
         }
-
         finally
         {
             _launchClickInProgress = false;
             UpdateMultiplayer();
         }
-
     }
 
     private async void ImportWorld_Click(object sender, RoutedEventArgs e)
@@ -266,7 +258,6 @@ public partial class Start : UserControl
                     });
                 });
             }
-
             finally
             {
                 _worldImportInProgress = false;
@@ -276,12 +267,10 @@ public partial class Start : UserControl
 
             ErrorHandling.ShowImportSuccess(this);
         }
-
         catch (Exception ex)
         {
             ErrorHandling.ShowImportError(this, ex);
         }
-
     }
 
     private void Help_Click(object sender, MouseButtonEventArgs e)
@@ -291,7 +280,6 @@ public partial class Start : UserControl
             parent.ShowHelp();
             e.Handled = true;
         }
-
     }
 
     private void Stats_Click(object sender, MouseButtonEventArgs e)
@@ -301,7 +289,6 @@ public partial class Start : UserControl
             parent.ShowStatistics();
             e.Handled = true;
         }
-
     }
 
     private bool TryGetBotWindow(out TwitchCraftBot parent)
@@ -392,8 +379,8 @@ public partial class Start : UserControl
 
         if (_remoteControllerUnlocked)
         {
-            string remoteHost = (RemoteHostTextbox.Text ?? string.Empty).Trim();
-            if (remoteHost.Length == 0)
+            string remoteHost = RemoteHostTextbox.Text;
+            if (string.IsNullOrWhiteSpace(remoteHost))
                 return "Enter the host server address for Remote Control Mode.";
 
             if (!ConfigurationStore.IsValidRemoteHost(remoteHost))
@@ -455,18 +442,16 @@ public partial class Start : UserControl
                 GetRconPassword());
             return true;
         }
-
         catch (Exception ex)
         {
             ErrorHandling.ShowSettingsUpdateError(this, ex);
             return false;
         }
-
     }
 
     private bool TryGetRconPort(out int port)
     {
-        return int.TryParse((RemoteRCONPortTextbox.Text ?? string.Empty).Trim(), out port)
+        return int.TryParse(RemoteRCONPortTextbox.Text.AsSpan().Trim(), out port)
             && port is >= 1 and <= 65535;
     }
 
@@ -477,12 +462,10 @@ public partial class Start : UserControl
             : RemoteRCONPasswordBox.Password ?? string.Empty;
     }
 
-    private void SetRconPassword(string value)
+    private void ClearRconPassword()
     {
-        if (RemoteRCONPasswordShowCheckbox.IsChecked == true)
-            RemoteRCONPasswordTextbox.Text = value;
-        else
-            RemoteRCONPasswordBox.Password = value;
+        RemoteRCONPasswordBox.Clear();
+        RemoteRCONPasswordTextbox.Clear();
     }
 
     private void ShowRconPassword_Changed(object sender, RoutedEventArgs e)
@@ -491,7 +474,6 @@ public partial class Start : UserControl
         {
             RemoteRCONPasswordTextbox.Text = RemoteRCONPasswordBox.Password ?? string.Empty;
         }
-
         else
         {
             RemoteRCONPasswordBox.Password = RemoteRCONPasswordTextbox.Text ?? string.Empty;
@@ -516,12 +498,10 @@ public partial class Start : UserControl
             RemoteRCONPasswordBox.Visibility = Visibility.Collapsed;
             RemoteRCONPasswordTextbox.Visibility = Visibility.Visible;
         }
-
         else
         {
             RemoteRCONPasswordTextbox.Visibility = Visibility.Collapsed;
             RemoteRCONPasswordBox.Visibility = Visibility.Visible;
         }
-
     }
 }

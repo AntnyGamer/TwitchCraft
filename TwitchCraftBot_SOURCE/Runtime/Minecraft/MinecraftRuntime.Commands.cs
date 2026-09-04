@@ -358,7 +358,7 @@ public sealed partial class BotMainHandler
         => char.IsWhiteSpace(value) || value == '\uFEFF';
 
     private static bool HasLineBreak(ReadOnlySpan<char> command)
-        => command.Contains('\r') || command.Contains('\n');
+        => command.IndexOfAny('\r', '\n') >= 0;
 
     private Task<bool> WriteCommandNoLockAsync(Process process, string normalizedCommand, CancellationToken cancellationToken)
     {
@@ -432,5 +432,4 @@ public sealed partial class BotMainHandler
             ArrayPool<byte>.Shared.Return(rented);
         }
     }
-
 }

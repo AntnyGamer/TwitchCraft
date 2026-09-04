@@ -93,8 +93,10 @@ public partial class Settings
 
     private void LoadMainSettings(StartingProfile settings)
     {
-        CommandPrefixTextBox.Text = ConfigurationStore.NormalizeCommandPrefix(settings.CommandPrefix, "!");
-        SecondaryCommandPrefixTextBox.Text = ConfigurationStore.NormalizeCommandPrefix(settings.SecondaryCommandPrefix, string.Empty);
+        _savedCommandPrefix = ConfigurationStore.NormalizeCommandPrefix(settings.CommandPrefix, "!");
+        _savedSecondaryCommandPrefix = ConfigurationStore.NormalizeCommandPrefix(settings.SecondaryCommandPrefix, string.Empty);
+        CommandPrefixTextBox.Text = _savedCommandPrefix;
+        SecondaryCommandPrefixTextBox.Text = _savedSecondaryCommandPrefix;
         MentionViewersCheckbox.IsChecked = settings.MentionViewersInBotReplies;
         ExactCooldownCheckbox.IsChecked = settings.ShowExactCooldownRemaining;
         UnknownCommandResponseCheckbox.IsChecked = settings.RespondToUnknownCommands;
@@ -103,7 +105,7 @@ public partial class Settings
         SetEditableInt(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMinimumSeconds);
         SetEditableInt(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMaximumSeconds);
         SetEditableInt(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, settings.MaximumTokenBalance);
-        RecentChatPayoutCheckbox.IsChecked = settings.PassiveRewardsRequireRecentChat;
+        ActivityPayoutCheckbox.IsChecked = settings.PassiveRewardsRequireActivity;
         SetEditableInt(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, settings.ChannelCommandLimitPerMinute);
         AllowAllTargetsCheckbox.IsChecked = settings.AllowAllPlayerTarget;
         AllowRandomTargetsCheckbox.IsChecked = settings.AllowRandomPlayerTarget;
@@ -240,10 +242,18 @@ public partial class Settings
         RelayTextColorDropdown.SelectedItem = "White";
     }
 
-    private async void Prefix_LostFocus(object sender, RoutedEventArgs e)
+    private async void Prefix_Changed(object sender, RoutedEventArgs e)
     {
         if (_initializing)
             return;
+
+        if (e is SelectionChangedEventArgs)
+        {
+            if (sender is not ComboBox { SelectedItem: string selected })
+                return;
+
+            ((ComboBox)sender).Text = selected;
+        }
 
         string primary = ConfigurationStore.NormalizeCommandPrefix(CommandPrefixTextBox.Text, "!");
         string secondary = ConfigurationStore.NormalizeCommandPrefix(SecondaryCommandPrefixTextBox.Text, string.Empty);
@@ -252,11 +262,38 @@ public partial class Settings
 
         CommandPrefixTextBox.Text = primary;
         SecondaryCommandPrefixTextBox.Text = secondary;
+        if (string.Equals(primary, _savedCommandPrefix, StringComparison.Ordinal) &&
+            string.Equals(secondary, _savedSecondaryCommandPrefix, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        int saveVersion = ++_prefixSaveVersion;
+        bool prefixChanged = !string.Equals(primary, _savedCommandPrefix, StringComparison.Ordinal);
+        _savedCommandPrefix = primary;
+        _savedSecondaryCommandPrefix = secondary;
+        if (prefixChanged)
+            UpdateCommandPrefixes(primary);
+
         await SaveConfigAsync(config =>
         {
             config.Settings.CommandPrefix = primary;
             config.Settings.SecondaryCommandPrefix = secondary;
         });
+
+        if (saveVersion != _prefixSaveVersion)
+            return;
+
+        var runtime = AppHelpers.GetBotWindow(this)?.Runtime;
+        if (runtime == null)
+            return;
+
+        CommandPrefixTextBox.Text = runtime.CommandPrefix;
+        SecondaryCommandPrefixTextBox.Text = runtime.SecondaryCommandPrefix;
+        if (!string.Equals(runtime.CommandPrefix, _savedCommandPrefix, StringComparison.Ordinal))
+            UpdateCommandPrefixes(runtime.CommandPrefix);
+        _savedCommandPrefix = runtime.CommandPrefix;
+        _savedSecondaryCommandPrefix = runtime.SecondaryCommandPrefix;
     }
 
     private async void MentionViewers_Changed(object sender, RoutedEventArgs e)
@@ -273,8 +310,8 @@ public partial class Settings
 
     private async void RequireActivity_Changed(object sender, RoutedEventArgs e)
     {
-        RecentChatWindowDropdown.IsEnabled = RecentChatPayoutCheckbox.IsChecked == true;
-        await SaveBoolAsync(RecentChatPayoutCheckbox, static (settings, value) => settings.PassiveRewardsRequireRecentChat = value);
+        ActivityWindowDropdown.IsEnabled = ActivityPayoutCheckbox.IsChecked == true;
+        await SaveBoolAsync(ActivityPayoutCheckbox, static (settings, value) => settings.PassiveRewardsRequireActivity = value);
     }
 
     private async void AllowAllTargets_Changed(object sender, RoutedEventArgs e)
@@ -493,7 +530,7 @@ public partial class Settings
         target.PassiveTokenPayoutMinimumSeconds = source.PassiveTokenPayoutMinimumSeconds;
         target.PassiveTokenPayoutMaximumSeconds = source.PassiveTokenPayoutMaximumSeconds;
         target.MaximumTokenBalance = source.MaximumTokenBalance;
-        target.PassiveRewardsRequireRecentChat = source.PassiveRewardsRequireRecentChat;
+        target.PassiveRewardsRequireActivity = source.PassiveRewardsRequireActivity;
         target.ChannelCommandLimitPerMinute = source.ChannelCommandLimitPerMinute;
         target.AllowAllPlayerTarget = source.AllowAllPlayerTarget;
         target.AllowRandomPlayerTarget = source.AllowRandomPlayerTarget;

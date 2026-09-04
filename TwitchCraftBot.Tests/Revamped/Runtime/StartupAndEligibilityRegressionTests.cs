@@ -7,17 +7,17 @@ namespace TwitchCraftBot.Tests.Revamped.Runtime;
 public sealed class StartupAndEligibilityRegressionTests
 {
     [Fact]
-    public async Task Eligibility_WhenRecentChatIsNotRequiredAcceptsRosterViewerWithoutActivity()
+    public async Task Eligibility_AcceptsRosterViewerWhenActivityNotRequired()
     {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireRecentChat = false);
+        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireActivity = false);
 
         Assert.True(scope.Runtime.IsRewardEligibleNoLock("quietviewer", 1_000_000));
     }
 
     [Fact]
-    public async Task Eligibility_WhenRecentChatIsRequiredRejectsViewerWithoutActivity()
+    public async Task Eligibility_RejectsInactiveViewerWhenActivityRequired()
     {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireRecentChat = true);
+        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireActivity = true);
 
         Assert.False(scope.Runtime.IsRewardEligibleNoLock("quietviewer", 1_000));
     }
@@ -27,8 +27,8 @@ public sealed class StartupAndEligibilityRegressionTests
     {
         using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
         {
-            settings.PassiveRewardsRequireRecentChat = true;
-            settings.PassiveRecentChatWindowMinutes = 1;
+            settings.PassiveRewardsRequireActivity = true;
+            settings.PassiveActivityWindowMinutes = 1;
         });
 
         scope.Runtime.RecordChatActivity("  @Viewer_Name  ", 1_000);
@@ -41,8 +41,8 @@ public sealed class StartupAndEligibilityRegressionTests
     {
         using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
         {
-            settings.PassiveRewardsRequireRecentChat = true;
-            settings.PassiveRecentChatWindowMinutes = 2;
+            settings.PassiveRewardsRequireActivity = true;
+            settings.PassiveActivityWindowMinutes = 2;
         });
         scope.Runtime.RecordChatActivity("viewer", 1_000);
 
@@ -54,8 +54,8 @@ public sealed class StartupAndEligibilityRegressionTests
     {
         using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
         {
-            settings.PassiveRewardsRequireRecentChat = true;
-            settings.PassiveRecentChatWindowMinutes = 1;
+            settings.PassiveRewardsRequireActivity = true;
+            settings.PassiveActivityWindowMinutes = 1;
         });
         scope.Runtime.RecordChatActivity("viewer", 1_000);
         scope.Runtime.RecordChatActivity("VIEWER", 1_100);

@@ -401,5 +401,4 @@ public sealed partial class BotMainHandler
             _spectatorPlayers.Remove(playerName);
         }
     }
-
 }

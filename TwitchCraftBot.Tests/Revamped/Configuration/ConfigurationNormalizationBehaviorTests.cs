@@ -42,7 +42,7 @@ public sealed class ConfigurationNormalizationBehaviorTests
                 MaximumTokenBalance = -1,
                 ChannelCommandLimitPerMinute = 1001,
                 ViewerCommandLimitPerMinute = -1,
-                PassiveRecentChatWindowMinutes = 500,
+                PassiveActivityWindowMinutes = 500,
                 AutomaticBackupIntervalHours = 2,
                 AutomaticBackupRetentionCount = 2,
                 MaxVisibleTwitchLogLines = 1,
@@ -100,7 +100,7 @@ public sealed class ConfigurationNormalizationBehaviorTests
         Assert.Equal(0, config.Settings.MaximumTokenBalance);
         Assert.Equal(0, config.Settings.ChannelCommandLimitPerMinute);
         Assert.Equal(0, config.Settings.ViewerCommandLimitPerMinute);
-        Assert.Equal(120, config.Settings.PassiveRecentChatWindowMinutes);
+        Assert.Equal(10, config.Settings.PassiveActivityWindowMinutes);
         Assert.Equal(24, config.Settings.AutomaticBackupIntervalHours);
         Assert.Equal(StartingProfile.DefaultAutomaticBackupRetentionCount, config.Settings.AutomaticBackupRetentionCount);
         Assert.Equal(250, config.Settings.MaxVisibleTwitchLogLines);
@@ -200,5 +200,4 @@ public sealed class ConfigurationNormalizationBehaviorTests
         Assert.False(result);
         Assert.Equal("first\nsecond", password);
     }
-
 }

@@ -96,7 +96,6 @@ public sealed class CommandService
                 seconds = DefaultGlobalGameCommandCooldownSeconds;
             return TimeSpan.FromSeconds(seconds).Ticks;
         }
-
     }
 
     public bool TryGetGlobalCooldown(out TimeSpan remaining)
@@ -148,9 +147,7 @@ public sealed class CommandService
                 remaining = TimeSpan.Zero;
                 return true;
             }
-
         }
-
     }
 
     public void ClearGlobalCooldown()
@@ -189,7 +186,6 @@ public sealed class CommandService
             reservationUtc = now;
             return true;
         }
-
     }
 
     public void ClearLightningCooldown()
@@ -198,7 +194,6 @@ public sealed class CommandService
         {
             _lastLightningUtc = DateTime.MinValue;
         }
-
     }
 
     public void ClearLightningCooldown(DateTime reservationUtc)
@@ -208,7 +203,6 @@ public sealed class CommandService
             if (_lastLightningUtc == reservationUtc)
                 _lastLightningUtc = DateTime.MinValue;
         }
-
     }
 
     internal bool TryUseScaleCommand(string commandName, out TimeSpan remaining, out DateTime reservationUtc)
@@ -235,7 +229,6 @@ public sealed class CommandService
                     reservationUtc = DateTime.MinValue;
                     return false;
                 }
-
             }
 
             _timedScaleCommandCooldowns[normalizedCommand] = now;
@@ -243,7 +236,6 @@ public sealed class CommandService
             reservationUtc = now;
             return true;
         }
-
     }
 
     internal void ClearScaleCooldowns()
@@ -252,7 +244,6 @@ public sealed class CommandService
         {
             _timedScaleCommandCooldowns.Clear();
         }
-
     }
 
     internal void ClearScaleCooldown(string commandName, DateTime reservationUtc)
@@ -265,7 +256,6 @@ public sealed class CommandService
             if (_timedScaleCommandCooldowns.TryGetValue(normalizedCommand, out DateTime current) && current == reservationUtc)
                 _timedScaleCommandCooldowns.Remove(normalizedCommand);
         }
-
     }
 
     public bool IsGambleOnCooldown(string user, out TimeSpan remaining)
@@ -290,7 +280,6 @@ public sealed class CommandService
 
                 _gambleCooldowns.Remove(normalized);
             }
-
         }
 
         remaining = TimeSpan.Zero;
@@ -306,7 +295,6 @@ public sealed class CommandService
         {
             _gambleCooldowns[normalized] = DateTime.UtcNow + duration;
         }
-
     }
 
     public bool IsAllowedUser(string user)
@@ -370,7 +358,6 @@ public sealed class CommandService
                 {
                     return MakePlayerTarget(exactDefault);
                 }
-
             }
 
             if (online.Count == 1)
@@ -385,7 +372,6 @@ public sealed class CommandService
                     ? requester + ", " + defaultPlayer + " is not online. Please specify a player name."
                     : requester + ", please specify which player to target.";
             }
-
             else
             {
                 message = defaultPlayer.Length > 0
@@ -429,7 +415,6 @@ public sealed class CommandService
                 {
                     return MakePlayerTarget(exactDefault);
                 }
-
             }
 
             await replyAsync(requester + ", invalid player name '" + player + "'. You were not charged.", cancellationToken).ConfigureAwait(false);
@@ -445,5 +430,4 @@ public sealed class CommandService
 
         return MakePlayerTarget(exactPlayer);
     }
-
 }

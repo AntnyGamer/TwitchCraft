@@ -38,8 +38,8 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
             nameof(StartingProfile.PassiveTokensPerPayout),
             nameof(StartingProfile.PassiveTokenPayoutMinimumSeconds),
             nameof(StartingProfile.PassiveTokenPayoutMaximumSeconds),
-            nameof(StartingProfile.PassiveRewardsRequireRecentChat),
-            nameof(StartingProfile.PassiveRecentChatWindowMinutes),
+            nameof(StartingProfile.PassiveRewardsRequireActivity),
+            nameof(StartingProfile.PassiveActivityWindowMinutes),
             nameof(StartingProfile.MaximumTokenBalance),
             nameof(StartingProfile.CommandCostMultiplier),
             nameof(StartingProfile.AutomaticFollowRewardsEnabled),
@@ -86,7 +86,8 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
             nameof(StartingProfile.NetworkCompressionThreshold),
             nameof(StartingProfile.RCONTimeoutSeconds),
             nameof(StartingProfile.GracefulShutdownTimeoutSeconds),
-            nameof(StartingProfile.EmptyServerShutdownDelayMinutes)
+            nameof(StartingProfile.EmptyServerShutdownDelayMinutes),
+            nameof(StartingProfile.WhitelistEnabled)
         ])
     ];
 
@@ -178,5 +179,4 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
 
         return properties;
     }
-
 }

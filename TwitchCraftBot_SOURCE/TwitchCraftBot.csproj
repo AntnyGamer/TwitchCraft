@@ -23,13 +23,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assets\server-icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-
-    <Content Include="Assets\locateplayers\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="Assets\server-icon.png" LogicalName="TwitchCraft.server-icon.png" />
+    <EmbeddedResource Include="Assets\locateplayers\**\*">
+      <LogicalName>TwitchCraft.locateplayers/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

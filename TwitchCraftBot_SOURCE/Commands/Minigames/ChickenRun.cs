@@ -120,7 +120,7 @@ public static partial class MinigameManager
             }
 
             if (payouts.Count > 0)
-                runtime.Tokens.Award(payouts);
+                runtime.Tokens.Adjust(payouts);
 
             await SafeReplyAsync(
                 runtime,
@@ -141,5 +141,4 @@ public static partial class MinigameManager
             EndMinigame(runtime, "ChickenRun", runID);
         }
     }
-
 }

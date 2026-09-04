@@ -11,23 +11,17 @@ public sealed class ServerPropertyEditor
     private const string DefaultLevelName = "world";
     private static readonly UTF8Encoding Utf8NoBom = new(false);
 
-    private static readonly string[] ManagedGameplayPropertyOrder =
+    private static readonly string[] ManagedServerPropertyOrder =
     [
         "difficulty",
         "hardcore",
-        "pvp"
-    ];
-
-    private static readonly string[] ManagedMinecraftServerPropertyOrder =
-    [
+        "pvp",
         "view-distance",
         "simulation-distance",
         "entity-broadcast-range-percentage",
-        "network-compression-threshold"
-    ];
-
-    private static readonly string[] ManagedStartupPropertyOrder =
-    [
+        "network-compression-threshold",
+        "white-list",
+        "enforce-whitelist",
         "max-players",
         "motd",
         "online-mode",
@@ -36,11 +30,10 @@ public sealed class ServerPropertyEditor
         "enable-query",
         "query.port",
         "enable-rcon",
-        "rcon.port",
-        "rcon.password"
+        "rcon.port"
     ];
 
-    private static readonly HashSet<string> ManagedServerProperties = CreateManagedServerProperties();
+    private static readonly HashSet<string> ManagedServerProperties = new(ManagedServerPropertyOrder, StringComparer.OrdinalIgnoreCase) { "rcon.password" };
 
     public static string GetPropertiesPath(BotConfig config)
     {
@@ -100,7 +93,7 @@ public sealed class ServerPropertyEditor
             return DefaultLevelName;
 
         if (Path.IsPathRooted(value) || value.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
-            value.Contains('/') || value.Contains('\\') || value.Contains(':'))
+            value.AsSpan().IndexOfAny('/', '\\', ':') >= 0)
         {
             return DefaultLevelName;
         }
@@ -190,6 +183,7 @@ public sealed class ServerPropertyEditor
         props["simulation-distance"] = config.Settings.SimulationDistance.ToString(CultureInfo.InvariantCulture);
         props["entity-broadcast-range-percentage"] = config.Settings.EntityBroadcastRangePercentage.ToString(CultureInfo.InvariantCulture);
         props["network-compression-threshold"] = config.Settings.NetworkCompressionThreshold.ToString(CultureInfo.InvariantCulture);
+        props["white-list"] = props["enforce-whitelist"] = config.Settings.WhitelistEnabled ? "true" : "false";
 
         SetDefault(props, "enable-jmx-monitoring", "false");
         SetDefault(props, "gamemode", "survival");
@@ -209,13 +203,11 @@ public sealed class ServerPropertyEditor
         SetDefault(props, "player-idle-timeout", "500");
         SetDefault(props, "force-gamemode", "true");
         SetDefault(props, "rate-limit", "0");
-        SetDefault(props, "white-list", "false");
         SetDefault(props, "broadcast-console-to-ops", "false");
         SetDefault(props, "previews-chat", "false");
         SetDefault(props, "function-permission-level", "2");
         SetDefault(props, "level-type", "minecraft:normal");
         SetDefault(props, "text-filtering-config", string.Empty);
-        SetDefault(props, "enforce-whitelist", "false");
         SetDefault(props, "spawn-protection", "0");
         SetDefault(props, "resource-pack-sha1", string.Empty);
         SetDefault(props, "max-world-size", "29999984");
@@ -313,20 +305,20 @@ public sealed class ServerPropertyEditor
         editableKeys.Sort(StringComparer.OrdinalIgnoreCase);
         if (editableKeys.Count > 0)
         {
-            builder.AppendLine("# THE SETTINGS BELOW ARE NOT MANAGED BY TWITCHCRAFT");
-            builder.AppendLine("# YOU CAN CHANGE THEM HERE; TWITCHCRAFT PRESERVES THEIR VALUES.");
+            builder.AppendLine("# THESE SETTINGS CAN BE CHANGED DIRECTLY IN THIS FILE.");
+            builder.AppendLine("# TWITCHCRAFT WILL PRESERVE YOUR CHANGES.");
             foreach (string key in editableKeys)
                 AppendProperty(builder, key, props[key]);
 
             builder.AppendLine();
         }
 
-        builder.AppendLine("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT");
-        builder.AppendLine("# CHANGE THEM IN TWITCHCRAFT; DIRECT EDITS HERE MAY BE REPLACED.");
-        builder.AppendLine();
-        AppendManagedSection(builder, props, "GAMEPLAY SETTINGS", ManagedGameplayPropertyOrder);
-        AppendManagedSection(builder, props, "MINECRAFT SERVER SETTINGS", ManagedMinecraftServerPropertyOrder);
-        AppendManagedSection(builder, props, "SERVER STARTUP & CONNECTION", ManagedStartupPropertyOrder, appendTrailingBlankLine: false);
+        builder.AppendLine("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT.");
+        builder.AppendLine("# IT IS RECOMMENDED TO CHANGE THEM IN TWITCHCRAFT AS DIRECT EDITS HERE MAY BE REPLACED.");
+        foreach (string key in ManagedServerPropertyOrder)
+            if (props.TryGetValue(key, out string? value)) AppendProperty(builder, key, value);
+        builder.AppendLine().AppendLine("# RCON PASSWORD - MANAGED BY TWITCHCRAFT - KEEP SECURE").AppendLine("# IF LOCALLY HOSTING, CHANGE IT IN TWITCHCRAFT: SETTINGS > DANGEROUS");
+        if (props.TryGetValue("rcon.password", out string? rconPassword)) AppendProperty(builder, "rcon.password", rconPassword);
 
         string content = builder.ToString();
         if (string.Equals(existingContent, content, StringComparison.Ordinal))
@@ -337,39 +329,6 @@ public sealed class ServerPropertyEditor
         File.WriteAllText(tempPath, content, Utf8NoBom);
         TwitchCraftBot_V1.FileSystemHelper.ReplaceFile(tempPath, propsPath, backupPath, "Atomic server.properties save failed; falling back to copy");
         return content;
-    }
-
-    private static HashSet<string> CreateManagedServerProperties()
-    {
-        HashSet<string> properties = new(StringComparer.OrdinalIgnoreCase);
-        AddManagedProperties(properties, ManagedGameplayPropertyOrder);
-        AddManagedProperties(properties, ManagedMinecraftServerPropertyOrder);
-        AddManagedProperties(properties, ManagedStartupPropertyOrder);
-        return properties;
-    }
-
-    private static void AddManagedProperties(HashSet<string> destination, string[] properties)
-    {
-        foreach (string property in properties)
-            destination.Add(property);
-    }
-
-    private static void AppendManagedSection(
-        StringBuilder builder,
-        Dictionary<string, string> props,
-        string title,
-        string[] propertyOrder,
-        bool appendTrailingBlankLine = true)
-    {
-        builder.Append("# ").AppendLine(title);
-        foreach (string key in propertyOrder)
-        {
-            if (props.TryGetValue(key, out string? value))
-                AppendProperty(builder, key, value);
-        }
-
-        if (appendTrailingBlankLine)
-            builder.AppendLine();
     }
 
     private static void AppendProperty(StringBuilder builder, string key, string value)

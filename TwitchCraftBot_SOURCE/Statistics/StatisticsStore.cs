@@ -142,8 +142,7 @@ internal static partial class BotStatisticsStore
 
     public static bool ApplyEffectsDelta(long effectsGiven)
     {
-        long safeEffects = Math.Max(0L, effectsGiven);
-        if (safeEffects <= 0)
+        if (effectsGiven <= 0)
         {
             return true;
         }
@@ -152,7 +151,7 @@ internal static partial class BotStatisticsStore
         {
             lock (IoGate)
             {
-                AddEffectsNoLock(safeEffects);
+                AddEffectsNoLock(effectsGiven);
             }
 
             return true;
@@ -291,5 +290,4 @@ internal static partial class BotStatisticsStore
             }
         }
     }
-
 }

@@ -35,7 +35,7 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Security policy](SECURITY.md)
 * [AI Assistance Disclosure](docs/NOTE.md)
 
-External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
+External tutorials and short links later in this guide are supplemental mirrors.If they disagree with this repository, use the repository-local documentation
 
 ## 1. Requirements
 
@@ -95,14 +95,14 @@ For Minecraft versions **26.1–26.2.0**:
    * TwitchCraft will prepare the Minecraft server and then open the Start screen
 
 **Run the process:**
-1. Select whether you want to use multiplayer and then turn offline mode on or off (only available with multiplayer)
+1. Select whether you want to use multiplayer and then turn Online Mode on or off (only available with multiplayer)
 2. Enter your Minecraft username if asked
 3. If you want to use an existing world, import it before starting
 4. Click **Start**
 
 ## 6. Settings & Customization
 
-TwitchCraft includes a Settings menu that lets you customize how the bot, Minecraft server, commands, tokens, statistics, backups, and other features behave
+TwitchCraft includes settings to customize the bot, server, commands, tokens, statistics, backups, and more
 
 **Settings include:**
 
@@ -183,15 +183,13 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 
 **On the computer or host running the Minecraft server:**
 
-1. Open `server.properties`
-2. Find these settings:
+1. If TwitchCraft manages the host server (default), set or copy the RCON password from **Settings --> Dangerous --> RCON Password**
+2. Otherwise, open `server.properties` and set:
    * `enable-rcon=true`
    * `rcon.port=25575`
    * `rcon.password=YOUR_PASSWORD_HERE`
-3. Replace `YOUR_PASSWORD_HERE` with a strong private password
-4. Save `server.properties`
-5. Restart the Minecraft server
-6. Make sure the RCON port is allowed through the server firewall if needed
+3. Restart the Minecraft server after changing the password
+4. Make sure the RCON port is allowed through the server firewall if needed
 
 **In TwitchCraft as the remote user:**
 
@@ -205,9 +203,9 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
    * Use `127.0.0.1` if TwitchCraft is running on the same computer as the Minecraft server
 6. Enter the RCON Port
    * The default port is `25575`
-   * This must match `rcon.port` in `server.properties`
+   * This must match the RCON port configured on the host server
 7. Enter the RCON Password
-   * This must match `rcon.password` in `server.properties`
+   * This must match the RCON password configured on the host server
 8. Enter your Minecraft username if asked
 9. Click **Start**
 
@@ -241,9 +239,13 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
   * `!givetokens <user/all/random> <amount>`
   * `!removetokens <user/all/random> <amount>`
 
-**Actual token file location:** `%APPDATA%\TwitchCraftBot\viewer_tokens.db` (for reference, paste this path into Win + R or File Explorer)
+**Actual token file location:**
+`%APPDATA%\TwitchCraftBot\viewer_tokens.db`
 
-**Readable token export location:** `%APPDATA%\TwitchCraftBot\exports\viewer_tokens.json`
+**Readable token export location:**
+`%APPDATA%\TwitchCraftBot\exports\viewer_tokens.json`
+
+*For reference, paste any of the file locations above into Win + R or File Explorer.*
 
 **Notes:**
 
@@ -273,12 +275,15 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 * Time survived
 * Sessions started
 
-**Statistics file location:** `%APPDATA%\TwitchCraftBot\statistics.db`
+**Statistics file location:**
+`%APPDATA%\TwitchCraftBot\statistics.db`
 
 **Readable statistics export locations:**
 
 * `%APPDATA%\TwitchCraftBot\exports\statistics.json`
 * `%APPDATA%\TwitchCraftBot\exports\statistics_viewers.json`
+
+*For reference, paste any of the file locations above into Win + R or File Explorer.*
 
 **Technical notes:**
 
@@ -318,4 +323,4 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 
 TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
 
-**README version 1.8.0.0 — September 2, 2026**
+**README version 1.8.0.0 — September 3rd, 2026**

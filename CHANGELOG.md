@@ -2,16 +2,18 @@
 
 All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
-## [1.8.0.0] - 2026-09-02
+## [1.8.0.0] - 2026-09-03
 
 - Completely redesigned and greatly expanded Settings with many new command, economy, chat, performance, backup, and Minecraft server options
 - Added per-command customization, customizable command prefixes, rate limits, and cooldown controls
-- Added many new Twitch and Minecraft commands and expanded token/economy features
+- Added 12 new Twitch and Minecraft commands and greatly expanded token/economy features
+- Added automatic one-time token rewards for new Twitch followers
+- Added Low Resource Mode to reduce background resource usage, especially while minimized
 - Replaced the separate bot-token setup tool with built-in Twitch authorization and automatic token refreshing
 - Added automatic config and token database backups
 - Improved Twitch, Minecraft, RCON, viewer tracking, logging, and server startup/shutdown handling
 - Dropped support for Minecraft versions older than 1.20.5
-- Added many new tests, increasing the test suite from 200 to 275 total
+- Added many new tests, increasing the test suite from 200 to 300 total
 - Updated README and documentation
 - Minor UI and usability improvements
 - Minor bug fixes
@@ -72,7 +74,7 @@ All notable changes to this project are documented here. Release entries are lis
 - HOTFIX: Chicken Run and Wither Battle minigames no longer give extra tokens
 - HOTFIX: Max second bets on Chicken Run can now win
 - HOTFIX: Fixed numbering issue in the README.txt
-- You can now chose a custom cooldown time for the global command cooldown setting
+- You can now choose a custom cooldown time for the global command cooldown setting
 - Minor performance optimizations
 
 ## [1.7.0] - 2026-06-18
@@ -158,9 +160,9 @@ All notable changes to this project are documented here. Release entries are lis
 
 ## [1.5.0] - 2026-04-05
 
-- Added version support from 1.21.5-->26.1.1
+- Added version support from 1.21.5 through 26.1.1
 - Added 5 new commands (!slaughter, !rename, !johnny, !scared, !xp)
-- Upgraded !givetokens and !removetokens commands (now works with all, random, self)
+- Upgraded !givetokens and !removetokens commands (now work with all, random, self)
 - The bot now prompts you to close any stale javaw.exe processes
 - Added "Infested" and "Trial Omen" effects to effect list
 - The Minecraft username textbox no longer disappears after inputting a name for the first time
@@ -283,7 +285,7 @@ All notable changes to this project are documented here. Release entries are lis
 
 - Added an import world feature
 - Added the ability to allow your Twitch moderators to use typically streamer-only commands
-- Added the ability to place a 10 second cooldown on all game-effecting commands
+- Added the ability to place a 10 second cooldown on all game-affecting commands
 - Passive token and minigame enabling choices now persist after closing the bot
 - Updated the UI of the Help tab
 - Bug fixes
@@ -324,7 +326,7 @@ All notable changes to this project are documented here. Release entries are lis
 
 - Upgraded code to C#14
 - Fixed tokens getting wiped randomly
-- Fixed javaw.eve running after shutdown
+- Fixed javaw.exe running after shutdown
 - Bug fixes
 - Other minor changes
 

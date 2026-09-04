@@ -9,7 +9,7 @@ public sealed class OAuthTokenFormattingTests
     [InlineData("OAUTH:secret", "secret")]
     [InlineData("secret", "secret")]
     [InlineData(null, "")]
-    public void NormalizeAccessToken_RemovesWhitespaceAndOauthPrefix(string? value, string expected)
+    public void NormalizeAccessToken_RemovesWhitespaceAndOAuthPrefix(string? value, string expected)
     {
         Assert.Equal(expected, TwitchTokenHelper.NormalizeAccessToken(value));
     }

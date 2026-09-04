@@ -72,7 +72,8 @@ public sealed class ServerPropertiesContractTests
                 ViewDistance = 6,
                 SimulationDistance = 8,
                 EntityBroadcastRangePercentage = 75,
-                NetworkCompressionThreshold = 128
+                NetworkCompressionThreshold = 128,
+                WhitelistEnabled = true
             }
         };
 
@@ -87,6 +88,8 @@ public sealed class ServerPropertiesContractTests
         Assert.Contains("simulation-distance=8", content, StringComparison.Ordinal);
         Assert.Contains("entity-broadcast-range-percentage=75", content, StringComparison.Ordinal);
         Assert.Contains("network-compression-threshold=128", content, StringComparison.Ordinal);
+        Assert.Contains("white-list=true", content, StringComparison.Ordinal);
+        Assert.Contains("enforce-whitelist=true", content, StringComparison.Ordinal);
         Assert.Contains("level-name=Streamer World", content, StringComparison.Ordinal);
         Assert.Contains("server-port=25570", content, StringComparison.Ordinal);
         Assert.Contains("rcon.port=25580", content, StringComparison.Ordinal);
@@ -99,29 +102,28 @@ public sealed class ServerPropertiesContractTests
         Assert.DoesNotContain("server-port=12345", content, StringComparison.Ordinal);
         foreach (string key in new[] { "allow-nether", "spawn-monsters", "enable-command-block" })
             Assert.DoesNotContain("\n" + key + "=", "\n" + content, StringComparison.Ordinal);
-        int editableHeader = content.IndexOf("# THE SETTINGS BELOW ARE NOT MANAGED BY TWITCHCRAFT", StringComparison.Ordinal);
-        int managedHeader = content.IndexOf("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT", StringComparison.Ordinal);
-        int gameplayHeader = content.IndexOf("# GAMEPLAY SETTINGS", StringComparison.Ordinal);
-        int minecraftServerHeader = content.IndexOf("# MINECRAFT SERVER SETTINGS", StringComparison.Ordinal);
-        int startupHeader = content.IndexOf("# SERVER STARTUP & CONNECTION", StringComparison.Ordinal);
+        Assert.Contains("# THESE SETTINGS CAN BE CHANGED DIRECTLY IN THIS FILE.", content, StringComparison.Ordinal);
+        Assert.Contains("# TWITCHCRAFT WILL PRESERVE YOUR CHANGES.", content, StringComparison.Ordinal);
+        Assert.Contains("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT.", content, StringComparison.Ordinal);
+        Assert.Contains("# IT IS RECOMMENDED TO CHANGE THEM IN TWITCHCRAFT AS DIRECT EDITS HERE MAY BE REPLACED.", content, StringComparison.Ordinal);
+        Assert.Contains("# IF LOCALLY HOSTING, CHANGE IT IN TWITCHCRAFT: SETTINGS > DANGEROUS", content, StringComparison.Ordinal);
+        int editableHeader = content.IndexOf("# THESE SETTINGS CAN BE CHANGED DIRECTLY IN THIS FILE.", StringComparison.Ordinal);
+        int managedHeader = content.IndexOf("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT.", StringComparison.Ordinal);
+        int rconPasswordHeader = content.IndexOf("# RCON PASSWORD - MANAGED BY TWITCHCRAFT - KEEP SECURE", StringComparison.Ordinal);
 
-        Assert.True(editableHeader >= 0);
-        Assert.True(editableHeader < managedHeader);
-        Assert.True(managedHeader < gameplayHeader);
-        Assert.True(gameplayHeader < minecraftServerHeader);
-        Assert.True(minecraftServerHeader < startupHeader);
+        Assert.True(editableHeader >= 0 && editableHeader < managedHeader && managedHeader < rconPasswordHeader);
 
         foreach (string key in new[] { "a-custom", "custom-setting", "escaped-value", "gamemode", "level-name", "z-custom" })
             AssertPropertyInSection(content, key, editableHeader, managedHeader);
 
-        foreach (string key in new[] { "difficulty", "hardcore" })
-            AssertPropertyInSection(content, key, gameplayHeader, minecraftServerHeader);
+        foreach (string key in new[]
+        {
+            "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
+            "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
+        })
+            AssertPropertyInSection(content, key, managedHeader, rconPasswordHeader);
 
-        foreach (string key in new[] { "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold" })
-            AssertPropertyInSection(content, key, minecraftServerHeader, startupHeader);
-
-        foreach (string key in new[] { "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port", "rcon.password" })
-            AssertPropertyInSection(content, key, startupHeader, content.Length);
+        AssertPropertyInSection(content, "rcon.password", rconPasswordHeader, content.Length);
 
         Assert.True(content.IndexOf("a-custom=first", StringComparison.Ordinal) < content.IndexOf("z-custom=last", StringComparison.Ordinal));
         Assert.True(content.IndexOf("enable-query=", StringComparison.Ordinal) < content.IndexOf("rcon.port=", StringComparison.Ordinal));
@@ -136,5 +138,4 @@ public sealed class ServerPropertiesContractTests
         Assert.True(index > sectionStart && index < sectionEnd, $"Expected '{key}' in the requested server.properties section.");
         Assert.Equal(index, content.LastIndexOf(propertyPrefix, StringComparison.Ordinal));
     }
-
 }

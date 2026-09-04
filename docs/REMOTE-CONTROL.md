@@ -10,7 +10,9 @@ Avoid exposing the RCON port directly to the public internet. Never reuse the RC
 
 ## Configure the remote server
 
-In the remote server's `server.properties`:
+If TwitchCraft manages the host server, set or copy its password from **Settings --> Dangerous --> RCON Password** and restart that local server after changing it.
+
+For other servers, configure `server.properties`:
 
 ```properties
 enable-rcon=true
@@ -32,6 +34,8 @@ The Minecraft game port and RCON port serve different purposes. Players do not n
 6. Enter the exact RCON password.
 7. Enter the streamer's Minecraft username if requested.
 8. Select **Start**.
+
+Remote Control Mode starts with a blank password field. Enter the host server's exact RCON password; the remote RCON port and password are used only for that session and never replace your local-server RCON settings.
 
 Use `127.0.0.1` only when TwitchCraft and the remote-controlled server run on the same computer. Use a private address when both machines share a trusted network or VPN.
 

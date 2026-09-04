@@ -71,6 +71,10 @@ public partial class Settings : UserControl
     private CancellationTokenSource? _ramSaveDebounceCts;
     private CancellationTokenSource? _tokenAuthorizationCts;
     private bool _hasSavedTwitchAuthorization;
+    private int _prefixSaveVersion;
+    private string _savedCommandPrefix = "!";
+    private string _savedSecondaryCommandPrefix = string.Empty;
+    private string _savedRconPassword = string.Empty;
 
     private static bool IsAsciiDigitsOnly(string? value)
     {
@@ -96,7 +100,7 @@ public partial class Settings : UserControl
         [
             ViewerCommandLimitDropdown, ChannelCommandLimitDropdown, GlobalCooldownSecondsDropdown,
             PassivePayoutAmountDropdown, PassivePayoutMinimumDropdown, PassivePayoutMaximumDropdown,
-            RecentChatWindowDropdown, MaximumTokenBalanceDropdown, CommandCostMultiplierDropdown,
+            MaximumTokenBalanceDropdown, CommandCostMultiplierDropdown,
             FollowRewardAmountDropdown, RelayRateDropdown, MaxTwitchLogLinesDropdown,
             MaxMinecraftLogLinesDropdown, GameplayQueueDropdown, ViewDistanceDropdown,
             SimulationDistanceDropdown, EntityBroadcastRangeDropdown, NetworkCompressionDropdown,
@@ -291,8 +295,14 @@ public partial class Settings : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        _initializing = true;
         CancelRamSave();
         CancelAuthorization();
+        RconPasswordBox.Clear();
+        RconPasswordTextBox.Clear();
+        RconPasswordBox.Visibility = Visibility.Visible;
+        RconPasswordTextBox.Visibility = Visibility.Collapsed;
+        RconPasswordShowButton.Content = "Show";
         ResetAuthButton();
     }
 
@@ -380,7 +390,7 @@ public partial class Settings : UserControl
     private void LoadSettings(StartingProfile settings, ServerConfig server)
     {
         MinigamesCheckbox.IsChecked = settings.MinigamesEnabled;
-        string cooldownText = settings.MinigameCooldown.ToString();
+        string cooldownText = settings.MinigameCooldown + " minutes";
         MinigameCooldownDropdown.SelectedItem = cooldownText;
         MinigameCooldownDropdown.Text = cooldownText;
         PassiveTokensCheckbox.IsChecked = settings.PassiveTokenEarningEnabled;
@@ -401,6 +411,12 @@ public partial class Settings : UserControl
         SetDifficulty(settings.Difficulty);
         MinRamTextBox.Text = server.MemoryMinGB.ToString();
         MaxRamTextBox.Text = server.MemoryMaxGB.ToString();
+        _savedRconPassword = server.RCON.Password;
+        RconPasswordBox.Password = _savedRconPassword;
+        RconPasswordTextBox.Clear();
+        RconPasswordBox.Visibility = Visibility.Visible;
+        RconPasswordTextBox.Visibility = Visibility.Collapsed;
+        RconPasswordShowButton.Content = "Show";
         LoadMainSettings(settings);
         LoadExtraSettings(settings);
     }
@@ -531,7 +547,7 @@ public partial class Settings : UserControl
         string selected = (MinigameCooldownDropdown.SelectedItem as string
             ?? MinigameCooldownDropdown.Text
             ?? string.Empty).Trim();
-        if (!int.TryParse(selected, out int minutes) || minutes < 2 || minutes > 30)
+        if (!int.TryParse(selected.Split(' ')[0], out int minutes) || minutes < 2 || minutes > 30)
         {
             return;
         }
@@ -684,7 +700,7 @@ public partial class Settings : UserControl
         }
     }
 
-    private async void Pvp_Changed(object sender, RoutedEventArgs e)
+    private async void PVP_Changed(object sender, RoutedEventArgs e)
         => await SaveGameplayAsync();
 
     private async void Hardcore_Changed(object sender, RoutedEventArgs e)
@@ -718,6 +734,103 @@ public partial class Settings : UserControl
     {
         if (!config.Settings.RemoteControlEnabled)
             ServerPropertyEditor.ApplyProfile(config);
+    }
+
+    private string GetRconPassword() => RconPasswordTextBox.Visibility == Visibility.Visible
+        ? RconPasswordTextBox.Text ?? string.Empty
+        : RconPasswordBox.Password ?? string.Empty;
+
+    private void CopyRconPassword_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (GetRconPassword() is { Length: > 0 } password) Clipboard.SetText(password);
+        }
+        catch (Exception ex) { ErrorHandling.LogNonFatal("RCON password copy failed", ex); }
+    }
+
+    private void GenerateRconPassword_Click(object sender, RoutedEventArgs e)
+    {
+        string password = ConfigurationStore.GenerateRconPassword();
+        if (RconPasswordTextBox.Visibility == Visibility.Visible)
+        {
+            RconPasswordTextBox.Text = password;
+            RconPasswordTextBox.Focus();
+            RconPasswordTextBox.CaretIndex = password.Length;
+        }
+        else
+        {
+            RconPasswordBox.Password = password;
+            RconPasswordBox.Focus();
+        }
+    }
+
+    private void ToggleRconPasswordVisibility_Click(object sender, RoutedEventArgs e)
+    {
+        if (RconPasswordTextBox.Visibility == Visibility.Visible)
+        {
+            RconPasswordBox.Password = RconPasswordTextBox.Text ?? string.Empty;
+            RconPasswordTextBox.Clear();
+            RconPasswordTextBox.Visibility = Visibility.Collapsed;
+            RconPasswordBox.Visibility = Visibility.Visible;
+            RconPasswordShowButton.Content = "Show";
+            RconPasswordBox.Focus();
+        }
+        else
+        {
+            RconPasswordTextBox.Text = RconPasswordBox.Password ?? string.Empty;
+            RconPasswordBox.Visibility = Visibility.Collapsed;
+            RconPasswordTextBox.Visibility = Visibility.Visible;
+            RconPasswordShowButton.Content = "Hide";
+            RconPasswordTextBox.Focus();
+            RconPasswordTextBox.CaretIndex = RconPasswordTextBox.Text.Length;
+        }
+    }
+
+    private async void RconPasswordEditor_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (_initializing || RconPasswordEditor.IsKeyboardFocusWithin)
+            return;
+
+        string currentPassword = GetRconPassword();
+        if (!ConfigurationStore.TryNormalizeRconPassword(currentPassword, out string password))
+        {
+            if (!string.Equals(currentPassword, _savedRconPassword, StringComparison.Ordinal))
+            {
+                MessageBox.Show("Enter a non-empty RCON password without line breaks.", "RCON Password", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (RconPasswordTextBox.Visibility == Visibility.Visible) RconPasswordTextBox.Text = _savedRconPassword;
+                else RconPasswordBox.Password = _savedRconPassword;
+            }
+            return;
+        }
+
+        if (string.Equals(password, _savedRconPassword, StringComparison.Ordinal))
+        {
+            if (!string.Equals(currentPassword, password, StringComparison.Ordinal))
+            {
+                if (RconPasswordTextBox.Visibility == Visibility.Visible) RconPasswordTextBox.Text = password;
+                else RconPasswordBox.Password = password;
+            }
+            return;
+        }
+
+        await _settingsSaveGate.WaitAsync();
+        try
+        {
+            if (string.Equals(password, _savedRconPassword, StringComparison.Ordinal))
+                return;
+
+            await Task.Run(() => ConfigurationStore.Update(config => config.Server.RCON.Password = password));
+            _savedRconPassword = password;
+            if (RconPasswordTextBox.Visibility == Visibility.Visible) RconPasswordTextBox.Text = password;
+            else RconPasswordBox.Password = password;
+            AppHelpers.GetBotWindow(this)?.Runtime.StageLocalRconPassword(password);
+        }
+        catch (Exception ex) { ErrorHandling.ShowSaveSettingsError(this, ex); }
+        finally
+        {
+            _settingsSaveGate.Release();
+        }
     }
 
     private async void Ram_Changed(object sender, TextChangedEventArgs e)
@@ -841,8 +954,8 @@ public partial class Settings : UserControl
                 settings.PassiveTokensPerPayout = defaults.PassiveTokensPerPayout;
                 settings.PassiveTokenPayoutMinimumSeconds = defaults.PassiveTokenPayoutMinimumSeconds;
                 settings.PassiveTokenPayoutMaximumSeconds = defaults.PassiveTokenPayoutMaximumSeconds;
-                settings.PassiveRewardsRequireRecentChat = defaults.PassiveRewardsRequireRecentChat;
-                settings.PassiveRecentChatWindowMinutes = defaults.PassiveRecentChatWindowMinutes;
+                settings.PassiveRewardsRequireActivity = defaults.PassiveRewardsRequireActivity;
+                settings.PassiveActivityWindowMinutes = defaults.PassiveActivityWindowMinutes;
                 settings.MaximumTokenBalance = defaults.MaximumTokenBalance;
                 settings.AutomaticFollowRewardsEnabled = defaults.AutomaticFollowRewardsEnabled;
                 settings.FollowRewardAmount = defaults.FollowRewardAmount;
@@ -887,6 +1000,7 @@ public partial class Settings : UserControl
                 settings.SimulationDistance = defaults.SimulationDistance;
                 settings.EntityBroadcastRangePercentage = defaults.EntityBroadcastRangePercentage;
                 settings.NetworkCompressionThreshold = defaults.NetworkCompressionThreshold;
+                settings.WhitelistEnabled = defaults.WhitelistEnabled;
                 settings.RCONTimeoutSeconds = defaults.RCONTimeoutSeconds;
                 settings.GracefulShutdownTimeoutSeconds = defaults.GracefulShutdownTimeoutSeconds;
                 settings.EmptyServerShutdownDelayMinutes = defaults.EmptyServerShutdownDelayMinutes;
@@ -997,7 +1111,7 @@ public partial class Settings : UserControl
 
         for (int i = 2; i <= 30; i++)
         {
-            MinigameCooldownDropdown.Items.Add(i.ToString());
+            MinigameCooldownDropdown.Items.Add(i + " minutes");
         }
     }
 

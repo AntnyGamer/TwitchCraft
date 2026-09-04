@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+
 namespace TwitchCraftBot_V1;
 
 public static partial class CommandList
@@ -12,9 +13,8 @@ public static partial class CommandList
         async Task BanAsync(string[]? args, string sender, CancellationToken ct)
         {
             const string commandName = "ban";
-            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false))
-                return;
-            if (!await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
+            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
+                !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
@@ -86,9 +86,8 @@ public static partial class CommandList
         async Task KickAsync(string[]? args, string sender, CancellationToken ct)
         {
             const string commandName = "kick";
-            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false))
-                return;
-            if (!await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
+            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
+                !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
@@ -113,9 +112,8 @@ public static partial class CommandList
         async Task UnbanAsync(string[]? args, string sender, CancellationToken ct)
         {
             const string commandName = "unban";
-            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false))
-                return;
-            if (!await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
+            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
+                !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
@@ -139,9 +137,8 @@ public static partial class CommandList
         {
             string commandName = add ? "whitelistadd" : "whitelistremove";
             string action = add ? "add" : "remove";
-            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false))
-                return;
-            if (!await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
+            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
+                !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
@@ -183,9 +180,8 @@ public static partial class CommandList
                     DisplayName = string.IsNullOrEmpty(runtime.DefaultMinecraftPlayer) ? "everyone" : runtime.DefaultMinecraftPlayer,
                     PlayerCount = 1
                 };
-                if (!await CheckEffectCountAsync(count, sender, ct).ConfigureAwait(false))
-                    return;
-                if (!await RequireTokensAsync(sender, count, ct).ConfigureAwait(false))
+                if (!await CheckEffectCountAsync(count, sender, ct).ConfigureAwait(false) ||
+                    !await RequireTokensAsync(sender, count, ct).ConfigureAwait(false))
                     return;
                 target = await FilterSpectatorsAsync(target, ct).ConfigureAwait(false);
                 if (target is null || target.PlayerCount <= 0)
@@ -202,9 +198,8 @@ public static partial class CommandList
                     count = parsedCount;
                     argIndex = 1;
                 }
-                if (!await CheckEffectCountAsync(count, sender, ct).ConfigureAwait(false))
-                    return;
-                if (!await RequireTokensAsync(sender, count, ct).ConfigureAwait(false))
+                if (!await CheckEffectCountAsync(count, sender, ct).ConfigureAwait(false) ||
+                    !await RequireTokensAsync(sender, count, ct).ConfigureAwait(false))
                     return;
                 target = await ResolveTargetAsync(args, argIndex, sender, ct).ConfigureAwait(false);
                 if (target == null)

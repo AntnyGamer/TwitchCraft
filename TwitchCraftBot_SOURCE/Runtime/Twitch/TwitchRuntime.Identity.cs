@@ -21,7 +21,7 @@ public sealed partial class BotMainHandler
         {
             throw new InvalidOperationException(
                 "The saved Twitch authorization belongs to a different Twitch application. " +
-                "Open Settings → Dangerous → Reauthorize Twitch, then start TwitchCraft again.");
+                "Open Settings --> Dangerous --> Reauthorize Twitch, then start TwitchCraft again.");
         }
 
         string token = NormalizeToken(config.Twitch.BotToken);
@@ -53,7 +53,7 @@ public sealed partial class BotMainHandler
             if (!refreshed.IsSuccess && TwitchOAuthAuthorizer.ShouldUseDeviceAuth(refreshed.Error))
             {
                 throw new InvalidOperationException(
-                    "Twitch authorization needs to be renewed. Open Settings → Dangerous → Reauthorize Twitch, then start TwitchCraft again. " +
+                    "Twitch authorization needs to be renewed. Open Settings --> Dangerous --> Reauthorize Twitch, then start TwitchCraft again. " +
                     refreshed.Error,
                     ex);
             }
@@ -61,7 +61,7 @@ public sealed partial class BotMainHandler
             if (!refreshed.IsSuccess)
             {
                 throw new InvalidOperationException(
-                    "Twitch authorization expired and could not be renewed. Open Settings → Dangerous → Authorize Twitch. " +
+                    "Twitch authorization expired and could not be renewed. Open Settings --> Dangerous --> Authorize Twitch. " +
                     refreshed.Error,
                     ex);
             }
@@ -125,7 +125,9 @@ public sealed partial class BotMainHandler
             });
 
             if (_activeConfig != null &&
-                string.Equals(_activeConfig.Twitch.ClientID, clientId, StringComparison.Ordinal) && string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), expectedToken, StringComparison.Ordinal) && string.Equals(NormalizeToken(persisted.Twitch.BotToken), NormalizeToken(refreshed.Token), StringComparison.Ordinal))
+                string.Equals(_activeConfig.Twitch.ClientID, clientId, StringComparison.Ordinal) &&
+                string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), expectedToken, StringComparison.Ordinal) &&
+                string.Equals(NormalizeToken(persisted.Twitch.BotToken), NormalizeToken(refreshed.Token), StringComparison.Ordinal))
             {
                 BotConfig active = CloneConfig(_activeConfig);
                 active.Twitch.BotToken = refreshed.Token;
@@ -261,5 +263,4 @@ public sealed partial class BotMainHandler
         {
         }
     }
-
 }

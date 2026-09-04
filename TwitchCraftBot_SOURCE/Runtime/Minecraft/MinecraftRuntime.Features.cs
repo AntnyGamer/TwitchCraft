@@ -121,5 +121,4 @@ public sealed partial class BotMainHandler
     public string MobLootGameRuleName => UsesNamespacedGameRules ? "minecraft:mob_drops" : "doMobLoot";
 
     public bool MinecraftServerReady => _minecraftServerReady;
-
 }

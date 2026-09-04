@@ -13,7 +13,7 @@ public partial class Settings
 {
     private static readonly (int Value, string Label)[] ViewerCommandLimitOptions =
         [(0, "Unlimited"), (3, "3"), (5, "5"), (10, "10"), (15, "15"), (20, "20"), (30, "30"), (60, "60")];
-    private static readonly (int Value, string Label)[] RecentChatWindowOptions =
+    private static readonly (int Value, string Label)[] ActivityWindowOptions =
         [(1, "1 minute"), (2, "2 minutes"), (5, "5 minutes"), (10, "10 minutes"), (15, "15 minutes"), (30, "30 minutes"), (60, "1 hour"), (120, "2 hours")];
     private static readonly (int Value, string Label)[] BackupIntervalOptions =
         [(1, "1 hour"), (6, "6 hours"), (12, "12 hours"), (24, "24 hours"), (48, "2 days"), (168, "1 week")];
@@ -49,7 +49,7 @@ public partial class Settings
     private void AddExtraOptions()
     {
         AddOptions(ViewerCommandLimitDropdown, ViewerCommandLimitOptions);
-        AddOptions(RecentChatWindowDropdown, RecentChatWindowOptions);
+        AddOptions(ActivityWindowDropdown, ActivityWindowOptions);
         AddOptions(BackupIntervalDropdown, BackupIntervalOptions);
         AddOptions(BackupRetentionDropdown, BackupRetentionOptions);
         AddOptions(MaxTwitchLogLinesDropdown, VisibleLogLineOptions);
@@ -70,8 +70,8 @@ public partial class Settings
     private void LoadExtraSettings(StartingProfile settings)
     {
         SetEditableInt(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, settings.ViewerCommandLimitPerMinute);
-        SetEditableInt(RecentChatWindowDropdown, RecentChatWindowOptions, settings.PassiveRecentChatWindowMinutes);
-        RecentChatWindowDropdown.IsEnabled = settings.PassiveRewardsRequireRecentChat;
+        SetIntOption(ActivityWindowDropdown, ActivityWindowOptions, settings.PassiveActivityWindowMinutes, 10);
+        ActivityWindowDropdown.IsEnabled = settings.PassiveRewardsRequireActivity;
         AutomaticBackupsCheckbox.IsChecked = settings.AutomaticBackupsEnabled;
         SetIntOption(BackupIntervalDropdown, BackupIntervalOptions, settings.AutomaticBackupIntervalHours, 24);
         SetIntOption(BackupRetentionDropdown, BackupRetentionOptions, settings.AutomaticBackupRetentionCount, StartingProfile.DefaultAutomaticBackupRetentionCount);
@@ -92,6 +92,7 @@ public partial class Settings
         SetEditableInt(EntityBroadcastRangeDropdown, EntityBroadcastOptions, settings.EntityBroadcastRangePercentage);
         SetEditableInt(NetworkCompressionDropdown, NetworkCompressionOptions, settings.NetworkCompressionThreshold);
         SetIntOption(EmptyShutdownDropdown, EmptyShutdownOptions, settings.EmptyServerShutdownDelayMinutes, 0);
+        WhitelistCheckbox.IsChecked = settings.WhitelistEnabled;
         UpdateLowResource(settings);
         BuildCommandSettings(settings);
     }
@@ -118,7 +119,8 @@ public partial class Settings
 
             TextBlock name = new()
             {
-                Text = commandName,
+                Text = _savedCommandPrefix + commandName,
+                Tag = commandName,
                 VerticalAlignment = VerticalAlignment.Center,
                 FontFamily = new FontFamily("Cascadia Mono"),
                 FontSize = 14,
@@ -170,6 +172,18 @@ public partial class Settings
             row.Children.Add(globalCooldown);
             CommandCustomizationPanel.Children.Add(row);
         }
+    }
+
+    private void UpdateCommandPrefixes(string prefix)
+    {
+        for (int i = 1; i < CommandCustomizationPanel.Children.Count; i++)
+            if (CommandCustomizationPanel.Children[i] is Grid row &&
+                row.Children.Count > 0 &&
+                row.Children[0] is TextBlock name &&
+                name.Tag is string commandName)
+            {
+                name.Text = prefix + commandName;
+            }
     }
 
     private static Grid CreateCommandSettingsRow()
@@ -371,18 +385,9 @@ public partial class Settings
         SetIntValue(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, value);
         await SaveConfigAsync(config => config.Settings.ViewerCommandLimitPerMinute = value);
     }
-    private async void ActivityWindow_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (!_initializing && !_updatingCustomValueControls && RecentChatWindowDropdown.SelectedItem is string)
-            await SaveExtraValueAsync(RecentChatWindowDropdown, RecentChatWindowOptions, 1, 120,
-                static settings => settings.PassiveRecentChatWindowMinutes,
-                static (settings, value) => settings.PassiveRecentChatWindowMinutes = value);
-    }
 
-    private async void ActivityWindow_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveExtraValueAsync(RecentChatWindowDropdown, RecentChatWindowOptions, 1, 120,
-            static settings => settings.PassiveRecentChatWindowMinutes,
-            static (settings, value) => settings.PassiveRecentChatWindowMinutes = value);
+    private async void ActivityWindow_Changed(object sender, SelectionChangedEventArgs e)
+        => await SaveOptionAsync(ActivityWindowDropdown, ActivityWindowOptions, static (settings, value) => settings.PassiveActivityWindowMinutes = value);
 
     private async void BackupInterval_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(BackupIntervalDropdown, BackupIntervalOptions, static (settings, value) => settings.AutomaticBackupIntervalHours = value);
@@ -477,6 +482,15 @@ public partial class Settings
         => await SaveOptionAsync(SqliteOptimizeDropdown, SqliteOptimizeOptions, static (settings, value) => settings.SQLiteOptimizeIntervalHours = value);
     private async void EmptyShutdown_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(EmptyShutdownDropdown, EmptyShutdownOptions, static (settings, value) => settings.EmptyServerShutdownDelayMinutes = value);
+
+    private async void Whitelist_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_initializing)
+            return;
+
+        bool enabled = WhitelistCheckbox.IsChecked == true;
+        await SaveConfigAsync(config => config.Settings.WhitelistEnabled = enabled, beforeSave: ApplyLocalProfile);
+    }
 
     private async void ViewDistance_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -651,7 +665,7 @@ public partial class Settings
     private static void CopyExtraSettings(StartingProfile source, StartingProfile target)
     {
         target.ViewerCommandLimitPerMinute = source.ViewerCommandLimitPerMinute;
-        target.PassiveRecentChatWindowMinutes = source.PassiveRecentChatWindowMinutes;
+        target.PassiveActivityWindowMinutes = source.PassiveActivityWindowMinutes;
         target.AutomaticBackupsEnabled = source.AutomaticBackupsEnabled;
         target.AutomaticBackupIntervalHours = source.AutomaticBackupIntervalHours;
         target.AutomaticBackupRetentionCount = source.AutomaticBackupRetentionCount;
@@ -670,6 +684,7 @@ public partial class Settings
         target.EntityBroadcastRangePercentage = source.EntityBroadcastRangePercentage;
         target.NetworkCompressionThreshold = source.NetworkCompressionThreshold;
         target.EmptyServerShutdownDelayMinutes = source.EmptyServerShutdownDelayMinutes;
+        target.WhitelistEnabled = source.WhitelistEnabled;
         target.CommandCustomizations = new Dictionary<string, CommandCustomization>(StringComparer.OrdinalIgnoreCase);
     }
 }

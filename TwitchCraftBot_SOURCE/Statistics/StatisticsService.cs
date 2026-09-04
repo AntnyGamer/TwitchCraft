@@ -80,6 +80,7 @@ public sealed partial class StatisticsService
     private bool _enabled = true;
     private string _streamerName = string.Empty;
     private string _streamerMinecraftName = string.Empty;
+    private string _commandPrefix = "!";
 
     internal StatisticsService(BotStatisticsDependencies dependencies)
     {
@@ -89,11 +90,17 @@ public sealed partial class StatisticsService
 
     public bool Enabled => _enabled;
 
-    internal void SetContext(bool enabled, string streamerName, string streamerMinecraftName)
+    internal void SetContext(bool enabled, string streamerName, string streamerMinecraftName, string commandPrefix)
     {
         _enabled = enabled;
         _streamerName = streamerName;
         _streamerMinecraftName = streamerMinecraftName;
+        if (!string.Equals(_commandPrefix, commandPrefix, StringComparison.Ordinal))
+            lock (_statisticsGate)
+            {
+                _commandPrefix = commandPrefix;
+                _cachedStatisticsLeaderboardVersion = -1;
+            }
     }
 
     internal void Load()
@@ -117,9 +124,7 @@ public sealed partial class StatisticsService
                 _statisticsLoaded = true;
                 MarkLeaderboardDirty();
             }
-
         }
-
     }
 
     internal void ResetForSession()
@@ -133,7 +138,6 @@ public sealed partial class StatisticsService
             };
             MarkLeaderboardDirty();
         }
-
     }
 
     internal void ResetSurvival()
@@ -155,7 +159,6 @@ public sealed partial class StatisticsService
             _sessionStatistics.LastDeathScore = 0;
             _totalStatistics.LastDeathScore = 0;
         }
-
     }
 
     internal void ResetDeathBaseline()
@@ -166,7 +169,6 @@ public sealed partial class StatisticsService
             _sessionStatistics.DeathScoreBaselineSet = true;
             _sessionStatistics.LastDeathScore = ClampDeathScore(_totalStatistics.LastDeathScore);
         }
-
     }
 
     public Task ResetAllAsync()
@@ -189,7 +191,6 @@ public sealed partial class StatisticsService
                     trackedPlayerIsOnline = true;
                     break;
                 }
-
             }
 
             trackedPlayerIsSpectator = _dependencies.IsSpectator(trackedPlayer);
@@ -224,12 +225,10 @@ public sealed partial class StatisticsService
 
                 preservedPlayerIsSpectator = true;
             }
-
             else
             {
                 preservedPlayerIsSpectator = false;
             }
-
         }
 
         lock (_deathStatisticsGate)
@@ -256,14 +255,12 @@ public sealed partial class StatisticsService
                 _totalStatistics = new BotLifetimeStatistics { LastDeathScore = deathScoreBaseline };
                 MarkLeaderboardDirty();
             }
-
         }
 
         _dependencies.QueueSnapshot();
         _dependencies.QueueGamemode();
         _dependencies.QueueAllDeathScores();
     }
-
 }
 
 internal sealed record BotStatisticsDependencies(

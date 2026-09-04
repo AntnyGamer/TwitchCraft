@@ -88,5 +88,4 @@ public sealed class RollingLogPersistenceTests
             .Where(line => line.Length > 0)
             .ToArray();
     }
-
 }

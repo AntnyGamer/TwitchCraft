@@ -100,7 +100,7 @@ public static partial class MinigameManager
                     payouts.Add(new(bet.Viewer, payout));
             }
 
-            runtime.Tokens.Award(payouts);
+            runtime.Tokens.Adjust(payouts);
             payoutApplied = true;
 
             if (witherDefeated)
@@ -148,5 +148,4 @@ public static partial class MinigameManager
             EndMinigame(runtime, "WitherBattle", runID);
         }
     }
-
 }

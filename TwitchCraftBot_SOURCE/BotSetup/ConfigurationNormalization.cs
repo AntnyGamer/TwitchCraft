@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 
 namespace TwitchCraftBot_V1.BotSetup;
 
@@ -205,7 +206,8 @@ public sealed partial class ConfigurationStore
             config.Settings.ChannelCommandLimitPerMinute = 0;
         if (config.Settings.ViewerCommandLimitPerMinute < 0 || config.Settings.ViewerCommandLimitPerMinute > 1000)
             config.Settings.ViewerCommandLimitPerMinute = 0;
-        config.Settings.PassiveRecentChatWindowMinutes = Math.Clamp(config.Settings.PassiveRecentChatWindowMinutes, 1, 120);
+        config.Settings.PassiveActivityWindowMinutes = NormalizeChoice(
+            config.Settings.PassiveActivityWindowMinutes, 10, 1, 2, 5, 10, 15, 30, 60, 120);
         config.Settings.AutomaticBackupIntervalHours = NormalizeChoice(config.Settings.AutomaticBackupIntervalHours, 24, 1, 6, 12, 24, 48, 168);
         config.Settings.AutomaticBackupRetentionCount = NormalizeChoice(config.Settings.AutomaticBackupRetentionCount, StartingProfile.DefaultAutomaticBackupRetentionCount, 1, 3, 5, 10, 20);
         config.Settings.MaxVisibleTwitchLogLines = NormalizeRange(config.Settings.MaxVisibleTwitchLogLines, 250, 50, 5000);
@@ -298,9 +300,7 @@ public sealed partial class ConfigurationStore
     internal static string NormalizeCommandPrefix(string? prefix, string fallback)
     {
         string value = (prefix ?? string.Empty).Trim();
-        if (value.Length == 0)
-            return fallback;
-        if (value.Length > 2)
+        if (value.Length is 0 or > 2)
             return fallback;
 
         for (int i = 0; i < value.Length; i++)
@@ -334,9 +334,10 @@ public sealed partial class ConfigurationStore
         int choice4,
         int choice5,
         int? choice6 = null,
-        int? choice7 = null)
+        int? choice7 = null,
+        int? choice8 = null)
         => value == choice1 || value == choice2 || value == choice3 || value == choice4 || value == choice5 ||
-           value == choice6 || value == choice7
+           value == choice6 || value == choice7 || value == choice8
             ? value
             : fallback;
 
@@ -402,10 +403,11 @@ public sealed partial class ConfigurationStore
 
     public static string NormalizeRconPassword(string? value) => CleanText(value);
 
+    internal static string GenerateRconPassword() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(24));
+
     public static bool TryNormalizeRconPassword(string? value, out string password)
     {
         password = CleanText(value);
         return password.Length > 0 && password.AsSpan().IndexOfAny('\r', '\n') < 0;
     }
-
 }

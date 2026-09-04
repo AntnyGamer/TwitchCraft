@@ -77,28 +77,22 @@ public sealed partial class StatisticsService
 
     internal void RecordEffects(int count, bool streamerReceivedEffect)
     {
-        if (!Enabled || !streamerReceivedEffect)
-        {
-            return;
-        }
-
-        long effectsReceivedByStreamer = Math.Max(0L, count);
-        if (effectsReceivedByStreamer <= 0)
+        if (!Enabled || !streamerReceivedEffect || count <= 0)
         {
             return;
         }
 
         Load();
 
-        if (!BotStatisticsStore.ApplyEffectsDelta(effectsReceivedByStreamer))
+        if (!BotStatisticsStore.ApplyEffectsDelta(count))
         {
             return;
         }
 
         lock (_statisticsGate)
         {
-            _sessionStatistics.EffectsGiven += effectsReceivedByStreamer;
-            _totalStatistics.EffectsGiven += effectsReceivedByStreamer;
+            _sessionStatistics.EffectsGiven += count;
+            _totalStatistics.EffectsGiven += count;
         }
     }
 
@@ -225,5 +219,4 @@ public sealed partial class StatisticsService
             && streamerName.Length > 0
             && string.Equals(normalizedViewer, streamerName, StringComparison.OrdinalIgnoreCase);
     }
-
 }

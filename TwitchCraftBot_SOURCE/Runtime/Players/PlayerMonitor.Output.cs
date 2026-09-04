@@ -11,7 +11,7 @@ public sealed partial class BotMainHandler
 {
     private void HandleRconResponse(string response)
     {
-        if (!response.Contains('\n') && !response.Contains('\r'))
+        if (response.AsSpan().IndexOfAny('\r', '\n') < 0)
         {
             HandleRconLine(response);
             return;
@@ -307,5 +307,4 @@ public sealed partial class BotMainHandler
         ApplySnapshot(players);
         CompleteSnapshot(true);
     }
-
 }

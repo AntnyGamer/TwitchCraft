@@ -32,7 +32,7 @@ public sealed partial class BotMainHandler
     private long _lastChannelCommandLimitNoticeTicks;
     private int _twitchChatConnected;
 
-    public int MaximumTokenBalance => Math.Max(0, _activeConfig?.Settings.MaximumTokenBalance ?? 0);
+    public int MaximumTokenBalance => _activeConfig?.Settings.MaximumTokenBalance ?? 0;
     public bool AllowAllPlayerTarget => _activeConfig?.Settings.AllowAllPlayerTarget ?? true;
     public bool AllowRandomPlayerTarget => _activeConfig?.Settings.AllowRandomPlayerTarget ?? true;
     public bool ShowConnectionHealth => _activeConfig?.Settings.ShowConnectionHealth ?? false;
@@ -112,9 +112,9 @@ public sealed partial class BotMainHandler
 
         StringBuilder? builder = null;
         int copyStart = 0;
-        for (int i = 0; i + 1 < message.Length; i++)
+        for (int i = message.IndexOf('!'); i >= 0 && i + 1 < message.Length; i = message.IndexOf('!', i + 1))
         {
-            if (message[i] != '!' || !char.IsAsciiLetter(message[i + 1]) ||
+            if (!char.IsAsciiLetter(message[i + 1]) ||
                 i > 0 && (char.IsAsciiLetterOrDigit(message[i - 1]) || message[i - 1] == '_'))
             {
                 continue;
@@ -152,25 +152,16 @@ public sealed partial class BotMainHandler
     internal int GetPayoutDelay()
     {
         StartingProfile settings = EffectiveSettings;
-        int minimum = Math.Clamp(settings.PassiveTokenPayoutMinimumSeconds, 10, 900);
-        int maximum = Math.Clamp(settings.PassiveTokenPayoutMaximumSeconds, 10, 900);
-        if (minimum > maximum)
-            (minimum, maximum) = (maximum, minimum);
+        int minimum = settings.PassiveTokenPayoutMinimumSeconds;
+        int maximum = settings.PassiveTokenPayoutMaximumSeconds;
         return minimum == maximum ? minimum : Random.Shared.Next(minimum, maximum + 1);
     }
 
-    internal int PassiveTokensPerPayout
-    {
-        get
-        {
-            int amount = _activeConfig?.Settings.PassiveTokensPerPayout ?? 1;
-            return amount is >= 1 and <= 1_000_000 ? amount : 1;
-        }
-    }
+    internal int PassiveTokensPerPayout => _activeConfig?.Settings.PassiveTokensPerPayout ?? 1;
 
     internal void RecordChatActivity(string sender, long unixSeconds)
     {
-        if (!EffectiveSettings.PassiveRewardsRequireRecentChat)
+        if (!EffectiveSettings.PassiveRewardsRequireActivity)
             return;
 
         string normalizedSender = NormalizeUser(sender);
@@ -184,12 +175,11 @@ public sealed partial class BotMainHandler
     internal bool IsRewardEligibleNoLock(string viewer, long nowUnixSeconds)
     {
         StartingProfile settings = EffectiveSettings;
-        if (!settings.PassiveRewardsRequireRecentChat)
+        if (!settings.PassiveRewardsRequireActivity)
             return true;
 
-        int minutes = Math.Clamp(settings.PassiveRecentChatWindowMinutes, 1, 120);
         return _viewerLastChatActivity.TryGetValue(viewer, out long lastActive) &&
-            nowUnixSeconds - lastActive <= minutes * 60L;
+            nowUnixSeconds - lastActive <= settings.PassiveActivityWindowMinutes * 60L;
     }
 
     internal bool TryUseCommandSlots(string viewer, out bool viewerLimited, long? nowTicks = null)
@@ -323,16 +313,12 @@ public sealed partial class BotMainHandler
     private void EndCommand() => _currentCommandExecution.Value = null;
 
     internal bool HasPerUserCooldownOverride(string? commandName = null)
-    {
-        string name = (commandName ?? Statistics.CurrentCommandName).Trim();
-        return TryGetCommandSettings(name, out CommandCustomization customization) && customization.CooldownSeconds.HasValue;
-    }
+        => TryGetCommandSettings(commandName ?? Statistics.CurrentCommandName, out CommandCustomization customization) &&
+            customization.CooldownSeconds.HasValue;
 
     internal bool HasGlobalCooldownOverride(string? commandName = null)
-    {
-        string name = (commandName ?? Statistics.CurrentCommandName).Trim();
-        return TryGetCommandSettings(name, out CommandCustomization customization) && customization.GlobalCooldownSeconds.HasValue;
-    }
+        => TryGetCommandSettings(commandName ?? Statistics.CurrentCommandName, out CommandCustomization customization) &&
+            customization.GlobalCooldownSeconds.HasValue;
 
     private bool TryGetCommandSettings(string? commandName, out CommandCustomization customization)
     {

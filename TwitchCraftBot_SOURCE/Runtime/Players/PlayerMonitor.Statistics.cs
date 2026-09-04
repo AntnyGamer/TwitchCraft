@@ -320,5 +320,4 @@ public sealed partial class BotMainHandler
             ? segment
             : TextSegmentHelper.TrimSegment(segment, colon + 1, segment.Length - colon - 1);
     }
-
 }

@@ -6,7 +6,7 @@ namespace TwitchCraftBot.Tests.Revamped.Runtime;
 public sealed class FollowRewardEventTests
 {
     [Fact]
-    public void FollowRewardIsOneHundredTokens()
+    public void DefaultFollowRewardIsOneHundredTokens()
     {
         Assert.Equal(100, BotMainHandler.DefaultFollowRewardAmount);
     }

@@ -59,13 +59,6 @@ public sealed class TokenService
             : _store.AdjustBalances(users, amount, MaximumBalance);
     }
 
-    public void Award(IEnumerable<KeyValuePair<string, int>> changes)
-    {
-        ArgumentNullException.ThrowIfNull(changes);
-        if (!IsEmptyCollection(changes))
-            _store.AdjustBalances(changes, MaximumBalance);
-    }
-
     internal FollowRewardResult TryRewardFollower(
         string userID,
         string userLogin,

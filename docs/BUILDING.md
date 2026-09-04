@@ -16,7 +16,7 @@ dotnet test TwitchCraft.slnx -c Release --no-build
 dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
 ```
 
-`TwitchCraft.slnx` is the canonical repository validation entry point. Its Release build compiles the TwitchCraft WPF application and the regression test projects. The smaller solution files may still be used for isolated development.
+`TwitchCraft.slnx` is the canonical repository validation entry point. Its Release build compiles the TwitchCraft WPF application, the regression test project, and the test-process helper. The app-only `TwitchCraftBot_SOURCE\TwitchCraftBot.slnx` solution may still be used for isolated application development.
 
 To produce a local coverage report equivalent to CI, run:
 
@@ -31,7 +31,7 @@ Coverage output is written under `TestResults/` and is not committed.
 To publish a Windows x64 single-file build, run:
 
 ```powershell
-dotnet publish ".\TwitchCraftBot_SOURCE\TwitchCraftBot.csproj" -c Release -r win-x64 --self-contained true -o ".\TwitchCraftBot_SOURCE\publish" /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false
+dotnet publish ".\TwitchCraftBot_SOURCE\TwitchCraftBot.csproj" -c Release -r win-x64 --self-contained true -o ".\TwitchCraftBot_SOURCE\publish" -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false
 ```
 
 The published files will be created in `TwitchCraftBot_SOURCE\publish`.

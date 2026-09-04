@@ -29,7 +29,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!tokenleaderboard` | `!tokenleaderboard` | Free | Twitch viewers | Everyone | Shows the five viewers with the highest token balances. |
 | `!followreward` | `!followreward` | Free | None | Everyone | Explains the automatic one-time follow reward and its configured token amount (100 by default). |
 | `!commandstats` | `!commandstats` | Free | Current session | Everyone | Shows session game-command, dangerous-command, nice-command, token-spend, and most-used-command statistics. |
-| `!tradetokens` | `!tradetokens <twitch-user> <amount>` | Entered amount | Twitch user | Everyone | Spends the sender's tokens and gives the recipient 50% of the amount. |
+| `!tradetokens` | `!tradetokens <twitch-user> <amount>` | Entered amount | Twitch user | Everyone | Spends the sender's tokens and gives the recipient half the amount, rounded down and limited by the configured maximum balance. |
 | `!gambletokens` | `!gambletokens <amount> [risk 1-10]` | 5–150 token bet | Self | Everyone | Gambles tokens; risk defaults to 5 and is clamped to 1–10. Five-minute cooldown. |
 | `!givetokens` | `!givetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Adds tokens. A one-argument form targets the sender. |
 | `!removetokens` | `!removetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Removes tokens. A one-argument form targets the sender. |
@@ -87,8 +87,8 @@ These commands are meaningful only while their matching minigame is active. Paid
 
 | Command | Syntax | Cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
-| `!chickenbet` | `!chickenbet <token-amount> <seconds>` | Bet amount | Active Chicken Run | Everyone | Bets on the chicken's finishing time. The handler also recognizes the legacy reversed argument order when unambiguous. |
-| `!guess` | `!guess <1-100>` | Free | Active number round | Everyone | Guesses the current number; correct guesses win 10 tokens. Five-second per-viewer guess cooldown. |
+| `!chickenbet` | `!chickenbet <token-amount> <seconds>` | Bet amount | Active Chicken Run | Everyone | Bets on the chicken's finishing time. |
+| `!guess` | `!guess <1-100>` | Free | Active number round | Everyone | Guesses the current number; correct guesses award 10 tokens, limited by the configured maximum balance. Five-second per-viewer guess cooldown. |
 | `!damagewither` | `!damagewither <token-amount>` | Bet amount | Active Wither Battle | Everyone | Spends tokens as Wither damage and records the viewer's contribution. |
 
 ## Compatibility and failure cases

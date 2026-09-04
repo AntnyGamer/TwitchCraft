@@ -460,5 +460,4 @@ public sealed partial class BotMainHandler
             (flags.HasTcPlayerList && flags.hasDoesNotExist) ||
             (flags.HasTcHealth && flags.hasDoesNotExist);
     }
-
 }

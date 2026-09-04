@@ -129,11 +129,6 @@ internal static partial class ErrorHandling
             "Complete every setup field and authorize Twitch with your bot account before starting.");
     }
 
-    public static void ShowInvalidBindIP(object? source, string bindIP)
-    {
-        ShowWarning(source, "Setup", $"'{bindIP}' is not a valid Bind IP address.");
-    }
-
     public static bool ConfirmBindIpReset(object? source)
     {
         const string message = @"Changing TwitchCraft's Bind IP is only recommended for advanced users. If you are seeing this message, there is a chance you may have accidentally edited the Bind IP, entered an invalid IPv4 address, or entered a VPN / non-IPv4 Bind IP. In this case, press Yes to reset the Bind IP to its default.
@@ -327,5 +322,4 @@ Do you want to reset the Bind IP to its default?";
     {
         ShowWarning(null, "Statistics", "Statistics could not be loaded, so empty totals are being displayed. The statistics database was not reset.");
     }
-
 }

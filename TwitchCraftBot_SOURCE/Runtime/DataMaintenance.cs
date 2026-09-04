@@ -48,11 +48,9 @@ internal sealed class DataMaintenance(
                                 _saveBot(token, login);
                             _lastTwitchValidationUtc = DateTime.UtcNow;
                         }
-
                         catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         { if (await _tryRefreshAuth(token, cancellationToken).ConfigureAwait(false)) _lastTwitchValidationUtc = DateTime.UtcNow; }
                     }
-
                 }
 
                 if (settings.AutomaticBackupsEnabled && IsBackupDue(settings.AutomaticBackupIntervalHours))
@@ -66,20 +64,16 @@ internal sealed class DataMaintenance(
 
                 await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken).ConfigureAwait(false);
             }
-
             catch (OperationCanceledException)
             {
                 break;
             }
-
             catch (Exception ex)
             {
                 ErrorHandling.LogNonFatal("Automatic data maintenance failed", ex);
                 await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken).ConfigureAwait(false);
             }
-
         }
-
     }
 
     internal void MarkTwitchValidated()
@@ -137,14 +131,11 @@ internal sealed class DataMaintenance(
                 _automaticBackupTimestampLoaded = true;
                 PruneBackups(root, retentionCount);
             }
-
             catch (Exception ex)
             {
                 ErrorHandling.LogNonFatal("Failed to create automatic backup", ex);
             }
-
         }
-
     }
 
     internal void BackupOnShutdown()
@@ -162,12 +153,10 @@ internal sealed class DataMaintenance(
             if (settings.AutomaticBackupsEnabled)
                 CreateBackup(settings.AutomaticBackupRetentionCount);
         }
-
         catch (Exception ex)
         {
             ErrorHandling.LogNonFatal("Failed to create shutdown backup", ex);
         }
-
     }
 
     internal static void PruneBackups(string root, int retentionCount)
@@ -195,7 +184,6 @@ internal sealed class DataMaintenance(
             try { backups[i].Directory.Delete(recursive: true); }
             catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to prune an old automatic backup", ex); }
         }
-
     }
 
     private static bool TryGetBackupTime(

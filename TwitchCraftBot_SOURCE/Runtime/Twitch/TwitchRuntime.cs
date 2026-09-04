@@ -448,5 +448,4 @@ public sealed partial class BotMainHandler
 
     internal static int GetReconnectDelayMs(int currentDelayMilliseconds)
         => Math.Min(currentDelayMilliseconds * 2, 15000);
-
 }

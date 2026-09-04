@@ -32,7 +32,7 @@ public sealed partial class BotMainHandler
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
-        ApplyServerSettingGameRules();
+        ApplyPVPGameRule();
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();
@@ -40,7 +40,7 @@ public sealed partial class BotMainHandler
         QueueDeathScore();
     }
 
-    private void ApplyServerSettingGameRules()
+    private void ApplyPVPGameRule()
     {
         BotConfig? config = _activeConfig;
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
@@ -429,5 +429,4 @@ public sealed partial class BotMainHandler
                 return true;
         }
     }
-
 }

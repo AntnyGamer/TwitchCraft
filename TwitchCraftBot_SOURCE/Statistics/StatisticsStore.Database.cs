@@ -311,5 +311,4 @@ internal static partial class BotStatisticsStore
     {
         return reader.IsDBNull(ordinal) ? 0L : Math.Max(0L, reader.GetInt64(ordinal));
     }
-
 }

@@ -59,7 +59,7 @@ Maximum became noticeably more expensive when extremely large amounts of log act
 | Low Resource | **0.01%** | **133 MB** | 135 MB |
 | Minimum | **0.01%** | **133 MB** | 135 MB |
 
-This was the clearest demonstration of Low Resource Mode's benefit. Under the same extreme workload while minimized, Low Resource used about **23 MB less average RAM** than Normal and reduced CPU from about **0.20% to 0.01%**.
+This was the clearest demonstration of Low Resource Mode's benefit. Under the same extreme workload while minimized, Low Resource used about **22 MB less average RAM** than Normal and reduced CPU from about **0.20% to 0.01%**.
 
 ---
 
