@@ -33,7 +33,7 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Changelog](CHANGELOG.md)
 * [Contributing](CONTRIBUTING.md)
 * [Security policy](SECURITY.md)
-* [AI Assistance Disclosure](docs/NOTE.md)
+* [Creation Note](docs/NOTE.md)
 
 External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
 
@@ -323,4 +323,4 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 
 TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
 
-**README version 1.8.0.0 — September 3rd, 2026**
+**README — September 6, 2026 (for TwitchCraft v1.8.0)**
