@@ -3,7 +3,7 @@
 ## Requirements
 
 - Windows 10 or 11, 64-bit
-- Minecraft Java Edition 1.20.5–1.21.11 or 26.1–26.2.0
+- Minecraft Java Edition 1.20.5–1.21.11 or 26.1.0–26.3.0
 - A Twitch account for the bot; using a separate account is recommended
 
 Install the Java Development Kit required by the Minecraft server version:
@@ -11,7 +11,7 @@ Install the Java Development Kit required by the Minecraft server version:
 | Minecraft version | Required Java |
 |---|---:|
 | 1.20.5–1.21.11 | JDK 21 |
-| 26.1–26.2.0 | JDK 25 |
+| 26.1.0–26.3.0 | JDK 25 |
 
 Use the 64-bit Windows installer. TwitchCraft checks `JAVA_HOME`, `PATH`, and common Java installation folders.
 
@@ -45,7 +45,9 @@ Install the .NET 10 SDK and run from the repository root:
 ```powershell
 dotnet restore TwitchCraft.slnx
 dotnet build TwitchCraft.slnx -c Release --no-restore
-dotnet test TwitchCraft.slnx -c Release --no-build
+Push-Location TwitchCraft.Tests
+dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build
+Pop-Location
 ```
 
 The root solution validates TwitchCraft and its regression tests.

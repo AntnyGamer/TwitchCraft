@@ -1,6 +1,6 @@
 # TwitchCraft User Guide
 
-**// TWITCHCRAFT BOT SCREENSHOT SHOWCASE**
+**// TWITCHCRAFT SCREENSHOT SHOWCASE**
 
 <p align="center">
   <img src="screenshots/1TC_Setup.png" width="700">
@@ -29,10 +29,11 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Remote Control](docs/REMOTE-CONTROL.md)
 * [Troubleshooting](docs/TROUBLESHOOTING.md)
 * [Architecture](docs/ARCHITECTURE.md)
-* [Release process](docs/RELEASES.md)
+* [Release process](docs/RELEASING.md)
 * [Changelog](CHANGELOG.md)
 * [Contributing](CONTRIBUTING.md)
 * [Security policy](SECURITY.md)
+* [Privacy policy](docs/PRIVACY.md)
 * [Creation Note](docs/NOTE.md)
 
 External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
@@ -40,7 +41,7 @@ External tutorials and short links later in this guide are supplemental mirrors.
 ## 1. Requirements
 
 * Windows 10/11 (64-bit)
-* Use Minecraft Java Edition version 1.20.5–1.21.11 or 26.1–26.2.0
+* Use Minecraft Java Edition version 1.20.5–1.21.11 or 26.1.0–26.3.0
 * Install the correct Java Development Kit (JDK) version for the Minecraft version you plan to run
 
 ## 2. Java / JDK Setup
@@ -52,7 +53,7 @@ For Minecraft versions **1.20.5–1.21.11**:
 * Use the Windows x64 Installer version
 * Any JDK 21.x version should work
 
-For Minecraft versions **26.1–26.2.0**:
+For Minecraft versions **26.1.0–26.3.0**:
 
 * You will need Java SE 25 (JDK 25)
 * Download: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
@@ -187,7 +188,7 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 2. Otherwise, open `server.properties` and set:
    * `enable-rcon=true`
    * `rcon.port=25575`
-   * `rcon.password=YOUR_PASSWORD_HERE`
+   * `rcon.password=RCON_PASSWORD_HERE`
 3. Restart the Minecraft server after changing the password
 4. Make sure the RCON port is allowed through the server firewall if needed
 
@@ -240,10 +241,10 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
   * `!removetokens <user/all/random> <amount>`
 
 **Actual token file location:**
-`%APPDATA%\TwitchCraftBot\viewer_tokens.db`
+`%APPDATA%\TwitchCraft\viewer_tokens.db`
 
 **Readable token export location:**
-`%APPDATA%\TwitchCraftBot\exports\viewer_tokens.json`
+`%APPDATA%\TwitchCraft\exports\viewer_tokens.json`
 
 *For reference, paste any of the file locations above into Win + R or File Explorer.*
 
@@ -260,7 +261,7 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 **Notes:**
 
 * Statistics can be enabled or disabled in Settings
-* Existing saved stats are still shown when statistics are disabled, but new stats are not counted
+* Existing saved stats are still shown while statistics are disabled, but new stats are not counted; re-enabling leaves session survival unavailable until the next fully tracked life
 * Reset Statistics clears all of the saved statistics
 
 **Statistics track:**
@@ -276,12 +277,12 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 * Sessions started
 
 **Statistics file location:**
-`%APPDATA%\TwitchCraftBot\statistics.db`
+`%APPDATA%\TwitchCraft\statistics.db`
 
 **Readable statistics export locations:**
 
-* `%APPDATA%\TwitchCraftBot\exports\statistics.json`
-* `%APPDATA%\TwitchCraftBot\exports\statistics_viewers.json`
+* `%APPDATA%\TwitchCraft\exports\statistics.json`
+* `%APPDATA%\TwitchCraft\exports\statistics_viewers.json`
 
 *For reference, paste any of the file locations above into Win + R or File Explorer.*
 
@@ -321,6 +322,7 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 
 ---
 
+
 TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
 
-**README — September 6, 2026 (for TwitchCraft v1.8.0)**
+**README — September 15th, 2026 (for TwitchCraft v1.9.0)**

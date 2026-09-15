@@ -14,7 +14,7 @@ In singleplayer, targeted commands use the configured streamer Minecraft account
 
 For paid targeted commands, one target pays the listed base cost. Multiple targets use the existing reduced scaling formula `base cost × (player count + 1) ÷ 2`, rounded down to a whole token. The command-cost multiplier is then applied and rounded up. Invalid, offline, protected, or unavailable targets are rejected before dispatch where applicable. Spectators may be filtered from gameplay targeting.
 
-Paid gameplay commands refund the charged tokens when TwitchCraft cannot dispatch the Minecraft command. A successfully dispatched command is not refunded merely because its effect was not visible in game.
+Paid gameplay commands refund the charged tokens when the Minecraft send path cannot confirm delivery. In Remote Control Mode, TwitchCraft does not interpret Minecraft's response text: a valid RCON command-response packet with the matching request ID and response type confirms delivery. For a multi-command RCON action, one such confirmation is enough to keep the charge even if the rest of the batch is interrupted; if no command in the batch is ever confirmed, the charge is refunded. This avoids language/version-dependent error parsing while still rejecting authentication, connection, timeout-before-confirmation, and malformed-protocol failures.
 
 The optional global gameplay-command cooldown applies to normal gameplay commands. By default, `!lightning`, `!tiny`, and `!giant` each use an independent five-minute cooldown shared by all viewers, while `!gambletokens` uses a five-minute per-viewer cooldown. Per-command cooldown settings can override these defaults.
 
@@ -59,7 +59,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!heal` | `!heal [target]` | 3 | Player(s) | Everyone | Gives instant health. |
 | `!insult` | `!insult [target]` | 5 | Player(s) | Everyone | Shows an insulting title to the target. |
 | `!invincible` | `!invincible [target]` | 15 | Player(s) | Everyone | Gives maximum resistance for 15 seconds. |
-| `!johnny` | `!johnny [target]` | 40 | Player(s) | Everyone | Spawns in a "Johnny" vindicator, very strong. |
+| `!johnny` | `!johnny [target]` | 40 | Player(s) | Everyone | Spawns a very strong "Johnny" vindicator. |
 | `!lava` | `!lava [target]` | 15 | Player(s) | Everyone | Places lava above the target. |
 | `!lightning` | `!lightning [target]` | 50 | Player(s) | Everyone | Strikes lightning; separate five-minute global cooldown. |
 | `!loot` | `!loot [target]` | 5 | Player(s) | Everyone | Spawns several random loot-table drops. |

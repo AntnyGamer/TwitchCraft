@@ -1,0 +1,314 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TwitchCraft_V1.Frames.Start"
+             Background="Transparent"
+             Foreground="White"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True">
+
+    <Grid ClipToBounds="True">
+        <Rectangle IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
+                    <GradientStop Color="#00000000" Offset="0" />
+                    <GradientStop Color="#DD000000" Offset="1" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <Viewbox Stretch="Uniform"
+                 StretchDirection="Both"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Stretch">
+            <Grid Width="800"
+                  Height="450"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  SnapsToDevicePixels="True">
+
+                <TextBlock x:Name="Title"
+                           Text="TwitchCraft"
+                           FontFamily="Cascadia Mono"
+                           FontSize="48"
+                           Foreground="Red"
+                           TextAlignment="Center"
+                           Margin="0,29,0,0"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top" />
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Margin="0,138,0,0">
+                    <TextBlock x:Name="Multiplayer"
+                               Text="Enable Multiplayer?"
+                               FontFamily="Arial Rounded MT Bold"
+                               FontSize="16"
+                               Foreground="#C6C6C6"
+                               TextAlignment="Center" />
+                    <CheckBox x:Name="MultiplayerCheckbox"
+                              KeyboardNavigation.TabIndex="3"
+                              AutomationProperties.Name="Enable Multiplayer"
+                              Checked="Multiplayer_Changed"
+                              Unchecked="Multiplayer_Changed"
+                              Margin="42,3,0,0" />
+                </StackPanel>
+
+                <TextBlock x:Name="RemoteControlStatus"
+                           Width="330"
+                           Text="REMOTE CONTROL MODE ACTIVATED"
+                           FontFamily="Arial Rounded MT Bold"
+                           FontSize="16"
+                           Foreground="#FF5555"
+                           TextAlignment="Center"
+                           Visibility="Collapsed"
+                           Margin="0,102,0,0"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top" />
+
+                <TextBlock x:Name="RemoteControlHelp"
+                           Width="360"
+                           Text="Press Ctrl + Alt + R to disable Remote Control Mode"
+                           FontFamily="Arial Rounded MT Bold"
+                           FontSize="12"
+                           Foreground="#C6C6C6"
+                           TextAlignment="Center"
+                           Visibility="Collapsed"
+                           Margin="0,124,0,0"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top" />
+
+                <TextBlock x:Name="RemoteHost"
+                           Text="Remote Host:"
+                           FontFamily="Arial Rounded MT Bold"
+                           FontSize="16"
+                           Foreground="#C6C6C6"
+                           Visibility="Collapsed"
+                           Margin="245,171,0,0"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top" />
+
+                <TextBox x:Name="RemoteHostTextbox"
+                         KeyboardNavigation.TabIndex="3"
+                         AutomationProperties.Name="Remote Host"
+                         Width="190"
+                         Height="20"
+                         FontFamily="Arial Rounded MT Bold"
+                         FontSize="16"
+                         Visibility="Collapsed"
+                         Margin="395,171,0,0"
+                         HorizontalAlignment="Left"
+                         VerticalAlignment="Top" />
+
+                <TextBlock x:Name="RemoteRCONPort"
+                           Text="RCON Port:"
+                           FontFamily="Arial Rounded MT Bold"
+                           FontSize="16"
+                           Foreground="#C6C6C6"
+                           Visibility="Collapsed"
+                           Margin="245,204,0,0"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top" />
+
+                <TextBox x:Name="RemoteRCONPortTextbox"
+                         KeyboardNavigation.TabIndex="4"
+                         AutomationProperties.Name="RCON Port"
+                         Width="190"
+                         Height="20"
+                         FontFamily="Arial Rounded MT Bold"
+                         FontSize="16"
+                         Visibility="Collapsed"
+                         Margin="395,204,0,0"
+                         HorizontalAlignment="Left"
+                         VerticalAlignment="Top" />
+
+                <TextBlock x:Name="RemoteRCONPassword"
+                           Text="RCON Password:"
+                           FontFamily="Arial Rounded MT Bold"
+                           FontSize="16"
+                           Foreground="#C6C6C6"
+                           Visibility="Collapsed"
+                           Margin="245,237,0,0"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top" />
+
+                <PasswordBox x:Name="RemoteRCONPasswordBox"
+                             KeyboardNavigation.TabIndex="5"
+                             AutomationProperties.Name="RCON Password"
+                             Width="190"
+                             Height="20"
+                             FontFamily="Arial Rounded MT Bold"
+                             FontSize="16"
+                             PasswordChar="●"
+                             Visibility="Collapsed"
+                             Margin="395,237,0,0"
+                             HorizontalAlignment="Left"
+                             VerticalAlignment="Top" />
+
+                <TextBox x:Name="RemoteRCONPasswordTextbox"
+                         KeyboardNavigation.TabIndex="5"
+                         AutomationProperties.Name="RCON Password"
+                         Width="190"
+                         Height="20"
+                         FontFamily="Arial Rounded MT Bold"
+                         FontSize="16"
+                         TextWrapping="NoWrap"
+                         HorizontalScrollBarVisibility="Hidden"
+                         IsUndoEnabled="False"
+                         Visibility="Collapsed"
+                         Margin="395,237,0,0"
+                         HorizontalAlignment="Left"
+                         VerticalAlignment="Top" />
+
+                <CheckBox x:Name="RemoteRCONPasswordShowCheckbox"
+                          KeyboardNavigation.TabIndex="6"
+                          AutomationProperties.Name="Show RCON Password"
+                          Content="Show"
+                          Foreground="#C6C6C6"
+                          FontFamily="Arial Rounded MT Bold"
+                          FontSize="12"
+                          Visibility="Collapsed"
+                          Margin="590,240,0,0"
+                          HorizontalAlignment="Left"
+                          VerticalAlignment="Top" />
+
+                <TextBlock x:Name="MCUser"
+                           Text="Minecraft Username:"
+                           FontFamily="Arial Rounded MT Bold"
+                           FontSize="16"
+                           Foreground="#C6C6C6"
+                           Visibility="Collapsed"
+                           Margin="205,212,0,0"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top" />
+
+                <TextBox x:Name="MCUserTextbox"
+                         KeyboardNavigation.TabIndex="7"
+                         AutomationProperties.Name="Minecraft Username"
+                         Width="190"
+                         Height="20"
+                         FontFamily="Arial Rounded MT Bold"
+                         FontSize="16"
+                         Visibility="Collapsed"
+                         Margin="395,212,0,0"
+                         HorizontalAlignment="Left"
+                         VerticalAlignment="Top" />
+
+                <Button x:Name="StartButton"
+                        KeyboardNavigation.TabIndex="8"
+                        Width="116"
+                        Height="51"
+                        Content="Start"
+                        FontFamily="Tw Cen MT Condensed Extra Bold"
+                        FontSize="20"
+                        Click="Start_Click"
+                        ToolTipService.ShowOnDisabled="True"
+                        ToolTipService.InitialShowDelay="800"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,305,0,0" />
+
+                <Border x:Name="StartButtonDisabledOverlay"
+                        Panel.ZIndex="10"
+                        Width="116"
+                        Height="51"
+                        Background="Transparent"
+                        Visibility="Collapsed"
+                        ToolTipService.InitialShowDelay="800"
+                        Margin="0,305,0,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top" />
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Margin="0,175,0,0">
+                    <TextBlock x:Name="OnlineMode"
+                               Text="Enable Online Mode?"
+                               FontFamily="Arial Rounded MT Bold"
+                               FontSize="16"
+                               Foreground="#C6C6C6"
+                               Visibility="Collapsed" />
+                    <CheckBox x:Name="OnlineModeCheckbox"
+                              KeyboardNavigation.TabIndex="4"
+                              AutomationProperties.Name="Enable Online Mode"
+                              IsChecked="True"
+                              Visibility="Collapsed"
+                              Margin="36,3,0,0" />
+                </StackPanel>
+
+                <Button x:Name="ImportWorldButton"
+                        KeyboardNavigation.TabIndex="9"
+                        ToolTipService.ShowOnDisabled="True"
+                        Width="132"
+                        Height="30"
+                        Content="Import World"
+                        FontFamily="Tw Cen MT Condensed Extra Bold"
+                        FontSize="20"
+                        Click="ImportWorld_Click"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,366,0,0" />
+
+                <TextBlock x:Name="MCVersion"
+                           Width="170"
+                           Text="Minecraft 26.2.0"
+                           FontFamily="Cascadia Mono"
+                           FontSize="12"
+                           Foreground="#C6C6C6"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top"
+                           TextAlignment="Center"
+                           Margin="0,426,0,0"
+                           Height="14" />
+
+                <TextBlock x:Name="TwitchCraftVersion"
+                           Text="Version:"
+                           FontFamily="Cascadia Mono"
+                           FontSize="12"
+                           Foreground="#C6C6C6"
+                           TextAlignment="Center"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top"
+                           Margin="675,16,0,0" />
+
+                <Button x:Name="Gear"
+                        KeyboardNavigation.TabIndex="0"
+                        Style="{StaticResource IconButton}"
+                        Click="Settings_Click"
+                        ToolTip="Settings"
+                        AutomationProperties.Name="Settings"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="12,10,0,0">
+                    <Image Width="34"
+                           Height="34"
+                           Source="/Assets/Gear.png"
+                           Stretch="Fill" />
+                </Button>
+
+                <Button x:Name="Statistics"
+                        KeyboardNavigation.TabIndex="1"
+                        Style="{StaticResource IconButton}"
+                        Click="Stats_Click"
+                        ToolTip="Statistics"
+                        AutomationProperties.Name="Statistics"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="51,10,0,0">
+                    <Image Width="34"
+                           Height="34"
+                           Source="/Assets/Statistics.png"
+                           Stretch="Fill" />
+                </Button>
+
+                <Button KeyboardNavigation.TabIndex="2"
+                        Style="{StaticResource HelpIconButton}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="90,10,0,0" />
+
+            </Grid>
+        </Viewbox>
+    </Grid>
+</UserControl>

@@ -1,11 +1,11 @@
 # Architecture
 
-TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI. `BotMainHandler` is the application-facing coordinator; focused components own command, token, statistics, maintenance, and background-task behavior.
+TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI. `MainHandler` is the application-facing coordinator; focused components own command, token, statistics, maintenance, and background-task behavior.
 
 ```text
 WPF shell
     ↓
-BotMainHandler (application coordinator)
+MainHandler (application coordinator)
     ├── CommandService (targeting, costs, authorization, cooldown state)
     ├── TokenService (viewer economy and token-database lifecycle)
     ├── StatisticsService (session/lifetime tracking and snapshots)
@@ -20,7 +20,7 @@ BotMainHandler (application coordinator)
 ## Main folders
 
 - `Application/` — application helpers, shared infrastructure, and UI-thread dispatch
-- `BotSetup/` — configuration, validation, server properties, Java discovery, world import, and datapack setup
+- `Setup/` — configuration, validation, server properties, Java discovery, world import, and datapack setup
 - `Commands/` — command parsing/building, registration, gameplay/economy handlers, targeting, refunds, and `Minigames/`
 - `Diagnostics/` — exception handling, structured rolling logs, and application-version metadata
 - `Identity/` — Twitch token, Twitch username, and Minecraft username normalization
@@ -30,23 +30,23 @@ BotMainHandler (application coordinator)
 - `Tokens/` — `TokenService`, viewer-token accounting, SQLite persistence, and JSON export
 - `Frames/` — WPF pages and their event logic
 - `Assets/` — images, icon, server icon, and locate-players datapack
-- `TwitchCraftBot.Tests/` — behavioral regression tests, including focused WPF state tests
+- `TwitchCraft.Tests/` — behavioral regression tests, including focused WPF state tests
 
-`BotMainHandler` exposes the focused components through `runtime.Commands`, `runtime.Tokens`, and `runtime.Statistics`. Twitch, Minecraft, and player-monitor code remain coordinated partials for now; move them behind similarly focused ownership boundaries incrementally rather than adding more state to the coordinator.
+`MainHandler` exposes the focused components through `runtime.Commands`, `runtime.Tokens`, and `runtime.Statistics`. Twitch, Minecraft, and player-monitor code remain coordinated partials.
 
 ## Startup flow
 
 1. WPF starts and installs global exception handlers.
-2. The application checks its `%APPDATA%\TwitchCraftBot` working directory and loads normalized configuration.
+2. The application checks its `%APPDATA%\TwitchCraft` working directory and loads normalized configuration.
 3. The user selects local or remote mode and the session-specific Start options.
-4. The bot runtime initializes token/statistics stores and Twitch identity.
+4. The TwitchCraft runtime initializes token/statistics stores and Twitch identity.
 5. Local mode prepares the server directory and starts the Java process detected during setup; remote mode verifies RCON.
 6. TwitchCraft renews its locally stored device authorization when needed, then Twitch IRC connects over TLS, joins the configured channel, and starts bounded processing queues. Helix and EventSub provide viewer-roster and follow data.
 7. Player monitoring and optional minigame/statistics loops start after Minecraft readiness.
 
 ## Component ownership
 
-- `BotMainHandler` owns application composition and session lifecycle coordination.
+- `MainHandler` owns application composition and session lifecycle coordination.
 - `CommandService` owns mutable command cooldowns, command cost scaling, moderator authorization, and player-target resolution.
 - `TokenService` owns the `TokenHandler` database and all balance/reward operations.
 - `StatisticsService` owns statistics locks, session/lifetime state, persistence deltas, death tracking, and snapshot caches.
@@ -64,7 +64,7 @@ Dependencies flow into components through small callbacks or focused collaborato
 5. Paid commands reserve/charge tokens before dispatch.
 6. Commands are built with selector, JSON, SNBT, and version-aware escaping.
 7. The local transport serializes writes to Java stdin; remote mode sends RCON packets.
-8. The narrow `PaidCommandTransaction` coordinator records statistics only after dispatch succeeds. Before success, a failure refunds the charge exactly once and releases only that command's cooldown reservation.
+8. The narrow `PaidCommandTransaction` coordinator records statistics only after the Minecraft send path reports success. Local write failures refund the charge exactly once and release only that command's cooldown reservation. Remote RCON charging is based on protocol confirmation rather than response wording: a matching command-response packet with the expected response type confirms delivery, and one confirmed response is enough for a multi-command batch even if the remainder is interrupted. If no command response is confirmed, authentication/transport/protocol failure causes the send to fail and the charge is refunded.
 
 ## Local and remote modes
 
@@ -85,4 +85,4 @@ Cancellation tokens stop background loops. Local mode requests graceful server s
 
 ## Testability direction
 
-Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The runtime uses explicit construction and narrow callback seams rather than a service container. Future safe seams include a constructor-injected `TimeProvider`, Minecraft command client, Twitch client, and statistics store; introduce them one dependency at a time without a repository-wide dependency-injection framework conversion.
+Tests cover pure builders, normalizers, Twitch/IRC parsers, viewer-token persistence, rolling-log behavior, paid-command transaction semantics, focused WPF state, and fake process/socket integrations without requiring a live Twitch channel or Minecraft server. The runtime uses explicit construction and narrow callback seams rather than a service container.

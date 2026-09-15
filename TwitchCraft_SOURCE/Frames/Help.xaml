@@ -1,0 +1,103 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraft_V1.Frames.Help" KeyDown="Back_KeyDown" IsVisibleChanged="Help_IsVisibleChanged" FontFamily="Arial Rounded MT Bold" FontSize="14" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style TargetType="Hyperlink">
+            <Setter Property="Foreground" Value="LightSkyBlue" />
+            <EventSetter Event="RequestNavigate" Handler="Link_RequestNavigate" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid ClipToBounds="True">
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
+                <GradientStop Color="#00000000" Offset="0" />
+                <GradientStop Color="#DD000000" Offset="1" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <Viewbox Stretch="Uniform" StretchDirection="Both">
+            <Grid Width="800" Height="450">
+                <Button x:Name="BackButton" Content="Back" Width="100" Height="30" Click="Back_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" KeyboardNavigation.TabIndex="0" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <Button Content="Open Logs Folder" Width="125" Height="24" Click="OpenLogs_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="16" KeyboardNavigation.TabIndex="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,13,24,0" />
+
+                <TextBlock Text="HELP" FontFamily="Cascadia Mono" FontSize="36" FontWeight="Bold" Margin="0,22,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" Opacity="1" />
+                    </TextBlock.Effect>
+                </TextBlock>
+
+                <TextBlock FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="34,90,0,0">
+                    <Hyperlink Click="OpenReadme_Click" KeyboardNavigation.TabIndex="2">Open README.txt</Hyperlink>
+                </TextBlock>
+
+                <TextBlock FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,90,0,0">
+                    <Hyperlink NavigateUri="https://rentry.co/bot-commands" KeyboardNavigation.TabIndex="3">View Bot Commands Online</Hyperlink>
+                </TextBlock>
+
+                <TextBlock FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,90,34,0">
+                    <Hyperlink NavigateUri="https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/TROUBLESHOOTING.md" KeyboardNavigation.TabIndex="4">Troubleshooting</Hyperlink>
+                </TextBlock>
+
+                <Border Margin="24,125,24,0" VerticalAlignment="Top" Background="#B3171717" BorderBrush="#FF5A5A5A" BorderThickness="2" CornerRadius="6" Padding="18,14" Height="238">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="ABOUT" FontFamily="Cascadia Mono" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="AboutVersion" Text="Version:" FontSize="11" Foreground="#D0D0D0" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                        <TextBlock Margin="0,10,0,0" Text="Bring Twitch chat into your Minecraft Java Edition world. Viewers use chat commands to trigger in-game events, with configurable tokens, cooldowns, and rewards." Foreground="#E0E0E0" TextAlignment="Center" />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,3,18,0">
+                                <TextBlock Text="CREATED BY" FontFamily="Cascadia Mono" FontSize="12" FontWeight="Bold" Foreground="#B8B8B8" TextAlignment="Center" />
+                                <TextBlock Margin="0,6,0,0" Text="AntnyGamer — creation and design" Foreground="#E0E0E0" TextAlignment="Center" />
+                                <TextBlock Margin="0,4,0,0" Text="Inspired by Lil_KleinStein" FontSize="13" Foreground="#D0D0D0" TextAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,3,0,0">
+                                <TextBlock Text="TWITCHCRAFT IS OPEN SOURCE" FontFamily="Cascadia Mono" FontSize="12" FontWeight="Bold" Foreground="#B8B8B8" TextAlignment="Center" />
+                                <TextBlock Margin="0,8,0,0" Text="Independent community project • AGPL v3" FontSize="13" Foreground="#E0E0E0" TextAlignment="Center" />
+                                <TextBlock Margin="0,4,0,0" Text="Not affiliated with Mojang or Microsoft." FontSize="13" Foreground="#D0D0D0" TextAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Margin="0,10,0,0" Text="Special thanks to all the Twitch viewers who helped test TwitchCraft and left feedback!" FontSize="13" Foreground="#D0D0D0" TextAlignment="Center" />
+                        <WrapPanel Margin="0,25,0,0" HorizontalAlignment="Center">
+                            <TextBlock Margin="0,0,24,0">
+                                <Hyperlink NavigateUri="https://github.com/AntnyGamer/TwitchCraft" KeyboardNavigation.TabIndex="5">Source on GitHub</Hyperlink>
+                            </TextBlock>
+
+                            <TextBlock Margin="0,0,24,0">
+                                <Hyperlink NavigateUri="https://github.com/AntnyGamer/TwitchCraft/blob/main/licenses/LICENSE" KeyboardNavigation.TabIndex="6">License</Hyperlink>
+                            </TextBlock>
+
+                            <TextBlock>
+                                <Hyperlink NavigateUri="https://github.com/AntnyGamer/TwitchCraft/issues/new/choose" KeyboardNavigation.TabIndex="7">Report an issue</Hyperlink>
+                            </TextBlock>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Grid Margin="34,386,34,0" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="166" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="Need help with a problem?" />
+                        <TextBlock Margin="0,4,0,0" Text="Include your diagnostics and steps to reproduce when reporting it." FontSize="12" Foreground="#D0D0D0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <Button Content="Copy Diagnostics" Height="28" Click="CopyDiagnostics_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" KeyboardNavigation.TabIndex="8" ToolTip="Copy app, runtime, system, Minecraft, configuration, and connection diagnostics." />
+                        <TextBlock x:Name="DiagnosticsStatus" Margin="0,5,0,0" FontSize="12" Foreground="#D0D0D0" TextAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                    </StackPanel>
+                </Grid>
+
+            </Grid>
+        </Viewbox>
+    </Grid>
+</UserControl>

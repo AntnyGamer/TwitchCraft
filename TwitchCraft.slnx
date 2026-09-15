@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="TwitchCraftBot.Tests/TestInfrastructure/TestProcess/TwitchCraftBot.TestProcess.csproj" />
-  <Project Path="TwitchCraftBot_SOURCE/TwitchCraftBot.csproj" />
-  <Project Path="TwitchCraftBot.Tests/TwitchCraftBot.Tests.csproj" />
+  <Project Path="TwitchCraft.Tests/TestInfrastructure/TestProcess/TwitchCraft.TestProcess.csproj" />
+  <Project Path="TwitchCraft_SOURCE/TwitchCraft.csproj" />
+  <Project Path="TwitchCraft.Tests/TwitchCraft.Tests.csproj" />
 </Solution>

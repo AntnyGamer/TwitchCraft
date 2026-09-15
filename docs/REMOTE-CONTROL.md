@@ -17,7 +17,7 @@ For other servers, configure `server.properties`:
 ```properties
 enable-rcon=true
 rcon.port=25575
-rcon.password=REPLACE_WITH_YOUR_PASSWORD
+rcon.password=RCON_PASSWORD_HERE
 ```
 
 Restart the server after changing these values. Restrict the firewall so only the TwitchCraft machine or private network can reach the RCON port.
@@ -45,7 +45,7 @@ Use `127.0.0.1` only when TwitchCraft and the remote-controlled server run on th
 - Command delivery uses RCON rather than local Java standard input.
 - Remote mode cannot manage the remote Java process or local server files.
 - Local-only administrator operations (`!ban`, `!kick`, `!unban`, `!whitelistadd`, and `!whitelistremove`) are unavailable in Remote Control Mode.
-- Token refunds occur when a paid command cannot be dispatched successfully; a successful dispatch is not refunded merely because the in-game outcome was not visible.
+- Token charging uses RCON protocol confirmation, not Minecraft response wording. A command counts as delivered only after TwitchCraft receives a response packet with the matching request ID and expected response type. For a multi-command action, one confirmed command response is enough to keep the charge if the remainder is interrupted; if no command response is confirmed, the action fails and paid-command handling refunds it. Authentication, connection, timeout-before-confirmation, and malformed-protocol failures therefore do not count as confirmed delivery.
 
 ## Troubleshooting
 

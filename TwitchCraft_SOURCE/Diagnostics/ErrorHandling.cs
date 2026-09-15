@@ -1,0 +1,277 @@
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Net.Sockets;
+using System.Reflection;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
+
+namespace TwitchCraft_V1;
+
+internal static partial class ErrorHandling
+{
+    private const string DefaultTitle = "TwitchCraft";
+    private const string LogFileName = "TwitchCraft.log";
+    private const long MaxLogBytes = 1_000_000;
+    private const int MaxOldLogFiles = 4;
+    private static readonly Lock LogGate = new();
+    private static readonly UTF8Encoding UTF8NoBOM = new(false);
+    private static readonly JsonSerializerOptions LogJsonOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+    private static readonly string ApplicationVersion = ApplicationVersionProvider.Resolve();
+    private static readonly string SessionID = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
+    private static bool _initialized;
+    private static bool _logInitialized;
+    private static long _nextLogRetryTicks;
+    private static RollingJsonLogWriter? _logWriter;
+
+    public static void Initialize(Application? application)
+    {
+        if (_initialized || application == null)
+            return;
+
+        application.DispatcherUnhandledException += OnDispatcherException;
+        application.Exit += OnExit;
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnTaskException;
+        _initialized = true;
+    }
+
+    private static void ShowInfo(object? source, string? title, string? message)
+    {
+        Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private static void ShowWarning(object? source, string? title, string? message)
+    {
+        Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private static void ShowError(object? source, string? title, string? message)
+    {
+        Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    private static MessageBoxResult ShowQuestion(
+        object? source,
+        string? title,
+        string? message,
+        MessageBoxImage image = MessageBoxImage.Question)
+    {
+        return Show(source, message, title, MessageBoxButton.YesNo, image);
+    }
+
+    private static MessageBoxResult Show(
+        object? source,
+        string? message,
+        string? title,
+        MessageBoxButton buttons,
+        MessageBoxImage image)
+    {
+        Window? owner = ResolveOwner(source);
+        string safeMessage = message ?? string.Empty;
+        string safeTitle = string.IsNullOrWhiteSpace(title) ? DefaultTitle : title;
+
+        return UIThread.ShowMessageBox(owner, safeMessage, safeTitle, buttons, image);
+    }
+
+    private static Window? ResolveOwner(object? source)
+    {
+        try
+        {
+            if (source is Window window)
+                return window;
+
+            if (source is FrameworkElement element)
+            {
+                if (element.Dispatcher.CheckAccess())
+                    return Window.GetWindow(element);
+
+                return element.Dispatcher.Invoke(() => Window.GetWindow(element));
+            }
+
+            Application? application = Application.Current;
+
+            if (application == null)
+                return null;
+
+            if (application.Dispatcher.CheckAccess())
+                return application.MainWindow;
+
+            return application.Dispatcher.Invoke(() => application.MainWindow);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string FormatException(Exception? ex)
+    {
+        return ex?.Message ?? "An unexpected error occurred.";
+    }
+
+    public static string FormatLog(string context, Exception? ex)
+    {
+        return context + ": " + FormatException(ex);
+    }
+
+    public static void LogNonFatal(string context, Exception? ex)
+    {
+        Trace.TraceWarning(FormatLog(context, ex));
+        WriteLog("WARN", context, ex);
+    }
+
+    public static string FormatLog(string context, SocketException ex)
+    {
+        return context + ": " + ex.SocketErrorCode;
+    }
+
+    private static void WriteLog(string level, string context, Exception? ex)
+    {
+        try
+        {
+            var logEvent = new StructuredLogEvent
+            {
+                Timestamp = DateTimeOffset.Now.ToString("O", CultureInfo.InvariantCulture),
+                Level = level,
+                Event = context,
+                ApplicationVersion = ApplicationVersion,
+                SessionID = SessionID,
+                ExceptionType = ex?.GetType().FullName,
+                Message = ex?.Message ?? context,
+                OriginalError = ex?.ToString()
+            };
+            string line = JsonSerializer.Serialize(logEvent, LogJsonOptions);
+
+            RollingJsonLogWriter? writer;
+            lock (LogGate)
+            {
+                EnsureLogNoLock();
+                writer = _logWriter;
+            }
+
+            writer?.TryWriteLine(line);
+        }
+        catch
+        {
+        }
+    }
+
+    private static void EnsureLogNoLock()
+    {
+        if (_logInitialized || Environment.TickCount64 < _nextLogRetryTicks)
+            return;
+
+        try
+        {
+            string directory = Setup.ConfigurationStore.LogsDirectory;
+            Directory.CreateDirectory(directory);
+            string logPath = Path.Combine(directory, LogFileName);
+            _logWriter = new RollingJsonLogWriter(logPath, MaxLogBytes, MaxOldLogFiles, UTF8NoBOM);
+        }
+        catch
+        {
+            _nextLogRetryTicks = Environment.TickCount64 + 30_000;
+        }
+
+        _logInitialized = _logWriter != null;
+    }
+
+    private static void CloseLog()
+    {
+        RollingJsonLogWriter? writer;
+        lock (LogGate)
+        {
+            writer = _logWriter;
+            _logWriter = null;
+            _logInitialized = false;
+            _nextLogRetryTicks = 0;
+        }
+
+        try
+        {
+            writer?.Dispose();
+        }
+        catch
+        {
+        }
+    }
+
+    private static void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        Exception? ex = e.Exception;
+        WriteLog("ERROR", "Unhandled UI exception", ex);
+        string message = ex == null
+            ? "An unexpected error occurred."
+            : "An unexpected error occurred.\n\n" + FormatException(ex);
+
+        ShowError(null, "Unexpected Error", message);
+        e.Handled = true;
+    }
+
+    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        WriteLog("ERROR", "Unhandled application exception", e.ExceptionObject as Exception);
+    }
+
+    private static void OnTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        WriteLog("ERROR", "Unobserved task exception", e.Exception);
+        e.SetObserved();
+    }
+
+    private static void OnExit(object sender, ExitEventArgs e)
+    {
+        CloseLog();
+    }
+
+    private sealed class StructuredLogEvent
+    {
+        public required string Timestamp { get; init; }
+        public required string Level { get; init; }
+        public required string Event { get; init; }
+        public required string ApplicationVersion { get; init; }
+        [JsonPropertyName("sessionID")]
+        public required string SessionID { get; init; }
+        public string? ExceptionType { get; init; }
+        public string? Message { get; init; }
+        [JsonPropertyName("details")]
+        public string? OriginalError { get; init; }
+    }
+}
+
+internal static class ApplicationVersionProvider
+{
+    internal const string UnknownVersion = "Unknown";
+
+    internal static string Resolve()
+        => Resolve(typeof(ApplicationVersionProvider).Assembly);
+
+    internal static string Resolve(Assembly? assembly)
+    {
+        if (assembly == null)
+            return UnknownVersion;
+
+        try
+        {
+            string? fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
+            return string.IsNullOrWhiteSpace(fileVersion) ? UnknownVersion : fileVersion;
+        }
+        catch
+        {
+            return UnknownVersion;
+        }
+    }
+}

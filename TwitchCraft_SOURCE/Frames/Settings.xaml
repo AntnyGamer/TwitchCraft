@@ -1,0 +1,508 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraft_V1.Frames.Settings" KeyDown="Back_KeyDown" Background="Transparent" Foreground="White" FontFamily="Arial Rounded MT Bold" UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <Style x:Key="CategoryButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Width" Value="134" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="FontFamily" Value="Tw Cen MT Condensed Extra Bold" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Opacity" Value="0.78" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusVisual}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="PageTitle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Arial Rounded MT Bold" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Foreground" Value="#C6C6C6" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+        <Style x:Key="SettingLabel" TargetType="TextBlock">
+            <Setter Property="Width" Value="326" />
+            <Setter Property="FontFamily" Value="Arial Rounded MT Bold" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="#C6C6C6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="SettingRow" TargetType="DockPanel">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Margin" Value="0,0,4,3" />
+            <Setter Property="LastChildFill" Value="False" />
+        </Style>
+        <Style x:Key="CategoryNote" TargetType="TextBlock">
+            <Setter Property="Width" Value="465" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="#C6C6C6" />
+            <Setter Property="FontFamily" Value="Arial Rounded MT Bold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Height" Value="26" />
+            <Setter Property="FontFamily" Value="Arial Rounded MT Bold" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusVisual}" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform Y="1" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DimWhenDisabledComboBox" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.55" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="NumericEditableComboBox" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="IsEditable" Value="True" />
+            <Setter Property="IsTextSearchEnabled" Value="False" />
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusVisual}" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform Y="1" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CommandCustomizationListItem" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <ListBoxItem x:Key="CommandCustomizationHeader" x:Shared="False" Style="{StaticResource CommandCustomizationListItem}" IsEnabled="False">
+            <StackPanel Margin="12,20,8,4">
+                <TextBlock Text="CUSTOM COMMAND SETTINGS" Style="{StaticResource PageTitle}" />
+                <TextBlock Style="{StaticResource CategoryNote}" Margin="0,0,0,8" Text="Set per-user and global cooldowns independently. Default keeps the built-in behavior for that cooldown; None disables it." />
+                <Grid Margin="2,0,0,0" TextBlock.Foreground="LightGray" TextBlock.FontSize="12" TextBlock.FontWeight="SemiBold">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="165" />
+                        <ColumnDefinition Width="65" />
+                        <ColumnDefinition Width="125" />
+                        <ColumnDefinition Width="125" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Command" />
+                    <TextBlock Grid.Column="1" Text="Enabled" Margin="-18,0,0,0" />
+                    <TextBlock Grid.Column="2" Text="Per-user" Margin="15,0,0,0" />
+                    <TextBlock Grid.Column="3" Text="Global" Margin="21,0,0,0" />
+                </Grid>
+            </StackPanel>
+        </ListBoxItem>
+        <ListBoxItem x:Key="CommandCustomizationFooter" x:Shared="False" Style="{StaticResource CommandCustomizationListItem}" Height="18" IsEnabled="False" />
+    </UserControl.Resources>
+    <Grid ClipToBounds="True">
+        <Rectangle IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
+                    <GradientStop Color="#00000000" Offset="0" />
+                    <GradientStop Color="#DD000000" Offset="1" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+        <Viewbox Stretch="Uniform" StretchDirection="Both">
+            <Grid Width="800" Height="450">
+                <Button Content="Back" KeyboardNavigation.TabIndex="0" Width="100" Height="30" Click="Back_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <TextBlock Text="SETTINGS" FontFamily="Cascadia Mono" FontSize="36" FontWeight="Bold" Margin="0,22,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" />
+                    </TextBlock.Effect>
+                </TextBlock>
+                <Border Width="728" Height="348" Margin="0,88,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" BorderBrush="Black" BorderThickness="2" CornerRadius="5">
+                    <Border.Background>
+                        <SolidColorBrush Color="#FF656565" Opacity="0.5" />
+                    </Border.Background>
+                    <Grid Margin="10,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="146" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <Button x:Name="CommandsCategoryButton" KeyboardNavigation.TabIndex="1" Content="Commands" Style="{StaticResource CategoryButton}" Click="Commands_Click" />
+                            <Button x:Name="CustomCommandsCategoryButton" KeyboardNavigation.TabIndex="2" Content="Custom Commands" Style="{StaticResource CategoryButton}" Click="CustomCommands_Click" />
+                            <Button x:Name="EconomyCategoryButton" KeyboardNavigation.TabIndex="3" Content="Economy" Style="{StaticResource CategoryButton}" Click="Economy_Click" />
+                            <Button x:Name="GameplayCategoryButton" KeyboardNavigation.TabIndex="4" Content="Gameplay" Style="{StaticResource CategoryButton}" Click="Gameplay_Click" />
+                            <Button x:Name="ChatDisplayCategoryButton" KeyboardNavigation.TabIndex="5" Content="Chat &amp; Display" Style="{StaticResource CategoryButton}" Click="ChatDisplay_Click" />
+                            <Button x:Name="PerformanceCategoryButton" KeyboardNavigation.TabIndex="6" Content="Performance" Style="{StaticResource CategoryButton}" Click="Performance_Click" />
+                            <Button x:Name="ServerCategoryButton" KeyboardNavigation.TabIndex="7" Content="Minecraft Server" Style="{StaticResource CategoryButton}" Click="Server_Click" />
+                            <Button x:Name="DangerousCategoryButton" KeyboardNavigation.TabIndex="8" Content="Dangerous" Style="{StaticResource CategoryButton}" Click="Dangerous_Click" />
+                            <Button Content="Reset Category" KeyboardNavigation.TabIndex="9" Width="134" Height="28" Margin="0,2,0,0" Click="ResetCategory_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" />
+                            <Button Content="Reset All Defaults" KeyboardNavigation.TabIndex="10" Width="134" Height="28" Margin="0,2,0,0" Click="ResetDefaults_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <Border Grid.Column="2" Background="Transparent" BorderBrush="Black" BorderThickness="0" CornerRadius="4">
+                            <Grid>
+                                <Grid x:Name="CommandsSettingsPage">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="12,20,8,18">
+                                            <TextBlock Text="COMMAND SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Primary command prefix:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="CommandPrefixTextBox" AutomationProperties.Name="Primary command prefix" IsEditable="True" IsTextSearchEnabled="False" MaxDropDownHeight="180" SelectionChanged="Prefix_Changed" LostFocus="Prefix_Changed" ToolTip="Choose a common prefix or type your own (maximum 2 characters)." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Optional secondary prefix:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="SecondaryCommandPrefixTextBox" AutomationProperties.Name="Optional secondary prefix" IsEditable="True" IsTextSearchEnabled="False" MaxDropDownHeight="180" SelectionChanged="Prefix_Changed" LostFocus="Prefix_Changed" ToolTip="Choose a common prefix, type your own (maximum 2 characters), or leave blank to disable the secondary prefix." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Pause viewer commands:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="ViewerCommandsPausedCheckbox" AutomationProperties.Name="Pause viewer commands" Checked="ViewerPause_Changed" Unchecked="ViewerPause_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Allow moderators to use streamer commands:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="ModeratorCommandsCheckbox" AutomationProperties.Name="Allow moderators to use streamer commands" Checked="ModeratorCommands_Changed" Unchecked="ModeratorCommands_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Commands per viewer per minute:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="ViewerCommandLimitDropdown" AutomationProperties.Name="Commands per viewer per minute" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="ViewerLimit_Changed" LostFocus="ViewerLimit_LostFocus" ToolTip="Choose a preset or type 0–1,000. Zero means unlimited." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Channel commands per minute:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="ChannelCommandLimitDropdown" AutomationProperties.Name="Channel commands per minute" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="ChannelLimit_Changed" LostFocus="ChannelLimit_LostFocus" ToolTip="Choose a preset or type 0–1,000. Zero means unlimited." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable global game-command cooldown:" Style="{StaticResource SettingLabel}" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <CheckBox x:Name="GlobalCooldownCheckbox" AutomationProperties.Name="Enable global game-command cooldown" Checked="GlobalCooldown_Changed" Unchecked="GlobalCooldown_Changed" Margin="0,0,8,0" />
+                                                    <ComboBox x:Name="GlobalCooldownSecondsDropdown" AutomationProperties.Name="Global game-command cooldown" Visibility="Collapsed" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="CooldownTime_Changed" LostFocus="CooldownTime_LostFocus" ToolTip="Choose a preset or type 0.1–120 seconds." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Show exact cooldown remaining:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="ExactCooldownCheckbox" AutomationProperties.Name="Show exact cooldown remaining" Checked="ExactCooldown_Changed" Unchecked="ExactCooldown_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Bot response verbosity:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="ResponseVerbosityDropdown" AutomationProperties.Name="Bot response verbosity" SelectionChanged="Verbosity_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Respond to unknown commands:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="UnknownCommandResponseCheckbox" AutomationProperties.Name="Respond to unknown commands" Checked="UnknownCommands_Changed" Unchecked="UnknownCommands_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Mention viewers in bot replies:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="MentionViewersCheckbox" AutomationProperties.Name="Mention viewers in bot replies" Checked="MentionViewers_Changed" Unchecked="MentionViewers_Changed" />
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                                <Grid x:Name="CustomCommandsSettingsPage" Visibility="Collapsed">
+                                    <ListBox x:Name="CommandCustomizationList" Background="Transparent" Foreground="White" ItemContainerStyle="{StaticResource CommandCustomizationListItem}"
+                                             AutomationProperties.Name="Command customizations" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel">
+                                        <ListBox.Template>
+                                            <ControlTemplate TargetType="ListBox">
+                                                <ScrollViewer Focusable="False" CanContentScroll="True" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" PanningMode="Both">
+                                                    <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                                </ScrollViewer>
+                                            </ControlTemplate>
+                                        </ListBox.Template>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid MinHeight="34" Margin="12,0,8,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="165" />
+                                                        <ColumnDefinition Width="65" />
+                                                        <ColumnDefinition Width="125" />
+                                                        <ColumnDefinition Width="125" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center" FontFamily="Arial Rounded MT Bold" FontSize="14">
+                                                        <Run Text="{DynamicResource CommandSettingsPrefix}" /><Run Text="{Binding Name, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <CheckBox Grid.Column="1" IsChecked="{Binding Enabled, Mode=TwoWay}" AutomationProperties.Name="Enabled" />
+                                                    <ComboBox Grid.Column="2" HorizontalAlignment="Left" ItemsSource="{Binding PerUserOptions}" DisplayMemberPath="Label" SelectedItem="{Binding PerUserCooldown, Mode=TwoWay}"
+                                                              AutomationProperties.Name="Per-user cooldown" ToolTip="Cooldown for each viewer separately. Default keeps the command's built-in per-user behavior." />
+                                                    <ComboBox Grid.Column="3" HorizontalAlignment="Left" ItemsSource="{Binding GlobalOptions}" DisplayMemberPath="Label" SelectedItem="{Binding GlobalCooldown, Mode=TwoWay}"
+                                                              AutomationProperties.Name="Global cooldown" ToolTip="Cooldown shared by all viewers for this command. Default keeps the command's normal global cooldown behavior." />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                                <Grid x:Name="EconomySettingsPage" Visibility="Collapsed">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="12,20,8,18">
+                                            <TextBlock Text="ECONOMY SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable passive token earning:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="PassiveTokensCheckbox" AutomationProperties.Name="Enable passive token earning" Checked="PassiveTokens_Changed" Unchecked="PassiveTokens_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Passive tokens per payout:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="PassivePayoutAmountDropdown" AutomationProperties.Name="Passive tokens per payout" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="PayoutAmount_Changed" LostFocus="PayoutAmount_LostFocus" ToolTip="Choose a preset or type 1–1,000,000." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Passive interval range (seconds):" Style="{StaticResource SettingLabel}" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <ComboBox x:Name="PassivePayoutMinimumDropdown" AutomationProperties.Name="Minimum passive interval" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="PayoutRange_Changed" LostFocus="PayoutRange_LostFocus" ToolTip="Minimum: choose a preset or type 10–900 seconds." />
+                                                    <TextBlock Text=" to " VerticalAlignment="Center" Foreground="#C6C6C6" />
+                                                    <ComboBox x:Name="PassivePayoutMaximumDropdown" AutomationProperties.Name="Maximum passive interval" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="PayoutRange_Changed" LostFocus="PayoutRange_LostFocus" ToolTip="Maximum: choose a preset or type 10–900 seconds." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Require activity for passive payouts:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="ActivityPayoutCheckbox" AutomationProperties.Name="Require activity for passive payouts" Checked="RequireActivity_Changed" Unchecked="RequireActivity_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Activity eligibility window:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="ActivityWindowDropdown" AutomationProperties.Name="Activity eligibility window" SelectionChanged="ActivityWindow_Changed" ToolTipService.ShowOnDisabled="True" ToolTip="Choose an activity window. Available when passive-payout activity is enabled." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Maximum token balance:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="MaximumTokenBalanceDropdown" AutomationProperties.Name="Maximum token balance" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="TokenLimit_Changed" LostFocus="TokenLimit_LostFocus" ToolTip="Choose a preset or type 0–2,147,483,647. Zero means unlimited." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Command-cost multiplier:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="CommandCostMultiplierDropdown" AutomationProperties.Name="Command-cost multiplier" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="CostMultiplier_Changed" LostFocus="CostMultiplier_LostFocus" ToolTip="Choose a preset or type a multiplier from 0–5.0. 0x makes priced commands free." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Automatically reward new followers:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="FollowRewardsCheckbox" AutomationProperties.Name="Automatically reward new followers" Checked="FollowRewards_Changed" Unchecked="FollowRewards_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Tokens per new follower:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="FollowRewardAmountDropdown" AutomationProperties.Name="Tokens per new follower" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="FollowReward_Changed" LostFocus="FollowReward_LostFocus" ToolTipService.ShowOnDisabled="True" ToolTip="Choose a preset or type 1–1,000,000. Available when new-follower rewards are enabled." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Automatically reward Bits (1 Bit = 1 token):" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="BitRewardsCheckbox" AutomationProperties.Name="Automatically reward Bits" Checked="BitRewards_Changed" Unchecked="BitRewards_Changed" />
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                                <Grid x:Name="GameplaySettingsPage" Visibility="Collapsed">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="12,20,8,18">
+                                            <TextBlock Text="GAMEPLAY SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable minigames:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="MinigamesCheckbox" AutomationProperties.Name="Enable minigames" Checked="Minigames_Changed" Unchecked="Minigames_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Cooldown between minigames:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="MinigameCooldownDropdown" AutomationProperties.Name="Cooldown between minigames" SelectionChanged="MinigameCooldown_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable hardcore mode:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="HardcoreCheckbox" AutomationProperties.Name="Enable hardcore mode" Checked="Hardcore_Changed" Unchecked="Hardcore_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Difficulty:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="DifficultyDropdown" AutomationProperties.Name="Difficulty" SelectionChanged="Difficulty_Changed">
+                                                    <ComboBoxItem Content="Easy" />
+                                                    <ComboBoxItem Content="Medium" />
+                                                    <ComboBoxItem Content="Hard" />
+                                                </ComboBox>
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable PvP in multiplayer" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="PVPCheckbox" AutomationProperties.Name="Enable PvP in multiplayer" Checked="PVP_Changed" Unchecked="PVP_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Allow targeting all players:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="AllowAllTargetsCheckbox" AutomationProperties.Name="Allow targeting all players" Checked="AllowAllTargets_Changed" Unchecked="AllowAllTargets_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Allow random player targeting:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="AllowRandomTargetsCheckbox" AutomationProperties.Name="Allow random player targeting" Checked="AllowRandomTargets_Changed" Unchecked="AllowRandomTargets_Changed" />
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                                <Grid x:Name="ChatDisplaySettingsPage" Visibility="Collapsed">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="12,20,8,18">
+                                            <TextBlock Text="CHAT &amp; DISPLAY SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Relay non-command chat to Minecraft:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="NonCommandChatRelayCheckbox" AutomationProperties.Name="Relay non-command chat to Minecraft" Checked="ChatRelay_Changed" Unchecked="ChatRelay_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Add timestamps to Minecraft relay:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="RelayTimestampsCheckbox" AutomationProperties.Name="Add timestamps to Minecraft relay" Checked="RelayTimestamps_Changed" Unchecked="RelayTimestamps_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Minecraft relay text color:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="RelayTextColorDropdown" AutomationProperties.Name="Minecraft relay text color" SelectionChanged="RelayColor_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Minecraft relay messages per second:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="RelayRateDropdown" AutomationProperties.Name="Minecraft relay messages per second" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="RelayRate_Changed" LostFocus="RelayRate_LostFocus" ToolTip="Choose a preset or type 0–100 messages per second. Zero means unlimited." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}" ToolTip="Shows Twitch and Minecraft connection status above the viewer list on the main screen.">
+                                                <TextBlock Text="Show connection health:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="ConnectionHealthCheckbox" AutomationProperties.Name="Show connection health" Checked="ConnectionHealth_Changed" Unchecked="ConnectionHealth_Changed" />
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                                <Grid x:Name="PerformanceSettingsPage" Visibility="Collapsed">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="12,20,8,18">
+                                            <TextBlock Text="PERFORMANCE &amp; DATA SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable low-resource preset:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="LowResourceModeCheckbox" AutomationProperties.Name="Enable low-resource preset" Checked="LowResource_Changed" Unchecked="LowResource_Changed" ToolTip="Uses smaller logs and queues, slower roster/health refreshes, minimized UI pausing, and a safe relay limit." />
+                                            </DockPanel>
+                                            <Border x:Name="LowResourceEffectiveValuesBorder" Visibility="Collapsed" Margin="0,2,0,10" Padding="10" Width="465" HorizontalAlignment="Left" BorderBrush="Black" BorderThickness="1" CornerRadius="4">
+                                                <Border.Background>
+                                                    <SolidColorBrush Color="#FF656565" Opacity="0.5" />
+                                                </Border.Background>
+                                                <TextBlock x:Name="LowResourceEffectiveValuesTextBlock" TextWrapping="Wrap" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" VerticalAlignment="Center" />
+                                            </Border>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Pause unnecessary UI updates while minimized:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="PauseUIUpdatesCheckbox" AutomationProperties.Name="Pause unnecessary UI updates while minimized" Checked="PauseUI_Changed" Unchecked="PauseUI_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Live viewer roster refresh interval:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="ViewerRosterIntervalDropdown" AutomationProperties.Name="Live viewer roster refresh interval" SelectionChanged="RosterInterval_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Maximum visible Twitch log lines:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="MaxTwitchLogLinesDropdown" AutomationProperties.Name="Maximum visible Twitch log lines" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="TwitchLogLimit_Changed" LostFocus="TwitchLogLimit_LostFocus" ToolTip="Choose a preset or type 50–5,000 lines." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Maximum visible Minecraft log lines:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="MaxMinecraftLogLinesDropdown" AutomationProperties.Name="Maximum visible Minecraft log lines" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="MinecraftLogLimit_Changed" LostFocus="MinecraftLogLimit_LostFocus" ToolTip="Choose a preset or type 50–5,000 lines." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Maximum queued gameplay commands:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="GameplayQueueDropdown" AutomationProperties.Name="Maximum queued gameplay commands" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="QueueLimit_Changed" LostFocus="QueueLimit_LostFocus" ToolTip="Choose a preset or type 10–1,000 queued commands." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable statistics:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="StatisticsEnabledCheckbox" AutomationProperties.Name="Enable statistics" Checked="Statistics_Changed" Unchecked="Statistics_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="SQLite optimization interval:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="SqliteOptimizeDropdown" AutomationProperties.Name="SQLite optimization interval" SelectionChanged="SqliteOptimize_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable automatic config and token backups:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="AutomaticBackupsCheckbox" AutomationProperties.Name="Enable automatic config and token backups" Checked="Backups_Changed" Unchecked="Backups_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Automatic backup interval:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="BackupIntervalDropdown" AutomationProperties.Name="Automatic backup interval" Style="{StaticResource DimWhenDisabledComboBox}" SelectionChanged="BackupInterval_Changed" ToolTipService.ShowOnDisabled="True" ToolTip="Available when automatic config and token backups are enabled." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Backups to keep:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="BackupRetentionDropdown" AutomationProperties.Name="Backups to keep" Style="{StaticResource DimWhenDisabledComboBox}" SelectionChanged="BackupRetention_Changed" ToolTipService.ShowOnDisabled="True" ToolTip="Available when automatic config and token backups are enabled." />
+                                            </DockPanel>
+                                            <TextBlock Style="{StaticResource CategoryNote}" Margin="0,8,0,0" Text="Automatic backups (including config.json and viewer_tokens.db) run on the selected interval and when TwitchCraft closes, and are stored locally in TwitchCraft\backups." />
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                                <Grid x:Name="ServerSettingsPage" Visibility="Collapsed">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <StackPanel Margin="12,20,8,18">
+                                            <TextBlock Text="MINECRAFT SERVER SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="View distance (chunks):" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="ViewDistanceDropdown" AutomationProperties.Name="View distance in chunks" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="ViewDistance_Changed" LostFocus="ViewDistance_LostFocus" ToolTip="Choose a preset or type 2–32 chunks." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Simulation distance (chunks):" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="SimulationDistanceDropdown" AutomationProperties.Name="Simulation distance in chunks" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="Simulation_Changed" LostFocus="Simulation_LostFocus" ToolTip="Choose a preset or type 2–32 chunks." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Entity broadcast range percentage:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="EntityBroadcastRangeDropdown" AutomationProperties.Name="Entity broadcast range percentage" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="EntityRange_Changed" LostFocus="EntityRange_LostFocus" ToolTip="Choose a preset or type 10–1,000 percent." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Network compression threshold:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="NetworkCompressionDropdown" AutomationProperties.Name="Network compression threshold" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="Compression_Changed" LostFocus="Compression_LostFocus" ToolTip="Choose a preset or type -1–4,096 bytes. -1 disables compression." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="RCON timeout:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="RCONTimeoutDropdown" AutomationProperties.Name="RCON timeout" Style="{StaticResource NumericEditableComboBox}" SelectionChanged="RCONTimeout_Changed" LostFocus="RCONTimeout_LostFocus" ToolTip="Choose a preset or type 1–60 seconds." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Graceful shutdown timeout:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="GracefulShutdownTimeoutDropdown" AutomationProperties.Name="Graceful shutdown timeout" SelectionChanged="ShutdownTimeout_Changed" ToolTip="How long TwitchCraft waits after sending stop before force-closing a local Minecraft server." />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Pause server after it stays empty for:" Style="{StaticResource SettingLabel}" />
+                                                <ComboBox x:Name="EmptyShutdownDropdown" AutomationProperties.Name="Pause server after it stays empty for" SelectionChanged="EmptyShutdown_Changed" />
+                                            </DockPanel>
+                                            <DockPanel Style="{StaticResource SettingRow}">
+                                                <TextBlock Text="Enable whitelist:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="WhitelistCheckbox" AutomationProperties.Name="Enable whitelist" Checked="Whitelist_Changed" Unchecked="Whitelist_Changed" />
+                                            </DockPanel>
+                                            <TextBlock Style="{StaticResource CategoryNote}" Margin="0,8,0,0" Text="Whitelist, distance, broadcast range, and compression changes apply on the next locally hosted Minecraft server start." />
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                                <Grid x:Name="DangerousSettingsPage" Visibility="Collapsed" Margin="12,20,0,18">
+                                    <Border BorderBrush="Black" BorderThickness="2" CornerRadius="5">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="#FF530000" Opacity="0.5" />
+                                        </Border.Background>
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <StackPanel Width="450" Margin="0,12" HorizontalAlignment="Center">
+                                                <TextBlock Text="DANGEROUS SETTINGS" Style="{StaticResource PageTitle}" HorizontalAlignment="Center" Margin="0,0,0,18" />
+                                                <Grid Width="410" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="78" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="34" />
+                                                        <RowDefinition Height="34" />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Minimum Minecraft RAM (GB):" Style="{StaticResource SettingLabel}" Width="Auto" />
+                                                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="MinRAMTextBox" AutomationProperties.Name="Minimum Minecraft RAM in GB" Width="70" Height="26" HorizontalAlignment="Right" VerticalAlignment="Center" TextChanged="RAM_Changed" PreviewTextInput="RAM_PreviewTextInput" FontFamily="Arial Rounded MT Bold" FontSize="16" MaxLength="3" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Maximum Minecraft RAM (GB):" Style="{StaticResource SettingLabel}" Width="Auto" />
+                                                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="MaxRAMTextBox" AutomationProperties.Name="Maximum Minecraft RAM in GB" Width="70" Height="26" HorizontalAlignment="Right" VerticalAlignment="Center" TextChanged="RAM_Changed" PreviewTextInput="RAM_PreviewTextInput" FontFamily="Arial Rounded MT Bold" FontSize="16" MaxLength="3" />
+                                                </Grid>
+                                                <TextBlock Width="410" Margin="0,0,0,25" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" VerticalAlignment="Center" Text="RAM changes apply on the next server start." />
+                                                <Button x:Name="AuthorizeTwitchButton" Content="Authorize Twitch" ToolTipService.ShowOnDisabled="True" Width="178" Height="30" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Center" />
+                                                <TextBlock Width="410" Margin="0,4,0,22" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" VerticalAlignment="Center" Text="TwitchCraft uses a public Twitch application. No Client ID or Client Secret is entered by the user, and your Twitch password is never provided to TwitchCraft. Authorization tokens are stored locally and sent only to Twitch as needed." />
+                                                <StackPanel x:Name="RCONPasswordEditor" Margin="0,0,0,8" IsKeyboardFocusWithinChanged="RCONPasswordEditor_IsKeyboardFocusWithinChanged">
+                                                    <Grid Width="410" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="66" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="RCON Password:" Style="{StaticResource SettingLabel}" Width="Auto" TextWrapping="NoWrap" Margin="0,0,8,0" />
+                                                        <PasswordBox Grid.Column="1" x:Name="RCONPasswordBox" AutomationProperties.Name="RCON Password" Height="26" VerticalAlignment="Center" PasswordChar="●" FontFamily="Arial Rounded MT Bold" FontSize="16" />
+                                                        <TextBox Grid.Column="1" x:Name="RCONPasswordTextBox" AutomationProperties.Name="RCON Password" UndoLimit="0" Height="26" VerticalAlignment="Center" FontFamily="Arial Rounded MT Bold" FontSize="16" Visibility="Collapsed" />
+                                                        <Button Grid.Column="2" x:Name="RCONPasswordShowButton" Content="Show" Width="58" Height="26" HorizontalAlignment="Right" Click="ToggleRCONPasswordVisibility_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="16" />
+                                                    </Grid>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                        <Button Content="Copy" Width="82" Height="28" Click="CopyRCONPassword_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="17" />
+                                                        <Button Content="Generate New" Width="116" Height="28" Margin="8,0,0,0" Click="GenerateRCONPassword_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="17" />
+                                                    </StackPanel>
+                                                    <TextBlock Width="410" Margin="0,0,0,14" TextAlignment="Center" TextWrapping="Wrap" Foreground="#C6C6C6" FontSize="13" Text="This is your TwitchCraft-hosted server's RCON password. Trusted Remote Control users must enter it to connect. Changes take effect on the next local server start." />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Button Content="Reset Statistics" ToolTipService.ShowOnDisabled="True" Width="148" Height="30" Click="ResetStats_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Margin="0,0,10,0" HorizontalAlignment="Center" />
+                                                    <Button Content="Delete Config" Width="148" Height="30" Click="DeleteConfig_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Center" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Viewbox>
+    </Grid>
+</UserControl>

@@ -3,7 +3,7 @@
 TwitchCraft stores its user-specific data under:
 
 ```text
-%APPDATA%\TwitchCraftBot
+%APPDATA%\TwitchCraft
 ```
 
 Depending on enabled features and runtime state, this directory can contain:
@@ -12,7 +12,7 @@ Depending on enabled features and runtime state, this directory can contain:
 - `viewer_tokens.db`
 - `statistics.db`
 - JSON exports under `exports/`
-- diagnostic logs
+- diagnostic logs under `logs/`
 - automatic point-in-time backups under `backups/`
 - the managed local Minecraft server directory and world data
 
@@ -91,7 +91,7 @@ Configuration saves use `config.json.tmp` as a temporary file with a replacement
 Before restoring an automatic backup:
 
 1. Close TwitchCraft.
-2. Make a copy of the entire `%APPDATA%\TwitchCraftBot` directory.
+2. Make a copy of the entire `%APPDATA%\TwitchCraft` directory.
 3. Inspect filenames carefully; never post their contents publicly.
 4. Restore `config.json` and `viewer_tokens.db` from the same timestamped backup folder.
 5. Start TwitchCraft and verify settings and balances before launching a server.

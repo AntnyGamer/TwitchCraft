@@ -13,10 +13,17 @@
 
 config.json
 coverage.*
+eula.txt
+server.properties
 
 .vs/
 bin/
 exports/
+logs/
+MCServer/
 obj/
 publish/
 TestResults/
+world/
+world_nether/
+world_the_end/

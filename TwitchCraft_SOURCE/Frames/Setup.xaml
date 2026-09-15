@@ -1,0 +1,53 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraft_V1.Frames.Setup" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="VersionItemTemplate">
+            <TextBlock Text="{Binding Label}" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid ClipToBounds="True">
+        <Rectangle IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
+                    <GradientStop Color="#00000000" Offset="0" />
+                    <GradientStop Color="#DD000000" Offset="1" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
+                <Button KeyboardNavigation.TabIndex="0" Style="{StaticResource HelpIconButton}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,10,0,0" />
+                <TextBlock x:Name="Title" Text="TwitchCraft Setup" FontFamily="Cascadia Mono" FontSize="30" Foreground="Red" TextAlignment="Center" Margin="0,26,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" />
+                <TextBlock x:Name="JavaRequirementText" Width="91" Text="JDK 25 REQUIRED" FontFamily="Arial Rounded MT Bold" FontSize="10" Foreground="#FFD6D6D6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="196,111,0,0" />
+                <TextBlock x:Name="MCVersion" Text="Minecraft Version:" FontFamily="Arial Rounded MT Bold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="196,126,0,0" />
+                <ComboBox x:Name="MCVersionDropdown" KeyboardNavigation.TabIndex="1" AutomationProperties.Name="Minecraft Version" Width="200" Height="33" FontFamily="Arial Rounded MT Bold" FontSize="16" SelectionChanged="Version_Changed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="404,120,0,0">
+                    <ComboBox.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" FontFamily="Arial Rounded MT Bold" FontSize="15" Foreground="#111111" FontWeight="Bold" Margin="6,4,6,2" TextDecorations="Underline" />
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ComboBox.GroupStyle>
+                </ComboBox>
+                <TextBlock x:Name="MCBindIP" FontFamily="Arial Rounded MT Bold" HorizontalAlignment="Left" VerticalAlignment="Top" Width="181" Margin="196,160,0,0"><Run Text="Minecraft Bind IP:" FontSize="14" Foreground="White" /><Run Text=" " /><Run Text=" (advanced) " FontSize="10" Foreground="#FFD6D6D6" /></TextBlock>
+                <TextBox x:Name="MCBindIPTextbox" KeyboardNavigation.TabIndex="2" AutomationProperties.Name="Minecraft Bind IP" Width="200" Height="30" Text="127.0.0.1" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="404,155,0,0" />
+                <TextBlock x:Name="TwitchUser" Text="Twitch Channel Name:" FontFamily="Arial Rounded MT Bold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="196,192,0,0" />
+                <TextBox x:Name="TwitchUserTextbox" KeyboardNavigation.TabIndex="3" AutomationProperties.Name="Twitch Channel Name" Width="200" Height="30" FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="404,187,0,0" />
+                <TextBlock x:Name="BotUser" Text="Authorized Bot Account:" FontFamily="Arial Rounded MT Bold" FontSize="14" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="196,224,0,0" />
+                <TextBox x:Name="BotUserTextbox" AutomationProperties.Name="Authorized Bot Account" Width="200" Height="30" IsReadOnly="True" IsTabStop="False" ToolTip="Filled automatically after Twitch authorization." FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="404,219,0,0" />
+                <TextBlock Width="500" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,258,0,0" FontFamily="Arial Rounded MT Bold" FontSize="10.5" FontWeight="Bold" Foreground="Red" Text="IMPORTANT: Authorize with the Twitch account you want TwitchCraft to use as your bot account." />
+
+                <Button x:Name="AuthorizeTwitchButton" KeyboardNavigation.TabIndex="4" ToolTipService.ShowOnDisabled="True" Width="156" Height="32" Content="Authorize Twitch" IsEnabled="True" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,292,0,0" />
+
+                <Button x:Name="StartButton" KeyboardNavigation.TabIndex="5" Width="116" Height="51" Content="Start" IsEnabled="False" ToolTipService.ShowOnDisabled="True" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Start_Click" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,330,0,0" />
+
+                <TextBlock Width="640" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,396,0,0" FontFamily="Arial Rounded MT Bold" FontSize="10" Foreground="#FFD6D6D6" Text="TwitchCraft is an open-source application designed to enhance your Twitch streams and Minecraft playthroughs. TwitchCraft only accesses your Twitch information and permissions where needed to provide its features. Your Twitch password is never provided to TwitchCraft; your Twitch authorization tokens are stored ONLY locally on your computer. TwitchCraft's source code is publicly viewable and editable on GitHub. You can revoke TwitchCraft's access at any time through Twitch." />
+
+            </Grid>
+        </Viewbox>
+    </Grid>
+</UserControl>

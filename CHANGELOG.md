@@ -2,7 +2,24 @@
 
 All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
-## [1.8.0.0] - 2026-09-03
+## [1.9.0] - 2026-09-15
+
+- Added support for Minecraft version 26.3
+- 26.2 is now treated as the preferred version
+- Completely revamped the Help page
+- Added a settings button to directly access settings
+- Improved RCON handling and validation
+- Upgraded the testing infrastructure
+- Added new tests and updated existing ones, now 315 total
+- Updated README and documentation
+- Updated NuGet packages
+- Improved keyboard navigation and accessibility across the interface
+- Moved logs to a log folder and added a button to access them on the Help page
+- Minor UI and usability improvements
+- Minor bug fixes
+- Minor security, stability, and performance improvements
+
+## [1.8.0] - 2026-09-03
 
 - Completely redesigned and greatly expanded Settings with many new command, economy, chat, performance, backup, and Minecraft server options
 - Added per-command customization, customizable command prefixes, rate limits, and cooldown controls

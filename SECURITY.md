@@ -13,7 +13,11 @@ Only the latest public release of TwitchCraft is supported with security updates
 
 Please do **not** publicly post security vulnerabilities in GitHub Issues, Discussions, pull requests, or comments.
 
-If you find a security issue, please report it privately to the project owner.
+If you find a security issue, use GitHub's private vulnerability reporting form for this repository:
+
+`https://github.com/AntnyGamer/TwitchCraft/security/advisories/new`
+
+If GitHub does not offer the private form, do **not** post vulnerability details publicly. Open a normal repository issue containing only a request for a private security contact method.
 
 Security issues may include:
 
