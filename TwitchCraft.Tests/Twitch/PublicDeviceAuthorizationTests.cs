@@ -1,5 +1,7 @@
+using System;
 using System.Text.Json;
 using TwitchCraft_V1.Setup;
+using Xunit;
 
 namespace TwitchCraft.Tests.Twitch;
 

@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+
 string? jarPath = null;
 for (int i = 0; i + 1 < args.Length; i++)
 {

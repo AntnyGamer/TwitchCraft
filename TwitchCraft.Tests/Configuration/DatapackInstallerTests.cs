@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1.Setup;
+using Xunit;
 
 namespace TwitchCraft.Tests.Configuration;
 

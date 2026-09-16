@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Threading;
+
 namespace TwitchCraft.Tests.TestInfrastructure;
 
 internal sealed class TemporaryDirectory : IDisposable

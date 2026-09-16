@@ -1,6 +1,9 @@
+using System;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using TwitchCraft_V1;
+using Xunit;
 
 namespace TwitchCraft.Tests.Runtime;
 

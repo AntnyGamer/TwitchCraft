@@ -1,6 +1,10 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
+using Xunit;
 
 namespace TwitchCraft.Tests.Configuration;
 

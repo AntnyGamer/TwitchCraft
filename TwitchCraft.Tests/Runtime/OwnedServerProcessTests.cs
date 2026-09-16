@@ -1,6 +1,11 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
+using Xunit;
 
 namespace TwitchCraft.Tests.Runtime;
 
@@ -23,12 +28,8 @@ public sealed class OwnedServerProcessTests
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
             await runtime.StopProcessSafeAsync(waitBriefly: true);
 
-            string[] arguments = await File.ReadAllLinesAsync(
-                config.Server.JarPath + ".args",
-                cancellationToken);
-            string[] commands = await File.ReadAllLinesAsync(
-                config.Server.JarPath + ".stdin",
-                cancellationToken);
+            string[] arguments = await File.ReadAllLinesAsync(config.Server.JarPath + ".args", cancellationToken);
+            string[] commands = await File.ReadAllLinesAsync(config.Server.JarPath + ".stdin", cancellationToken);
             Assert.Equal(
                 [
                     "-Xmx4G",
@@ -59,13 +60,21 @@ public sealed class OwnedServerProcessTests
         {
             await runtime.StartServerAsync(config, cancellationToken);
             string processIDPath = config.Server.JarPath + ".pid";
+            int processID = 0;
             await FakeJavaServer.WaitUntilAsync(
-                () => File.Exists(processIDPath),
+                () =>
+                {
+                    try
+                    {
+                        return int.TryParse(File.ReadAllText(processIDPath), out processID);
+                    }
+                    catch (IOException)
+                    {
+                        return false;
+                    }
+                },
                 "Fake Java process did not write its process ID within 10 seconds.",
                 cancellationToken);
-            int processID = int.Parse(
-                await File.ReadAllTextAsync(processIDPath, cancellationToken),
-                System.Globalization.CultureInfo.InvariantCulture);
             await FakeJavaServer.WaitForProcessExitAsync(processID, cancellationToken);
 
             InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>

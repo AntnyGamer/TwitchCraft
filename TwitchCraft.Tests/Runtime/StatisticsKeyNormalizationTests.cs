@@ -1,4 +1,5 @@
 using TwitchCraft_V1;
+using Xunit;
 
 namespace TwitchCraft.Tests.Runtime;
 

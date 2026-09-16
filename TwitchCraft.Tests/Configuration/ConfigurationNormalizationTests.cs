@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using TwitchCraft_V1.Setup;
+using Xunit;
 
 namespace TwitchCraft.Tests.Configuration;
 

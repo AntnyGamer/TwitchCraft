@@ -1,13 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft.Tests.Economy;
 using TwitchCraft_V1;
+using Xunit;
 
 namespace TwitchCraft.Tests.Commands;
 
 [Collection(EconomyDatabaseCollection.Name)]
 public sealed class MinigameTransactionTests
 {
-
     [Fact]
     public async Task ReplyBetErrorAsync_ReportsEveryRejectedBetReason()
     {

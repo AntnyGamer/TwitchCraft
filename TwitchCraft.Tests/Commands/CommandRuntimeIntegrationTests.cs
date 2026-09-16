@@ -1,7 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft.Tests.Economy;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
+using Xunit;
 
 namespace TwitchCraft.Tests.Commands;
 
@@ -9,7 +15,7 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class CommandRuntimeIntegrationTests
 {
     [Fact]
-    public async Task RunningTwitchCraft_LiveCommandToggleControlsChargeAndMinecraftDelivery()
+    public async Task LiveCommandToggle_ControlsChargeAndMinecraftDelivery()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -51,7 +57,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RunningTwitchCraft_PerUserAndGlobalCooldownsEnforceCorrectScope()
+    public async Task PerUserAndGlobalCooldowns_EnforceCorrectScope()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -108,7 +114,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RunningTwitchCraft_RemoteControllerRejectsMalformedRCONResponse()
+    public async Task RemoteController_RejectsMalformedRCONResponse()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -192,7 +198,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RunningTwitchCraft_RCONPartialBatchSucceedsAndWrongTypeFails()
+    public async Task RCONPartialBatch_SucceedsAndWrongTypeFails()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -228,7 +234,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RunningTwitchCraft_FailedMinecraftSendRefundsAndDoesNotConsumeCustomCooldown()
+    public async Task FailedMinecraftSend_RefundsAndDoesNotConsumeCustomCooldown()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();

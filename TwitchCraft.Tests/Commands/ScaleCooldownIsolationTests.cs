@@ -1,6 +1,9 @@
+using System;
+using System.IO;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft.Tests.Economy;
 using TwitchCraft_V1;
+using Xunit;
 
 namespace TwitchCraft.Tests.Commands;
 

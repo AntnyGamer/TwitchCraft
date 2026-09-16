@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using TwitchCraft_V1;
+using Xunit;
 
 namespace TwitchCraft.Tests.Commands;
 
@@ -173,5 +176,4 @@ public sealed class EnchantmentCommandTests
             "enchant @s minecraft:sharpness 5",
             MinecraftItemEnchantHelper.BuildEnchant("@s", "sharpness", 5));
     }
-
 }
