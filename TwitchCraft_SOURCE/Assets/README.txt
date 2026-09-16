@@ -74,7 +74,7 @@
     4. Click "Start"
 
 ============================================================
-                 6. SETTINGS & CUSTOMIZATION
+                 6. SETTINGS AND CUSTOMIZATION
 ============================================================
 
   TwitchCraft includes settings to customize the bot, server, commands, tokens, statistics, backups, and more

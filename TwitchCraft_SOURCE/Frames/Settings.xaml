@@ -137,7 +137,7 @@
                             <Button x:Name="CustomCommandsCategoryButton" KeyboardNavigation.TabIndex="2" Content="Custom Commands" Style="{StaticResource CategoryButton}" Click="CustomCommands_Click" />
                             <Button x:Name="EconomyCategoryButton" KeyboardNavigation.TabIndex="3" Content="Economy" Style="{StaticResource CategoryButton}" Click="Economy_Click" />
                             <Button x:Name="GameplayCategoryButton" KeyboardNavigation.TabIndex="4" Content="Gameplay" Style="{StaticResource CategoryButton}" Click="Gameplay_Click" />
-                            <Button x:Name="ChatDisplayCategoryButton" KeyboardNavigation.TabIndex="5" Content="Chat &amp; Display" Style="{StaticResource CategoryButton}" Click="ChatDisplay_Click" />
+                            <Button x:Name="ChatDisplayCategoryButton" KeyboardNavigation.TabIndex="5" Content="Chat and Display" Style="{StaticResource CategoryButton}" Click="ChatDisplay_Click" />
                             <Button x:Name="PerformanceCategoryButton" KeyboardNavigation.TabIndex="6" Content="Performance" Style="{StaticResource CategoryButton}" Click="Performance_Click" />
                             <Button x:Name="ServerCategoryButton" KeyboardNavigation.TabIndex="7" Content="Minecraft Server" Style="{StaticResource CategoryButton}" Click="Server_Click" />
                             <Button x:Name="DangerousCategoryButton" KeyboardNavigation.TabIndex="8" Content="Dangerous" Style="{StaticResource CategoryButton}" Click="Dangerous_Click" />
@@ -325,7 +325,7 @@
                                 <Grid x:Name="ChatDisplaySettingsPage" Visibility="Collapsed">
                                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                                         <StackPanel Margin="12,20,8,18">
-                                            <TextBlock Text="CHAT &amp; DISPLAY SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <TextBlock Text="CHAT AND DISPLAY SETTINGS" Style="{StaticResource PageTitle}" />
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Relay non-command chat to Minecraft:" Style="{StaticResource SettingLabel}" />
                                                 <CheckBox x:Name="NonCommandChatRelayCheckbox" AutomationProperties.Name="Relay non-command chat to Minecraft" Checked="ChatRelay_Changed" Unchecked="ChatRelay_Changed" />
@@ -352,7 +352,7 @@
                                 <Grid x:Name="PerformanceSettingsPage" Visibility="Collapsed">
                                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                                         <StackPanel Margin="12,20,8,18">
-                                            <TextBlock Text="PERFORMANCE &amp; DATA SETTINGS" Style="{StaticResource PageTitle}" />
+                                            <TextBlock Text="PERFORMANCE AND DATA SETTINGS" Style="{StaticResource PageTitle}" />
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Enable low-resource preset:" Style="{StaticResource SettingLabel}" />
                                                 <CheckBox x:Name="LowResourceModeCheckbox" AutomationProperties.Name="Enable low-resource preset" Checked="LowResource_Changed" Unchecked="LowResource_Changed" ToolTip="Uses smaller logs and queues, slower roster/health refreshes, minimized UI pausing, and a safe relay limit." />

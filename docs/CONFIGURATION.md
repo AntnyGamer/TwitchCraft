@@ -62,7 +62,7 @@ The `Settings` object is written in the same category order shown by the Setting
 2. `Custom Commands`
 3. `Economy`
 4. `Gameplay`
-5. `Chat & Display`
+5. `Chat and Display`
 6. `Performance`
 7. `Minecraft Server`
 
