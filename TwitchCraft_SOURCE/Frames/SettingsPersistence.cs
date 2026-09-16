@@ -49,8 +49,8 @@ public partial class Settings
     private static string GetCategoryName(SettingsCategory category) => category switch
     {
         SettingsCategory.CustomCommands => "Custom Commands",
-        SettingsCategory.ChatDisplay => "Chat & Display",
-        SettingsCategory.Performance => "Performance & Data",
+        SettingsCategory.ChatDisplay => "Chat and Display",
+        SettingsCategory.Performance => "Performance and Data",
         SettingsCategory.Server => "Minecraft Server",
         _ => category.ToString()
     };

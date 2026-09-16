@@ -54,7 +54,7 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
             nameof(StartingProfile.AllowAllPlayerTarget),
             nameof(StartingProfile.AllowRandomPlayerTarget)
         ]),
-        ("Chat & Display",
+        ("Chat and Display",
         [
             nameof(StartingProfile.NonCommandChatRelayEnabled),
             nameof(StartingProfile.IncludeRelayTimestamps),

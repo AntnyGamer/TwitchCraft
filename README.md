@@ -101,7 +101,7 @@ For Minecraft versions **26.1.0–26.3.0**:
 3. If you want to use an existing world, import it before starting
 4. Click **Start**
 
-## 6. Settings & Customization
+## 6. Settings and Customization
 
 TwitchCraft includes settings to customize the bot, server, commands, tokens, statistics, backups, and more
 
