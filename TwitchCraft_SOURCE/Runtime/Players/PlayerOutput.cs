@@ -41,7 +41,7 @@ public sealed partial class MainHandler
 
     internal async Task ReadOutputAsync(CancellationToken cancellationToken)
     {
-        Process? process = _javaServerProcess;
+        Process? process = _minecraftSession.Process;
         if (process == null)
             return;
 
@@ -143,7 +143,7 @@ public sealed partial class MainHandler
 
     private async Task ReadErrorAsync(CancellationToken cancellationToken)
     {
-        Process? process = _javaServerProcess;
+        Process? process = _minecraftSession.Process;
         if (process == null)
             return;
 

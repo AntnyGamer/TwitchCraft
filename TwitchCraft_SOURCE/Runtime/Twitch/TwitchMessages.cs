@@ -58,7 +58,7 @@ public sealed partial class MainHandler
                 return message;
         }
 
-        if (IRCUTF8NoBOM.GetByteCount(message) <= maxBytes)
+        if (TwitchSession.UTF8NoBOM.GetByteCount(message) <= maxBytes)
             return message;
 
         int usedBytes = 0;
@@ -66,7 +66,7 @@ public sealed partial class MainHandler
         while (length < message.Length)
         {
             int charCount = char.IsHighSurrogate(message[length]) && length + 1 < message.Length && char.IsLowSurrogate(message[length + 1]) ? 2 : 1;
-            int nextBytes = IRCUTF8NoBOM.GetByteCount(message.AsSpan(length, charCount));
+            int nextBytes = TwitchSession.UTF8NoBOM.GetByteCount(message.AsSpan(length, charCount));
             if (usedBytes + nextBytes > maxBytes)
                 break;
 
@@ -84,14 +84,14 @@ public sealed partial class MainHandler
             return;
         }
 
-        StreamWriter? writer = _IRCWriter;
+        StreamWriter? writer = _twitchSession.Writer;
         if (writer == null)
         {
             return;
         }
 
-        string channelPrefix = _IRCChannelPrefix;
-        int maxMessageBytes = _IRCChannelMessageMaxBytes;
+        string channelPrefix = _twitchSession.ChannelPrefix;
+        int maxMessageBytes = _twitchSession.ChannelMessageMaxBytes;
         if (channelPrefix.Length == 0 || maxMessageBytes <= 0)
         {
             return;

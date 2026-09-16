@@ -19,10 +19,8 @@ internal static class DatapackInstaller
     private const string InlinePrintTellraw = "tellraw @a[tag=lp_requester,limit=1] [{selector:'@s',color:'aqua'},{text:': ',color:'gray'},{text:'X=',color:'gold'},{score:{name:'$x',objective:'lp_math'}},{text:' Y=',color:'gold'},{score:{name:'$y',objective:'lp_math'}},{text:' Z=',color:'gold'},{score:{name:'$z',objective:'lp_math'}},{text:' Dimension=',color:'gray'},{nbt:'Dimension',entity:'@s',color:'light_purple'}]";
 
     public static bool SyncLocateDatapack(TwitchCraftConfig config)
-    {
-        return !config.Settings.MultiplayerEnabled ||
+        => !config.Settings.MultiplayerEnabled ||
             SyncLocateDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, ServerPropertyEditor.GetLevelName(config));
-    }
 
     public static bool SyncLocateDatapack(string serverDirectory, string minecraftVersion, string? levelName = null)
     {

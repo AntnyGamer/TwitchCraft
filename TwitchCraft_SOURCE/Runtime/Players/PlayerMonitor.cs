@@ -99,7 +99,7 @@ public sealed partial class MainHandler
         RuntimeState state = _runtimeState;
         if (cts == null ||
             cts.IsCancellationRequested ||
-            !_minecraftServerReady ||
+            !_minecraftSession.ServerReady ||
             state == RuntimeState.Stopping ||
             state == RuntimeState.Stopped ||
             (requireMultiplayer && !MultiplayerEnabled))
@@ -204,7 +204,7 @@ public sealed partial class MainHandler
 
         long snapshotTicks = Volatile.Read(ref _lastOnlinePlayersSnapshotTicks);
         long snapshotAge = DateTime.UtcNow.Ticks - snapshotTicks;
-        if (_minecraftServerReady && snapshotAge >= OnlinePlayersRefreshInterval.Ticks &&
+        if (_minecraftSession.ServerReady && snapshotAge >= OnlinePlayersRefreshInterval.Ticks &&
             !await RefreshSnapshotAsync(cancellationToken).ConfigureAwait(false) &&
             DateTime.UtcNow.Ticks - snapshotTicks >= OnlinePlayersRefreshInterval.Ticks * 2)
             return [];

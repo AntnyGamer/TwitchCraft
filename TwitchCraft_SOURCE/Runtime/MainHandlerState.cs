@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
@@ -18,8 +16,6 @@ public sealed partial class MainHandler
     private readonly SemaphoreSlim _lifecycleGate;
     private readonly TwitchSession _twitchSession;
     private readonly MinecraftSession _minecraftSession;
-    private const int MaxQueuedIRCCommands = 75;
-    private const int MaxQueuedIRCQuickWork = 500;
     private readonly Lock _viewerGate;
     private readonly Lock _playerGate;
     private readonly Lock _cooldownGate;
@@ -29,10 +25,8 @@ public sealed partial class MainHandler
     private readonly BackgroundTaskTracker _backgroundTaskTracker;
     private readonly DataMaintenance _dataMaintenance;
     private TwitchCraft? _shellWindow;
-    private CancellationTokenSource? _sessionCts, _followRewardsCts;
-    private Task? _followRewardsTask;
+    private CancellationTokenSource? _sessionCts;
     private TwitchCraftConfig? _activeConfig;
-    private string? _nextLocalRCONPassword;
     private RuntimeState _runtimeState;
     private Dictionary<string, long> _viewerRewardSchedule;
     private List<string> _knownViewers;
@@ -40,19 +34,13 @@ public sealed partial class MainHandler
     private List<string> _lastSidebarPlayers;
     private bool _playerSidebarInitialized, _profileApplied;
     private long _lastOnlinePlayersSnapshotTicks;
-    private readonly IRCWorkQueueState _IRCCommandQueue;
-    private readonly IRCWorkQueueState _IRCQuickQueue;
-    private int _IRCQueueGeneration;
     private int _lifecycleStopGeneration;
     private int _shutdownRequested;
-    private long _lastIRCCommandOverflowNoticeTicks;
     private string _currentStreamerName;
     private string _currentCommandPrefix;
     private string _currentSecondaryCommandPrefix;
     private string _currentMinecraftRelayTextColor;
     private string _currentBotResponseVerbosity;
-    private string _IRCChannelPrefix;
-    private int _IRCChannelMessageMaxBytes;
     private string _currentDefaultMinecraftPlayer;
     private string _currentDefaultMinecraftPlayerName;
     private string _currentStreamerMinecraftName;
@@ -66,27 +54,6 @@ public sealed partial class MainHandler
     private List<EffectDefinition> _cachedSupportedEffects;
     private string _cachedMinecraftFeatureVersion;
     private MinecraftVersionSupport.MinecraftVersionInfo? _cachedMinecraftFeatureInfo;
-
-    private SemaphoreSlim _serverWriteGate => _minecraftSession.WriteGate;
-    private SemaphoreSlim _IRCWriteGate => _twitchSession.WriteGate;
-    private SemaphoreSlim _IRCChatRateGate => _twitchSession.ChatRateGate;
-    private SemaphoreSlim _botIdentityResolveGate => _twitchSession.BotIdentityResolveGate;
-    private SemaphoreSlim _twitchTokenRefreshGate => _twitchSession.TokenRefreshGate;
-    private bool _minecraftServerReady
-    {
-        get => _minecraftSession.ServerReady;
-        set => _minecraftSession.ServerReady = value;
-    }
-    private Process? _javaServerProcess
-    {
-        get => _minecraftSession.Process;
-        set => _minecraftSession.Process = value;
-    }
-    private StreamWriter? _IRCWriter
-    {
-        get => _twitchSession.Writer;
-        set => _twitchSession.Writer = value;
-    }
 
     public TokenService Tokens { get; }
 
@@ -149,14 +116,11 @@ public sealed partial class MainHandler
             (token, cancellationToken) => ValidateBotAsync(token, _activeConfig?.Twitch.ClientID ?? string.Empty, cancellationToken),
             SaveBot,
             TryRefreshAuthAsync);
-        _IRCCommandQueue = new(MaxQueuedIRCCommands);
-        _IRCQuickQueue = new(MaxQueuedIRCQuickWork);
         _currentStreamerName = string.Empty;
         _currentCommandPrefix = "!";
         _currentSecondaryCommandPrefix = string.Empty;
         _currentMinecraftRelayTextColor = "white";
         _currentBotResponseVerbosity = BotResponseVerbositySettings.Normal;
-        _IRCChannelPrefix = string.Empty;
         _currentDefaultMinecraftPlayer = string.Empty;
         _currentDefaultMinecraftPlayerName = string.Empty;
         _currentStreamerMinecraftName = string.Empty;
@@ -211,7 +175,7 @@ public sealed partial class MainHandler
     internal bool ProfileApplied => _profileApplied || _runtimeState != RuntimeState.Stopped;
     public bool RequireOnlineMode => _activeConfig?.Settings.RequireOnlineMode != false;
 
-    internal void StageLocalRCONPassword(string password) => Interlocked.Exchange(ref _nextLocalRCONPassword, password);
+    internal void StageLocalRCONPassword(string password) => _minecraftSession.StageLocalRCONPassword(password);
 
     public bool MultiTargetingEnabled => MultiplayerEnabled || RemoteControlEnabled;
 
@@ -229,8 +193,7 @@ public sealed partial class MainHandler
             _currentSecondaryCommandPrefix = string.Empty;
         _currentMinecraftRelayTextColor = ConfigurationStore.NormalizeColor(config.Settings.MinecraftRelayTextColor);
         _currentBotResponseVerbosity = ConfigurationStore.NormalizeVerbosity(config.Settings.BotResponseVerbosity);
-        _IRCChannelPrefix = _currentStreamerName.Length == 0 ? string.Empty : "PRIVMSG #" + _currentStreamerName + " :";
-        _IRCChannelMessageMaxBytes = _IRCChannelPrefix.Length == 0 ? 0 : 510 - IRCUTF8NoBOM.GetByteCount(_IRCChannelPrefix);
+        _twitchSession.SetChannel(_currentStreamerName);
         string configuredMinecraftPlayer = config.Identity.StreamerMinecraftName.Trim();
         _currentDefaultMinecraftPlayer = configuredMinecraftPlayer.Length > 0
             ? configuredMinecraftPlayer

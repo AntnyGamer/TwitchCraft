@@ -303,7 +303,7 @@ public sealed partial class MainHandler
     internal bool AutomaticFollowRewardsEnabled
         => _activeConfig?.Settings.AutomaticFollowRewardsEnabled ?? true;
 
-    internal bool IsFollowRewardsRunning => AutomaticFollowRewardsEnabled && _followRewardsTask is { IsCompleted: false };
+    internal bool IsFollowRewardsRunning => AutomaticFollowRewardsEnabled && _twitchSession.FollowRewardsTask is { IsCompleted: false };
 
     internal int FollowRewardAmount
         => _activeConfig?.Settings.FollowRewardAmount ?? DefaultFollowRewardAmount;

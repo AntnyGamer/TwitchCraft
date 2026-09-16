@@ -18,7 +18,7 @@ public sealed partial class MainHandler
     {
         TwitchCraftConfig config = ConfigurationStore.Load();
         if (!remoteControlEnabled)
-            Interlocked.Exchange(ref _nextLocalRCONPassword, null);
+            _minecraftSession.ClearLocalRCONPassword();
         (int localRCONPort, string localRCONPassword) = (config.Server.RCON.Port, config.Server.RCON.Password);
         config.Settings.MultiplayerEnabled = multiplayerEnabled;
         config.Settings.RequireOnlineMode = !multiplayerEnabled || requireOnlineMode;
@@ -73,7 +73,7 @@ public sealed partial class MainHandler
 
         if (!remoteControlEnabled)
             ApplyProfile(config);
-        TwitchCraftConfig persistedConfig = CloneConfig(config);
+        TwitchCraftConfig persistedConfig = ConfigurationStore.Clone(config);
         if (remoteControlEnabled)
             (persistedConfig.Server.RCON.Port, persistedConfig.Server.RCON.Password) = (localRCONPort, localRCONPassword);
         persistedConfig.Settings.MultiplayerEnabled = false;
@@ -150,7 +150,7 @@ public sealed partial class MainHandler
             try
             {
                 int delayMinutes = _activeConfig?.Settings.EmptyServerShutdownDelayMinutes ?? 0;
-                if (delayMinutes <= 0 || RemoteControlEnabled || !_minecraftServerReady)
+                if (delayMinutes <= 0 || RemoteControlEnabled || !_minecraftSession.ServerReady)
                 {
                     emptySinceTicks = 0;
                 }
@@ -195,7 +195,7 @@ public sealed partial class MainHandler
     {
         try
         {
-            TwitchCraftConfig configBeforeRestart = CloneConfig(_activeConfig ?? ConfigurationStore.Load());
+            TwitchCraftConfig configBeforeRestart = ConfigurationStore.Clone(_activeConfig ?? ConfigurationStore.Load());
             if (configBeforeRestart.Settings.RemoteControlEnabled)
             {
                 if (wipeWorld)
@@ -212,7 +212,7 @@ public sealed partial class MainHandler
             await StopSessionAsync().ConfigureAwait(false);
             if (wipeWorld)
             {
-                TwitchCraftConfig config = CloneConfig(_activeConfig ?? ConfigurationStore.Load());
+                TwitchCraftConfig config = ConfigurationStore.Clone(_activeConfig ?? ConfigurationStore.Load());
                 if (!string.IsNullOrWhiteSpace(config.Server.ServerDirectory))
                 {
                     string levelName = ServerPropertyEditor.GetLevelName(config);
@@ -256,8 +256,8 @@ public sealed partial class MainHandler
             _sessionCts = new CancellationTokenSource();
             if (stopGeneration != Volatile.Read(ref _lifecycleStopGeneration)) _sessionCts.Cancel();
             CancellationToken token = _sessionCts.Token;
-            TwitchCraftConfig config = CloneConfig(_activeConfig ?? ConfigurationStore.Load());
-            if (!config.Settings.RemoteControlEnabled && Interlocked.Exchange(ref _nextLocalRCONPassword, null) is string localRCONPassword)
+            TwitchCraftConfig config = ConfigurationStore.Clone(_activeConfig ?? ConfigurationStore.Load());
+            if (!config.Settings.RemoteControlEnabled && _minecraftSession.TakeLocalRCONPassword() is string localRCONPassword)
                 config.Server.RCON.Password = localRCONPassword;
             config = await EnsureAuthAsync(config, token).ConfigureAwait(false);
             if (!config.Settings.MultiplayerEnabled)
@@ -265,7 +265,7 @@ public sealed partial class MainHandler
 
             if (!config.Settings.RemoteControlEnabled)
                 ApplyProfile(config);
-            ValidateConfig(config);
+            SetupInputValidator.ValidateRuntimeConfig(config);
             SetConfig(config);
             RefreshCatalogs();
             Tokens.Load(config.Settings.MaximumTokenBalance);
@@ -319,7 +319,7 @@ public sealed partial class MainHandler
             failedSessionCts?.Dispose();
 
             _runtimeState = RuntimeState.Stopped;
-            CloseIRCSocket();
+            _twitchSession.CloseSocket();
 
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(false).ConfigureAwait(false);
@@ -352,7 +352,7 @@ public sealed partial class MainHandler
 
             _runtimeState = RuntimeState.Stopping;
             await RestartFollowRewardsAsync().ConfigureAwait(false);
-            _minecraftServerReady = false;
+            _minecraftSession.ServerReady = false;
             _minecraftSession.ServerExitExpected = true;
             ResetQueues();
             Statistics.PauseSurvival();
@@ -365,7 +365,7 @@ public sealed partial class MainHandler
             }
 
             await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
-            CloseIRCSocket();
+            _twitchSession.CloseSocket();
             if (!RemoteControlEnabled)
                 await TryStopServerAsync().ConfigureAwait(false);
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
@@ -386,7 +386,7 @@ public sealed partial class MainHandler
             Tokens.TryExportJson();
             StatisticsService.FlushForShutdown();
             CloseStores();
-            CloseIRCSocket();
+            _twitchSession.CloseSocket();
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(false).ConfigureAwait(false);
             throw;
@@ -419,11 +419,11 @@ public sealed partial class MainHandler
 
     internal async Task StartServerIfNeededAsync(CancellationToken cancellationToken)
     {
-        Process process = _javaServerProcess
+        Process process = _minecraftSession.Process
             ?? throw new InvalidOperationException("Minecraft server process could not be started.");
         await Task.Delay(250, cancellationToken).ConfigureAwait(false);
 
-        if (!ReferenceEquals(process, _javaServerProcess) || process.HasExited)
+        if (!ReferenceEquals(process, _minecraftSession.Process) || process.HasExited)
         {
             throw new InvalidOperationException("Minecraft server process exited during startup.");
         }

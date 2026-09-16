@@ -124,5 +124,5 @@ public sealed partial class MainHandler
 
     internal bool RCONConnected => _minecraftSession.RCONHealthy;
 
-    public bool MinecraftServerReady => _minecraftServerReady && (!RemoteControlEnabled || _minecraftSession.RCONHealthy);
+    public bool MinecraftServerReady => _minecraftSession.ServerReady && (!RemoteControlEnabled || _minecraftSession.RCONHealthy);
 }

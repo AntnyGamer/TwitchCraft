@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft_V1.Setup;
@@ -8,130 +7,6 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    // ===== Active config helpers =====
-
-    private static TwitchCraftConfig CloneConfig(TwitchCraftConfig source)
-    {
-        ArgumentNullException.ThrowIfNull(source);
-
-        return new TwitchCraftConfig
-        {
-            Server = new ServerConfig
-            {
-                Java = new JavaConfig
-                {
-                    ExecutablePath = source.Server.Java.ExecutablePath,
-                    HomeDirectory = source.Server.Java.HomeDirectory
-                },
-                RCON = new RCONConfig
-                {
-                    Port = source.Server.RCON.Port,
-                    Password = source.Server.RCON.Password
-                },
-                MinecraftVersion = source.Server.MinecraftVersion,
-                ServerDirectory = source.Server.ServerDirectory,
-                JarPath = source.Server.JarPath,
-                BindIP = source.Server.BindIP,
-                PreviousBindIP = source.Server.PreviousBindIP,
-                RemoteHost = source.Server.RemoteHost,
-                Port = source.Server.Port,
-                MaxPlayers = source.Server.MaxPlayers,
-                MemoryMinGB = source.Server.MemoryMinGB,
-                MemoryMaxGB = source.Server.MemoryMaxGB
-            },
-            Twitch = new TwitchConfig
-            {
-                ClientID = source.Twitch.ClientID,
-                BotToken = source.Twitch.BotToken,
-                RefreshToken = source.Twitch.RefreshToken,
-                StreamerName = source.Twitch.StreamerName,
-                BotName = source.Twitch.BotName
-            },
-            Identity = new IdentityConfig
-            {
-                StreamerMinecraftName = source.Identity.StreamerMinecraftName
-            },
-            Settings = new StartingProfile
-            {
-                MultiplayerEnabled = source.Settings.MultiplayerEnabled,
-                MultiplayerPVPEnabled = source.Settings.MultiplayerPVPEnabled,
-                WhitelistEnabled = source.Settings.WhitelistEnabled,
-                RemoteControlEnabled = source.Settings.RemoteControlEnabled,
-                HardcoreEnabled = source.Settings.HardcoreEnabled,
-                Difficulty = source.Settings.Difficulty,
-                RequireOnlineMode = source.Settings.RequireOnlineMode,
-                MinigamesEnabled = source.Settings.MinigamesEnabled,
-                MinigameCooldown = source.Settings.MinigameCooldown,
-                PassiveTokenEarningEnabled = source.Settings.PassiveTokenEarningEnabled,
-                AutomaticFollowRewardsEnabled = source.Settings.AutomaticFollowRewardsEnabled,
-                FollowRewardAmount = source.Settings.FollowRewardAmount,
-                AutomaticBitRewardsEnabled = source.Settings.AutomaticBitRewardsEnabled,
-                CommandCostMultiplier = source.Settings.CommandCostMultiplier,
-                BotResponseVerbosity = source.Settings.BotResponseVerbosity,
-                NonCommandChatRelayEnabled = source.Settings.NonCommandChatRelayEnabled,
-                ModeratorsCanUseStreamerCommands = source.Settings.ModeratorsCanUseStreamerCommands,
-                GlobalGameCommandCooldownEnabled = source.Settings.GlobalGameCommandCooldownEnabled,
-                GlobalGameCommandCooldownSeconds = source.Settings.GlobalGameCommandCooldownSeconds,
-                StatisticsEnabled = source.Settings.StatisticsEnabled,
-                CommandPrefix = source.Settings.CommandPrefix,
-                SecondaryCommandPrefix = source.Settings.SecondaryCommandPrefix,
-                MentionViewersInBotReplies = source.Settings.MentionViewersInBotReplies,
-                ShowExactCooldownRemaining = source.Settings.ShowExactCooldownRemaining,
-                RespondToUnknownCommands = source.Settings.RespondToUnknownCommands,
-                ViewerCommandsPaused = source.Settings.ViewerCommandsPaused,
-                PassiveTokensPerPayout = source.Settings.PassiveTokensPerPayout,
-                PassiveTokenPayoutMinimumSeconds = source.Settings.PassiveTokenPayoutMinimumSeconds,
-                PassiveTokenPayoutMaximumSeconds = source.Settings.PassiveTokenPayoutMaximumSeconds,
-                MaximumTokenBalance = source.Settings.MaximumTokenBalance,
-                PassiveRewardsRequireActivity = source.Settings.PassiveRewardsRequireActivity,
-                ChannelCommandLimitPerMinute = source.Settings.ChannelCommandLimitPerMinute,
-                AllowAllPlayerTarget = source.Settings.AllowAllPlayerTarget,
-                AllowRandomPlayerTarget = source.Settings.AllowRandomPlayerTarget,
-                IncludeRelayTimestamps = source.Settings.IncludeRelayTimestamps,
-                MinecraftRelayTextColor = source.Settings.MinecraftRelayTextColor,
-                ShowConnectionHealth = source.Settings.ShowConnectionHealth,
-                ViewerCommandLimitPerMinute = source.Settings.ViewerCommandLimitPerMinute,
-                PassiveActivityWindowMinutes = source.Settings.PassiveActivityWindowMinutes,
-                AutomaticBackupsEnabled = source.Settings.AutomaticBackupsEnabled,
-                AutomaticBackupIntervalHours = source.Settings.AutomaticBackupIntervalHours,
-                AutomaticBackupRetentionCount = source.Settings.AutomaticBackupRetentionCount,
-                LowResourceModeEnabled = source.Settings.LowResourceModeEnabled,
-                PauseUIUpdatesWhenMinimized = source.Settings.PauseUIUpdatesWhenMinimized,
-                MaxVisibleTwitchLogLines = source.Settings.MaxVisibleTwitchLogLines,
-                MaxVisibleMinecraftLogLines = source.Settings.MaxVisibleMinecraftLogLines,
-                ViewerRosterRefreshIntervalSeconds = source.Settings.ViewerRosterRefreshIntervalSeconds,
-                MinecraftRelayMessagesPerSecond = source.Settings.MinecraftRelayMessagesPerSecond,
-                MaxGameplayCommandQueue = source.Settings.MaxGameplayCommandQueue,
-                RCONTimeoutSeconds = source.Settings.RCONTimeoutSeconds,
-                GracefulShutdownTimeoutSeconds = source.Settings.GracefulShutdownTimeoutSeconds,
-                SQLiteOptimizeIntervalHours = source.Settings.SQLiteOptimizeIntervalHours,
-                ViewDistance = source.Settings.ViewDistance,
-                SimulationDistance = source.Settings.SimulationDistance,
-                EntityBroadcastRangePercentage = source.Settings.EntityBroadcastRangePercentage,
-                NetworkCompressionThreshold = source.Settings.NetworkCompressionThreshold,
-                EmptyServerShutdownDelayMinutes = source.Settings.EmptyServerShutdownDelayMinutes,
-                CommandCustomizations = CloneCommands(source.Settings.CommandCustomizations)
-            }
-        };
-    }
-
-    private static Dictionary<string, CommandCustomization> CloneCommands(
-        Dictionary<string, CommandCustomization>? source)
-    {
-        Dictionary<string, CommandCustomization> result = new(source?.Count ?? 0, StringComparer.OrdinalIgnoreCase);
-        if (source == null)
-            return result;
-
-        foreach ((string name, CommandCustomization customization) in source)
-            result[name] = new CommandCustomization
-            {
-                Enabled = customization.Enabled,
-                CooldownSeconds = customization.CooldownSeconds,
-                GlobalCooldownSeconds = customization.GlobalCooldownSeconds
-            };
-        return result;
-    }
-
     public async Task ApplySettingsAsync(TwitchCraftConfig config, bool refreshMinigameLoops = false, bool preserveTwitchAuth = false)
     {
         ArgumentNullException.ThrowIfNull(config);
@@ -139,7 +14,7 @@ public sealed partial class MainHandler
         await _lifecycleGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            TwitchCraftConfig activeConfig = CloneConfig(config);
+            TwitchCraftConfig activeConfig = ConfigurationStore.Clone(config);
             ConfigurationStore.NormalizeRuntime(activeConfig);
             bool minigamesEnabledChanged = false, passiveScheduleChanged = false, followRewardsChanged = false, twitchAuthChanged = false, maximumBalanceNeedsClamp = false;
 
@@ -175,7 +50,7 @@ public sealed partial class MainHandler
 
             if (!activeConfig.Settings.GlobalGameCommandCooldownEnabled)
                 Commands.ClearGlobalCooldown();
-            if (twitchAuthChanged) CloseIRCSocket();
+            if (twitchAuthChanged) _twitchSession.CloseSocket();
             if (twitchAuthChanged || followRewardsChanged) await RestartFollowRewardsAsync().ConfigureAwait(false);
 
             if (passiveScheduleChanged)
@@ -221,13 +96,17 @@ public sealed partial class MainHandler
 
     private async Task RestartFollowRewardsAsync()
     {
-        CancellationTokenSource? oldCts = _followRewardsCts; Task? oldTask = _followRewardsTask;
-        _followRewardsCts = null; _followRewardsTask = null; oldCts?.Cancel();
+        CancellationTokenSource? oldCts = _twitchSession.FollowRewardsCts;
+        Task? oldTask = _twitchSession.FollowRewardsTask;
+        _twitchSession.FollowRewardsCts = null;
+        _twitchSession.FollowRewardsTask = null;
+        oldCts?.Cancel();
         if (oldTask != null) await oldTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
         oldCts?.Dispose();
         if (!AutomaticFollowRewardsEnabled || _runtimeState != RuntimeState.Running || _sessionCts == null) return;
-        _followRewardsCts = CancellationTokenSource.CreateLinkedTokenSource(_sessionCts.Token);
-        _followRewardsTask = RunFollowRewardsAsync(_followRewardsCts.Token); TrackTask(_followRewardsTask);
+        _twitchSession.FollowRewardsCts = CancellationTokenSource.CreateLinkedTokenSource(_sessionCts.Token);
+        _twitchSession.FollowRewardsTask = RunFollowRewardsAsync(_twitchSession.FollowRewardsCts.Token);
+        TrackTask(_twitchSession.FollowRewardsTask);
     }
 
     private void RefreshCatalogs()

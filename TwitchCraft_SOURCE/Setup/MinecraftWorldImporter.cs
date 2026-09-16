@@ -22,11 +22,9 @@ internal sealed class MinecraftWorldImportPlan
 internal static class MinecraftWorldImporter
 {
     public static bool IsWorldFolder(string path)
-    {
-        return !string.IsNullOrWhiteSpace(path)
+        => !string.IsNullOrWhiteSpace(path)
             && Directory.Exists(path)
             && File.Exists(Path.Combine(path, "level.dat"));
-    }
 
     public static MinecraftWorldImportPlan CreateImportPlan(TwitchCraftConfig config, string sourceWorldPath)
     {

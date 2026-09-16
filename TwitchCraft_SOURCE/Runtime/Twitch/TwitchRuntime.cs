@@ -14,41 +14,15 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private readonly struct IRCQueuedWork(
-        Func<CancellationToken, Task> work,
-        string context,
-        int generation,
-        CancellationToken cancellationToken)
-    {
-        public Func<CancellationToken, Task> Work { get; } = work;
-        public string Context { get; } = context;
-        public int Generation { get; } = generation;
-        public CancellationToken CancellationToken { get; } = cancellationToken;
-    }
-
-    private sealed class IRCWorkQueueState(int maxDepth)
-    {
-        public Lock Gate { get; } = new();
-        public Queue<IRCQueuedWork> Queue { get; set; } = new();
-        public int Depth;
-        public int Active;
-        public int MaxDepth { get; } = maxDepth;
-    }
-
-    private static readonly UTF8Encoding IRCUTF8NoBOM = new(false);
-    private static readonly TimeSpan IRCShutdownPartTimeout = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan IRCOperationTimeout = TimeSpan.FromSeconds(15);
-    private static readonly long IRCCommandOverflowNoticeIntervalTicks = TimeSpan.FromSeconds(30).Ticks;
-
     private static string NormalizeToken(string? token) => TwitchTokenHelper.NormalizeAccessToken(token);
 
     private async Task SendIRCLineAsync(StreamWriter writer, string line, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(line) || !ReferenceEquals(writer, _IRCWriter))
+        if (string.IsNullOrWhiteSpace(line) || !ReferenceEquals(writer, _twitchSession.Writer))
             return;
 
         bool rateLimited = line.StartsWith("PRIVMSG ", StringComparison.Ordinal);
-        if (rateLimited) await _IRCChatRateGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (rateLimited) await _twitchSession.ChatRateGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             long sendDelay = 0;
@@ -62,12 +36,12 @@ public sealed partial class MainHandler
             if (sendDelay > 0)
                 await Task.Delay(TimeSpan.FromMilliseconds(sendDelay), cancellationToken).ConfigureAwait(false);
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(IRCOperationTimeout);
+            timeoutCts.CancelAfter(TwitchSession.OperationTimeout);
             CancellationToken writeToken = timeoutCts.Token;
-            await _IRCWriteGate.WaitAsync(writeToken).ConfigureAwait(false);
+            await _twitchSession.WriteGate.WaitAsync(writeToken).ConfigureAwait(false);
             try
             {
-                if (!ReferenceEquals(writer, _IRCWriter))
+                if (!ReferenceEquals(writer, _twitchSession.Writer))
                     return;
 
                 await writer.WriteLineAsync(line.AsMemory(), writeToken).ConfigureAwait(false);
@@ -80,12 +54,12 @@ public sealed partial class MainHandler
             }
             finally
             {
-                _IRCWriteGate.Release();
+                _twitchSession.WriteGate.Release();
             }
         }
         finally
         {
-            if (rateLimited) _IRCChatRateGate.Release();
+            if (rateLimited) _twitchSession.ChatRateGate.Release();
         }
     }
 
@@ -95,12 +69,12 @@ public sealed partial class MainHandler
             return;
 
         using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(IRCOperationTimeout);
+        timeoutCts.CancelAfter(TwitchSession.OperationTimeout);
         CancellationToken writeToken = timeoutCts.Token;
-        await _IRCWriteGate.WaitAsync(writeToken).ConfigureAwait(false);
+        await _twitchSession.WriteGate.WaitAsync(writeToken).ConfigureAwait(false);
         try
         {
-            if (!ReferenceEquals(writer, _IRCWriter))
+            if (!ReferenceEquals(writer, _twitchSession.Writer))
                 return;
 
             for (int i = 0; i < lines.Count; i++)
@@ -114,19 +88,19 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _IRCWriteGate.Release();
+            _twitchSession.WriteGate.Release();
         }
     }
 
     private async Task LeaveIRCAsync(CancellationToken cancellationToken)
     {
-        StreamWriter? writer = _IRCWriter;
-        if (writer == null || !_IRCWriteGate.Wait(0, CancellationToken.None))
+        StreamWriter? writer = _twitchSession.Writer;
+        if (writer == null || !_twitchSession.WriteGate.Wait(0, CancellationToken.None))
             return;
 
         try
         {
-            if (!ReferenceEquals(writer, _IRCWriter))
+            if (!ReferenceEquals(writer, _twitchSession.Writer))
                 return;
 
             string channel = StreamerName;
@@ -134,7 +108,7 @@ public sealed partial class MainHandler
                 return;
 
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(IRCShutdownPartTimeout);
+            timeoutCts.CancelAfter(TwitchSession.ShutdownPartTimeout);
             await writer.WriteLineAsync(("PART #" + channel).AsMemory(), timeoutCts.Token).ConfigureAwait(false);
             await writer.FlushAsync(timeoutCts.Token).ConfigureAwait(false);
         }
@@ -145,7 +119,7 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _IRCWriteGate.Release();
+            _twitchSession.WriteGate.Release();
         }
     }
 
@@ -192,10 +166,10 @@ public sealed partial class MainHandler
                 socket.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 10);
                 _twitchSession.Socket = socket;
 
-                tokenRegistration = cancellationToken.Register(() => CloseIRCSocket(socket));
+                tokenRegistration = cancellationToken.Register(() => _twitchSession.CloseSocket(socket));
 
                 using CancellationTokenSource connectTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                connectTimeoutCts.CancelAfter(IRCOperationTimeout);
+                connectTimeoutCts.CancelAfter(TwitchSession.OperationTimeout);
                 await socket.ConnectAsync(IRCHost, IRCPort, connectTimeoutCts.Token).ConfigureAwait(false);
 
                 stream = new(socket.GetStream(), false);
@@ -206,13 +180,13 @@ public sealed partial class MainHandler
                     },
                     connectTimeoutCts.Token).ConfigureAwait(false);
 
-                reader = new(stream, IRCUTF8NoBOM, leaveOpen: true);
-                writer = new(stream, IRCUTF8NoBOM, leaveOpen: true)
+                reader = new(stream, TwitchSession.UTF8NoBOM, leaveOpen: true);
+                writer = new(stream, TwitchSession.UTF8NoBOM, leaveOpen: true)
                 {
                     NewLine = "\r\n",
                     AutoFlush = false
                 };
-                _IRCWriter = writer;
+                _twitchSession.Writer = writer;
 
                 await SendIRCLinesAsync(
                     writer,
@@ -376,7 +350,7 @@ public sealed partial class MainHandler
                             includeTimestamp,
                             includeTimestamp ? DateTime.Now : default);
                         _ = QueueIRCWork(
-                            _IRCQuickQueue,
+                            _twitchSession.QuickQueue,
                             ct => SendTellrawAsync("@a", relayMessage, relayColor, false, ct),
                             "chat relay",
                             quick: true,
@@ -442,7 +416,7 @@ public sealed partial class MainHandler
                 {
                 }
 
-                CloseIRCSocket(socket);
+                _twitchSession.CloseSocket(socket);
             }
 
             if (cancellationToken.IsCancellationRequested)
@@ -469,4 +443,92 @@ public sealed partial class MainHandler
 
     internal static int GetReconnectDelayMs(int currentDelayMilliseconds)
         => Math.Min(currentDelayMilliseconds * 2, 15000);
+}
+
+internal sealed class TwitchSession
+{
+    private const int MaxQueuedCommands = 75;
+    private const int MaxQueuedQuickWork = 500;
+    internal static readonly UTF8Encoding UTF8NoBOM = new(false);
+    internal static readonly TimeSpan ShutdownPartTimeout = TimeSpan.FromSeconds(1);
+    internal static readonly TimeSpan OperationTimeout = TimeSpan.FromSeconds(15);
+    internal static readonly long CommandOverflowNoticeIntervalTicks = TimeSpan.FromSeconds(30).Ticks;
+
+    private TcpClient? _socket;
+    private StreamWriter? _writer;
+
+    internal SemaphoreSlim WriteGate { get; } = new(1, 1);
+    internal SemaphoreSlim ChatRateGate { get; } = new(1, 1);
+    internal SemaphoreSlim BotIdentityResolveGate { get; } = new(1, 1);
+    internal SemaphoreSlim TokenRefreshGate { get; } = new(1, 1);
+    internal HashSet<string> MessageIDs { get; } = new(StringComparer.Ordinal);
+    internal Queue<string> MessageIDOrder { get; } = new();
+    internal Queue<long> ChatSendTimes { get; } = new(100);
+    internal WorkQueueState CommandQueue { get; } = new(MaxQueuedCommands);
+    internal WorkQueueState QuickQueue { get; } = new(MaxQueuedQuickWork);
+    internal CancellationTokenSource? FollowRewardsCts;
+    internal Task? FollowRewardsTask;
+    internal int QueueGeneration;
+    internal long LastCommandOverflowNoticeTicks;
+    internal string ChannelPrefix { get; private set; } = string.Empty;
+    internal int ChannelMessageMaxBytes { get; private set; }
+
+    internal TcpClient? Socket
+    {
+        get => _socket;
+        set => _socket = value;
+    }
+
+    internal StreamWriter? Writer
+    {
+        get => _writer;
+        set => _writer = value;
+    }
+
+    internal void SetChannel(string streamerName)
+    {
+        ChannelPrefix = streamerName.Length == 0 ? string.Empty : "PRIVMSG #" + streamerName + " :";
+        ChannelMessageMaxBytes = ChannelPrefix.Length == 0 ? 0 : 510 - UTF8NoBOM.GetByteCount(ChannelPrefix);
+    }
+
+    internal bool TryClearWriter(StreamWriter? writer)
+        => ReferenceEquals(Interlocked.CompareExchange(ref _writer, null, writer), writer);
+
+    internal void CloseSocket(TcpClient? socketToClose = null)
+    {
+        TcpClient? socket = socketToClose ?? _socket;
+        if (socket == null)
+            return;
+
+        Interlocked.CompareExchange(ref _socket, null, socket);
+
+        try
+        {
+            socket.Dispose();
+        }
+        catch
+        {
+        }
+    }
+
+    internal readonly struct QueuedWork(
+        Func<CancellationToken, Task> work,
+        string context,
+        int generation,
+        CancellationToken cancellationToken)
+    {
+        internal Func<CancellationToken, Task> Work { get; } = work;
+        internal string Context { get; } = context;
+        internal int Generation { get; } = generation;
+        internal CancellationToken CancellationToken { get; } = cancellationToken;
+    }
+
+    internal sealed class WorkQueueState(int maxDepth)
+    {
+        internal Lock Gate { get; } = new();
+        internal Queue<QueuedWork> Queue { get; set; } = new();
+        internal int Depth;
+        internal int Active;
+        internal int MaxDepth { get; } = maxDepth;
+    }
 }

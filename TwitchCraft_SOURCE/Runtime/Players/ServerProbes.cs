@@ -11,7 +11,7 @@ public sealed partial class MainHandler
 {
     private void HandleReadyState(string line)
     {
-        if (_minecraftServerReady || string.IsNullOrEmpty(line))
+        if (_minecraftSession.ServerReady || string.IsNullOrEmpty(line))
             return;
 
         if (!line.Contains("Done (", StringComparison.OrdinalIgnoreCase) &&
@@ -20,7 +20,7 @@ public sealed partial class MainHandler
             return;
         }
 
-        _minecraftServerReady = true;
+        _minecraftSession.ServerReady = true;
 
         try
         {

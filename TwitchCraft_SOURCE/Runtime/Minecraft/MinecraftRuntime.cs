@@ -31,7 +31,7 @@ public sealed partial class MainHandler
         try
         {
             await SendServerCommandAsync("stop", timeoutCts.Token).ConfigureAwait(false);
-            if (_javaServerProcess is { HasExited: false })
+            if (_minecraftSession.Process is { HasExited: false })
                 await Task.Delay(500, timeoutCts.Token).ConfigureAwait(false);
         }
         catch
@@ -51,7 +51,7 @@ public sealed partial class MainHandler
             "list",
             timeoutCts.Token).ConfigureAwait(false)
             ?? throw new InvalidOperationException("Remote controller could not authenticate with RCON. Check the host, RCON port, and RCON password.");
-        _minecraftServerReady = true;
+        _minecraftSession.ServerReady = true;
         _minecraftSession.RCONHealthy = true;
         _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" + config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
         QueueFirstSnapshot();
@@ -62,7 +62,7 @@ public sealed partial class MainHandler
 
     internal async Task StartServerAsync(TwitchCraftConfig config, CancellationToken cancellationToken)
     {
-        if (_javaServerProcess is { HasExited: false })
+        if (_minecraftSession.Process is { HasExited: false })
             throw new InvalidOperationException("The previous Minecraft server process is still running.");
         string jarPath = string.IsNullOrWhiteSpace(config.Server.JarPath)
             ? Path.Combine(config.Server.ServerDirectory, "server.jar")
@@ -90,7 +90,7 @@ public sealed partial class MainHandler
         try
         {
             process.Start();
-            _javaServerProcess = process;
+            _minecraftSession.Process = process;
         }
         catch
         {
@@ -101,7 +101,7 @@ public sealed partial class MainHandler
 
     private async Task WatchServerAsync(CancellationToken cancellationToken)
     {
-        Process? process = _javaServerProcess;
+        Process? process = _minecraftSession.Process;
         if (process == null)
             return;
 
@@ -124,13 +124,13 @@ public sealed partial class MainHandler
         {
             if (cancellationToken.IsCancellationRequested
                 || _minecraftSession.ServerExitExpected
-                || !ReferenceEquals(process, _javaServerProcess)
+                || !ReferenceEquals(process, _minecraftSession.Process)
                 || _runtimeState != RuntimeState.Running)
             {
                 return;
             }
 
-            _minecraftServerReady = false;
+            _minecraftSession.ServerReady = false;
             Statistics.PauseSurvival();
             _runtimeState = RuntimeState.Stopped;
 
@@ -156,10 +156,10 @@ public sealed partial class MainHandler
             {
             }
 
-            CloseIRCSocket();
+            _twitchSession.CloseSocket();
             Tokens.TryExportJson();
             StatisticsService.FlushForShutdown();
-            _javaServerProcess = null;
+            _minecraftSession.Process = null;
             try
             {
                 process.Dispose();
@@ -242,6 +242,163 @@ public sealed partial class MainHandler
         {
             ArrayPool<byte>.Shared.Return(firstBuffer);
             ArrayPool<byte>.Shared.Return(secondBuffer);
+        }
+    }
+}
+
+internal sealed class MinecraftSession
+{
+    private Process? _process;
+    private volatile bool _serverReady;
+    private int _rconHealthy;
+    private int _serverExitExpected;
+    private string? _stagedLocalRCONPassword;
+
+    internal SemaphoreSlim WriteGate { get; } = new(1, 1);
+
+    internal Process? Process
+    {
+        get => _process;
+        set => _process = value;
+    }
+
+    internal bool ServerReady
+    {
+        get => _serverReady;
+        set => _serverReady = value;
+    }
+
+    internal bool RCONHealthy
+    {
+        get => Volatile.Read(ref _rconHealthy) != 0;
+        set => Volatile.Write(ref _rconHealthy, value ? 1 : 0);
+    }
+
+    internal bool ServerExitExpected
+    {
+        get => Volatile.Read(ref _serverExitExpected) != 0;
+        set => Interlocked.Exchange(ref _serverExitExpected, value ? 1 : 0);
+    }
+
+    internal bool ProcessRunning
+        => _process is { } process && TryGetProcessRunning(process, out bool running) && running;
+
+    internal void StageLocalRCONPassword(string password)
+        => Interlocked.Exchange(ref _stagedLocalRCONPassword, password);
+
+    internal void ClearLocalRCONPassword()
+        => Interlocked.Exchange(ref _stagedLocalRCONPassword, null);
+
+    internal string? TakeLocalRCONPassword()
+        => Interlocked.Exchange(ref _stagedLocalRCONPassword, null);
+
+    private void ClearProcessIfCurrent(Process process)
+        => Interlocked.CompareExchange(ref _process, null, process);
+
+    internal void StopProcessSafe()
+    {
+        Process? process = _process;
+        if (process == null)
+            return;
+
+        try
+        {
+            if (TryGetProcessRunning(process, out bool running) && running)
+            {
+                KillProcessTree(process);
+                process.WaitForExit(3000);
+            }
+        }
+        catch
+        {
+        }
+
+        if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
+            return;
+
+        ClearProcessIfCurrent(process);
+        DisposeProcessSafe(process);
+    }
+
+    internal async Task StopProcessSafeAsync(bool waitBriefly, TimeSpan gracefulShutdownTimeout)
+    {
+        Process? process = _process;
+        if (process == null)
+            return;
+
+        if (waitBriefly)
+            await WaitForProcessExitAsync(process, gracefulShutdownTimeout).ConfigureAwait(false);
+
+        try
+        {
+            if (TryGetProcessRunning(process, out bool running) && running)
+            {
+                KillProcessTree(process);
+                await WaitForProcessExitAsync(process, TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+        }
+
+        if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
+            return;
+
+        ClearProcessIfCurrent(process);
+        DisposeProcessSafe(process);
+    }
+
+    private static async Task WaitForProcessExitAsync(Process process, TimeSpan timeout)
+    {
+        try
+        {
+            if (process.HasExited)
+                return;
+
+            Task exitTask = process.WaitForExitAsync();
+            Task completed = await Task.WhenAny(exitTask, Task.Delay(timeout)).ConfigureAwait(false);
+            if (ReferenceEquals(completed, exitTask))
+                await exitTask.ConfigureAwait(false);
+        }
+        catch
+        {
+        }
+    }
+
+    private static void KillProcessTree(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch
+        {
+            process.Kill();
+        }
+    }
+
+    private static bool TryGetProcessRunning(Process process, out bool running)
+    {
+        try
+        {
+            running = !process.HasExited;
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+        {
+            running = false;
+            return ex is InvalidOperationException;
+        }
+    }
+
+    private static void DisposeProcessSafe(Process process)
+    {
+        try
+        {
+            process.Dispose();
+        }
+        catch
+        {
         }
     }
 }

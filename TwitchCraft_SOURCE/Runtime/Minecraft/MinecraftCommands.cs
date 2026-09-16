@@ -61,16 +61,16 @@ public sealed partial class MainHandler
         if (activeConfig?.Settings.RemoteControlEnabled == true)
             return await SendRCONCommandAsync(activeConfig, commandText, cancellationToken, applyRemoteTimeout).ConfigureAwait(false);
 
-        Process? process = _javaServerProcess;
+        Process? process = _minecraftSession.Process;
         if (process == null)
         {
             return false;
         }
 
-        await _serverWriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!ReferenceEquals(process, _javaServerProcess) || process.HasExited)
+            if (!ReferenceEquals(process, _minecraftSession.Process) || process.HasExited)
             {
                 return false;
             }
@@ -88,7 +88,7 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _serverWriteGate.Release();
+            _minecraftSession.WriteGate.Release();
         }
     }
 
@@ -121,16 +121,16 @@ public sealed partial class MainHandler
         if (activeConfig?.Settings.RemoteControlEnabled == true)
             return await SendRCONCommandsAsync(activeConfig, snapshot, cancellationToken).ConfigureAwait(false);
 
-        Process? process = _javaServerProcess;
+        Process? process = _minecraftSession.Process;
         if (process == null)
         {
             return false;
         }
 
-        await _serverWriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (!ReferenceEquals(process, _javaServerProcess) || process.HasExited)
+            if (!ReferenceEquals(process, _minecraftSession.Process) || process.HasExited)
             {
                 return false;
             }
@@ -148,13 +148,13 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _serverWriteGate.Release();
+            _minecraftSession.WriteGate.Release();
         }
     }
 
     private async Task<bool> SendRCONCommandAsync(TwitchCraftConfig config, string command, CancellationToken cancellationToken, bool applyTimeout = true)
     {
-        await _serverWriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         CancellationTokenSource? timeoutCts = null;
         CancellationToken commandToken = cancellationToken;
         if (applyTimeout)
@@ -186,13 +186,13 @@ public sealed partial class MainHandler
         finally
         {
             timeoutCts?.Dispose();
-            _serverWriteGate.Release();
+            _minecraftSession.WriteGate.Release();
         }
     }
 
     private async Task<bool> SendRCONCommandsAsync(TwitchCraftConfig config, List<string> commands, CancellationToken cancellationToken)
     {
-        await _serverWriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -223,7 +223,7 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _serverWriteGate.Release();
+            _minecraftSession.WriteGate.Release();
         }
     }
 
@@ -237,7 +237,7 @@ public sealed partial class MainHandler
         if (commandText.Length == 0)
             return null;
 
-        await _serverWriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -261,7 +261,7 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _serverWriteGate.Release();
+            _minecraftSession.WriteGate.Release();
         }
     }
 
@@ -282,7 +282,7 @@ public sealed partial class MainHandler
         if (commandTexts.Count == 0)
             return null;
 
-        await _serverWriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -306,7 +306,7 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _serverWriteGate.Release();
+            _minecraftSession.WriteGate.Release();
         }
     }
 

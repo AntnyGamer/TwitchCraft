@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -77,7 +76,7 @@ public sealed partial class MainHandler
         CancellationToken cancellationToken)
     {
         string normalizedRejectedToken = NormalizeToken(rejectedToken);
-        await _twitchTokenRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _twitchSession.TokenRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             TwitchConfig? twitch = _activeConfig?.Twitch;
@@ -108,7 +107,7 @@ public sealed partial class MainHandler
         }
         finally
         {
-            _twitchTokenRefreshGate.Release();
+            _twitchSession.TokenRefreshGate.Release();
         }
     }
 
@@ -134,7 +133,7 @@ public sealed partial class MainHandler
                 string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), expectedToken, StringComparison.Ordinal) &&
                 string.Equals(NormalizeToken(persisted.Twitch.BotToken), refreshed.IsSuccess ? NormalizeToken(refreshed.Token) : expectedToken, StringComparison.Ordinal))
             {
-                TwitchCraftConfig active = CloneConfig(_activeConfig);
+                TwitchCraftConfig active = ConfigurationStore.Clone(_activeConfig);
                 active.Twitch.RefreshToken = persisted.Twitch.RefreshToken;
                 if (refreshed.IsSuccess)
                 {
@@ -157,7 +156,7 @@ public sealed partial class MainHandler
 
         if (resolvedBotName.Length == 0)
         {
-            await _botIdentityResolveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _twitchSession.BotIdentityResolveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 twitch = _activeConfig?.Twitch;
@@ -167,7 +166,7 @@ public sealed partial class MainHandler
             }
             finally
             {
-                _botIdentityResolveGate.Release();
+                _twitchSession.BotIdentityResolveGate.Release();
             }
 
             if (resolvedBotName.Length == 0)
@@ -203,7 +202,7 @@ public sealed partial class MainHandler
 
                 if (_activeConfig != null)
                 {
-                    TwitchCraftConfig activeConfig = CloneConfig(_activeConfig);
+                    TwitchCraftConfig activeConfig = ConfigurationStore.Clone(_activeConfig);
                     activeConfig.Twitch = config.Twitch;
                     SetConfig(activeConfig);
                 }
@@ -233,7 +232,4 @@ public sealed partial class MainHandler
             throw new InvalidOperationException(error);
         return login;
     }
-
-    private void CloseIRCSocket(TcpClient? socketToClose = null)
-        => _twitchSession.CloseSocket(socketToClose);
 }

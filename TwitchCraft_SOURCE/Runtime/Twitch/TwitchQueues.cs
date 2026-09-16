@@ -11,11 +11,11 @@ public sealed partial class MainHandler
     private async Task WarnQueueOverloadAsync(CancellationToken cancellationToken)
     {
         long nowTicks = DateTime.UtcNow.Ticks;
-        long previousTicks = Volatile.Read(ref _lastIRCCommandOverflowNoticeTicks);
-        if (previousTicks != 0 && nowTicks - previousTicks < IRCCommandOverflowNoticeIntervalTicks)
+        long previousTicks = Volatile.Read(ref _twitchSession.LastCommandOverflowNoticeTicks);
+        if (previousTicks != 0 && nowTicks - previousTicks < TwitchSession.CommandOverflowNoticeIntervalTicks)
             return;
 
-        if (Interlocked.CompareExchange(ref _lastIRCCommandOverflowNoticeTicks, nowTicks, previousTicks) != previousTicks)
+        if (Interlocked.CompareExchange(ref _twitchSession.LastCommandOverflowNoticeTicks, nowTicks, previousTicks) != previousTicks)
             return;
 
         _shellWindow?.AddChatLogLine("[IRC] Command queue overloaded; skipped commands temporarily.");
@@ -23,7 +23,7 @@ public sealed partial class MainHandler
     }
 
     private bool QueueIRCWork(
-        IRCWorkQueueState state,
+        TwitchSession.WorkQueueState state,
         Func<CancellationToken, Task> work,
         string context,
         bool quick,
@@ -32,25 +32,25 @@ public sealed partial class MainHandler
         if (cancellationToken.IsCancellationRequested)
             return false;
 
-        Queue<IRCQueuedWork> queueToRun;
+        Queue<TwitchSession.QueuedWork> queueToRun;
         bool startProcessor;
         int generation;
 
         lock (state.Gate)
         {
-            generation = Volatile.Read(ref _IRCQueueGeneration);
+            generation = Volatile.Read(ref _twitchSession.QueueGeneration);
             if (cancellationToken.IsCancellationRequested)
                 return false;
 
             int depth = Interlocked.Increment(ref state.Depth);
-            int maxDepth = ReferenceEquals(state, _IRCCommandQueue) ? MaxGameplayCommandQueue : state.MaxDepth;
+            int maxDepth = ReferenceEquals(state, _twitchSession.CommandQueue) ? MaxGameplayCommandQueue : state.MaxDepth;
             if (depth > maxDepth)
             {
                 Interlocked.Decrement(ref state.Depth);
                 return false;
             }
 
-            state.Queue.Enqueue(new IRCQueuedWork(work, context, generation, cancellationToken));
+            state.Queue.Enqueue(new TwitchSession.QueuedWork(work, context, generation, cancellationToken));
             queueToRun = state.Queue;
             startProcessor = state.Active == 0;
             if (startProcessor)
@@ -68,19 +68,19 @@ public sealed partial class MainHandler
         string context,
         CancellationToken cancellationToken)
         => QueueIRCWork(
-            _IRCCommandQueue,
+            _twitchSession.CommandQueue,
             work,
             context,
             quick: false,
             cancellationToken);
 
-    private async Task RunQueueAsync(IRCWorkQueueState state, Queue<IRCQueuedWork> queue, bool quick)
+    private async Task RunQueueAsync(TwitchSession.WorkQueueState state, Queue<TwitchSession.QueuedWork> queue, bool quick)
     {
         try
         {
             while (true)
             {
-                IRCQueuedWork item;
+                TwitchSession.QueuedWork item;
                 lock (state.Gate)
                 {
                     if (!ReferenceEquals(queue, state.Queue) || queue.Count == 0)
@@ -94,11 +94,11 @@ public sealed partial class MainHandler
         }
         finally
         {
-            Queue<IRCQueuedWork>? queueToRestart = null;
+            Queue<TwitchSession.QueuedWork>? queueToRestart = null;
             lock (state.Gate)
             {
                 state.Active = 0;
-                Queue<IRCQueuedWork> currentQueue = state.Queue;
+                Queue<TwitchSession.QueuedWork> currentQueue = state.Queue;
                 if (currentQueue.Count > 0)
                 {
                     state.Active = 1;
@@ -115,12 +115,12 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task RunQueuedWorkAsync(IRCWorkQueueState state, IRCQueuedWork item, bool quick)
+    private async Task RunQueuedWorkAsync(TwitchSession.WorkQueueState state, TwitchSession.QueuedWork item, bool quick)
     {
         CancellationToken cancellationToken = item.CancellationToken;
         try
         {
-            if (item.Generation == Volatile.Read(ref _IRCQueueGeneration) && !cancellationToken.IsCancellationRequested)
+            if (item.Generation == Volatile.Read(ref _twitchSession.QueueGeneration) && !cancellationToken.IsCancellationRequested)
                 await item.Work(cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -134,25 +134,25 @@ public sealed partial class MainHandler
         }
         finally
         {
-            if (item.Generation == Volatile.Read(ref _IRCQueueGeneration))
+            if (item.Generation == Volatile.Read(ref _twitchSession.QueueGeneration))
                 Interlocked.Decrement(ref state.Depth);
         }
     }
 
     internal void ResetQueues()
     {
-        lock (_IRCCommandQueue.Gate)
-            lock (_IRCQuickQueue.Gate)
+        lock (_twitchSession.CommandQueue.Gate)
+            lock (_twitchSession.QuickQueue.Gate)
             {
-                Interlocked.Increment(ref _IRCQueueGeneration);
-                ResetQueueNoLock(_IRCCommandQueue);
-                ResetQueueNoLock(_IRCQuickQueue);
+                Interlocked.Increment(ref _twitchSession.QueueGeneration);
+                ResetQueueNoLock(_twitchSession.CommandQueue);
+                ResetQueueNoLock(_twitchSession.QuickQueue);
             }
     }
 
-    private static void ResetQueueNoLock(IRCWorkQueueState state)
+    private static void ResetQueueNoLock(TwitchSession.WorkQueueState state)
     {
-        state.Queue = new Queue<IRCQueuedWork>();
+        state.Queue = new Queue<TwitchSession.QueuedWork>();
         Volatile.Write(ref state.Depth, 0);
     }
 

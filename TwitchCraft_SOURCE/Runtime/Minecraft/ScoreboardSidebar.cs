@@ -10,7 +10,7 @@ public sealed partial class MainHandler
 {
     private async Task ClearSidebarAsync(CancellationToken cancellationToken)
     {
-        if (_minecraftServerReady)
+        if (_minecraftSession.ServerReady)
             await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
 
         lock (_playerGate)
@@ -37,7 +37,7 @@ public sealed partial class MainHandler
 
     private async Task RefreshSidebarAsync(CancellationToken cancellationToken)
     {
-        if (!MultiplayerEnabled || !_minecraftServerReady)
+        if (!MultiplayerEnabled || !_minecraftSession.ServerReady)
             return;
 
         List<string> players;
