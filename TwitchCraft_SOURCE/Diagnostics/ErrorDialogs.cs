@@ -6,11 +6,11 @@ namespace TwitchCraft_V1;
 
 internal static partial class ErrorHandling
 {
-    public static void ShowReadmeMissing(object? source, string READMEPath)
-        => ShowError(source, "README Error", $"Couldn't find README.txt here:\n\n{READMEPath}");
+    public static void ShowFileMissing(object? source, string name, string path)
+        => ShowError(source, name + " Error", $"Couldn't find {System.IO.Path.GetFileName(path)} here:\n\n{path}");
 
-    public static void ShowReadmeError(object? source, Exception ex)
-        => ShowError(source, "README Error", "Couldn't open README.txt.\n\n" + FormatException(ex));
+    public static void ShowFileError(object? source, string name, string path, Exception ex)
+        => ShowError(source, name + " Error", $"Couldn't open {System.IO.Path.GetFileName(path)}.\n\n" + FormatException(ex));
 
     public static void ShowMainWindowError(object? source)
         => ShowWarning(source, DefaultTitle, "Couldn't access the main window.");

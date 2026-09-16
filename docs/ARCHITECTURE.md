@@ -6,9 +6,9 @@ TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or
 WPF shell
     ↓
 MainHandler (application coordinator)
-    ├── TwitchSession (IRC socket/writer, send throttling, IRC session state)
-    ├── MinecraftSession (Java process, serialized writes, readiness/RCON state)
-    ├── CommandService (targeting, costs, authorization, cooldown state)
+    ├── TwitchSession (IRC transport/queue state, throttling, deduplication, session task state)
+    ├── MinecraftSession (Java process, serialized writes, readiness/RCON/exit state, process cleanup)
+    ├── CommandService (targeting, costs, authorization, built-in command cooldowns)
     ├── TokenService (viewer economy and token-database lifecycle)
     ├── StatisticsService (session/lifetime tracking and snapshots)
     ├── DataMaintenance (backups, optimization, auth validation)
@@ -17,18 +17,18 @@ MainHandler (application coordinator)
 
 ## Main folders
 
-- `Application/` — application helpers, shared infrastructure, and UI-thread dispatch
-- `Setup/` — configuration, validation, server properties, Java discovery, world import, and datapack setup
-- `Commands/` — command parsing/building, registration, gameplay/economy handlers, targeting, refunds, and `Minigames/`
-- `Diagnostics/` — exception handling, structured rolling logs, and application-version metadata
-- `Identity/` — Twitch token, Twitch username, and Minecraft username normalization
-- `Infrastructure/` — shared file, JSON export, sorted-list, and text-segment helpers
-- `Runtime/` — the coordinator, lifecycle, task/maintenance owners, and `Minecraft/`, `Players/`, and `Twitch/` transport/monitoring areas
-- `Statistics/` — `StatisticsService`, lifetime/session models, SQLite persistence, and JSON exports
-- `Tokens/` — `TokenService`, viewer-token accounting, SQLite persistence, and JSON export
-- `Frames/` — WPF pages and their event logic
-- `Assets/` — images, icon, server icon, and locate-players datapack
-- `TwitchCraft.Tests/` — behavioral regression tests, including focused WPF state tests
+* `Application/` — application helpers, shared infrastructure, and UI-thread dispatch
+* `Setup/` — configuration, validation, server properties, Java discovery, world import, and datapack setup
+* `Commands/` — command parsing/building, registration, gameplay/economy handlers, targeting, refunds, and `Minigames/`
+* `Diagnostics/` — exception handling, structured rolling logs, and application-version metadata
+* `Identity/` — Twitch token, Twitch username, and Minecraft username normalization
+* `Infrastructure/` — shared file, JSON export, sorted-list, and text-segment helpers
+* `Runtime/` — the coordinator, lifecycle, task/maintenance owners, and `Minecraft/`, `Players/`, and `Twitch/` transport/monitoring areas
+* `Statistics/` — `StatisticsService`, lifetime/session models, SQLite persistence, and JSON exports
+* `Tokens/` — `TokenService`, viewer-token accounting, SQLite persistence, and JSON export
+* `Frames/` — WPF pages and their event logic
+* `Assets/` — images, icon, server icon, and locate-players datapack
+* `TwitchCraft.Tests/` — behavioral regression tests, including focused WPF state tests
 
 `MainHandler` exposes the focused components through `runtime.Commands`, `runtime.Tokens`, and `runtime.Statistics`. `TwitchSession` and `MinecraftSession` own their transport/session resources while `MainHandler` continues coordinating lifecycle, command, viewer, and player-monitor behavior.
 
@@ -44,14 +44,14 @@ MainHandler (application coordinator)
 
 ## Component ownership
 
-- `MainHandler` owns application composition and overall session lifecycle coordination.
-- `TwitchSession` owns the live IRC socket/writer, Twitch write/rate-limit synchronization, message de-duplication, and send-rate state for the Twitch session.
-- `MinecraftSession` owns the local Java process, serialized Minecraft writes, server readiness, RCON-health state, expected-exit state, and process cleanup.
-- `CommandService` owns mutable command cooldowns, command cost scaling, moderator authorization, and player-target resolution.
-- `TokenService` owns the `TokenHandler` database and all balance/reward operations.
-- `StatisticsService` owns statistics locks, session/lifetime state, persistence deltas, death tracking, and snapshot caches.
-- `DataMaintenance` owns backup schedules, retention, SQLite optimization, and periodic Twitch-token validation.
-- `BackgroundTaskTracker` owns tracked task state and observes task faults.
+* `MainHandler` owns application composition and overall session lifecycle coordination.
+* `TwitchSession` owns the live IRC socket/writer, Twitch write/rate-limit and identity/token-refresh synchronization, IRC work queues, message de-duplication, send-rate/channel state, and follow-reward task lifetime.
+* `MinecraftSession` owns the local Java process, serialized Minecraft writes, server readiness, RCON-health state, expected-exit state, staged local RCON state, and process cleanup.
+* `CommandService` owns built-in command-specific cooldowns, command cost scaling, moderator authorization, and player-target resolution.
+* `TokenService` owns the `TokenHandler` database and all balance/reward operations.
+* `StatisticsService` owns statistics locks, session/lifetime state, persistence deltas, death tracking, and snapshot caches.
+* `DataMaintenance` owns backup schedules, retention, SQLite optimization, and periodic Twitch-token validation.
+* `BackgroundTaskTracker` owns tracked task state and observes task faults.
 
 Dependencies flow into components through small callbacks or focused collaborators. Components do not reach into the coordinator's private state.
 
@@ -72,12 +72,12 @@ Local mode owns Java process startup, output/error readers, server preparation, 
 
 ## Persistence
 
-- `config.json` uses normalized models, temporary-file writes, and replacement fallback.
-- Automatic timestamped backups pair `config.json` with a consistent SQLite copy of `viewer_tokens.db` and prune complete sets according to configured retention.
-- Viewer balances use SQLite with a readable JSON export.
-- Statistics use SQLite with aggregate/viewer JSON exports.
-- Database operations use synchronization and parameterized statements.
-- Server/world files remain separate from configuration and databases.
+* `config.json` uses normalized models, temporary-file writes, and replacement fallback.
+* Automatic timestamped backups pair `config.json` with a consistent SQLite copy of `viewer_tokens.db` and prune complete sets according to configured retention.
+* Viewer balances use SQLite with a readable JSON export.
+* Statistics use SQLite with aggregate/viewer JSON exports.
+* Database operations use synchronization and parameterized statements.
+* Server/world files remain separate from configuration and databases.
 
 ## Shutdown and recovery
 

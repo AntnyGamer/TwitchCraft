@@ -22,22 +22,22 @@ public partial class Help : UserControl
         Unloaded += (_, _) => ClearDiagnosticsStatus();
     }
 
-    private void OpenReadme_Click(object sender, RoutedEventArgs e)
+    private void OpenReadme_Click(object sender, RoutedEventArgs e) => OpenBundledFile("README.txt", "README");
+    private void OpenLicense_Click(object sender, RoutedEventArgs e) => OpenBundledFile(Path.Combine("licenses", "LICENSE"), "License");
+
+    private void OpenBundledFile(string relativePath, string name)
     {
+        string path = Path.Combine(AppContext.BaseDirectory, relativePath);
         try
         {
-            string readmePath = Path.Combine(AppContext.BaseDirectory, "README.txt");
-            if (!File.Exists(readmePath))
-            {
-                ErrorHandling.ShowReadmeMissing(this, readmePath);
-                return;
-            }
-
-            AppHelpers.OpenTarget(readmePath);
+            if (File.Exists(path))
+                AppHelpers.OpenTarget(path);
+            else
+                ErrorHandling.ShowFileMissing(this, name, path);
         }
         catch (Exception ex)
         {
-            ErrorHandling.ShowReadmeError(this, ex);
+            ErrorHandling.ShowFileError(this, name, path, ex);
         }
     }
 
