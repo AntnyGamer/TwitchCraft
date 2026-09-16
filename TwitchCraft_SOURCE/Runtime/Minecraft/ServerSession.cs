@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -161,7 +160,7 @@ public sealed partial class MainHandler
         Interlocked.Exchange(ref _trackedPlayerDeathScoreRefreshQueued, 0);
         Volatile.Write(ref _deathScoreInitializedPlayerName, null);
         Volatile.Write(ref _minecraftQueryUnavailableUntilTicks, 0);
-        Volatile.Write(ref _RCONHealthy, 0);
+        _minecraftSession.RCONHealthy = false;
         _minecraftServerReady = false;
 
         _shellWindow?.ClearServerLog();
@@ -169,117 +168,10 @@ public sealed partial class MainHandler
         _shellWindow?.UpdateViewers([]);
     }
 
-    private void StopProcessSafe()
-    {
-        Process? process = _javaServerProcess;
-        if (process == null)
-            return;
+    private void StopProcessSafe() => _minecraftSession.StopProcessSafe();
 
-        try
-        {
-            if (TryGetProcessRunning(process, out bool running) && running)
-            {
-                KillProcessTree(process);
-                process.WaitForExit(3000);
-            }
-        }
-        catch
-        {
-        }
-
-        if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning) return;
-        Interlocked.CompareExchange(ref _javaServerProcess, null, process);
-        DisposeProcessSafe(process);
-    }
-
-    internal async Task StopProcessSafeAsync(bool waitBriefly)
-    {
-        Process? process = _javaServerProcess;
-        if (process == null)
-            return;
-
-        try
-        {
-            if (waitBriefly)
-                await WaitForProcessExitAsync(process, GracefulShutdownTimeout).ConfigureAwait(false);
-        }
-        catch
-        {
-        }
-
-        try
-        {
-            if (TryGetProcessRunning(process, out bool running) && running)
-            {
-                KillProcessTree(process);
-                await WaitForProcessExitAsync(process, TimeSpan.FromSeconds(3)).ConfigureAwait(false);
-            }
-        }
-        catch
-        {
-        }
-
-        if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning) return;
-        Interlocked.CompareExchange(ref _javaServerProcess, null, process);
-        DisposeProcessSafe(process);
-    }
-
-    private static async Task WaitForProcessExitAsync(Process process, TimeSpan timeout)
-    {
-        try
-        {
-            if (process.HasExited)
-                return;
-
-            Task exitTask = process.WaitForExitAsync();
-            Task completed = await Task.WhenAny(exitTask, Task.Delay(timeout)).ConfigureAwait(false);
-            if (ReferenceEquals(completed, exitTask))
-            {
-                await exitTask.ConfigureAwait(false);
-                return;
-            }
-        }
-        catch
-        {
-        }
-    }
-
-    private static void KillProcessTree(Process process)
-    {
-        try
-        {
-            process.Kill(entireProcessTree: true);
-        }
-        catch
-        {
-            process.Kill();
-        }
-    }
-
-    private static bool TryGetProcessRunning(Process process, out bool running)
-    {
-        try
-        {
-            running = !process.HasExited;
-            return true;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
-        {
-            running = false;
-            return ex is InvalidOperationException;
-        }
-    }
-
-    private static void DisposeProcessSafe(Process process)
-    {
-        try
-        {
-            process.Dispose();
-        }
-        catch
-        {
-        }
-    }
+    internal Task StopProcessSafeAsync(bool waitBriefly)
+        => _minecraftSession.StopProcessSafeAsync(waitBriefly, GracefulShutdownTimeout);
 
     private void SafeCleanup()
     {

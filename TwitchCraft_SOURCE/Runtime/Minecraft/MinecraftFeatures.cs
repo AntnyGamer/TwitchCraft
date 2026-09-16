@@ -120,9 +120,9 @@ public sealed partial class MainHandler
 
     public string MobLootGameRuleName => UsesNamespacedGameRules ? "minecraft:mob_drops" : "doMobLoot";
 
-    internal bool MinecraftProcessRunning => _javaServerProcess is { } process && TryGetProcessRunning(process, out bool running) && running;
+    internal bool MinecraftProcessRunning => _minecraftSession.ProcessRunning;
 
-    internal bool RCONConnected => Volatile.Read(ref _RCONHealthy) != 0;
+    internal bool RCONConnected => _minecraftSession.RCONHealthy;
 
-    public bool MinecraftServerReady => _minecraftServerReady && (!RemoteControlEnabled || Volatile.Read(ref _RCONHealthy) != 0);
+    public bool MinecraftServerReady => _minecraftServerReady && (!RemoteControlEnabled || _minecraftSession.RCONHealthy);
 }

@@ -39,9 +39,6 @@ public sealed partial class MainHandler
     private static readonly TimeSpan IRCShutdownPartTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan IRCOperationTimeout = TimeSpan.FromSeconds(15);
     private static readonly long IRCCommandOverflowNoticeIntervalTicks = TimeSpan.FromSeconds(30).Ticks;
-    private readonly HashSet<string> _IRCMessageIDs = new(StringComparer.Ordinal);
-    private readonly Queue<string> _IRCMessageIDOrder = new();
-    private readonly Queue<long> _IRCChatSendTimes = new(100);
 
     private static string NormalizeToken(string? token) => TwitchTokenHelper.NormalizeAccessToken(token);
 
@@ -58,8 +55,8 @@ public sealed partial class MainHandler
             if (rateLimited)
             {
                 long now = Environment.TickCount64;
-                if (_IRCChatSendTimes.Count >= 100)
-                    sendDelay = Math.Max(0, _IRCChatSendTimes.Peek() + 30_000 - now);
+                if (_twitchSession.ChatSendTimes.Count >= 100)
+                    sendDelay = Math.Max(0, _twitchSession.ChatSendTimes.Peek() + 30_000 - now);
             }
 
             if (sendDelay > 0)
@@ -77,8 +74,8 @@ public sealed partial class MainHandler
                 await writer.FlushAsync(writeToken).ConfigureAwait(false);
                 if (rateLimited)
                 {
-                    if (_IRCChatSendTimes.Count >= 100) _IRCChatSendTimes.Dequeue();
-                    _IRCChatSendTimes.Enqueue(Environment.TickCount64);
+                    if (_twitchSession.ChatSendTimes.Count >= 100) _twitchSession.ChatSendTimes.Dequeue();
+                    _twitchSession.ChatSendTimes.Enqueue(Environment.TickCount64);
                 }
             }
             finally
@@ -193,7 +190,7 @@ public sealed partial class MainHandler
                 socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
                 socket.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 30);
                 socket.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 10);
-                _IRCSocket = socket;
+                _twitchSession.Socket = socket;
 
                 tokenRegistration = cancellationToken.Register(() => CloseIRCSocket(socket));
 
@@ -325,12 +322,12 @@ public sealed partial class MainHandler
                     string payload = message.Trailing;
                     if (message.ID.Length > 0)
                     {
-                        if (!_IRCMessageIDs.Add(message.ID))
+                        if (!_twitchSession.MessageIDs.Add(message.ID))
                             continue;
 
-                        _IRCMessageIDOrder.Enqueue(message.ID);
-                        if (_IRCMessageIDOrder.Count > 4096)
-                            _IRCMessageIDs.Remove(_IRCMessageIDOrder.Dequeue());
+                        _twitchSession.MessageIDOrder.Enqueue(message.ID);
+                        if (_twitchSession.MessageIDOrder.Count > 4096)
+                            _twitchSession.MessageIDs.Remove(_twitchSession.MessageIDOrder.Dequeue());
                     }
 
                     bool hasChatMessage = sender.Length > 0 && payload.Length > 0;
@@ -410,7 +407,7 @@ public sealed partial class MainHandler
             }
             finally
             {
-                if (ReferenceEquals(Interlocked.CompareExchange(ref _IRCWriter, null, writer), writer))
+                if (_twitchSession.TryClearWriter(writer))
                     SetChatConnected(false);
 
                 try

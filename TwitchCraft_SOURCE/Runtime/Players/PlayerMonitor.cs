@@ -266,11 +266,11 @@ public sealed partial class MainHandler
 
             if (response == null)
             {
-                Volatile.Write(ref _RCONHealthy, 0);
+                _minecraftSession.RCONHealthy = false;
                 return false;
             }
 
-            Volatile.Write(ref _RCONHealthy, 1);
+            _minecraftSession.RCONHealthy = true;
             if (!TryParseList(response, out List<string> players))
                 return false;
             ApplySnapshot(players);
@@ -283,7 +283,7 @@ public sealed partial class MainHandler
         }
         catch
         {
-            Volatile.Write(ref _RCONHealthy, 0);
+            _minecraftSession.RCONHealthy = false;
             return false;
         }
     }

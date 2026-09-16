@@ -19,8 +19,6 @@ public sealed partial class MainHandler
     private static readonly TimeSpan ServerLogUnlockWaitTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan StopCommandTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan ManualCommandTimeout = TimeSpan.FromSeconds(5);
-    private volatile bool _minecraftServerReady;
-    private int _RCONHealthy;
     private int _initialPlayerSnapshotQueued;
     private int _suppressedOnlinePlayersLogLines;
     private int _serverCommandErrorContextLines;
@@ -54,7 +52,7 @@ public sealed partial class MainHandler
             timeoutCts.Token).ConfigureAwait(false)
             ?? throw new InvalidOperationException("Remote controller could not authenticate with RCON. Check the host, RCON port, and RCON password.");
         _minecraftServerReady = true;
-        Volatile.Write(ref _RCONHealthy, 1);
+        _minecraftSession.RCONHealthy = true;
         _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" + config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
         QueueFirstSnapshot();
         QueueSnapshot();
@@ -116,7 +114,7 @@ public sealed partial class MainHandler
             return;
         }
 
-        if (cancellationToken.IsCancellationRequested || Volatile.Read(ref _serverExitExpected) != 0)
+        if (cancellationToken.IsCancellationRequested || _minecraftSession.ServerExitExpected)
         {
             return;
         }
@@ -125,7 +123,7 @@ public sealed partial class MainHandler
         try
         {
             if (cancellationToken.IsCancellationRequested
-                || Volatile.Read(ref _serverExitExpected) != 0
+                || _minecraftSession.ServerExitExpected
                 || !ReferenceEquals(process, _javaServerProcess)
                 || _runtimeState != RuntimeState.Running)
             {

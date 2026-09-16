@@ -235,19 +235,5 @@ public sealed partial class MainHandler
     }
 
     private void CloseIRCSocket(TcpClient? socketToClose = null)
-    {
-        TcpClient? socket = socketToClose ?? _IRCSocket;
-        if (socket == null)
-            return;
-
-        Interlocked.CompareExchange(ref _IRCSocket, null, socket);
-
-        try
-        {
-            socket.Dispose();
-        }
-        catch
-        {
-        }
-    }
+        => _twitchSession.CloseSocket(socketToClose);
 }

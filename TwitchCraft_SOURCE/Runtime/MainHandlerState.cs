@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,11 +16,8 @@ public sealed partial class MainHandler
     private readonly AppShellViewModel _shellModel;
     private readonly ChatCommandRegistry _commandRegistry;
     private readonly SemaphoreSlim _lifecycleGate;
-    private readonly SemaphoreSlim _serverWriteGate;
-    private readonly SemaphoreSlim _IRCWriteGate;
-    private readonly SemaphoreSlim _IRCChatRateGate;
-    private readonly SemaphoreSlim _botIdentityResolveGate;
-    private readonly SemaphoreSlim _twitchTokenRefreshGate;
+    private readonly TwitchSession _twitchSession;
+    private readonly MinecraftSession _minecraftSession;
     private const int MaxQueuedIRCCommands = 75;
     private const int MaxQueuedIRCQuickWork = 500;
     private readonly Lock _viewerGate;
@@ -33,7 +29,6 @@ public sealed partial class MainHandler
     private readonly BackgroundTaskTracker _backgroundTaskTracker;
     private readonly DataMaintenance _dataMaintenance;
     private TwitchCraft? _shellWindow;
-    private Process? _javaServerProcess;
     private CancellationTokenSource? _sessionCts, _followRewardsCts;
     private Task? _followRewardsTask;
     private TwitchCraftConfig? _activeConfig;
@@ -45,12 +40,9 @@ public sealed partial class MainHandler
     private List<string> _lastSidebarPlayers;
     private bool _playerSidebarInitialized, _profileApplied;
     private long _lastOnlinePlayersSnapshotTicks;
-    private TcpClient? _IRCSocket;
-    private StreamWriter? _IRCWriter;
     private readonly IRCWorkQueueState _IRCCommandQueue;
     private readonly IRCWorkQueueState _IRCQuickQueue;
     private int _IRCQueueGeneration;
-    private int _serverExitExpected;
     private int _lifecycleStopGeneration;
     private int _shutdownRequested;
     private long _lastIRCCommandOverflowNoticeTicks;
@@ -75,6 +67,27 @@ public sealed partial class MainHandler
     private string _cachedMinecraftFeatureVersion;
     private MinecraftVersionSupport.MinecraftVersionInfo? _cachedMinecraftFeatureInfo;
 
+    private SemaphoreSlim _serverWriteGate => _minecraftSession.WriteGate;
+    private SemaphoreSlim _IRCWriteGate => _twitchSession.WriteGate;
+    private SemaphoreSlim _IRCChatRateGate => _twitchSession.ChatRateGate;
+    private SemaphoreSlim _botIdentityResolveGate => _twitchSession.BotIdentityResolveGate;
+    private SemaphoreSlim _twitchTokenRefreshGate => _twitchSession.TokenRefreshGate;
+    private bool _minecraftServerReady
+    {
+        get => _minecraftSession.ServerReady;
+        set => _minecraftSession.ServerReady = value;
+    }
+    private Process? _javaServerProcess
+    {
+        get => _minecraftSession.Process;
+        set => _minecraftSession.Process = value;
+    }
+    private StreamWriter? _IRCWriter
+    {
+        get => _twitchSession.Writer;
+        set => _twitchSession.Writer = value;
+    }
+
     public TokenService Tokens { get; }
 
     public CommandService Commands { get; }
@@ -96,6 +109,8 @@ public sealed partial class MainHandler
         ArgumentNullException.ThrowIfNull(shellModel);
 
         _shellModel = shellModel;
+        _twitchSession = new();
+        _minecraftSession = new();
         Commands = new CommandService(
             HasGlobalCooldownOverride,
             HasPerUserCooldownOverride,
@@ -111,11 +126,6 @@ public sealed partial class MainHandler
             playerName => QueueDeathScore(playerName),
             QueueRespawn));
         _lifecycleGate = new(1, 1);
-        _serverWriteGate = new(1, 1);
-        _IRCWriteGate = new(1, 1);
-        _IRCChatRateGate = new(1, 1);
-        _botIdentityResolveGate = new(1, 1);
-        _twitchTokenRefreshGate = new(1, 1);
         _viewerGate = new();
         _playerGate = new();
         _cooldownGate = new();

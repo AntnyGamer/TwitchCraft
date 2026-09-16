@@ -270,7 +270,7 @@ public sealed partial class MainHandler
             RefreshCatalogs();
             Tokens.Load(config.Settings.MaximumTokenBalance);
             Statistics.Load();
-            Interlocked.Exchange(ref _serverExitExpected, 0);
+            _minecraftSession.ServerExitExpected = false;
             ResetSession();
             _backgroundTaskTracker.Clear();
 
@@ -353,7 +353,7 @@ public sealed partial class MainHandler
             _runtimeState = RuntimeState.Stopping;
             await RestartFollowRewardsAsync().ConfigureAwait(false);
             _minecraftServerReady = false;
-            Interlocked.Exchange(ref _serverExitExpected, 1);
+            _minecraftSession.ServerExitExpected = true;
             ResetQueues();
             Statistics.PauseSurvival();
             sessionCts = _sessionCts;

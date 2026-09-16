@@ -1,20 +1,18 @@
 # Architecture
 
-TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI. `MainHandler` is the application-facing coordinator; focused components own command, token, statistics, maintenance, and background-task behavior.
+TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI. `MainHandler` is the application-facing coordinator; focused components own Twitch/Minecraft session resources, command, token, statistics, maintenance, and background-task behavior.
 
 ```text
 WPF shell
     ↓
 MainHandler (application coordinator)
+    ├── TwitchSession (IRC socket/writer, send throttling, connection-scoped state)
+    ├── MinecraftSession (Java process, serialized writes, readiness/RCON state)
     ├── CommandService (targeting, costs, authorization, cooldown state)
     ├── TokenService (viewer economy and token-database lifecycle)
     ├── StatisticsService (session/lifetime tracking and snapshots)
     ├── DataMaintenance (backups, optimization, auth validation)
-    ├── BackgroundTaskTracker (owned task collection and fault observation)
-    ├── Twitch transport (IRC, Helix, EventSub)
-    └── Minecraft runtime
-          ├── Local Java process + stdin
-          └── Remote RCON + query clients
+    └── BackgroundTaskTracker (owned task collection and fault observation)
 ```
 
 ## Main folders
@@ -32,7 +30,7 @@ MainHandler (application coordinator)
 - `Assets/` — images, icon, server icon, and locate-players datapack
 - `TwitchCraft.Tests/` — behavioral regression tests, including focused WPF state tests
 
-`MainHandler` exposes the focused components through `runtime.Commands`, `runtime.Tokens`, and `runtime.Statistics`. Twitch, Minecraft, and player-monitor code remain coordinated partials.
+`MainHandler` exposes the focused components through `runtime.Commands`, `runtime.Tokens`, and `runtime.Statistics`. `TwitchSession` and `MinecraftSession` own their transport/session resources while `MainHandler` continues coordinating lifecycle, command, viewer, and player-monitor behavior.
 
 ## Startup flow
 
@@ -46,7 +44,9 @@ MainHandler (application coordinator)
 
 ## Component ownership
 
-- `MainHandler` owns application composition and session lifecycle coordination.
+- `MainHandler` owns application composition and overall session lifecycle coordination.
+- `TwitchSession` owns the live IRC socket/writer, Twitch write/rate-limit synchronization, connection message de-duplication, and connection-scoped send state.
+- `MinecraftSession` owns the local Java process, serialized Minecraft writes, server readiness, RCON-health state, expected-exit state, and process cleanup.
 - `CommandService` owns mutable command cooldowns, command cost scaling, moderator authorization, and player-target resolution.
 - `TokenService` owns the `TokenHandler` database and all balance/reward operations.
 - `StatisticsService` owns statistics locks, session/lifetime state, persistence deltas, death tracking, and snapshot caches.
