@@ -78,9 +78,9 @@ internal static class MinecraftQueryClient
         int start = 5 + playerSection + PlayerSectionMarker.Length;
         if (start >= buffer.Length || buffer[^1] != 0 || buffer[^2] != 0)
             throw new InvalidOperationException("Minecraft query player section was truncated.");
-        for (int i = start; i <= buffer.Length; i++)
+        for (int i = start; i < buffer.Length; i++)
         {
-            if (i < buffer.Length && buffer[i] != 0)
+            if (buffer[i] != 0)
                 continue;
 
             if (i == start)

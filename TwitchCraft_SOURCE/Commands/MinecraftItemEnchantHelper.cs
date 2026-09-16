@@ -5,7 +5,7 @@ namespace TwitchCraft_V1;
 
 internal static class MinecraftItemEnchantHelper
 {
-    private sealed record EnchantOption(string ID, int MaxLevel);
+    private readonly record struct EnchantOption(string ID, int MaxLevel);
 
     private static readonly EnchantOption[] BaseEnchantments =
     [

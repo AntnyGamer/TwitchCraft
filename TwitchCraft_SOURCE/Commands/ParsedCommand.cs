@@ -50,24 +50,19 @@ internal readonly struct ParsedCommand
         if (length <= 0)
             return string.Empty;
 
-        bool needsLowercase = false;
         for (int i = 0; i < length; i++)
         {
-            if (CommandUserHelper.LowerFast(value[start + i]) != value[start + i])
+            if (CommandUserHelper.LowerFast(value[start + i]) == value[start + i])
+                continue;
+
+            return string.Create(length, (Value: value, Start: start), static (destination, state) =>
             {
-                needsLowercase = true;
-                break;
-            }
+                for (int j = 0; j < destination.Length; j++)
+                    destination[j] = CommandUserHelper.LowerFast(state.Value[state.Start + j]);
+            });
         }
 
-        if (!needsLowercase)
-            return start == 0 && length == value.Length ? value : value.Substring(start, length);
-
-        return string.Create(length, (Value: value, Start: start), static (destination, state) =>
-        {
-            for (int i = 0; i < destination.Length; i++)
-                destination[i] = CommandUserHelper.LowerFast(state.Value[state.Start + i]);
-        });
+        return start == 0 && length == value.Length ? value : value.Substring(start, length);
     }
 
     private static string[] SplitArgs(ReadOnlySpan<char> args)

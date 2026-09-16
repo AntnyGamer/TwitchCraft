@@ -41,8 +41,8 @@ internal sealed class MinecraftSession
     internal bool ProcessRunning
         => _process is { } process && TryGetProcessRunning(process, out bool running) && running;
 
-    internal bool TryClearProcess(Process process)
-        => ReferenceEquals(Interlocked.CompareExchange(ref _process, null, process), process);
+    private void ClearProcessIfCurrent(Process process)
+        => Interlocked.CompareExchange(ref _process, null, process);
 
     internal void StopProcessSafe()
     {
@@ -65,7 +65,7 @@ internal sealed class MinecraftSession
         if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
             return;
 
-        TryClearProcess(process);
+        ClearProcessIfCurrent(process);
         DisposeProcessSafe(process);
     }
 
@@ -75,14 +75,8 @@ internal sealed class MinecraftSession
         if (process == null)
             return;
 
-        try
-        {
-            if (waitBriefly)
-                await WaitForProcessExitAsync(process, gracefulShutdownTimeout).ConfigureAwait(false);
-        }
-        catch
-        {
-        }
+        if (waitBriefly)
+            await WaitForProcessExitAsync(process, gracefulShutdownTimeout).ConfigureAwait(false);
 
         try
         {
@@ -99,7 +93,7 @@ internal sealed class MinecraftSession
         if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
             return;
 
-        TryClearProcess(process);
+        ClearProcessIfCurrent(process);
         DisposeProcessSafe(process);
     }
 

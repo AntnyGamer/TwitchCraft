@@ -49,28 +49,20 @@ internal static partial class ErrorHandling
     }
 
     private static void ShowInfo(object? source, string? title, string? message)
-    {
-        Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
-    }
+        => Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
 
     private static void ShowWarning(object? source, string? title, string? message)
-    {
-        Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
-    }
+        => Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
 
     private static void ShowError(object? source, string? title, string? message)
-    {
-        Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
-    }
+        => Show(source, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
 
     private static MessageBoxResult ShowQuestion(
         object? source,
         string? title,
         string? message,
         MessageBoxImage image = MessageBoxImage.Question)
-    {
-        return Show(source, message, title, MessageBoxButton.YesNo, image);
-    }
+        => Show(source, message, title, MessageBoxButton.YesNo, image);
 
     private static MessageBoxResult Show(
         object? source,
@@ -118,14 +110,10 @@ internal static partial class ErrorHandling
     }
 
     private static string FormatException(Exception? ex)
-    {
-        return ex?.Message ?? "An unexpected error occurred.";
-    }
+        => ex?.Message ?? "An unexpected error occurred.";
 
     public static string FormatLog(string context, Exception? ex)
-    {
-        return context + ": " + FormatException(ex);
-    }
+        => context + ": " + FormatException(ex);
 
     public static void LogNonFatal(string context, Exception? ex)
     {
@@ -134,9 +122,7 @@ internal static partial class ErrorHandling
     }
 
     public static string FormatLog(string context, SocketException ex)
-    {
-        return context + ": " + ex.SocketErrorCode;
-    }
+        => context + ": " + ex.SocketErrorCode;
 
     private static void WriteLog(string level, string context, Exception? ex)
     {
@@ -222,9 +208,7 @@ internal static partial class ErrorHandling
     }
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
-    {
-        WriteLog("ERROR", "Unhandled application exception", e.ExceptionObject as Exception);
-    }
+        => WriteLog("ERROR", "Unhandled application exception", e.ExceptionObject as Exception);
 
     private static void OnTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
@@ -232,10 +216,7 @@ internal static partial class ErrorHandling
         e.SetObserved();
     }
 
-    private static void OnExit(object sender, ExitEventArgs e)
-    {
-        CloseLog();
-    }
+    private static void OnExit(object sender, ExitEventArgs e) => CloseLog();
 
     private sealed class StructuredLogEvent
     {

@@ -6,7 +6,7 @@ TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or
 WPF shell
     ↓
 MainHandler (application coordinator)
-    ├── TwitchSession (IRC socket/writer, send throttling, connection-scoped state)
+    ├── TwitchSession (IRC socket/writer, send throttling, IRC session state)
     ├── MinecraftSession (Java process, serialized writes, readiness/RCON state)
     ├── CommandService (targeting, costs, authorization, cooldown state)
     ├── TokenService (viewer economy and token-database lifecycle)
@@ -45,7 +45,7 @@ MainHandler (application coordinator)
 ## Component ownership
 
 - `MainHandler` owns application composition and overall session lifecycle coordination.
-- `TwitchSession` owns the live IRC socket/writer, Twitch write/rate-limit synchronization, connection message de-duplication, and connection-scoped send state.
+- `TwitchSession` owns the live IRC socket/writer, Twitch write/rate-limit synchronization, message de-duplication, and send-rate state for the Twitch session.
 - `MinecraftSession` owns the local Java process, serialized Minecraft writes, server readiness, RCON-health state, expected-exit state, and process cleanup.
 - `CommandService` owns mutable command cooldowns, command cost scaling, moderator authorization, and player-target resolution.
 - `TokenService` owns the `TokenHandler` database and all balance/reward operations.

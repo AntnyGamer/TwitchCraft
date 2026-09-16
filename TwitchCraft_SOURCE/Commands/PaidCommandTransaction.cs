@@ -72,10 +72,9 @@ internal static class PaidCommandTransaction
                 charged = true;
             }
 
-            bool sent;
             try
             {
-                sent = await dependencies.DispatchAsync(cancellationToken).ConfigureAwait(false);
+                dispatchSucceeded = await dependencies.DispatchAsync(cancellationToken).ConfigureAwait(false);
             }
             catch
             {
@@ -84,7 +83,7 @@ internal static class PaidCommandTransaction
                 throw;
             }
 
-            if (!sent)
+            if (!dispatchSucceeded)
             {
                 bool refunded = RefundOnce();
                 NotifyFailureOnce();
@@ -92,7 +91,6 @@ internal static class PaidCommandTransaction
                 return false;
             }
 
-            dispatchSucceeded = true;
             dependencies.RecordStatistics(cost);
             return true;
         }

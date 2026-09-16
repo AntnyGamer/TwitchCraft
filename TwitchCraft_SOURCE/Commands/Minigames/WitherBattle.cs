@@ -13,8 +13,6 @@ public static partial class MinigameManager
         if (!TryStartMinigame(runtime, "WitherBattle", out long runID))
             return;
 
-        List<WitherBattleBet>? settlementBets = null;
-
         try
         {
             WitherBattleState state = GetWitherState(runtime);
@@ -44,6 +42,7 @@ public static partial class MinigameManager
             await Task.WhenAny(timerTask, defeatedSignal.Task).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
 
+            List<WitherBattleBet> bets;
             lock (MinigameGate)
             {
                 if (!ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState) ||
@@ -58,7 +57,7 @@ public static partial class MinigameManager
                 state.CurrentHealth = 0;
                 state.DefeatedSignal = null;
 
-                settlementBets = CloneBets(state.Bets, static bet => new WitherBattleBet
+                bets = CloneBets(state.Bets, static bet => new WitherBattleBet
                 {
                     Viewer = bet.Viewer,
                     TokenAmount = bet.TokenAmount
@@ -67,7 +66,6 @@ public static partial class MinigameManager
                 // Keep the original bets until the atomic settlement is durably saved.
             }
 
-            List<WitherBattleBet> bets = settlementBets!;
             if (bets.Count == 0)
             {
                 await SafeReplyAsync(runtime, "The Wither Battle ended because nobody joined.", cancellationToken).ConfigureAwait(false);
