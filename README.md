@@ -29,12 +29,12 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Remote Control](docs/REMOTE-CONTROL.md)
 * [Troubleshooting](docs/TROUBLESHOOTING.md)
 * [Architecture](docs/ARCHITECTURE.md)
+* [Contributing](CONTRIBUTING.md)
 * [Release process](docs/RELEASING.md)
 * [Changelog](CHANGELOG.md)
-* [Contributing](CONTRIBUTING.md)
 * [Security policy](SECURITY.md)
 * [Privacy policy](docs/PRIVACY.md)
-* [Creation Note](docs/NOTE.md)
+* [License](licenses/LICENSE)
 
 External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
 
@@ -246,7 +246,7 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 **Readable token export location:**
 `%APPDATA%\TwitchCraft\exports\viewer_tokens.json`
 
-*For reference, paste any of the file locations above into Win + R or File Explorer.*
+*For reference, paste any of the file locations above into Win + R or File Explorer*
 
 **Notes:**
 
@@ -284,7 +284,7 @@ Remote Control Mode lets TwitchCraft control an already-running Minecraft server
 * `%APPDATA%\TwitchCraft\exports\statistics.json`
 * `%APPDATA%\TwitchCraft\exports\statistics_viewers.json`
 
-*For reference, paste any of the file locations above into Win + R or File Explorer.*
+*For reference, paste any of the file locations above into Win + R or File Explorer*
 
 **Technical notes:**
 

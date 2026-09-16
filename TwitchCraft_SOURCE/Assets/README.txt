@@ -220,7 +220,7 @@
   Readable token export location:
   %APPDATA%\TwitchCraft\exports\viewer_tokens.json
 
-  For reference, paste any of the file locations above into Win + R or File Explorer.
+  For reference, paste any of the file locations above into Win + R or File Explorer
 
   Notes:
   - Viewer tokens are stored in viewer_tokens.db
@@ -255,7 +255,8 @@
   Readable statistics export locations:
   %APPDATA%\TwitchCraft\exports\statistics.json
   %APPDATA%\TwitchCraft\exports\statistics_viewers.json
-  For reference, paste any of the file locations above into Win + R or File Explorer.
+
+  For reference, paste any of the file locations above into Win + R or File Explorer
 
   Technical notes:
   - Editing the exported statistics JSON files will NOT affect TwitchCraft
