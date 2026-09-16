@@ -72,7 +72,7 @@
                             </TextBlock>
 
                             <TextBlock Margin="0,0,24,0">
-                                <Hyperlink NavigateUri="https://github.com/AntnyGamer/TwitchCraft/blob/main/licenses/LICENSE" KeyboardNavigation.TabIndex="6">License</Hyperlink>
+                                <Hyperlink Click="OpenLicense_Click" KeyboardNavigation.TabIndex="6">License</Hyperlink>
                             </TextBlock>
 
                             <TextBlock>
