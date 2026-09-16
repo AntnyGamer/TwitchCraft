@@ -15,7 +15,7 @@
 		<AssemblyTitle>TwitchCraft</AssemblyTitle>
 		<Description>Twitch viewers control your Minecraft!</Description>
 		<Product>TwitchCraft</Product>
-		<Copyright>© 2026 AntnyGamer. All rights reserved.</Copyright>
+		<Copyright>© 2026 AntnyGamer. Licensed under AGPL v3.</Copyright>
 
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<FileVersion>1.9.0.0</FileVersion>
