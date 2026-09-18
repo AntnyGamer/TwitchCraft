@@ -11,7 +11,7 @@ namespace TwitchCraft.Tests.Configuration;
 public sealed class LiveSettingsApplicationTests
 {
     [Fact]
-    public async Task ApplySavedConfig_ClonesNestedSettingsInsteadOfAliasingCallerState()
+    public async Task ApplySettings_ClonesNestedSettings()
     {
         using TemporaryDirectory directory = new();
         MainHandler runtime = new(

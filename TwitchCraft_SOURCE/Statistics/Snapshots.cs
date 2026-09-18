@@ -23,13 +23,13 @@ public sealed partial class StatisticsService
             string totalMostUsedCommand;
             lock (_statisticsGate)
             {
-                if (_cachedStatisticsLeaderboardVersion == _statisticsLeaderboardVersion &&
-                    string.Equals(_cachedStatisticsLeaderboardStreamer, streamerViewer, StringComparison.OrdinalIgnoreCase))
+                if (_cachedLeaderboardVersion == _leaderboardVersion &&
+                    string.Equals(_cachedLeaderboardStreamer, streamerViewer, StringComparison.OrdinalIgnoreCase))
                 {
                     return BuildSnapshotNoLock(now);
                 }
 
-                versionToRefresh = _statisticsLeaderboardVersion;
+                versionToRefresh = _leaderboardVersion;
                 sessionMostUsedCommand = GetTopCommand(_sessionStatistics.CommandUseCounts);
                 sessionMostDangerousViewer = GetTopViewer(_sessionStatistics.DangerousViewerScores, streamerViewer);
                 sessionNicestViewer = GetTopViewer(_sessionStatistics.NiceViewerScores, streamerViewer);
@@ -40,7 +40,7 @@ public sealed partial class StatisticsService
             cancellationToken.ThrowIfCancellationRequested();
             lock (_statisticsGate)
             {
-                if (versionToRefresh != _statisticsLeaderboardVersion)
+                if (versionToRefresh != _leaderboardVersion)
                 {
                     continue;
                 }
@@ -51,8 +51,8 @@ public sealed partial class StatisticsService
                 _cachedTotalMostUsedCommand = totalMostUsedCommand;
                 _cachedTotalMostDangerousViewer = totalMostDangerousViewer;
                 _cachedTotalNicestViewer = totalNicestViewer;
-                _cachedStatisticsLeaderboardStreamer = streamerViewer;
-                _cachedStatisticsLeaderboardVersion = versionToRefresh;
+                _cachedLeaderboardStreamer = streamerViewer;
+                _cachedLeaderboardVersion = versionToRefresh;
                 return BuildSnapshotNoLock(now);
             }
         }
@@ -112,7 +112,7 @@ public sealed partial class StatisticsService
 
     private void MarkLeaderboardDirty()
     {
-        _statisticsLeaderboardVersion++;
+        _leaderboardVersion++;
     }
 
     private static TimeSpan? ToDuration(long seconds)

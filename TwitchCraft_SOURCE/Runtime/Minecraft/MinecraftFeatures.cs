@@ -81,7 +81,7 @@ public sealed partial class MainHandler
     public string CurrentMinecraftVersion => _activeConfig?.Server.MinecraftVersion ?? string.Empty;
 
     private MinecraftVersionSupport.MinecraftVersionInfo GetMinecraftVersion()
-        => _cachedMinecraftFeatureInfo ?? MinecraftVersionSupport.GetVersion(CurrentMinecraftVersion);
+        => _minecraftVersionInfo ?? MinecraftVersionSupport.GetVersion(CurrentMinecraftVersion);
 
     public bool UsesInlineTextComponentSyntax => GetMinecraftVersion().UsesInlineTextComponents;
 

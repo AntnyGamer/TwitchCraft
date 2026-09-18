@@ -62,11 +62,11 @@ public sealed class CommandSettingsEditorTests
                 settings.UpdateLayout();
                 Assert.InRange(Descendants<ListBoxItem>(list).Count(), 1, 30);
                 ListBoxItem first = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
-                byte[] unselectedRow = RenderPixels(first);
+                byte[] unselectedPixels = RenderPixels(first);
                 first.IsSelected = true;
                 Pump();
                 settings.UpdateLayout();
-                Assert.Equal(unselectedRow, RenderPixels(first));
+                Assert.Equal(unselectedPixels, RenderPixels(first));
                 CheckBox enabled = Assert.Single(Descendants<CheckBox>(first));
                 enabled.SetCurrentValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, false);
                 ComboBox perUser = Descendants<ComboBox>(first).First();
