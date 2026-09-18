@@ -81,7 +81,6 @@ public sealed partial class MainHandler
         persistedConfig.Settings.RequireOnlineMode = true;
         ConfigurationStore.Save(persistedConfig);
         SetConfig(config);
-        RefreshCatalogs();
         _profileApplied = true;
     }
 
@@ -267,7 +266,6 @@ public sealed partial class MainHandler
                 ApplyProfile(config);
             SetupInputValidator.ValidateRuntimeConfig(config);
             SetConfig(config);
-            RefreshCatalogs();
             Tokens.Load(config.Settings.MaximumTokenBalance);
             Statistics.Load();
             _minecraftSession.ServerExitExpected = false;

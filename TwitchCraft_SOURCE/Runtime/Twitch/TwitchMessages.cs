@@ -127,7 +127,7 @@ public sealed partial class MainHandler
             ? SendChatAsync(
                 FormatReply(
                     message,
-                    _currentCommandSender.Value ?? string.Empty,
+                    Commands.CurrentSender,
                     _activeConfig?.Settings.MentionViewersInBotReplies == true),
                 cancellationToken)
             : Task.CompletedTask;

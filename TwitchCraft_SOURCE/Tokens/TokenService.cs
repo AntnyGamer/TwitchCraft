@@ -89,7 +89,7 @@ public sealed class TokenService
 
     internal void Close() => _store.CloseConnection();
 
-    private int MaximumBalance => Math.Max(0, _maximumBalance());
+    internal int MaximumBalance => Math.Max(0, _maximumBalance());
 
     private static bool IsEmptyCollection<T>(IEnumerable<T> values)
         => values is ICollection<T> { Count: 0 } || values is IReadOnlyCollection<T> { Count: 0 };

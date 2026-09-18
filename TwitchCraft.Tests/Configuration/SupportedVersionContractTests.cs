@@ -67,6 +67,8 @@ public sealed class SupportedVersionContractTests
     {
         List<EffectDefinition> firstEffects = Catalogs.BuildEffects();
         List<EffectDefinition> secondEffects = Catalogs.BuildEffects();
+        List<EffectDefinition> minimumVersionEffects = Catalogs.BuildEffects("1.20.5");
+        List<EffectDefinition> modernEffects = Catalogs.BuildEffects("1.21.0");
         List<string> minimumVersionMobs = Catalogs.BuildMobs("1.20.5");
         List<string> newMobs = Catalogs.BuildMobs("1.21.11");
         List<string> trialLoot = Catalogs.BuildLoot("1.21.0");
@@ -75,6 +77,8 @@ public sealed class SupportedVersionContractTests
 
         Assert.NotSame(firstEffects, secondEffects);
         Assert.NotSame(firstEffects[0], secondEffects[0]);
+        Assert.DoesNotContain(minimumVersionEffects, effect => effect.ID == "infested");
+        Assert.Contains(modernEffects, effect => effect.ID == "infested");
         Assert.Contains("armadillo", minimumVersionMobs);
         Assert.DoesNotContain("bogged", minimumVersionMobs);
         Assert.Contains("nautilus", newMobs);

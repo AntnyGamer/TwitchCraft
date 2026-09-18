@@ -9,33 +9,11 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private readonly record struct CommandCooldownReservation((string Command, string Sender) Key, long ReservationTicks, long CooldownTicks)
-    {
-        internal bool IsActive => Key.Command != null;
-    }
-
-    private sealed class CommandExecutionState
-    {
-        internal bool Succeeded;
-    }
-
     private static readonly StartingProfile DefaultEffectiveSettings = new();
-    private readonly AsyncLocal<string?> _currentCommandSender = new();
-    private readonly AsyncLocal<CommandExecutionState?> _currentCommandExecution = new();
-    private readonly Queue<long> _channelCommandTimestamps = new();
-    private readonly Dictionary<string, Queue<long>> _viewerCommandTimestamps = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, long> _viewerCommandLimitNotices = new(StringComparer.OrdinalIgnoreCase);
-    private const string GlobalCooldownKey = "\0";
-    private readonly Dictionary<(string Command, string Sender), long> _customCommandCooldownUntilTicks = [];
     private readonly Queue<long> _relayMessageTimestamps = new();
     private readonly Dictionary<string, long> _viewerLastChatActivity = new(StringComparer.OrdinalIgnoreCase);
-    private long _lastChannelCommandLimitNoticeTicks;
-    private long _lastCommandStatePruneTicks;
     private int _twitchChatConnected;
 
-    public int MaximumTokenBalance => _activeConfig?.Settings.MaximumTokenBalance ?? 0;
-    public bool AllowAllPlayerTarget => _activeConfig?.Settings.AllowAllPlayerTarget ?? true;
-    public bool AllowRandomPlayerTarget => _activeConfig?.Settings.AllowRandomPlayerTarget ?? true;
     public bool ShowConnectionHealth => _activeConfig?.Settings.ShowConnectionHealth ?? false;
     public bool TwitchChatConnected => Volatile.Read(ref _twitchChatConnected) != 0;
     public bool LowResourceModeEnabled => EffectiveSettings.LowResourceModeEnabled;
@@ -50,39 +28,10 @@ public sealed partial class MainHandler
 
     private StartingProfile EffectiveSettings => _activeConfig?.Settings ?? DefaultEffectiveSettings;
 
-    internal string CommandPrefix => _currentCommandPrefix;
-    internal string SecondaryCommandPrefix => _currentSecondaryCommandPrefix;
-    internal string MinecraftRelayTextColor => _currentMinecraftRelayTextColor;
-    internal string BotResponseVerbosity => _currentBotResponseVerbosity;
-
-    internal static bool TryMatchPrefix(
-        string payload,
-        string primaryPrefix,
-        string secondaryPrefix,
-        out string matchedPrefix)
-    {
-        matchedPrefix = string.Empty;
-        if (string.IsNullOrEmpty(payload))
-            return false;
-
-        if (secondaryPrefix.Length > primaryPrefix.Length && payload.StartsWith(secondaryPrefix, StringComparison.Ordinal))
-        {
-            matchedPrefix = secondaryPrefix;
-            return true;
-        }
-        if (payload.StartsWith(primaryPrefix, StringComparison.Ordinal))
-        {
-            matchedPrefix = primaryPrefix;
-            return true;
-        }
-        if (secondaryPrefix.Length > 0 && payload.StartsWith(secondaryPrefix, StringComparison.Ordinal))
-        {
-            matchedPrefix = secondaryPrefix;
-            return true;
-        }
-
-        return false;
-    }
+    internal string CommandPrefix => _activeConfig?.Settings.CommandPrefix ?? "!";
+    internal string SecondaryCommandPrefix => _activeConfig?.Settings.SecondaryCommandPrefix ?? string.Empty;
+    internal string MinecraftRelayTextColor => _activeConfig?.Settings.MinecraftRelayTextColor ?? "white";
+    internal string BotResponseVerbosity => _activeConfig?.Settings.BotResponseVerbosity ?? BotResponseVerbositySettings.Normal;
 
     internal static string FormatReply(string message, string sender, bool mentionViewer)
     {
@@ -183,178 +132,6 @@ public sealed partial class MainHandler
             nowUnixSeconds - lastActive <= settings.PassiveActivityWindowMinutes * 60L;
     }
 
-    internal bool TryUseCommandSlots(string viewer, out bool viewerLimited, long? nowTicks = null)
-    {
-        int viewerLimit = _activeConfig?.Settings.ViewerCommandLimitPerMinute ?? 0;
-        int channelLimit = _activeConfig?.Settings.ChannelCommandLimitPerMinute ?? 0;
-        viewerLimited = false;
-        if (viewerLimit <= 0 && channelLimit <= 0)
-            return true;
-        long now = nowTicks ?? DateTime.UtcNow.Ticks, cutoff = now - TimeSpan.TicksPerMinute;
-        lock (_cooldownGate)
-        {
-            PruneCommandStateNoLock(now);
-            Queue<long>? viewerTimestamps = null;
-            if (viewerLimit > 0 && viewer.Length > 0 && _viewerCommandTimestamps.TryGetValue(viewer, out viewerTimestamps))
-            {
-                while (viewerTimestamps.Count > 0 && viewerTimestamps.Peek() <= cutoff)
-                    viewerTimestamps.Dequeue();
-                if (viewerTimestamps.Count >= viewerLimit)
-                {
-                    viewerLimited = true;
-                    return false;
-                }
-            }
-
-            if (channelLimit > 0)
-            {
-                while (_channelCommandTimestamps.Count > 0 && _channelCommandTimestamps.Peek() <= cutoff)
-                    _channelCommandTimestamps.Dequeue();
-                if (_channelCommandTimestamps.Count >= channelLimit)
-                    return false;
-            }
-
-            if (viewerLimit > 0 && viewer.Length > 0)
-            {
-                if (viewerTimestamps == null)
-                    _viewerCommandTimestamps[viewer] = viewerTimestamps = new();
-                viewerTimestamps.Enqueue(now);
-            }
-            if (channelLimit > 0)
-                _channelCommandTimestamps.Enqueue(now);
-            return true;
-        }
-    }
-
-    internal bool ShouldWarnChannelLimit(long? nowTicks = null)
-    {
-        long now = nowTicks ?? DateTime.UtcNow.Ticks;
-        long previous = Volatile.Read(ref _lastChannelCommandLimitNoticeTicks);
-        if (previous != 0 && now - previous < 10 * TimeSpan.TicksPerSecond)
-            return false;
-        return Interlocked.CompareExchange(ref _lastChannelCommandLimitNoticeTicks, now, previous) == previous;
-    }
-
-    internal bool ShouldWarnViewerLimit(string sender, long? nowTicks = null)
-    {
-        string viewer = NormalizeUser(sender);
-        long now = nowTicks ?? DateTime.UtcNow.Ticks;
-        lock (_cooldownGate)
-        {
-            _viewerCommandLimitNotices.TryGetValue(viewer, out long previous);
-            if (previous != 0 && now - previous < 10 * TimeSpan.TicksPerSecond)
-                return false;
-            _viewerCommandLimitNotices[viewer] = now;
-            return true;
-        }
-    }
-
-    private bool TryReserveCommandCooldown(
-        string commandName,
-        string keyOwner,
-        double? cooldownSeconds,
-        out TimeSpan remaining,
-        out CommandCooldownReservation reservation)
-    {
-        remaining = TimeSpan.Zero;
-        reservation = default;
-        if (cooldownSeconds is not double seconds || seconds <= 0.0)
-            return true;
-
-        long nowTicks = DateTime.UtcNow.Ticks;
-        long cooldownTicks = (long)(seconds * TimeSpan.TicksPerSecond);
-        (string Command, string Sender) key = (commandName, keyOwner);
-        lock (_cooldownGate)
-        {
-            PruneCommandStateNoLock(nowTicks);
-            _customCommandCooldownUntilTicks.TryGetValue(key, out long next);
-            if (next != 0 && nowTicks < next)
-            {
-                remaining = TimeSpan.FromTicks(next - nowTicks);
-                return false;
-            }
-
-            long cooldownUntilTicks = nowTicks + cooldownTicks;
-            _customCommandCooldownUntilTicks[key] = cooldownUntilTicks;
-            reservation = new(key, cooldownUntilTicks, cooldownTicks);
-            return true;
-        }
-    }
-
-    private void FinishCommandCooldown(
-        CommandCooldownReservation reservation,
-        bool succeeded)
-    {
-        if (!reservation.IsActive)
-            return;
-
-        lock (_cooldownGate)
-        {
-            if (!_customCommandCooldownUntilTicks.TryGetValue(reservation.Key, out long current) ||
-                current != reservation.ReservationTicks)
-            {
-                return;
-            }
-
-            if (succeeded)
-                _customCommandCooldownUntilTicks[reservation.Key] = DateTime.UtcNow.Ticks + reservation.CooldownTicks;
-            else
-                _customCommandCooldownUntilTicks.Remove(reservation.Key);
-        }
-    }
-
-    private void PruneCommandStateNoLock(long nowTicks)
-    {
-        if ((_viewerCommandTimestamps.Count <= 4096 && _customCommandCooldownUntilTicks.Count <= 4096) ||
-            nowTicks - _lastCommandStatePruneTicks < TimeSpan.TicksPerMinute) return;
-        _lastCommandStatePruneTicks = nowTicks;
-        long cutoff = nowTicks - TimeSpan.TicksPerMinute;
-        foreach ((string viewer, Queue<long> timestamps) in _viewerCommandTimestamps)
-        {
-            while (timestamps.Count > 0 && timestamps.Peek() <= cutoff) timestamps.Dequeue();
-            if (timestamps.Count != 0) continue;
-            _viewerCommandTimestamps.Remove(viewer);
-            _viewerCommandLimitNotices.Remove(viewer);
-        }
-        foreach (var pair in _customCommandCooldownUntilTicks)
-            if (pair.Value <= nowTicks) _customCommandCooldownUntilTicks.Remove(pair.Key);
-    }
-
-    private void BeginCommand() => _currentCommandExecution.Value = new();
-
-    internal void MarkCommandSuccess()
-    {
-        if (_currentCommandExecution.Value is CommandExecutionState state)
-            state.Succeeded = true;
-    }
-
-    private bool CommandSucceeded => _currentCommandExecution.Value?.Succeeded == true;
-
-    private void EndCommand() => _currentCommandExecution.Value = null;
-
-    internal bool HasPerUserCooldownOverride(string? commandName = null)
-        => TryGetCommandSettings(commandName ?? Statistics.CurrentCommandName, out CommandCustomization customization) &&
-            customization.CooldownSeconds.HasValue;
-
-    internal bool HasGlobalCooldownOverride(string? commandName = null)
-        => TryGetCommandSettings(commandName ?? Statistics.CurrentCommandName, out CommandCustomization customization) &&
-            customization.GlobalCooldownSeconds.HasValue;
-
-    private bool TryGetCommandSettings(string? commandName, out CommandCustomization customization)
-    {
-        customization = null!;
-        Dictionary<string, CommandCustomization>? customizations = _activeConfig?.Settings.CommandCustomizations;
-        if (customizations == null || customizations.Count == 0)
-            return false;
-
-        string name = (commandName ?? string.Empty).Trim();
-        if (name.Length == 0 || !customizations.TryGetValue(name, out CommandCustomization? found) || found == null)
-            return false;
-
-        customization = found;
-        return true;
-    }
-
     internal bool TryUseRelaySlot(long? nowTicks = null)
     {
         StartingProfile settings = EffectiveSettings;
@@ -365,7 +142,7 @@ public sealed partial class MainHandler
             return true;
 
         long now = nowTicks ?? DateTime.UtcNow.Ticks;
-        lock (_cooldownGate)
+        lock (_relayGate)
         {
             long cutoff = now - TimeSpan.TicksPerSecond;
             while (_relayMessageTimestamps.Count > 0 && _relayMessageTimestamps.Peek() <= cutoff)

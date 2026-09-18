@@ -13,22 +13,14 @@ public sealed partial class StatisticsService
         }
     }
 
-    internal void SetStatsCommand(string? commandName)
-    {
-        string normalizedCommand = StatisticNameHelper.CleanCommandName(commandName);
-        _currentStatisticCommandName.Value = normalizedCommand.Length == 0 ? null : normalizedCommand;
-    }
-
-    internal string CurrentCommandName => _currentStatisticCommandName.Value ?? string.Empty;
-
-    internal void RecordCommand(string sender, int tokensSpent = 0)
+    internal void RecordCommand(string commandName, string sender, int tokensSpent = 0)
     {
         if (!Enabled)
         {
             return;
         }
 
-        string command = _currentStatisticCommandName.Value ?? string.Empty;
+        string command = StatisticNameHelper.CleanCommandName(commandName);
         ChatCommandStatisticFlags statisticFlags = _dependencies.GetCommandFlags(command);
         if ((statisticFlags & ChatCommandStatisticFlags.GameAffecting) == 0)
         {

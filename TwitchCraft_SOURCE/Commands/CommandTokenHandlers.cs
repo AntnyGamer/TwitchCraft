@@ -55,7 +55,7 @@ public static partial class CommandList
             }
             double winChance = 0.9 - ((risk - 1) * 0.08888888888888889);
             double payoutMul = 1.05 + ((risk - 1) * 0.21666666666666667);
-            bool win = MainHandler.SecureRandomChance(winChance);
+            bool win = CommandRandom.Chance(winChance);
             int gain = win ? Math.Max(1, (int)Math.Round(amount * (payoutMul - 1.0))) : 0;
             ConditionalTokenAdjustmentStatus gambleStatus = runtime.Tokens.TryGamble(who, amount, win ? gain : -amount, out int newBalance, out int actualDelta);
             if (gambleStatus == ConditionalTokenAdjustmentStatus.Failed)
@@ -127,7 +127,7 @@ public static partial class CommandList
                 int adjustedCount = isGive
                     ? runtime.Tokens.Award(viewers, amount)
                     : runtime.Tokens.Adjust(viewers, delta);
-                string amountDescription = !isGive || runtime.MaximumTokenBalance > 0
+                string amountDescription = !isGive || runtime.Tokens.MaximumBalance > 0
                     ? "up to " + amount.ToString(CultureInfo.InvariantCulture)
                     : amount.ToString(CultureInfo.InvariantCulture);
                 if (adjustedCount == viewers.Count)
@@ -153,7 +153,7 @@ public static partial class CommandList
                     await sayToChannel(who + ", there are no known viewers to choose from right now.", ct).ConfigureAwait(false);
                     return;
                 }
-                string chosen = viewers[MainHandler.SecureRandomInt(viewers.Count)];
+                string chosen = viewers[CommandRandom.Next(viewers.Count)];
                 int adjusted = isGive ? runtime.Tokens.Award(chosen, amount) : runtime.Tokens.Adjust(chosen, delta);
                 int actualAmount = Math.Abs(adjusted);
                 await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {actualAmount} {TokenLabel(actualAmount)} {direction} random viewer {chosen}."), ct).ConfigureAwait(false);

@@ -226,13 +226,13 @@ public sealed partial class MainHandler
 
                     if (!message.TryParse(line))
                     {
-                        _shellWindow?.AddChatLogLine(StripIRCTags(line));
+                        _shellWindow?.AddChatLogLine(IRCMessage.StripIRCTags(line));
                         continue;
                     }
 
                     if (string.Equals(message.Command, "PING", StringComparison.OrdinalIgnoreCase))
                     {
-                        _shellWindow?.AddChatLogLine(StripIRCTags(line));
+                        _shellWindow?.AddChatLogLine(IRCMessage.StripIRCTags(line));
 
                         string pingPayload = string.IsNullOrWhiteSpace(message.Trailing) ? "tmi.twitch.tv" : message.Trailing;
                         try
@@ -260,7 +260,7 @@ public sealed partial class MainHandler
 
                     if (string.Equals(message.Command, "CAP", StringComparison.OrdinalIgnoreCase))
                     {
-                        _shellWindow?.AddChatLogLine(StripIRCTags(line));
+                        _shellWindow?.AddChatLogLine(IRCMessage.StripIRCTags(line));
                         continue;
                     }
 
@@ -269,7 +269,7 @@ public sealed partial class MainHandler
                         if (!string.IsNullOrWhiteSpace(message.Trailing))
                             _shellWindow?.AddChatLogLine("[NOTICE] " + message.Trailing);
                         else
-                            _shellWindow?.AddChatLogLine(StripIRCTags(line));
+                            _shellWindow?.AddChatLogLine(IRCMessage.StripIRCTags(line));
                         if (message.Trailing.Contains("authentication failed", StringComparison.OrdinalIgnoreCase))
                         {
                             SaveBot(botToken, await ValidateBotAsync(botToken, twitch.ClientID, cancellationToken).ConfigureAwait(false));
@@ -288,7 +288,7 @@ public sealed partial class MainHandler
                             _shellWindow?.AddChatLogLine("[IRC] Connected to #" + channelLogin + ".");
                         }
                         else
-                            _shellWindow?.AddChatLogLine(StripIRCTags(line));
+                            _shellWindow?.AddChatLogLine(IRCMessage.StripIRCTags(line));
                         continue;
                     }
 
@@ -308,7 +308,7 @@ public sealed partial class MainHandler
                     _shellWindow?.AddChatLogLine(
                         hasChatMessage
                             ? "<" + sender + "> " + payload
-                            : StripIRCTags(line));
+                            : IRCMessage.StripIRCTags(line));
 
                     if (!hasChatMessage || IsIgnoredUser(sender, botName, separateBotAccount))
                         continue;
@@ -328,7 +328,7 @@ public sealed partial class MainHandler
                         _shellWindow?.AddChatLogLine("[Bits] " + sender + " cheered " + bitsText + " " + (message.Bits == 1 ? "Bit" : "Bits") + rewardResult);
                     }
 
-                    if (TryMatchPrefix(payload, CommandPrefix, SecondaryCommandPrefix, out string matchedPrefix))
+                    if (ParsedCommand.TryMatchPrefix(payload, CommandPrefix, SecondaryCommandPrefix, out string matchedPrefix))
                     {
                         bool isModerator = message.IsModerator;
 

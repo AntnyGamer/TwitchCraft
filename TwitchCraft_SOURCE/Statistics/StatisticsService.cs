@@ -61,7 +61,6 @@ public sealed partial class StatisticsService
     private readonly Lock _statisticsGate = new();
     private readonly Lock _deathStatisticsGate = new();
     private readonly Lock _statisticsLoadGate = new();
-    private readonly AsyncLocal<string?> _currentStatisticCommandName = new();
     private SessionStatistics _sessionStatistics = new();
     private LifetimeStatistics _totalStatistics = new();
     private volatile bool _statisticsLoaded;

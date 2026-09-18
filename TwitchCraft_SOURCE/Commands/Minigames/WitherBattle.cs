@@ -16,7 +16,7 @@ public static partial class MinigameManager
         try
         {
             WitherBattleState state = GetWitherState(runtime);
-            int witherHealth = MainHandler.SecureRandomInt(300, 501);
+            int witherHealth = CommandRandom.Next(300, 501);
             TaskCompletionSource<bool> defeatedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             lock (MinigameGate)
@@ -80,7 +80,7 @@ public static partial class MinigameManager
             }
 
             bool witherDefeated = totalDamage >= witherHealth;
-            bool witherFled = witherDefeated && MainHandler.SecureRandomInt(10) == 0;
+            bool witherFled = witherDefeated && CommandRandom.Next(10) == 0;
 
             double payoutMultiplier = witherDefeated ? (witherFled ? 0.75 : 1.2) : 0.5;
             List<KeyValuePair<string, int>> payouts = new(bets.Count);

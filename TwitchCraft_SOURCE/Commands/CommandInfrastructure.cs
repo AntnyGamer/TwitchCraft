@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,16 @@ using System.Threading.Tasks;
 namespace TwitchCraft_V1;
 
 // ===== Shared command models =====
+
+internal static class CommandRandom
+{
+    internal static int Next(int exclusiveMaximum) => RandomNumberGenerator.GetInt32(exclusiveMaximum);
+
+    internal static int Next(int minimum, int exclusiveMaximum) => RandomNumberGenerator.GetInt32(minimum, exclusiveMaximum);
+
+    internal static bool Chance(double probability)
+        => probability >= 1 || (probability > 0 && RandomNumberGenerator.GetInt32(int.MaxValue) < probability * int.MaxValue);
+}
 
 public sealed class EffectDefinition
 {

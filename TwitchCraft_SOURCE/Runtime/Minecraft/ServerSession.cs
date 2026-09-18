@@ -26,14 +26,9 @@ public sealed partial class MainHandler
             _viewerLastChatActivity.Clear();
         }
 
-        lock (_cooldownGate)
-        {
-            _channelCommandTimestamps.Clear();
-            _viewerCommandTimestamps.Clear();
-            _viewerCommandLimitNotices.Clear();
-            _customCommandCooldownUntilTicks.Clear();
+        Commands.ResetCommandState();
+        lock (_relayGate)
             _relayMessageTimestamps.Clear();
-        }
 
         lock (_playerGate)
         {

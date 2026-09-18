@@ -8,7 +8,7 @@ WPF shell
 MainHandler (application coordinator)
     ├── TwitchSession (IRC transport/queue state, throttling, deduplication, session task state)
     ├── MinecraftSession (Java process, serialized writes, readiness/RCON/exit state, process cleanup)
-    ├── CommandService (targeting, costs, authorization, built-in command cooldowns)
+    ├── CommandService (targeting, costs, authorization, command throttling/cooldowns, execution context)
     ├── TokenService (viewer economy and token-database lifecycle)
     ├── StatisticsService (session/lifetime tracking and snapshots)
     ├── DataMaintenance (backups, optimization, auth validation)
@@ -47,7 +47,7 @@ MainHandler (application coordinator)
 * `MainHandler` owns application composition and overall session lifecycle coordination.
 * `TwitchSession` owns the live IRC socket/writer, Twitch write/rate-limit and identity/token-refresh synchronization, IRC work queues, message de-duplication, send-rate/channel state, and follow-reward task lifetime.
 * `MinecraftSession` owns the local Java process, serialized Minecraft writes, server readiness, RCON-health state, expected-exit state, staged local RCON state, and process cleanup.
-* `CommandService` owns built-in command-specific cooldowns, command cost scaling, moderator authorization, and player-target resolution.
+* `CommandService` owns command execution context, rate limits and cooldowns, command cost scaling, moderator authorization, and player-target resolution.
 * `TokenService` owns the `TokenHandler` database and all balance/reward operations.
 * `StatisticsService` owns statistics locks, session/lifetime state, persistence deltas, death tracking, and snapshot caches.
 * `DataMaintenance` owns backup schedules, retention, SQLite optimization, and periodic Twitch-token validation.
