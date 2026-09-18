@@ -16,7 +16,7 @@ public static partial class CommandList
         {
             List<string> commands = MinecraftCommandFeatureBuilder.BuildChargedCreeper(
                 target.Selector,
-                MainHandler.Randomizer,
+                Random.Shared,
                 runtime.UsesInlineTextComponentSyntax,
                 runtime.UsesModernEntityAttributeNbt);
             commands.Add(MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 100, 10));
@@ -85,7 +85,7 @@ public static partial class CommandList
         }
         Task InsultAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string color = TitleColors[MainHandler.Randomizer.Next(TitleColors.Length)];
+            string color = TitleColors[Random.Shared.Next(TitleColors.Length)];
             return SendPricedReplyAsync(
                 target,
                 sender,
@@ -105,7 +105,7 @@ public static partial class CommandList
         }
         Task JohnnyAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnny(target.Selector, MainHandler.Randomizer, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
+            List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
             commands.Add(MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 100, 10));
             commands.Add(MinecraftCommandBuilder.Title(target.Selector, " ", "white", runtime.UsesInlineTextComponentSyntax));
             commands.Add(MinecraftCommandBuilder.Subtitle(target.Selector, "Johnny is coming!", "red", runtime.UsesInlineTextComponentSyntax));
@@ -162,12 +162,12 @@ public static partial class CommandList
         }
         Task LootAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            int times = MainHandler.Randomizer.Next(3, 5);
+            int times = Random.Shared.Next(3, 5);
             string[] commands = new string[times];
             for (int i = 0; i < times; i++)
             {
-                double offsetX = (MainHandler.Randomizer.NextDouble() * 2.0) - 1.0;
-                double offsetZ = (MainHandler.Randomizer.NextDouble() * 2.0) - 1.0;
+                double offsetX = (Random.Shared.NextDouble() * 2.0) - 1.0;
+                double offsetZ = (Random.Shared.NextDouble() * 2.0) - 1.0;
                 commands[i] = MinecraftCommandBuilder.Loot(target.Selector, runtime.GetRandomLootTable(), offsetX, offsetZ);
             }
             return SendPricedReplyAsync(
@@ -237,7 +237,7 @@ public static partial class CommandList
                     selectedItemData = await runtime.QueryItemAsync(playerName, ct).ConfigureAwait(false);
                 string singleSelector = MinecraftCommandBuilder.PlayerSelector(playerName);
                 MinecraftItemEnchantHelper.PickEnchant(
-                    MainHandler.Randomizer,
+                    Random.Shared,
                     runtime.SupportsMaceEnchantments,
                     out string enchantID,
                     out string prettyEnchantName,
@@ -473,7 +473,7 @@ public static partial class CommandList
         }
         Task SwitchMilkAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            (string itemID, string itemName) = MainHandler.Randomizer.Next(100) switch
+            (string itemID, string itemName) = Random.Shared.Next(100) switch
             {
                 < 50 => ("minecraft:bucket", "an empty bucket"),
                 < 75 => ("minecraft:water_bucket", "a water bucket"),
@@ -511,7 +511,7 @@ public static partial class CommandList
         }
         async Task WeatherAsync(string[]? _, string sender, CancellationToken ct)
         {
-            bool thunder = MainHandler.Randomizer.Next(2) == 0;
+            bool thunder = Random.Shared.Next(2) == 0;
             string weatherCommand = thunder ? "weather thunder" : "weather rain";
             if (!await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(10, 1), weatherCommand, ct).ConfigureAwait(false))
                 return;
@@ -544,7 +544,7 @@ public static partial class CommandList
                 target,
                 sender,
                 15,
-                _ => MinecraftCommandFeatureBuilder.BuildScared(target.Selector, MainHandler.Randomizer, runtime.UsesInlineTextComponentSyntax),
+                _ => MinecraftCommandFeatureBuilder.BuildScared(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax),
                 sender + " thinks you're a scaredy cat and spawned cats above you.",
                 "GOT BURIED IN CATS!",
                 sender + ", you spawned 20 cats on " + TargetName(target) + ".",

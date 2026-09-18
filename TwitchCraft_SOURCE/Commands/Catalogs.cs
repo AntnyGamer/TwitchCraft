@@ -103,11 +103,17 @@ internal static class Catalogs
         "wither_skeleton", "wolf", "zoglin", "zombie", "zombie_horse", "zombie_villager", "zombified_piglin"
     ];
 
-    public static List<EffectDefinition> BuildEffects()
+    public static List<EffectDefinition> BuildEffects(string? minecraftVersion = null)
     {
         List<EffectDefinition> effects = new(BaseEffects.Length);
         foreach (EffectDefinition effect in BaseEffects)
         {
+            if (!string.IsNullOrWhiteSpace(minecraftVersion) &&
+                !MinecraftVersionSupport.SupportsStatusEffect(minecraftVersion, effect.ID))
+            {
+                continue;
+            }
+
             effects.Add(new EffectDefinition
             {
                 ID = effect.ID,

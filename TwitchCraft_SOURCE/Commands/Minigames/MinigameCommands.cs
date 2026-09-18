@@ -124,7 +124,7 @@ public static partial class MinigameManager
 
                 if (gameActive)
                 {
-                    if (state.LastGuessAtUtc.TryGetValue(sender, out DateTime lastUtc) && !runtime.HasPerUserCooldownOverride("guess"))
+                    if (state.LastGuessAtUtc.TryGetValue(sender, out DateTime lastUtc) && !runtime.Commands.HasPerUserCooldownOverride("guess"))
                     {
                         double elapsed = (nowUtc - lastUtc).TotalSeconds;
                         if (elapsed < 5.0)

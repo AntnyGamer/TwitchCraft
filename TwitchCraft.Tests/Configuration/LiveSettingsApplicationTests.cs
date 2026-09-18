@@ -36,11 +36,11 @@ public sealed class LiveSettingsApplicationTests
             config.Settings.CommandCustomizations["heal"].GlobalCooldownSeconds = null;
             config.Settings.CommandCustomizations["lightning"] = new CommandCustomization { Enabled = false };
 
-            Assert.Equal(100, runtime.MaximumTokenBalance);
-            Assert.True(runtime.HasPerUserCooldownOverride("heal"));
-            Assert.True(runtime.HasGlobalCooldownOverride("heal"));
-            Assert.False(runtime.HasPerUserCooldownOverride("lightning"));
-            Assert.False(runtime.HasGlobalCooldownOverride("lightning"));
+            Assert.Equal(100, runtime.Tokens.MaximumBalance);
+            Assert.True(runtime.Commands.HasPerUserCooldownOverride("heal"));
+            Assert.True(runtime.Commands.HasGlobalCooldownOverride("heal"));
+            Assert.False(runtime.Commands.HasPerUserCooldownOverride("lightning"));
+            Assert.False(runtime.Commands.HasGlobalCooldownOverride("lightning"));
         }
         finally
         {
@@ -70,14 +70,14 @@ public sealed class LiveSettingsApplicationTests
         {
             await runtime.ApplySettingsAsync(config);
 
-            Assert.Equal(100, runtime.MaximumTokenBalance);
-            Assert.False(runtime.AllowAllPlayerTarget);
-            Assert.False(runtime.AllowRandomPlayerTarget);
+            Assert.Equal(100, runtime.Tokens.MaximumBalance);
+            Assert.False(runtime.Commands.AllowAllPlayerTarget);
+            Assert.False(runtime.Commands.AllowRandomPlayerTarget);
             Assert.Equal(5, runtime.PassiveTokensPerPayout);
             Assert.Equal(60, runtime.GetPassivePayoutDelay());
-            Assert.True(runtime.TryUseCommandSlots(string.Empty, out _, 100));
-            Assert.True(runtime.TryUseCommandSlots(string.Empty, out _, 101));
-            Assert.False(runtime.TryUseCommandSlots(string.Empty, out _, 102));
+            Assert.True(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 100));
+            Assert.True(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 101));
+            Assert.False(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 102));
 
             runtime.RecordChatActivity("viewer", 1000);
             Assert.True(runtime.IsRewardEligibleNoLock("viewer", 1599));
@@ -141,17 +141,17 @@ public sealed class LiveSettingsApplicationTests
             await runtime.ApplySettingsAsync(config);
 
             long now = DateTime.UtcNow.Ticks;
-            Assert.True(runtime.TryUseCommandSlots("viewer", out _, now));
-            Assert.True(runtime.TryUseCommandSlots("viewer", out _, now + 1));
-            Assert.False(runtime.TryUseCommandSlots("viewer", out _, now + 2));
-            Assert.True(runtime.TryUseCommandSlots("differentviewer", out _, now + 2));
+            Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now));
+            Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 1));
+            Assert.False(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 2));
+            Assert.True(runtime.Commands.TryUseCommandSlots("differentviewer", out _, now + 2));
             Assert.True(runtime.TryUseRelaySlot(now));
             Assert.True(runtime.TryUseRelaySlot(now + 1));
             Assert.False(runtime.TryUseRelaySlot(now + 2));
-            Assert.True(runtime.HasPerUserCooldownOverride("heal"));
-            Assert.False(runtime.HasPerUserCooldownOverride("lightning"));
-            Assert.True(runtime.HasGlobalCooldownOverride("tiny"));
-            Assert.False(runtime.HasGlobalCooldownOverride("heal"));
+            Assert.True(runtime.Commands.HasPerUserCooldownOverride("heal"));
+            Assert.False(runtime.Commands.HasPerUserCooldownOverride("lightning"));
+            Assert.True(runtime.Commands.HasGlobalCooldownOverride("tiny"));
+            Assert.False(runtime.Commands.HasGlobalCooldownOverride("heal"));
             Assert.Equal(100, runtime.MaxVisibleTwitchLogLines);
             Assert.Equal(100, runtime.MaxVisibleMinecraftLogLines);
             Assert.Equal(60, runtime.ViewerRosterRefreshIntervalSeconds);

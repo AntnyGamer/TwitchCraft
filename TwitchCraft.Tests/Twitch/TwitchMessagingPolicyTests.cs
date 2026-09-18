@@ -111,7 +111,7 @@ public sealed class TwitchMessagingPolicyTests
         bool expectedMatch,
         string expectedPrefix)
     {
-        Assert.Equal(expectedMatch, MainHandler.TryMatchPrefix(payload, primary, secondary, out string actual));
+        Assert.Equal(expectedMatch, ParsedCommand.TryMatchPrefix(payload, primary, secondary, out string actual));
         Assert.Equal(expectedPrefix, actual);
     }
 

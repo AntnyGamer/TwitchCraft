@@ -84,7 +84,7 @@ public static partial class MinigameManager
 
             state.Active = true;
             state.LastGuessAtUtc.Clear();
-            state.TargetNumber = MainHandler.SecureRandomInt(minValue, maxValue + 1);
+            state.TargetNumber = CommandRandom.Next(minValue, maxValue + 1);
             roundID = state.RoundID = ++_nextGeneration;
             return true;
         }

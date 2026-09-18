@@ -21,7 +21,7 @@ public static partial class CommandList
                 await SayAsync(sender + ", please provide a valid Minecraft username to ban.", ct).ConfigureAwait(false);
                 return;
             }
-            if (string.Equals(playerName, runtime.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(playerName, runtime.Commands.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
             {
                 await SayAsync(sender + ", the streamer account cannot be banned.", ct).ConfigureAwait(false);
                 return;
@@ -94,7 +94,7 @@ public static partial class CommandList
                 await SayAsync(sender + ", please provide a valid Minecraft username to kick.", ct).ConfigureAwait(false);
                 return;
             }
-            if (string.Equals(playerName, runtime.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(playerName, runtime.Commands.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
             {
                 await SayAsync(sender + ", the streamer account cannot be kicked.", ct).ConfigureAwait(false);
                 return;
@@ -145,7 +145,7 @@ public static partial class CommandList
                 await SayAsync(sender + ", please provide a valid Minecraft username to " + action + " to the whitelist.", ct).ConfigureAwait(false);
                 return;
             }
-            if (!add && string.Equals(playerName, runtime.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
+            if (!add && string.Equals(playerName, runtime.Commands.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
             {
                 await SayAsync(sender + ", the streamer account cannot be removed from the whitelist.", ct).ConfigureAwait(false);
                 return;
@@ -177,7 +177,7 @@ public static partial class CommandList
                 target = new ResolvedTarget
                 {
                     Selector = "@a[gamemode=!spectator]",
-                    DisplayName = string.IsNullOrEmpty(runtime.DefaultMinecraftPlayer) ? "everyone" : runtime.DefaultMinecraftPlayer,
+                    DisplayName = string.IsNullOrEmpty(runtime.Commands.DefaultMinecraftPlayer) ? "everyone" : runtime.Commands.DefaultMinecraftPlayer,
                     PlayerCount = 1
                 };
                 if (!await CheckEffectCountAsync(count, sender, ct).ConfigureAwait(false) ||
@@ -212,8 +212,8 @@ public static partial class CommandList
             for (int i = 0; i < count; i++)
             {
                 EffectDefinition effect = runtime.GetRandomEffect();
-                int amplifier = MainHandler.Randomizer.Next(effect.MinAmplifier, effect.MaxAmplifier + 1);
-                int seconds = MainHandler.Randomizer.Next(effect.MinSeconds, effect.MaxSeconds + 1);
+                int amplifier = Random.Shared.Next(effect.MinAmplifier, effect.MaxAmplifier + 1);
+                int seconds = Random.Shared.Next(effect.MinSeconds, effect.MaxSeconds + 1);
                 string level = EffectLevels[Math.Clamp(amplifier, 0, 4)];
                 string effectPretty = PrettyName(effect.ID) + " " + level +
                                       (seconds == 1 ? string.Empty : " for " + seconds.ToString(CultureInfo.InvariantCulture) + " seconds");

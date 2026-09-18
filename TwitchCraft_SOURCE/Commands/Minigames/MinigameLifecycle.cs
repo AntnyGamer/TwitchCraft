@@ -165,7 +165,7 @@ public static partial class MinigameManager
 
                 RefundChickenBets(runtime);
                 RefundWitherBets(runtime);
-                switch (MainHandler.SecureRandomInt(3))
+                switch (CommandRandom.Next(3))
                 {
                     case 0:
                         await RunChickenAsync(runtime, cancellationToken).ConfigureAwait(false);

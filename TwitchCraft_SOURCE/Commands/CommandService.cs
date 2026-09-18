@@ -14,34 +14,47 @@ public sealed class CommandService
     private static readonly TimeSpan FiveMinuteCommandCooldown = TimeSpan.FromMinutes(5);
     private TwitchCraftConfig? _config;
     private string _defaultMinecraftPlayer = string.Empty;
-    private readonly Func<string?, bool> _hasGlobalCooldownOverride;
-    private readonly Func<string, bool> _hasPerUserCooldownOverride;
+    private string _defaultMinecraftPlayerName = string.Empty;
     private readonly Func<CancellationToken, Task<List<string>>> _refreshPlayers;
     private readonly Lock _cooldownGate = new();
-    private readonly AsyncLocal<bool> _currentCommandSenderIsModerator = new();
+    private readonly Lock _commandStateGate = new();
+    private readonly AsyncLocal<string?> _currentCommandSender = new();
+    private readonly AsyncLocal<CommandExecutionState?> _currentCommandExecution = new();
+    private readonly Queue<long> _channelCommandTimestamps = new();
+    private readonly Dictionary<string, Queue<long>> _viewerCommandTimestamps = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _viewerCommandLimitNotices = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<(string Command, string Sender), long> _customCommandCooldownUntilTicks = [];
     private readonly Dictionary<string, DateTime> _timedScaleCommandCooldowns = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DateTime> _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
+    private long _lastChannelCommandLimitNoticeTicks;
+    private long _lastCommandStatePruneTicks;
     private DateTime _lastLightningUtc;
     private int _fireworksRepeatActive;
 
-    internal CommandService(
-        Func<string?, bool> hasGlobalCooldownOverride,
-        Func<string, bool> hasPerUserCooldownOverride,
-        Func<CancellationToken, Task<List<string>>> refreshPlayers)
+    internal CommandService(Func<CancellationToken, Task<List<string>>> refreshPlayers)
     {
-        ArgumentNullException.ThrowIfNull(hasGlobalCooldownOverride);
-        ArgumentNullException.ThrowIfNull(hasPerUserCooldownOverride);
         ArgumentNullException.ThrowIfNull(refreshPlayers);
-        _hasGlobalCooldownOverride = hasGlobalCooldownOverride;
-        _hasPerUserCooldownOverride = hasPerUserCooldownOverride;
         _refreshPlayers = refreshPlayers;
     }
 
-    internal void SetContext(TwitchCraftConfig? config, string defaultMinecraftPlayer)
+    internal void SetContext(TwitchCraftConfig? config)
     {
         _config = config;
-        _defaultMinecraftPlayer = defaultMinecraftPlayer;
+        string configured = config?.Identity.StreamerMinecraftName.Trim() ?? string.Empty;
+        string streamer = config?.Twitch.StreamerName.Trim() ?? string.Empty;
+        _defaultMinecraftPlayer = configured.Length > 0 ? configured : streamer;
+        _defaultMinecraftPlayerName = MinecraftNameHelper.TryNormalizePlayerName(_defaultMinecraftPlayer, out string normalized)
+            ? normalized
+            : string.Empty;
     }
+
+    internal string DefaultMinecraftPlayer => _defaultMinecraftPlayer;
+
+    internal string DefaultMinecraftPlayerName => _defaultMinecraftPlayerName;
+
+    public bool AllowAllPlayerTarget => _config?.Settings.AllowAllPlayerTarget ?? true;
+
+    public bool AllowRandomPlayerTarget => _config?.Settings.AllowRandomPlayerTarget ?? true;
 
     public int ScaleCost(int baseCost, int playerCount)
     {
@@ -73,11 +86,211 @@ public sealed class CommandService
 
     public void StopFireworks() => Volatile.Write(ref _fireworksRepeatActive, 0);
 
-    public bool GlobalGameCommandCooldownEnabled
-        => _config?.Settings.GlobalGameCommandCooldownEnabled == true && !_hasGlobalCooldownOverride(null);
+    internal const string GlobalCooldownKey = "\0";
 
-    public void SetModerator(bool isModerator)
-        => _currentCommandSenderIsModerator.Value = isModerator;
+    internal readonly record struct CooldownReservation((string Command, string Sender) Key, long ReservationTicks, long CooldownTicks)
+    {
+        internal bool IsActive => Key.Command != null;
+    }
+
+    private sealed class CommandExecutionState(string name, bool moderator)
+    {
+        internal string Name { get; } = name;
+        internal bool Moderator { get; } = moderator;
+        internal bool Succeeded;
+    }
+
+    public bool GlobalGameCommandCooldownEnabled
+        => _config?.Settings.GlobalGameCommandCooldownEnabled == true && !HasGlobalCooldownOverride();
+
+    internal string CurrentCommandName => _currentCommandExecution.Value?.Name ?? string.Empty;
+
+    internal string CurrentSender => _currentCommandSender.Value ?? string.Empty;
+
+    internal void SetCurrentSender(string? sender) => _currentCommandSender.Value = sender;
+
+    internal void BeginCommand(string commandName, bool isModerator)
+        => _currentCommandExecution.Value = new(commandName, isModerator);
+
+    internal void MarkCommandSuccess()
+    {
+        if (_currentCommandExecution.Value is CommandExecutionState state)
+            state.Succeeded = true;
+    }
+
+    internal bool CommandSucceeded => _currentCommandExecution.Value?.Succeeded == true;
+
+    internal void EndCommand() => _currentCommandExecution.Value = null;
+
+    internal bool HasPerUserCooldownOverride(string? commandName = null)
+        => TryGetCommandSettings(commandName ?? CurrentCommandName, out CommandCustomization customization) &&
+            customization.CooldownSeconds.HasValue;
+
+    internal bool HasGlobalCooldownOverride(string? commandName = null)
+        => TryGetCommandSettings(commandName ?? CurrentCommandName, out CommandCustomization customization) &&
+            customization.GlobalCooldownSeconds.HasValue;
+
+    internal bool TryGetCommandSettings(string? commandName, out CommandCustomization customization)
+    {
+        customization = null!;
+        Dictionary<string, CommandCustomization>? customizations = _config?.Settings.CommandCustomizations;
+        if (customizations == null || customizations.Count == 0)
+            return false;
+
+        string name = (commandName ?? string.Empty).Trim();
+        if (name.Length == 0 || !customizations.TryGetValue(name, out CommandCustomization? found) || found == null)
+            return false;
+
+        customization = found;
+        return true;
+    }
+
+    internal bool TryUseCommandSlots(string viewer, out bool viewerLimited, long? nowTicks = null)
+    {
+        int viewerLimit = _config?.Settings.ViewerCommandLimitPerMinute ?? 0;
+        int channelLimit = _config?.Settings.ChannelCommandLimitPerMinute ?? 0;
+        viewerLimited = false;
+        if (viewerLimit <= 0 && channelLimit <= 0)
+            return true;
+
+        long now = nowTicks ?? DateTime.UtcNow.Ticks, cutoff = now - TimeSpan.TicksPerMinute;
+        lock (_commandStateGate)
+        {
+            PruneCommandStateNoLock(now);
+            Queue<long>? viewerTimestamps = null;
+            if (viewerLimit > 0 && viewer.Length > 0 && _viewerCommandTimestamps.TryGetValue(viewer, out viewerTimestamps))
+            {
+                while (viewerTimestamps.Count > 0 && viewerTimestamps.Peek() <= cutoff)
+                    viewerTimestamps.Dequeue();
+                if (viewerTimestamps.Count >= viewerLimit)
+                {
+                    viewerLimited = true;
+                    return false;
+                }
+            }
+
+            if (channelLimit > 0)
+            {
+                while (_channelCommandTimestamps.Count > 0 && _channelCommandTimestamps.Peek() <= cutoff)
+                    _channelCommandTimestamps.Dequeue();
+                if (_channelCommandTimestamps.Count >= channelLimit)
+                    return false;
+            }
+
+            if (viewerLimit > 0 && viewer.Length > 0)
+            {
+                if (viewerTimestamps == null)
+                    _viewerCommandTimestamps[viewer] = viewerTimestamps = new();
+                viewerTimestamps.Enqueue(now);
+            }
+            if (channelLimit > 0)
+                _channelCommandTimestamps.Enqueue(now);
+            return true;
+        }
+    }
+
+    internal bool ShouldWarnChannelLimit(long? nowTicks = null)
+    {
+        long now = nowTicks ?? DateTime.UtcNow.Ticks;
+        long previous = Volatile.Read(ref _lastChannelCommandLimitNoticeTicks);
+        if (previous != 0 && now - previous < 10 * TimeSpan.TicksPerSecond)
+            return false;
+        return Interlocked.CompareExchange(ref _lastChannelCommandLimitNoticeTicks, now, previous) == previous;
+    }
+
+    internal bool ShouldWarnViewerLimit(string sender, long? nowTicks = null)
+    {
+        string viewer = CommandUserHelper.NormalizeUser(sender);
+        long now = nowTicks ?? DateTime.UtcNow.Ticks;
+        lock (_commandStateGate)
+        {
+            _viewerCommandLimitNotices.TryGetValue(viewer, out long previous);
+            if (previous != 0 && now - previous < 10 * TimeSpan.TicksPerSecond)
+                return false;
+            _viewerCommandLimitNotices[viewer] = now;
+            return true;
+        }
+    }
+
+    internal bool TryReserveCustomCooldown(
+        string commandName,
+        string keyOwner,
+        double? cooldownSeconds,
+        out TimeSpan remaining,
+        out CooldownReservation reservation)
+    {
+        remaining = TimeSpan.Zero;
+        reservation = default;
+        if (cooldownSeconds is not double seconds || seconds <= 0.0)
+            return true;
+
+        long nowTicks = DateTime.UtcNow.Ticks;
+        long cooldownTicks = (long)(seconds * TimeSpan.TicksPerSecond);
+        (string Command, string Sender) key = (commandName, keyOwner);
+        lock (_commandStateGate)
+        {
+            PruneCommandStateNoLock(nowTicks);
+            _customCommandCooldownUntilTicks.TryGetValue(key, out long next);
+            if (next != 0 && nowTicks < next)
+            {
+                remaining = TimeSpan.FromTicks(next - nowTicks);
+                return false;
+            }
+
+            long cooldownUntilTicks = nowTicks + cooldownTicks;
+            _customCommandCooldownUntilTicks[key] = cooldownUntilTicks;
+            reservation = new(key, cooldownUntilTicks, cooldownTicks);
+            return true;
+        }
+    }
+
+    internal void FinishCustomCooldown(CooldownReservation reservation, bool succeeded)
+    {
+        if (!reservation.IsActive)
+            return;
+
+        lock (_commandStateGate)
+        {
+            if (!_customCommandCooldownUntilTicks.TryGetValue(reservation.Key, out long current) ||
+                current != reservation.ReservationTicks)
+            {
+                return;
+            }
+
+            if (succeeded)
+                _customCommandCooldownUntilTicks[reservation.Key] = DateTime.UtcNow.Ticks + reservation.CooldownTicks;
+            else
+                _customCommandCooldownUntilTicks.Remove(reservation.Key);
+        }
+    }
+
+    private void PruneCommandStateNoLock(long nowTicks)
+    {
+        if ((_viewerCommandTimestamps.Count <= 4096 && _customCommandCooldownUntilTicks.Count <= 4096) ||
+            nowTicks - _lastCommandStatePruneTicks < TimeSpan.TicksPerMinute) return;
+        _lastCommandStatePruneTicks = nowTicks;
+        long cutoff = nowTicks - TimeSpan.TicksPerMinute;
+        foreach ((string viewer, Queue<long> timestamps) in _viewerCommandTimestamps)
+        {
+            while (timestamps.Count > 0 && timestamps.Peek() <= cutoff) timestamps.Dequeue();
+            if (timestamps.Count != 0) continue;
+            _viewerCommandTimestamps.Remove(viewer);
+            _viewerCommandLimitNotices.Remove(viewer);
+        }
+        foreach (var pair in _customCommandCooldownUntilTicks)
+            if (pair.Value <= nowTicks) _customCommandCooldownUntilTicks.Remove(pair.Key);
+    }
+
+    internal void ResetCommandState()
+    {
+        lock (_commandStateGate)
+        {
+            _channelCommandTimestamps.Clear();
+            _viewerCommandTimestamps.Clear();
+            _viewerCommandLimitNotices.Clear();
+            _customCommandCooldownUntilTicks.Clear();
+        }
+    }
 
     private long _lastTicks;
     private long _lastGambleCooldownPruneTicks;
@@ -162,7 +375,7 @@ public sealed class CommandService
 
     public bool TryUseLightning(out TimeSpan remaining, out DateTime reservationUtc)
     {
-        if (_hasGlobalCooldownOverride("lightning"))
+        if (HasGlobalCooldownOverride("lightning"))
         {
             remaining = TimeSpan.Zero;
             reservationUtc = DateTime.MinValue;
@@ -209,7 +422,7 @@ public sealed class CommandService
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0)
             throw new ArgumentException("A command name is required.", nameof(commandName));
-        if (_hasGlobalCooldownOverride(normalizedCommand))
+        if (HasGlobalCooldownOverride(normalizedCommand))
         {
             remaining = TimeSpan.Zero;
             reservationUtc = DateTime.MinValue;
@@ -259,7 +472,7 @@ public sealed class CommandService
 
     public bool IsGambleOnCooldown(string user, out TimeSpan remaining)
     {
-        if (_hasPerUserCooldownOverride("gambletokens"))
+        if (HasPerUserCooldownOverride("gambletokens"))
         {
             remaining = TimeSpan.Zero;
             return false;
@@ -287,7 +500,7 @@ public sealed class CommandService
 
     public void StartGambleCooldown(string user, TimeSpan duration)
     {
-        if (_hasPerUserCooldownOverride("gambletokens"))
+        if (HasPerUserCooldownOverride("gambletokens"))
             return;
         string normalized = CommandUserHelper.NormalizeUser(user);
         lock (_cooldownGate)
@@ -311,7 +524,7 @@ public sealed class CommandService
         string normalized = CommandUserHelper.NormalizeUser(user);
         return string.Equals(normalized, config.Twitch.StreamerName, StringComparison.OrdinalIgnoreCase)
             || string.Equals(normalized, config.Twitch.BotName, StringComparison.OrdinalIgnoreCase)
-            || (config.Settings.ModeratorsCanUseStreamerCommands && _currentCommandSenderIsModerator.Value);
+            || (config.Settings.ModeratorsCanUseStreamerCommands && _currentCommandExecution.Value?.Moderator == true);
     }
 
     private static string? FindOnlinePlayer(List<string> online, string playerName)

@@ -109,13 +109,6 @@ public sealed partial class MainHandler
         TrackTask(_twitchSession.FollowRewardsTask);
     }
 
-    private void RefreshCatalogs()
-    {
-        string version = CurrentMinecraftVersion;
-        _mobList = Catalogs.BuildMobs(version);
-        _lootList = Catalogs.BuildLoot(version);
-    }
-
     private enum RuntimeState
     {
         Stopped,

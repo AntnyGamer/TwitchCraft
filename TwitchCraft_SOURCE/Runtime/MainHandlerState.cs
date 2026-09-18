@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft_V1.Setup;
@@ -18,9 +17,8 @@ public sealed partial class MainHandler
     private readonly MinecraftSession _minecraftSession;
     private readonly Lock _viewerGate;
     private readonly Lock _playerGate;
-    private readonly Lock _cooldownGate;
+    private readonly Lock _relayGate;
     private readonly Lock _configPersistenceGate;
-    private readonly Lock _effectCacheGate;
     private readonly TimedPlayerScaleController _timedPlayerScaleController;
     private readonly BackgroundTaskTracker _backgroundTaskTracker;
     private readonly DataMaintenance _dataMaintenance;
@@ -37,22 +35,12 @@ public sealed partial class MainHandler
     private int _lifecycleStopGeneration;
     private int _shutdownRequested;
     private string _currentStreamerName;
-    private string _currentCommandPrefix;
-    private string _currentSecondaryCommandPrefix;
-    private string _currentMinecraftRelayTextColor;
-    private string _currentBotResponseVerbosity;
-    private string _currentDefaultMinecraftPlayer;
-    private string _currentDefaultMinecraftPlayerName;
     private string _currentStreamerMinecraftName;
-    private string _currentMinecraftVersion;
     private string _lastServerPropertiesPath;
     private string _lastServerPropertiesContent;
-    private readonly List<EffectDefinition> _effectList;
     private List<string> _lootList;
     private List<string> _mobList;
-    private string _cachedSupportedEffectsVersion;
-    private List<EffectDefinition> _cachedSupportedEffects;
-    private string _cachedMinecraftFeatureVersion;
+    private List<EffectDefinition> _effectList;
     private MinecraftVersionSupport.MinecraftVersionInfo? _cachedMinecraftFeatureInfo;
 
     public TokenService Tokens { get; }
@@ -78,10 +66,7 @@ public sealed partial class MainHandler
         _shellModel = shellModel;
         _twitchSession = new();
         _minecraftSession = new();
-        Commands = new CommandService(
-            HasGlobalCooldownOverride,
-            HasPerUserCooldownOverride,
-            RefreshPlayersAsync);
+        Commands = new CommandService(RefreshPlayersAsync);
         _commandRegistry = ChatCommandRegistry.CreateDefault(this);
         Statistics = new StatisticsService(new StatisticsDependencies(
             command => _commandRegistry.GetStatisticFlags(command),
@@ -95,9 +80,8 @@ public sealed partial class MainHandler
         _lifecycleGate = new(1, 1);
         _viewerGate = new();
         _playerGate = new();
-        _cooldownGate = new();
+        _relayGate = new();
         _configPersistenceGate = new();
-        _effectCacheGate = new();
         _backgroundTaskTracker = new();
         _timedPlayerScaleController = new(
             (command, token) => SendServerCommandAsync(command, token),
@@ -108,7 +92,7 @@ public sealed partial class MainHandler
         _knownViewers = [];
         _knownPlayers = [];
         _lastSidebarPlayers = [];
-        Tokens = new TokenService(tokenStorePath, () => MaximumTokenBalance);
+        Tokens = new TokenService(tokenStorePath, () => _activeConfig?.Settings.MaximumTokenBalance ?? 0);
         _dataMaintenance = new DataMaintenance(
             () => _activeConfig,
             DefaultEffectiveSettings,
@@ -117,22 +101,12 @@ public sealed partial class MainHandler
             SaveBot,
             TryRefreshAuthAsync);
         _currentStreamerName = string.Empty;
-        _currentCommandPrefix = "!";
-        _currentSecondaryCommandPrefix = string.Empty;
-        _currentMinecraftRelayTextColor = "white";
-        _currentBotResponseVerbosity = BotResponseVerbositySettings.Normal;
-        _currentDefaultMinecraftPlayer = string.Empty;
-        _currentDefaultMinecraftPlayerName = string.Empty;
         _currentStreamerMinecraftName = string.Empty;
-        _currentMinecraftVersion = string.Empty;
         _lastServerPropertiesPath = string.Empty;
         _lastServerPropertiesContent = string.Empty;
         _effectList = Catalogs.BuildEffects();
         _lootList = Catalogs.BuildLoot();
         _mobList = Catalogs.BuildMobs();
-        _cachedSupportedEffectsVersion = string.Empty;
-        _cachedSupportedEffects = _effectList;
-        _cachedMinecraftFeatureVersion = string.Empty;
     }
 
     private void InitializeApplicationState()
@@ -159,15 +133,6 @@ public sealed partial class MainHandler
 
     internal void TrackTask(Task task) => _backgroundTaskTracker.Track(task);
 
-    public static int SecureRandomInt(int exclusiveMaximum) => RandomNumberGenerator.GetInt32(exclusiveMaximum);
-
-    public static int SecureRandomInt(int minimum, int exclusiveMaximum) => RandomNumberGenerator.GetInt32(minimum, exclusiveMaximum);
-
-    public static bool SecureRandomChance(double probability)
-        => probability >= 1 || (probability > 0 && RandomNumberGenerator.GetInt32(int.MaxValue) < probability * int.MaxValue);
-
-    public static Random Randomizer => Random.Shared;
-
     public bool MultiplayerEnabled => _activeConfig?.Settings.MultiplayerEnabled == true;
 
     public bool RemoteControlEnabled => _activeConfig?.Settings.RemoteControlEnabled == true;
@@ -185,33 +150,29 @@ public sealed partial class MainHandler
 
     private void SetConfig(TwitchCraftConfig config)
     {
+        string previousMinecraftVersion = _activeConfig?.Server.MinecraftVersion ?? string.Empty;
         _activeConfig = config;
         _currentStreamerName = NormalizeUser(config.Twitch.StreamerName);
-        _currentCommandPrefix = ConfigurationStore.NormalizeCommandPrefix(config.Settings.CommandPrefix, "!");
-        _currentSecondaryCommandPrefix = ConfigurationStore.NormalizeCommandPrefix(config.Settings.SecondaryCommandPrefix, string.Empty);
-        if (string.Equals(_currentCommandPrefix, _currentSecondaryCommandPrefix, StringComparison.Ordinal))
-            _currentSecondaryCommandPrefix = string.Empty;
-        _currentMinecraftRelayTextColor = ConfigurationStore.NormalizeColor(config.Settings.MinecraftRelayTextColor);
-        _currentBotResponseVerbosity = ConfigurationStore.NormalizeVerbosity(config.Settings.BotResponseVerbosity);
         _twitchSession.SetChannel(_currentStreamerName);
         string configuredMinecraftPlayer = config.Identity.StreamerMinecraftName.Trim();
-        _currentDefaultMinecraftPlayer = configuredMinecraftPlayer.Length > 0
-            ? configuredMinecraftPlayer
-            : config.Twitch.StreamerName.Trim();
-        _currentDefaultMinecraftPlayerName = MinecraftNameHelper.TryNormalizePlayerName(_currentDefaultMinecraftPlayer, out string normalizedDefaultMinecraftPlayer)
-            ? normalizedDefaultMinecraftPlayer
-            : string.Empty;
         _currentStreamerMinecraftName = MinecraftNameHelper.TryNormalizePlayerName(configuredMinecraftPlayer, out string normalizedMinecraftPlayer)
             ? normalizedMinecraftPlayer
             : string.Empty;
-        _currentMinecraftVersion = (config.Server.MinecraftVersion ?? string.Empty).Trim();
-        Commands.SetContext(config, _currentDefaultMinecraftPlayer);
-        Statistics.SetContext(config.Settings.StatisticsEnabled, _currentStreamerName, _currentStreamerMinecraftName, _currentCommandPrefix);
+
+        string minecraftVersion = config.Server.MinecraftVersion;
+        if (!string.Equals(previousMinecraftVersion, minecraftVersion, StringComparison.OrdinalIgnoreCase))
+        {
+            _cachedMinecraftFeatureInfo = string.IsNullOrWhiteSpace(minecraftVersion)
+                ? null
+                : MinecraftVersionSupport.GetVersion(minecraftVersion);
+            _mobList = Catalogs.BuildMobs(minecraftVersion);
+            _lootList = Catalogs.BuildLoot(minecraftVersion);
+            _effectList = Catalogs.BuildEffects(minecraftVersion);
+        }
+
+        Commands.SetContext(config);
+        Statistics.SetContext(config.Settings.StatisticsEnabled, _currentStreamerName, _currentStreamerMinecraftName, config.Settings.CommandPrefix);
     }
-
-    public string DefaultMinecraftPlayer => _currentDefaultMinecraftPlayer;
-
-    public string DefaultMinecraftPlayerName => _currentDefaultMinecraftPlayerName;
 
     public string StreamerName => _currentStreamerName;
 }

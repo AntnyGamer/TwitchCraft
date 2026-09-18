@@ -30,12 +30,12 @@ public static partial class CommandList
             => ReplyAsync(msg, BotResponseKind.Essential, ct);
         Task ConfirmAsync(string? msg, CancellationToken ct)
         {
-            runtime.MarkCommandSuccess();
+            runtime.Commands.MarkCommandSuccess();
             return ReplyAsync(msg, BotResponseKind.Confirmation, ct);
         }
         Task SuccessAsync(string? msg, CancellationToken ct)
         {
-            runtime.MarkCommandSuccess();
+            runtime.Commands.MarkCommandSuccess();
             return ReplyAsync(msg, BotResponseKind.Essential, ct);
         }
         Task ReplyAsync(string? msg, BotResponseKind kind, CancellationToken ct)
@@ -96,8 +96,8 @@ public static partial class CommandList
                 DispatchAsync = dispatchAsync,
                 RecordStatistics = amount =>
                 {
-                    runtime.MarkCommandSuccess();
-                    runtime.Statistics.RecordCommand(sender, amount);
+                    runtime.Commands.MarkCommandSuccess();
+                    runtime.Statistics.RecordCommand(runtime.Commands.CurrentCommandName, sender, amount);
                 },
                 ReportInsufficientTokensAsync = (amount, token) => SayNotEnoughTokensAsync(sender, amount, token),
                 ReportDispatchFailureAsync = (refunded, token) => SayAsync(
@@ -163,7 +163,7 @@ public static partial class CommandList
                 return null;
             List<string> activePlayers = cachedTargetablePlayers ??
                 NormalizeTargets(await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
-            string defaultMinecraftPlayer = runtime.DefaultMinecraftPlayerName;
+            string defaultMinecraftPlayer = runtime.Commands.DefaultMinecraftPlayerName;
             bool defaultPlayerIsValid = defaultMinecraftPlayer.Length > 0;
             if (IsSingleplayer() && activePlayers.Count == 0 && defaultPlayerIsValid && !runtime.HasOnlinePlayerSnapshot)
                 activePlayers = [defaultMinecraftPlayer];
@@ -227,7 +227,7 @@ public static partial class CommandList
         }
         async Task<bool> IncludesStreamerAsync(ResolvedTarget target, CancellationToken ct)
         {
-            string streamerMinecraftName = runtime.DefaultMinecraftPlayerName;
+            string streamerMinecraftName = runtime.Commands.DefaultMinecraftPlayerName;
             if (streamerMinecraftName.Length == 0)
                 return false;
             if (!string.IsNullOrWhiteSpace(target.MinecraftName) &&
@@ -254,14 +254,14 @@ public static partial class CommandList
                 string first = (args[startIndex] ?? string.Empty).Trim();
                 if (first.Equals("random", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!runtime.AllowRandomPlayerTarget)
+                    if (!runtime.Commands.AllowRandomPlayerTarget)
                     {
                         await SayAsync(sender + ", random player targeting is disabled.", ct).ConfigureAwait(false);
                         return null;
                     }
 
                     List<string> players = NormalizeTargets(await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
-                    string defaultPlayer = runtime.DefaultMinecraftPlayerName;
+                    string defaultPlayer = runtime.Commands.DefaultMinecraftPlayerName;
                     if (players.Count == 0 && IsSingleplayer() &&
                         defaultPlayer.Length > 0 && !runtime.HasOnlinePlayerSnapshot)
                     {
@@ -272,7 +272,7 @@ public static partial class CommandList
                         await SayAsync(sender + ", no players are online to target right now.", ct).ConfigureAwait(false);
                         return null;
                     }
-                    string chosen = players[MainHandler.Randomizer.Next(players.Count)];
+                    string chosen = players[Random.Shared.Next(players.Count)];
                     ResolvedTarget? randomTarget = new()
                     {
                         Selector = MinecraftCommandBuilder.PlayerSelector(chosen),

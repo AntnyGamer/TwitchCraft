@@ -77,6 +77,15 @@ internal sealed class IRCMessage
         return true;
     }
 
+    internal static string StripIRCTags(string line)
+    {
+        if (line.Length == 0 || line[0] != '@')
+            return line;
+
+        int firstSpace = line.IndexOf(' ');
+        return firstSpace > 0 && firstSpace + 1 < line.Length ? line[(firstSpace + 1)..] : line;
+    }
+
     private void Reset()
     {
         Bits = 0;

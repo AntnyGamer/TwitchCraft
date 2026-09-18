@@ -62,49 +62,26 @@ public sealed partial class MainHandler
 
     public EffectDefinition GetRandomEffect()
     {
-        string version = CurrentMinecraftVersion;
-        List<EffectDefinition> availableEffects;
-        lock (_effectCacheGate)
-        {
-            if (!string.Equals(_cachedSupportedEffectsVersion, version, StringComparison.OrdinalIgnoreCase))
-            {
-                List<EffectDefinition> effects = new(_effectList.Count);
-                foreach (EffectDefinition effect in _effectList)
-                {
-                    if (MinecraftVersionSupport.SupportsStatusEffect(version, effect.ID))
-                    {
-                        effects.Add(effect);
-                    }
-                }
-
-                _cachedSupportedEffects = effects.Count == 0 ? _effectList : effects;
-                _cachedSupportedEffectsVersion = version;
-            }
-
-            availableEffects = _cachedSupportedEffects;
-        }
-
-        return availableEffects[Random.Shared.Next(availableEffects.Count)];
+        List<EffectDefinition> effects = _effectList;
+        return effects[Random.Shared.Next(effects.Count)];
     }
 
-    public string GetRandomLootTable() => _lootList[Random.Shared.Next(_lootList.Count)];
+    public string GetRandomLootTable()
+    {
+        List<string> loot = _lootList;
+        return loot[Random.Shared.Next(loot.Count)];
+    }
 
-    public string GetRandomMob() => _mobList[Random.Shared.Next(_mobList.Count)];
+    public string GetRandomMob()
+    {
+        List<string> mobs = _mobList;
+        return mobs[Random.Shared.Next(mobs.Count)];
+    }
 
-    public string CurrentMinecraftVersion => _currentMinecraftVersion;
+    public string CurrentMinecraftVersion => _activeConfig?.Server.MinecraftVersion ?? string.Empty;
 
     private MinecraftVersionSupport.MinecraftVersionInfo GetMinecraftVersion()
-    {
-        string version = CurrentMinecraftVersion;
-        if (!string.Equals(_cachedMinecraftFeatureVersion, version, StringComparison.OrdinalIgnoreCase))
-        {
-            _cachedMinecraftFeatureInfo = MinecraftVersionSupport.GetVersion(version);
-            _cachedMinecraftFeatureVersion = version;
-        }
-
-        return _cachedMinecraftFeatureInfo
-            ?? throw new InvalidOperationException("Minecraft version information is unavailable.");
-    }
+        => _cachedMinecraftFeatureInfo ?? MinecraftVersionSupport.GetVersion(CurrentMinecraftVersion);
 
     public bool UsesInlineTextComponentSyntax => GetMinecraftVersion().UsesInlineTextComponents;
 

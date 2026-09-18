@@ -17,6 +17,35 @@ internal readonly struct ParsedCommand
         _argumentArray = argumentArray;
     }
 
+    internal static bool TryMatchPrefix(
+        string payload,
+        string primaryPrefix,
+        string secondaryPrefix,
+        out string matchedPrefix)
+    {
+        matchedPrefix = string.Empty;
+        if (string.IsNullOrEmpty(payload))
+            return false;
+
+        if (secondaryPrefix.Length > primaryPrefix.Length && payload.StartsWith(secondaryPrefix, StringComparison.Ordinal))
+        {
+            matchedPrefix = secondaryPrefix;
+            return true;
+        }
+        if (payload.StartsWith(primaryPrefix, StringComparison.Ordinal))
+        {
+            matchedPrefix = primaryPrefix;
+            return true;
+        }
+        if (secondaryPrefix.Length > 0 && payload.StartsWith(secondaryPrefix, StringComparison.Ordinal))
+        {
+            matchedPrefix = secondaryPrefix;
+            return true;
+        }
+
+        return false;
+    }
+
     public static ParsedCommand Parse(string payload)
         => Parse(payload, "!");
 

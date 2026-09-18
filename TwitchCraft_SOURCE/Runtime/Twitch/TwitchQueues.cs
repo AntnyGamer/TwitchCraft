@@ -169,15 +169,6 @@ public sealed partial class MainHandler
             || string.Equals(sender, "streamelements", StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static string StripIRCTags(string line)
-    {
-        if (line.Length == 0 || line[0] != '@')
-            return line;
-
-        int firstSpace = line.IndexOf(' ');
-        return firstSpace > 0 && firstSpace + 1 < line.Length ? line[(firstSpace + 1)..] : line;
-    }
-
     private static string BuildQueueContext(string payload)
     {
         const string Prefix = "command ";
@@ -193,9 +184,9 @@ public sealed partial class MainHandler
         if (parsed.Name.Length == 0)
             return;
 
-        CommandCooldownReservation customCooldownReservation = default;
-        CommandCooldownReservation globalCooldownReservation = default;
-        _currentCommandSender.Value = sender;
+        CommandService.CooldownReservation customCooldownReservation = default;
+        CommandService.CooldownReservation globalCooldownReservation = default;
+        Commands.SetCurrentSender(sender);
         try
         {
             if (!_commandRegistry.TryResolve(parsed.Name, out ChatCommandHandler handler))
@@ -219,7 +210,7 @@ public sealed partial class MainHandler
                 return;
             }
 
-            CommandCustomization? customization = TryGetCommandSettings(parsed.Name, out CommandCustomization resolvedCustomization)
+            CommandCustomization? customization = Commands.TryGetCommandSettings(parsed.Name, out CommandCustomization resolvedCustomization)
                 ? resolvedCustomization
                 : null;
             if (customization?.Enabled == false)
@@ -230,7 +221,7 @@ public sealed partial class MainHandler
                     cancellationToken).ConfigureAwait(false);
                 return;
             }
-            if (!TryReserveCommandCooldown(
+            if (!Commands.TryReserveCustomCooldown(
                     parsed.Name,
                     sender,
                     customization?.CooldownSeconds,
@@ -244,9 +235,9 @@ public sealed partial class MainHandler
                 return;
             }
 
-            if (!TryReserveCommandCooldown(
+            if (!Commands.TryReserveCustomCooldown(
                     parsed.Name,
-                    GlobalCooldownKey,
+                    CommandService.GlobalCooldownKey,
                     customization?.GlobalCooldownSeconds,
                     out TimeSpan customGlobalCooldownRemaining,
                     out globalCooldownReservation))
@@ -258,11 +249,11 @@ public sealed partial class MainHandler
                 return;
             }
 
-            if (!TryUseCommandSlots(sender, out bool viewerLimited))
+            if (!Commands.TryUseCommandSlots(sender, out bool viewerLimited))
             {
-                if (viewerLimited && ShouldWarnViewerLimit(sender))
+                if (viewerLimited && Commands.ShouldWarnViewerLimit(sender))
                     await SendReplyAsync(sender + ", you have reached your command limit. Try again shortly.", BotResponseKind.Essential, cancellationToken).ConfigureAwait(false);
-                else if (!viewerLimited && ShouldWarnChannelLimit())
+                else if (!viewerLimited && Commands.ShouldWarnChannelLimit())
                     await SendReplyAsync(
                         sender + ", the channel command limit has been reached. Try again shortly.",
                         BotResponseKind.Essential,
@@ -270,9 +261,7 @@ public sealed partial class MainHandler
                 return;
             }
 
-            BeginCommand();
-            Commands.SetModerator(isModerator);
-            Statistics.SetStatsCommand(parsed.Name);
+            Commands.BeginCommand(parsed.Name, isModerator);
             await handler(parsed.ArgumentArray, sender, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -281,12 +270,10 @@ public sealed partial class MainHandler
         }
         finally
         {
-            FinishCommandCooldown(customCooldownReservation, CommandSucceeded);
-            FinishCommandCooldown(globalCooldownReservation, CommandSucceeded);
-            EndCommand();
-            Statistics.SetStatsCommand(null);
-            Commands.SetModerator(false);
-            _currentCommandSender.Value = null;
+            Commands.FinishCustomCooldown(customCooldownReservation, Commands.CommandSucceeded);
+            Commands.FinishCustomCooldown(globalCooldownReservation, Commands.CommandSucceeded);
+            Commands.EndCommand();
+            Commands.SetCurrentSender(null);
         }
     }
 }
