@@ -64,9 +64,9 @@ public sealed partial class StatisticsService
     private SessionStatistics _sessionStatistics = new();
     private LifetimeStatistics _totalStatistics = new();
     private volatile bool _statisticsLoaded;
-    private long _statisticsLeaderboardVersion;
-    private long _cachedStatisticsLeaderboardVersion = -1;
-    private string _cachedStatisticsLeaderboardStreamer = string.Empty;
+    private long _leaderboardVersion;
+    private long _cachedLeaderboardVersion = -1;
+    private string _cachedLeaderboardStreamer = string.Empty;
     private string _cachedSessionMostUsedCommand = string.Empty;
     private string _cachedSessionMostDangerousViewer = string.Empty;
     private string _cachedSessionNicestViewer = string.Empty;
@@ -101,7 +101,7 @@ public sealed partial class StatisticsService
             lock (_statisticsGate)
             {
                 _commandPrefix = commandPrefix;
-                _cachedStatisticsLeaderboardVersion = -1;
+                _cachedLeaderboardVersion = -1;
             }
     }
 

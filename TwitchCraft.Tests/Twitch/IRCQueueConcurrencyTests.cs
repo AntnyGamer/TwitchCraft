@@ -138,7 +138,7 @@ public sealed class IRCQueueConcurrencyTests
         TaskCompletionSource<bool> newWorkCompleted = CreateSignal();
         Lock orderGate = new();
         List<string> order = [];
-        int rejectedWorkRuns = 0;
+        int oldQueuedWorkRuns = 0;
 
         try
         {
@@ -168,7 +168,7 @@ public sealed class IRCQueueConcurrencyTests
             Assert.True(runtime.QueueCommand(
                 _ =>
                 {
-                    Interlocked.Increment(ref rejectedWorkRuns);
+                    Interlocked.Increment(ref oldQueuedWorkRuns);
                     return Task.CompletedTask;
                 },
                 "!old-queued",
@@ -196,7 +196,7 @@ public sealed class IRCQueueConcurrencyTests
                 oldWorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken),
                 newWorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken));
 
-            Assert.Equal(0, Volatile.Read(ref rejectedWorkRuns));
+            Assert.Equal(0, Volatile.Read(ref oldQueuedWorkRuns));
             Assert.Equal(["old-start", "old-end", "new-start", "new-end"], order);
         }
         finally

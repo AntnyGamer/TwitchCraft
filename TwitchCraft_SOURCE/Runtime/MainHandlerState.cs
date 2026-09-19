@@ -41,7 +41,7 @@ public sealed partial class MainHandler
     private List<string> _lootList;
     private List<string> _mobList;
     private List<EffectDefinition> _effectList;
-    private MinecraftVersionSupport.MinecraftVersionInfo? _cachedMinecraftFeatureInfo;
+    private MinecraftVersionSupport.MinecraftVersionInfo? _minecraftVersionInfo;
 
     public TokenService Tokens { get; }
 
@@ -162,7 +162,7 @@ public sealed partial class MainHandler
         string minecraftVersion = config.Server.MinecraftVersion;
         if (!string.Equals(previousMinecraftVersion, minecraftVersion, StringComparison.OrdinalIgnoreCase))
         {
-            _cachedMinecraftFeatureInfo = string.IsNullOrWhiteSpace(minecraftVersion)
+            _minecraftVersionInfo = string.IsNullOrWhiteSpace(minecraftVersion)
                 ? null
                 : MinecraftVersionSupport.GetVersion(minecraftVersion);
             _mobList = Catalogs.BuildMobs(minecraftVersion);
