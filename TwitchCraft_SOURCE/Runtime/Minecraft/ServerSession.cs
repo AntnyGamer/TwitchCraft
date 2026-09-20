@@ -27,8 +27,7 @@ public sealed partial class MainHandler
         }
 
         Commands.ResetCommandState();
-        lock (_twitchSession.RelayGate)
-            _twitchSession.RelayMessageTimestamps.Clear();
+        _twitchSession.ResetRelayRateLimit();
 
         lock (_playerGate)
         {
@@ -62,10 +61,6 @@ public sealed partial class MainHandler
             _pendingServerProbeMarkers.Clear();
             Volatile.Write(ref _pendingServerProbeMarkerCount, 0);
         }
-
-        Commands.ClearLightningCooldown();
-        Commands.ClearScaleCooldowns();
-        Commands.ClearGlobalCooldown();
 
         Interlocked.Exchange(ref _playerSidebarRefreshQueued, 0);
         Interlocked.Exchange(ref _initialPlayerSnapshotQueued, 0);

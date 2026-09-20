@@ -47,15 +47,16 @@ public sealed class ScaleCooldownIsolationTests
 
         try
         {
-            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out long failedReservation));
+            const long now = 1_000_000;
+            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out long failedReservation, now));
             runtime.Commands.ClearScaleCooldown("tiny", failedReservation);
-            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out long activeReservation));
+            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out long activeReservation, now + 1));
 
             runtime.Commands.ClearScaleCooldown("tiny", failedReservation);
-            Assert.False(runtime.Commands.TryUseScaleCommand("tiny", out _, out _));
+            Assert.False(runtime.Commands.TryUseScaleCommand("tiny", out _, out _, now + 2));
 
             runtime.Commands.ClearScaleCooldown("tiny", activeReservation);
-            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out _));
+            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out _, now + 3));
         }
         finally
         {

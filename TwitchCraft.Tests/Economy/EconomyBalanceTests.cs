@@ -105,7 +105,7 @@ public sealed class EconomyBalanceTests
             FollowRewardResult result = store.TryRewardFollower(
                 "123456",
                 "viewer",
-                DateTimeOffset.UtcNow,
+                new DateTimeOffset(2026, 8, 27, 1, 2, 3, TimeSpan.Zero),
                 100,
                 out int awarded,
                 maximumBalance: 100);

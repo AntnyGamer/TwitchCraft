@@ -127,12 +127,48 @@ public sealed class TwitchMessagingPolicyTests
     }
 
     [Fact]
-    public void FormatRelay_AddsOptionalLocalTimestamp()
+    public void RelayPolicy_FormatsMessagesAndEnforcesRateLimit()
     {
         DateTime time = new(2026, 8, 27, 13, 5, 0);
+        TwitchSession session = new();
+        const long now = 10_000;
 
-        Assert.Equal("viewer: hello", MainHandler.FormatRelay("viewer", "hello", false, time));
-        Assert.Equal("[13:05] viewer: hello", MainHandler.FormatRelay("viewer", "hello", true, time));
+        Assert.Equal("viewer: hello", TwitchSession.FormatRelay("viewer", "hello", false, time));
+        Assert.Equal("[13:05] viewer: hello", TwitchSession.FormatRelay("viewer", "hello", true, time));
+        Assert.True(session.TryUseRelaySlot(2, true, now));
+        Assert.True(session.TryUseRelaySlot(2, true, now + 1));
+        Assert.False(session.TryUseRelaySlot(2, true, now + 2));
+        Assert.False(session.TryUseRelaySlot(2, true, now + 999));
+        Assert.True(session.TryUseRelaySlot(2, true, now + 1000));
+
+        session.ResetRelayRateLimit();
+
+        Assert.True(session.TryUseRelaySlot(2, true, now + 1001));
+
+        session.ResetRelayRateLimit();
+
+        Assert.True(session.TryUseRelaySlot(0, false, now));
+        Assert.True(session.TryUseRelaySlot(0, false, now));
+        Assert.True(session.TryUseRelaySlot(1, false, now));
+        Assert.False(session.TryUseRelaySlot(1, false, now + 1));
+
+        session.ResetRelayRateLimit();
+
+        for (int i = 0; i < 6; i++)
+            Assert.True(session.TryUseRelaySlot(6, false, now + i));
+        Assert.False(session.TryUseRelaySlot(6, false, now + 6));
+
+        session.ResetRelayRateLimit();
+
+        for (int i = 0; i < 5; i++)
+            Assert.True(session.TryUseRelaySlot(0, true, now + i));
+        Assert.False(session.TryUseRelaySlot(0, true, now + 5));
+
+        session.ResetRelayRateLimit();
+
+        for (int i = 0; i < 5; i++)
+            Assert.True(session.TryUseRelaySlot(100, true, now + i));
+        Assert.False(session.TryUseRelaySlot(100, true, now + 5));
     }
 
     [Fact]

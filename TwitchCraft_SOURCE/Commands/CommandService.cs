@@ -291,6 +291,11 @@ public sealed class CommandService
             _viewerCommandLimitNotices.Clear();
             _customCommandCooldownUntilTimestamp.Clear();
         }
+
+        ClearLightningCooldown();
+        lock (_cooldownGate)
+            _timedScaleCommandCooldowns.Clear();
+        ClearGlobalCooldown();
     }
 
     private long _lastGlobalCooldownTimestamp = -1;
@@ -448,14 +453,6 @@ public sealed class CommandService
             remaining = TimeSpan.Zero;
             reservationTimestamp = now;
             return true;
-        }
-    }
-
-    internal void ClearScaleCooldowns()
-    {
-        lock (_cooldownGate)
-        {
-            _timedScaleCommandCooldowns.Clear();
         }
     }
 
