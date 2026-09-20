@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace TwitchCraft_V1;
 public sealed class CommandService
 {
     private const double DefaultGlobalGameCommandCooldownSeconds = 10.0;
-    private static readonly TimeSpan FiveMinuteCommandCooldown = TimeSpan.FromMinutes(5);
+    private static readonly long FiveMinuteCommandCooldownTimestampTicks = 5 * 60 * Stopwatch.Frequency;
     private TwitchCraftConfig? _config;
     private string _defaultMinecraftPlayer = string.Empty;
     private string _defaultMinecraftPlayerName = string.Empty;
@@ -23,12 +24,12 @@ public sealed class CommandService
     private readonly Queue<long> _channelCommandTimestamps = new();
     private readonly Dictionary<string, Queue<long>> _viewerCommandTimestamps = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _viewerCommandLimitNotices = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<(string Command, string Sender), long> _customCommandCooldownUntilTicks = [];
-    private readonly Dictionary<string, DateTime> _timedScaleCommandCooldowns = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, DateTime> _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
-    private long _lastChannelCommandLimitNoticeTicks;
-    private long _lastCommandStatePruneTicks;
-    private DateTime _lastLightningUtc;
+    private readonly Dictionary<(string Command, string Sender), long> _customCommandCooldownUntilTimestamp = [];
+    private readonly Dictionary<string, long> _timedScaleCommandCooldowns = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
+    private long _lastChannelCommandLimitNoticeTimestamp;
+    private long _lastCommandStatePruneTimestamp;
+    private long _lastLightningTimestamp = -FiveMinuteCommandCooldownTimestampTicks;
     private int _fireworksRepeatActive;
 
     internal CommandService(Func<CancellationToken, Task<List<string>>> refreshPlayers)
@@ -88,7 +89,7 @@ public sealed class CommandService
 
     internal const string GlobalCooldownKey = "\0";
 
-    internal readonly record struct CooldownReservation((string Command, string Sender) Key, long ReservationTicks, long CooldownTicks)
+    internal readonly record struct CooldownReservation((string Command, string Sender) Key, long ReservationTimestamp, long CooldownTimestampTicks)
     {
         internal bool IsActive => Key.Command != null;
     }
@@ -145,7 +146,7 @@ public sealed class CommandService
         return true;
     }
 
-    internal bool TryUseCommandSlots(string viewer, out bool viewerLimited, long? nowTicks = null)
+    internal bool TryUseCommandSlots(string viewer, out bool viewerLimited, long? nowTimestamp = null)
     {
         int viewerLimit = _config?.Settings.ViewerCommandLimitPerMinute ?? 0;
         int channelLimit = _config?.Settings.ChannelCommandLimitPerMinute ?? 0;
@@ -153,7 +154,7 @@ public sealed class CommandService
         if (viewerLimit <= 0 && channelLimit <= 0)
             return true;
 
-        long now = nowTicks ?? DateTime.UtcNow.Ticks, cutoff = now - TimeSpan.TicksPerMinute;
+        long now = nowTimestamp ?? Stopwatch.GetTimestamp(), cutoff = now - 60 * Stopwatch.Frequency;
         lock (_commandStateGate)
         {
             PruneCommandStateNoLock(now);
@@ -189,23 +190,23 @@ public sealed class CommandService
         }
     }
 
-    internal bool ShouldWarnChannelLimit(long? nowTicks = null)
+    internal bool ShouldWarnChannelLimit(long? nowTimestamp = null)
     {
-        long now = nowTicks ?? DateTime.UtcNow.Ticks;
-        long previous = Volatile.Read(ref _lastChannelCommandLimitNoticeTicks);
-        if (previous != 0 && now - previous < 10 * TimeSpan.TicksPerSecond)
+        long now = nowTimestamp ?? Stopwatch.GetTimestamp();
+        long previous = Volatile.Read(ref _lastChannelCommandLimitNoticeTimestamp);
+        if (previous != 0 && now - previous < 10 * Stopwatch.Frequency)
             return false;
-        return Interlocked.CompareExchange(ref _lastChannelCommandLimitNoticeTicks, now, previous) == previous;
+        return Interlocked.CompareExchange(ref _lastChannelCommandLimitNoticeTimestamp, now, previous) == previous;
     }
 
-    internal bool ShouldWarnViewerLimit(string sender, long? nowTicks = null)
+    internal bool ShouldWarnViewerLimit(string sender, long? nowTimestamp = null)
     {
         string viewer = CommandUserHelper.NormalizeUser(sender);
-        long now = nowTicks ?? DateTime.UtcNow.Ticks;
+        long now = nowTimestamp ?? Stopwatch.GetTimestamp();
         lock (_commandStateGate)
         {
             _viewerCommandLimitNotices.TryGetValue(viewer, out long previous);
-            if (previous != 0 && now - previous < 10 * TimeSpan.TicksPerSecond)
+            if (previous != 0 && now - previous < 10 * Stopwatch.Frequency)
                 return false;
             _viewerCommandLimitNotices[viewer] = now;
             return true;
@@ -224,22 +225,22 @@ public sealed class CommandService
         if (cooldownSeconds is not double seconds || seconds <= 0.0)
             return true;
 
-        long nowTicks = DateTime.UtcNow.Ticks;
-        long cooldownTicks = (long)(seconds * TimeSpan.TicksPerSecond);
+        long nowTimestamp = Stopwatch.GetTimestamp();
+        long cooldownTimestampTicks = (long)(seconds * Stopwatch.Frequency);
         (string Command, string Sender) key = (commandName, keyOwner);
         lock (_commandStateGate)
         {
-            PruneCommandStateNoLock(nowTicks);
-            _customCommandCooldownUntilTicks.TryGetValue(key, out long next);
-            if (next != 0 && nowTicks < next)
+            PruneCommandStateNoLock(nowTimestamp);
+            _customCommandCooldownUntilTimestamp.TryGetValue(key, out long next);
+            if (next != 0 && nowTimestamp < next)
             {
-                remaining = TimeSpan.FromTicks(next - nowTicks);
+                remaining = Stopwatch.GetElapsedTime(nowTimestamp, next);
                 return false;
             }
 
-            long cooldownUntilTicks = nowTicks + cooldownTicks;
-            _customCommandCooldownUntilTicks[key] = cooldownUntilTicks;
-            reservation = new(key, cooldownUntilTicks, cooldownTicks);
+            long cooldownUntilTimestamp = nowTimestamp + cooldownTimestampTicks;
+            _customCommandCooldownUntilTimestamp[key] = cooldownUntilTimestamp;
+            reservation = new(key, cooldownUntilTimestamp, cooldownTimestampTicks);
             return true;
         }
     }
@@ -251,25 +252,25 @@ public sealed class CommandService
 
         lock (_commandStateGate)
         {
-            if (!_customCommandCooldownUntilTicks.TryGetValue(reservation.Key, out long current) ||
-                current != reservation.ReservationTicks)
+            if (!_customCommandCooldownUntilTimestamp.TryGetValue(reservation.Key, out long current) ||
+                current != reservation.ReservationTimestamp)
             {
                 return;
             }
 
             if (succeeded)
-                _customCommandCooldownUntilTicks[reservation.Key] = DateTime.UtcNow.Ticks + reservation.CooldownTicks;
+                _customCommandCooldownUntilTimestamp[reservation.Key] = Stopwatch.GetTimestamp() + reservation.CooldownTimestampTicks;
             else
-                _customCommandCooldownUntilTicks.Remove(reservation.Key);
+                _customCommandCooldownUntilTimestamp.Remove(reservation.Key);
         }
     }
 
-    private void PruneCommandStateNoLock(long nowTicks)
+    private void PruneCommandStateNoLock(long nowTimestamp)
     {
-        if ((_viewerCommandTimestamps.Count <= 4096 && _customCommandCooldownUntilTicks.Count <= 4096) ||
-            nowTicks - _lastCommandStatePruneTicks < TimeSpan.TicksPerMinute) return;
-        _lastCommandStatePruneTicks = nowTicks;
-        long cutoff = nowTicks - TimeSpan.TicksPerMinute;
+        if ((_viewerCommandTimestamps.Count <= 4096 && _customCommandCooldownUntilTimestamp.Count <= 4096) ||
+            nowTimestamp - _lastCommandStatePruneTimestamp < 60 * Stopwatch.Frequency) return;
+        _lastCommandStatePruneTimestamp = nowTimestamp;
+        long cutoff = nowTimestamp - 60 * Stopwatch.Frequency;
         foreach ((string viewer, Queue<long> timestamps) in _viewerCommandTimestamps)
         {
             while (timestamps.Count > 0 && timestamps.Peek() <= cutoff) timestamps.Dequeue();
@@ -277,8 +278,8 @@ public sealed class CommandService
             _viewerCommandTimestamps.Remove(viewer);
             _viewerCommandLimitNotices.Remove(viewer);
         }
-        foreach (var pair in _customCommandCooldownUntilTicks)
-            if (pair.Value <= nowTicks) _customCommandCooldownUntilTicks.Remove(pair.Key);
+        foreach (var pair in _customCommandCooldownUntilTimestamp)
+            if (pair.Value <= nowTimestamp) _customCommandCooldownUntilTimestamp.Remove(pair.Key);
     }
 
     internal void ResetCommandState()
@@ -288,25 +289,25 @@ public sealed class CommandService
             _channelCommandTimestamps.Clear();
             _viewerCommandTimestamps.Clear();
             _viewerCommandLimitNotices.Clear();
-            _customCommandCooldownUntilTicks.Clear();
+            _customCommandCooldownUntilTimestamp.Clear();
         }
     }
 
-    private long _lastTicks;
-    private long _lastGambleCooldownPruneTicks;
+    private long _lastGlobalCooldownTimestamp = -1;
+    private long _lastGambleCooldownPruneTimestamp;
     private long _switchMilkTagCounter;
 
     public string NextSwitchMilkTag()
         => string.Create(CultureInfo.InvariantCulture, $"tc_switchmilk_{Interlocked.Increment(ref _switchMilkTagCounter)}");
 
-    private long GlobalGameCommandCooldownTicks
+    private long GlobalGameCommandCooldownTimestampTicks
     {
         get
         {
             double seconds = _config?.Settings.GlobalGameCommandCooldownSeconds ?? DefaultGlobalGameCommandCooldownSeconds;
             if (double.IsNaN(seconds) || seconds < 0.1 || seconds > 120.0)
                 seconds = DefaultGlobalGameCommandCooldownSeconds;
-            return TimeSpan.FromSeconds(seconds).Ticks;
+            return (long)(seconds * Stopwatch.Frequency);
         }
     }
 
@@ -318,13 +319,13 @@ public sealed class CommandService
             return false;
         }
 
-        long cooldownTicks = GlobalGameCommandCooldownTicks;
-        long last = Interlocked.Read(ref _lastTicks);
-        long next = last + cooldownTicks;
-        long now = DateTime.UtcNow.Ticks;
-        if (now < next)
+        long cooldownTimestampTicks = GlobalGameCommandCooldownTimestampTicks;
+        long last = Interlocked.Read(ref _lastGlobalCooldownTimestamp);
+        long next = last + cooldownTimestampTicks;
+        long now = Stopwatch.GetTimestamp();
+        if (last >= 0 && now < next)
         {
-            remaining = TimeSpan.FromTicks(next - now);
+            remaining = Stopwatch.GetElapsedTime(now, next);
             return true;
         }
 
@@ -332,9 +333,9 @@ public sealed class CommandService
         return false;
     }
 
-    public bool TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTicks)
+    public bool TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTimestamp)
     {
-        reservationTicks = 0;
+        reservationTimestamp = -1;
         if (!GlobalGameCommandCooldownEnabled)
         {
             remaining = TimeSpan.Zero;
@@ -343,19 +344,19 @@ public sealed class CommandService
 
         while (true)
         {
-            long cooldownTicks = GlobalGameCommandCooldownTicks;
-            long last = Interlocked.Read(ref _lastTicks);
-            long next = last + cooldownTicks;
-            long now = DateTime.UtcNow.Ticks;
-            if (now < next)
+            long cooldownTimestampTicks = GlobalGameCommandCooldownTimestampTicks;
+            long last = Interlocked.Read(ref _lastGlobalCooldownTimestamp);
+            long next = last + cooldownTimestampTicks;
+            long now = Stopwatch.GetTimestamp();
+            if (last >= 0 && now < next)
             {
-                remaining = TimeSpan.FromTicks(next - now);
+                remaining = Stopwatch.GetElapsedTime(now, next);
                 return false;
             }
 
-            if (Interlocked.CompareExchange(ref _lastTicks, now, last) == last)
+            if (Interlocked.CompareExchange(ref _lastGlobalCooldownTimestamp, now, last) == last)
             {
-                reservationTicks = now;
+                reservationTimestamp = now;
                 remaining = TimeSpan.Zero;
                 return true;
             }
@@ -364,38 +365,38 @@ public sealed class CommandService
 
     public void ClearGlobalCooldown()
     {
-        Interlocked.Exchange(ref _lastTicks, 0);
+        Interlocked.Exchange(ref _lastGlobalCooldownTimestamp, -1);
     }
 
-    public void ClearGlobalCooldown(long reservationTicks)
+    public void ClearGlobalCooldown(long reservationTimestamp)
     {
-        if (reservationTicks > 0)
-            Interlocked.CompareExchange(ref _lastTicks, 0, reservationTicks);
+        if (reservationTimestamp >= 0)
+            Interlocked.CompareExchange(ref _lastGlobalCooldownTimestamp, -1, reservationTimestamp);
     }
 
-    public bool TryUseLightning(out TimeSpan remaining, out DateTime reservationUtc)
+    public bool TryUseLightning(out TimeSpan remaining, out long reservationTimestamp)
     {
         if (HasGlobalCooldownOverride("lightning"))
         {
             remaining = TimeSpan.Zero;
-            reservationUtc = DateTime.MinValue;
+            reservationTimestamp = 0;
             return true;
         }
 
         lock (_cooldownGate)
         {
-            DateTime now = DateTime.UtcNow;
-            DateTime nextAllowed = _lastLightningUtc + FiveMinuteCommandCooldown;
+            long now = Stopwatch.GetTimestamp();
+            long nextAllowed = _lastLightningTimestamp + FiveMinuteCommandCooldownTimestampTicks;
             if (now < nextAllowed)
             {
-                remaining = nextAllowed - now;
-                reservationUtc = DateTime.MinValue;
+                remaining = Stopwatch.GetElapsedTime(now, nextAllowed);
+                reservationTimestamp = 0;
                 return false;
             }
 
-            _lastLightningUtc = now;
+            _lastLightningTimestamp = now;
             remaining = TimeSpan.Zero;
-            reservationUtc = now;
+            reservationTimestamp = now;
             return true;
         }
     }
@@ -404,20 +405,20 @@ public sealed class CommandService
     {
         lock (_cooldownGate)
         {
-            _lastLightningUtc = DateTime.MinValue;
+            _lastLightningTimestamp = -FiveMinuteCommandCooldownTimestampTicks;
         }
     }
 
-    public void ClearLightningCooldown(DateTime reservationUtc)
+    public void ClearLightningCooldown(long reservationTimestamp)
     {
         lock (_cooldownGate)
         {
-            if (_lastLightningUtc == reservationUtc)
-                _lastLightningUtc = DateTime.MinValue;
+            if (_lastLightningTimestamp == reservationTimestamp)
+                _lastLightningTimestamp = -FiveMinuteCommandCooldownTimestampTicks;
         }
     }
 
-    internal bool TryUseScaleCommand(string commandName, out TimeSpan remaining, out DateTime reservationUtc, DateTime? nowUtc = null)
+    internal bool TryUseScaleCommand(string commandName, out TimeSpan remaining, out long reservationTimestamp, long? nowTimestamp = null)
     {
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0)
@@ -425,27 +426,27 @@ public sealed class CommandService
         if (HasGlobalCooldownOverride(normalizedCommand))
         {
             remaining = TimeSpan.Zero;
-            reservationUtc = DateTime.MinValue;
+            reservationTimestamp = 0;
             return true;
         }
 
         lock (_cooldownGate)
         {
-            DateTime now = nowUtc ?? DateTime.UtcNow;
-            if (_timedScaleCommandCooldowns.TryGetValue(normalizedCommand, out DateTime lastUsedUtc))
+            long now = nowTimestamp ?? Stopwatch.GetTimestamp();
+            if (_timedScaleCommandCooldowns.TryGetValue(normalizedCommand, out long lastUsed))
             {
-                DateTime nextAllowed = lastUsedUtc + FiveMinuteCommandCooldown;
+                long nextAllowed = lastUsed + FiveMinuteCommandCooldownTimestampTicks;
                 if (now < nextAllowed)
                 {
-                    remaining = nextAllowed - now;
-                    reservationUtc = DateTime.MinValue;
+                    remaining = Stopwatch.GetElapsedTime(now, nextAllowed);
+                    reservationTimestamp = 0;
                     return false;
                 }
             }
 
             _timedScaleCommandCooldowns[normalizedCommand] = now;
             remaining = TimeSpan.Zero;
-            reservationUtc = now;
+            reservationTimestamp = now;
             return true;
         }
     }
@@ -458,14 +459,14 @@ public sealed class CommandService
         }
     }
 
-    internal void ClearScaleCooldown(string commandName, DateTime reservationUtc)
+    internal void ClearScaleCooldown(string commandName, long reservationTimestamp)
     {
         string normalizedCommand = (commandName ?? string.Empty).Trim();
-        if (normalizedCommand.Length == 0 || reservationUtc == DateTime.MinValue)
+        if (normalizedCommand.Length == 0)
             return;
         lock (_cooldownGate)
         {
-            if (_timedScaleCommandCooldowns.TryGetValue(normalizedCommand, out DateTime current) && current == reservationUtc)
+            if (_timedScaleCommandCooldowns.TryGetValue(normalizedCommand, out long current) && current == reservationTimestamp)
                 _timedScaleCommandCooldowns.Remove(normalizedCommand);
         }
     }
@@ -481,12 +482,12 @@ public sealed class CommandService
         string normalized = CommandUserHelper.NormalizeUser(user);
         lock (_cooldownGate)
         {
-            if (_gambleCooldowns.TryGetValue(normalized, out DateTime until))
+            if (_gambleCooldowns.TryGetValue(normalized, out long until))
             {
-                DateTime now = DateTime.UtcNow;
+                long now = Stopwatch.GetTimestamp();
                 if (until > now)
                 {
-                    remaining = until - now;
+                    remaining = Stopwatch.GetElapsedTime(now, until);
                     return true;
                 }
 
@@ -505,14 +506,14 @@ public sealed class CommandService
         string normalized = CommandUserHelper.NormalizeUser(user);
         lock (_cooldownGate)
         {
-            DateTime now = DateTime.UtcNow;
-            if (_gambleCooldowns.Count > 4096 && now.Ticks - _lastGambleCooldownPruneTicks >= TimeSpan.TicksPerMinute)
+            long now = Stopwatch.GetTimestamp();
+            if (_gambleCooldowns.Count > 4096 && now - _lastGambleCooldownPruneTimestamp >= 60 * Stopwatch.Frequency)
             {
-                _lastGambleCooldownPruneTicks = now.Ticks;
-                foreach (KeyValuePair<string, DateTime> pair in _gambleCooldowns)
+                _lastGambleCooldownPruneTimestamp = now;
+                foreach (KeyValuePair<string, long> pair in _gambleCooldowns)
                     if (pair.Value <= now) _gambleCooldowns.Remove(pair.Key);
             }
-            _gambleCooldowns[normalized] = now + duration;
+            _gambleCooldowns[normalized] = now + (long)(duration.TotalSeconds * Stopwatch.Frequency);
         }
     }
 

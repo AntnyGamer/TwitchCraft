@@ -401,8 +401,8 @@ public static partial class CommandList
         {
             if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return null;
-            if (runtime.Commands.TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTicks))
-                return reservationTicks;
+            if (runtime.Commands.TryReserveGlobalCooldown(out TimeSpan remaining, out long reservationTimestamp))
+                return reservationTimestamp;
             await SayAsync(
                 sender + ", game commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".",
                 ct).ConfigureAwait(false);

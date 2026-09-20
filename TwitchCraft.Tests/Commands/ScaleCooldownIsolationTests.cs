@@ -20,8 +20,8 @@ public sealed class ScaleCooldownIsolationTests
 
         try
         {
-            DateTime now = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out TimeSpan firstRemaining, out DateTime tinyReservation, now));
+            const long now = 1_000_000;
+            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out TimeSpan firstRemaining, out long tinyReservation, now));
             Assert.Equal(TimeSpan.Zero, firstRemaining);
             Assert.Equal(now, tinyReservation);
 
@@ -47,9 +47,9 @@ public sealed class ScaleCooldownIsolationTests
 
         try
         {
-            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out DateTime failedReservation));
+            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out long failedReservation));
             runtime.Commands.ClearScaleCooldown("tiny", failedReservation);
-            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out DateTime activeReservation));
+            Assert.True(runtime.Commands.TryUseScaleCommand("tiny", out _, out long activeReservation));
 
             runtime.Commands.ClearScaleCooldown("tiny", failedReservation);
             Assert.False(runtime.Commands.TryUseScaleCommand("tiny", out _, out _));

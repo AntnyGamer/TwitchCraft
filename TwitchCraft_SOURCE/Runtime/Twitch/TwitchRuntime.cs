@@ -452,7 +452,7 @@ internal sealed class TwitchSession
     internal static readonly UTF8Encoding UTF8NoBOM = new(false);
     internal static readonly TimeSpan ShutdownPartTimeout = TimeSpan.FromSeconds(1);
     internal static readonly TimeSpan OperationTimeout = TimeSpan.FromSeconds(15);
-    internal static readonly long CommandOverflowNoticeIntervalTicks = TimeSpan.FromSeconds(30).Ticks;
+    internal const long CommandOverflowNoticeIntervalMilliseconds = 30_000;
 
     private TcpClient? _socket;
     private StreamWriter? _writer;
@@ -464,12 +464,14 @@ internal sealed class TwitchSession
     internal HashSet<string> MessageIDs { get; } = new(StringComparer.Ordinal);
     internal Queue<string> MessageIDOrder { get; } = new();
     internal Queue<long> ChatSendTimes { get; } = new(100);
+    internal Lock RelayGate { get; } = new();
+    internal Queue<long> RelayMessageTimestamps { get; } = new();
     internal WorkQueueState CommandQueue { get; } = new(MaxQueuedCommands);
     internal WorkQueueState QuickQueue { get; } = new(MaxQueuedQuickWork);
     internal CancellationTokenSource? FollowRewardsCts;
     internal Task? FollowRewardsTask;
     internal int QueueGeneration;
-    internal long LastCommandOverflowNoticeTicks;
+    internal long LastCommandOverflowNoticeMilliseconds;
     internal string ChannelPrefix { get; private set; } = string.Empty;
     internal int ChannelMessageMaxBytes { get; private set; }
 

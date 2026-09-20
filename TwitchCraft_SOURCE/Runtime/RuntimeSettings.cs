@@ -10,7 +10,6 @@ namespace TwitchCraft_V1;
 public sealed partial class MainHandler
 {
     private static readonly StartingProfile DefaultEffectiveSettings = new();
-    private readonly Queue<long> _relayMessageTimestamps = new();
     private readonly Dictionary<string, long> _viewerLastChatActivity = new(StringComparer.OrdinalIgnoreCase);
     private int _twitchChatConnected;
 
@@ -132,7 +131,7 @@ public sealed partial class MainHandler
             nowUnixSeconds - lastActive <= settings.PassiveActivityWindowMinutes * 60L;
     }
 
-    internal bool TryUseRelaySlot(long? nowTicks = null)
+    internal bool TryUseRelaySlot(long? nowMilliseconds = null)
     {
         StartingProfile settings = EffectiveSettings;
         int limit = settings.MinecraftRelayMessagesPerSecond;
@@ -141,15 +140,15 @@ public sealed partial class MainHandler
         if (limit <= 0)
             return true;
 
-        long now = nowTicks ?? DateTime.UtcNow.Ticks;
-        lock (_relayGate)
+        long now = nowMilliseconds ?? Environment.TickCount64;
+        lock (_twitchSession.RelayGate)
         {
-            long cutoff = now - TimeSpan.TicksPerSecond;
-            while (_relayMessageTimestamps.Count > 0 && _relayMessageTimestamps.Peek() <= cutoff)
-                _relayMessageTimestamps.Dequeue();
-            if (_relayMessageTimestamps.Count >= limit)
+            long cutoff = now - 1000;
+            while (_twitchSession.RelayMessageTimestamps.Count > 0 && _twitchSession.RelayMessageTimestamps.Peek() <= cutoff)
+                _twitchSession.RelayMessageTimestamps.Dequeue();
+            if (_twitchSession.RelayMessageTimestamps.Count >= limit)
                 return false;
-            _relayMessageTimestamps.Enqueue(now);
+            _twitchSession.RelayMessageTimestamps.Enqueue(now);
             return true;
         }
     }

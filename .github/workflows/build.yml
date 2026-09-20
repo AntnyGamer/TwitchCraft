@@ -39,6 +39,16 @@ jobs:
         working-directory: TwitchCraft.Tests
         run: dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build --results-directory ..\TestResults --coverlet --coverlet-output-format cobertura
 
+      - name: Enforce code coverage
+        shell: pwsh
+        run: |
+          $report = Get-ChildItem "TestResults\coverage.cobertura.*.xml" | Select-Object -First 1
+          if (-not $report) { throw "Coverage report not found." }
+          [xml]$coverage = Get-Content $report.FullName
+          $lineCoverage = [double]$coverage.coverage.'line-rate' * 100
+          Write-Host "Line coverage: $($lineCoverage.ToString('0.00'))%"
+          if ($lineCoverage -lt 10) { throw "Line coverage fell below 10%." }
+
       - name: Upload code coverage
         if: always()
         uses: actions/upload-artifact@v7
