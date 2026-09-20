@@ -190,7 +190,7 @@ public sealed partial class MainHandler
         {
             if (!_commandRegistry.TryResolve(parsed.Name, out ChatCommandHandler handler))
             {
-                if (_activeConfig?.Settings.RespondToUnknownCommands == true)
+                if (EffectiveSettings.RespondToUnknownCommands)
                 {
                     await SendReplyAsync(
                         sender + ", unknown command " + prefix + parsed.Name + ".",

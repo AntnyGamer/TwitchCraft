@@ -318,7 +318,7 @@ public sealed partial class MainHandler
                     if (message.Bits > 0)
                     {
                         int bitReward = GetBitReward(
-                            _activeConfig?.Settings.AutomaticBitRewardsEnabled ?? true,
+                            EffectiveSettings.AutomaticBitRewardsEnabled,
                             message.Bits);
                         int awardedBits = bitReward > 0 ? Tokens.Award(sender, bitReward) : 0;
                         string bitsText = message.Bits.ToString(CultureInfo.InvariantCulture);
@@ -338,10 +338,11 @@ public sealed partial class MainHandler
                             cancellationToken))
                             TrackTask(WarnQueueOverloadAsync(cancellationToken));
                     }
-                    else if (_activeConfig?.Settings.NonCommandChatRelayEnabled != false)
+                    else
                     {
                         var settings = EffectiveSettings;
-                        if (!_twitchSession.TryUseRelaySlot(settings.MinecraftRelayMessagesPerSecond, settings.LowResourceModeEnabled))
+                        if (!settings.NonCommandChatRelayEnabled ||
+                            !_twitchSession.TryUseRelaySlot(settings.MinecraftRelayMessagesPerSecond, settings.LowResourceModeEnabled))
                             continue;
                         bool includeTimestamp = settings.IncludeRelayTimestamps;
                         string relayColor = settings.MinecraftRelayTextColor;
@@ -506,7 +507,7 @@ internal sealed class TwitchSession
         lock (_relayGate)
         {
             long cutoff = now - 1000;
-            while (_relayMessageTimestamps.Count > 0 && _relayMessageTimestamps.Peek() <= cutoff)
+            while (_relayMessageTimestamps.TryPeek(out long timestamp) && timestamp <= cutoff)
                 _relayMessageTimestamps.Dequeue();
             if (_relayMessageTimestamps.Count >= limit)
                 return false;

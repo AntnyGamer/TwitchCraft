@@ -10,7 +10,8 @@ public sealed partial class MainHandler
 {
     private static readonly StartingProfile DefaultEffectiveSettings = new();
     private readonly Dictionary<string, long> _viewerLastChatActivity = new(StringComparer.OrdinalIgnoreCase);
-    public bool ShowConnectionHealth => _activeConfig?.Settings.ShowConnectionHealth ?? false;
+
+    public bool ShowConnectionHealth => EffectiveSettings.ShowConnectionHealth;
     public bool TwitchChatConnected => _twitchSession.ChatConnected;
     public bool LowResourceModeEnabled => EffectiveSettings.LowResourceModeEnabled;
     public bool PauseUIUpdatesWhenMinimized => EffectiveSettings.PauseUIUpdatesWhenMinimized || EffectiveSettings.LowResourceModeEnabled;
@@ -24,9 +25,9 @@ public sealed partial class MainHandler
 
     private StartingProfile EffectiveSettings => _activeConfig?.Settings ?? DefaultEffectiveSettings;
 
-    internal string CommandPrefix => _activeConfig?.Settings.CommandPrefix ?? "!";
-    internal string SecondaryCommandPrefix => _activeConfig?.Settings.SecondaryCommandPrefix ?? string.Empty;
-    internal string BotResponseVerbosity => _activeConfig?.Settings.BotResponseVerbosity ?? BotResponseVerbositySettings.Normal;
+    internal string CommandPrefix => EffectiveSettings.CommandPrefix;
+    internal string SecondaryCommandPrefix => EffectiveSettings.SecondaryCommandPrefix;
+    internal string BotResponseVerbosity => EffectiveSettings.BotResponseVerbosity;
 
     internal static string FormatReply(string message, string sender, bool mentionViewer)
     {
@@ -75,7 +76,7 @@ public sealed partial class MainHandler
 
     internal string FormatCooldown(TimeSpan remaining)
     {
-        if (_activeConfig?.Settings.ShowExactCooldownRemaining == false)
+        if (!EffectiveSettings.ShowExactCooldownRemaining)
             return "a moment";
 
         int seconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds));
@@ -94,7 +95,7 @@ public sealed partial class MainHandler
         return minimum == maximum ? minimum : Random.Shared.Next(minimum, maximum + 1);
     }
 
-    internal int PassiveTokensPerPayout => _activeConfig?.Settings.PassiveTokensPerPayout ?? 1;
+    internal int PassiveTokensPerPayout => EffectiveSettings.PassiveTokensPerPayout;
 
     internal void RecordChatActivity(string sender, long unixSeconds)
     {
@@ -120,7 +121,6 @@ public sealed partial class MainHandler
     }
 
     private bool AreViewerCommandsPaused(string sender)
-        => _activeConfig?.Settings.ViewerCommandsPaused == true &&
+        => EffectiveSettings.ViewerCommandsPaused &&
             !string.Equals(sender, _currentStreamerName, StringComparison.OrdinalIgnoreCase);
-
 }
