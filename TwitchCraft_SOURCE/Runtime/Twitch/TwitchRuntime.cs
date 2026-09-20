@@ -283,7 +283,7 @@ public sealed partial class MainHandler
                         if (string.Equals(message.Command, "JOIN", StringComparison.OrdinalIgnoreCase) &&
                             string.Equals(message.SenderLogin, botName, StringComparison.OrdinalIgnoreCase))
                         {
-                            SetChatConnected(true);
+                            _twitchSession.ChatConnected = true;
                             reconnectDelayMs = 1000;
                             _shellWindow?.AddChatLogLine("[IRC] Connected to #" + channelLogin + ".");
                         }
@@ -340,11 +340,12 @@ public sealed partial class MainHandler
                     }
                     else if (_activeConfig?.Settings.NonCommandChatRelayEnabled != false)
                     {
-                        if (!TryUseRelaySlot())
+                        var settings = EffectiveSettings;
+                        if (!_twitchSession.TryUseRelaySlot(settings.MinecraftRelayMessagesPerSecond, settings.LowResourceModeEnabled))
                             continue;
-                        bool includeTimestamp = _activeConfig?.Settings.IncludeRelayTimestamps == true;
-                        string relayColor = MinecraftRelayTextColor;
-                        string relayMessage = FormatRelay(
+                        bool includeTimestamp = settings.IncludeRelayTimestamps;
+                        string relayColor = settings.MinecraftRelayTextColor;
+                        string relayMessage = TwitchSession.FormatRelay(
                             sender,
                             payload,
                             includeTimestamp,
@@ -353,8 +354,7 @@ public sealed partial class MainHandler
                             _twitchSession.QuickQueue,
                             ct => SendTellrawAsync("@a", relayMessage, relayColor, false, ct),
                             "chat relay",
-                            quick: true,
-                            cancellationToken: cancellationToken);
+                            cancellationToken);
                     }
                 }
             }
@@ -382,7 +382,7 @@ public sealed partial class MainHandler
             finally
             {
                 if (_twitchSession.TryClearWriter(writer))
-                    SetChatConnected(false);
+                    _twitchSession.ChatConnected = false;
 
                 try
                 {
@@ -454,6 +454,8 @@ internal sealed class TwitchSession
     internal static readonly TimeSpan OperationTimeout = TimeSpan.FromSeconds(15);
     internal const long CommandOverflowNoticeIntervalMilliseconds = 30_000;
 
+    private readonly Lock _relayGate = new();
+    private readonly Queue<long> _relayMessageTimestamps = new();
     private TcpClient? _socket;
     private StreamWriter? _writer;
 
@@ -464,14 +466,13 @@ internal sealed class TwitchSession
     internal HashSet<string> MessageIDs { get; } = new(StringComparer.Ordinal);
     internal Queue<string> MessageIDOrder { get; } = new();
     internal Queue<long> ChatSendTimes { get; } = new(100);
-    internal Lock RelayGate { get; } = new();
-    internal Queue<long> RelayMessageTimestamps { get; } = new();
     internal WorkQueueState CommandQueue { get; } = new(MaxQueuedCommands);
     internal WorkQueueState QuickQueue { get; } = new(MaxQueuedQuickWork);
     internal CancellationTokenSource? FollowRewardsCts;
     internal Task? FollowRewardsTask;
     internal int QueueGeneration;
     internal long LastCommandOverflowNoticeMilliseconds;
+    internal volatile bool ChatConnected;
     internal string ChannelPrefix { get; private set; } = string.Empty;
     internal int ChannelMessageMaxBytes { get; private set; }
 
@@ -492,6 +493,38 @@ internal sealed class TwitchSession
         ChannelPrefix = streamerName.Length == 0 ? string.Empty : "PRIVMSG #" + streamerName + " :";
         ChannelMessageMaxBytes = ChannelPrefix.Length == 0 ? 0 : 510 - UTF8NoBOM.GetByteCount(ChannelPrefix);
     }
+
+    internal bool TryUseRelaySlot(int configuredLimit, bool lowResourceMode, long? nowMilliseconds = null)
+    {
+        int limit = lowResourceMode
+            ? configuredLimit <= 0 ? 5 : Math.Min(configuredLimit, 5)
+            : configuredLimit;
+        if (limit <= 0)
+            return true;
+
+        long now = nowMilliseconds ?? Environment.TickCount64;
+        lock (_relayGate)
+        {
+            long cutoff = now - 1000;
+            while (_relayMessageTimestamps.Count > 0 && _relayMessageTimestamps.Peek() <= cutoff)
+                _relayMessageTimestamps.Dequeue();
+            if (_relayMessageTimestamps.Count >= limit)
+                return false;
+            _relayMessageTimestamps.Enqueue(now);
+            return true;
+        }
+    }
+
+    internal void ResetRelayRateLimit()
+    {
+        lock (_relayGate)
+            _relayMessageTimestamps.Clear();
+    }
+
+    internal static string FormatRelay(string sender, string payload, bool includeTimestamp, DateTime localTime)
+        => includeTimestamp
+            ? string.Create(CultureInfo.InvariantCulture, $"[{localTime:HH:mm}] {sender}: {payload}")
+            : string.Concat(sender, ": ", payload);
 
     internal bool TryClearWriter(StreamWriter? writer)
         => ReferenceEquals(Interlocked.CompareExchange(ref _writer, null, writer), writer);

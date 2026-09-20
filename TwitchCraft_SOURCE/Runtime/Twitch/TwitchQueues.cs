@@ -26,7 +26,6 @@ public sealed partial class MainHandler
         TwitchSession.WorkQueueState state,
         Func<CancellationToken, Task> work,
         string context,
-        bool quick,
         CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -34,6 +33,7 @@ public sealed partial class MainHandler
 
         Queue<TwitchSession.QueuedWork> queueToRun;
         bool startProcessor;
+        bool quick = ReferenceEquals(state, _twitchSession.QuickQueue);
         int generation;
 
         lock (state.Gate)
@@ -43,7 +43,7 @@ public sealed partial class MainHandler
                 return false;
 
             int depth = Interlocked.Increment(ref state.Depth);
-            int maxDepth = ReferenceEquals(state, _twitchSession.CommandQueue) ? MaxGameplayCommandQueue : state.MaxDepth;
+            int maxDepth = quick ? state.MaxDepth : MaxGameplayCommandQueue;
             if (depth > maxDepth)
             {
                 Interlocked.Decrement(ref state.Depth);
@@ -71,7 +71,6 @@ public sealed partial class MainHandler
             _twitchSession.CommandQueue,
             work,
             context,
-            quick: false,
             cancellationToken);
 
     private async Task RunQueueAsync(TwitchSession.WorkQueueState state, Queue<TwitchSession.QueuedWork> queue, bool quick)

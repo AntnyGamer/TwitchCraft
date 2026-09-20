@@ -102,6 +102,7 @@ public sealed class EconomyPersistenceTests
     [InlineData(true)]
     public void FollowReward_PersistsExactlyOnceAndCanRetryFailedWrites(bool failFirstWrite)
     {
+        DateTimeOffset followedAt = new(2026, 8, 27, 1, 2, 3, TimeSpan.Zero);
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
         TokenHandler writer = new(databasePath);
@@ -117,7 +118,7 @@ public sealed class EconomyPersistenceTests
                 command.CommandText = "CREATE TRIGGER fail_reward BEFORE INSERT ON TokenBalances BEGIN SELECT RAISE(ABORT, 'test'); END;";
                 command.ExecuteNonQuery();
                 Assert.Equal(FollowRewardResult.Failed,
-                    writer.TryRewardFollower("987654", "viewer", DateTimeOffset.UtcNow, 50, out int awarded));
+                    writer.TryRewardFollower("987654", "viewer", followedAt, 50, out int awarded));
                 Assert.Equal(0, awarded);
                 Assert.Equal(0, writer.GetBalance("viewer"));
                 command.CommandText = "SELECT COUNT(*) FROM RewardedFollows;";
@@ -127,7 +128,7 @@ public sealed class EconomyPersistenceTests
             }
             Assert.Equal(
                 FollowRewardResult.Rewarded,
-                writer.TryRewardFollower("987654", "viewer", DateTimeOffset.UtcNow, 50));
+                writer.TryRewardFollower("987654", "viewer", followedAt, 50));
         }
         finally
         {
@@ -139,7 +140,7 @@ public sealed class EconomyPersistenceTests
         {
             Assert.Equal(
                 FollowRewardResult.AlreadyRewarded,
-                reader.TryRewardFollower("987654", "viewer", DateTimeOffset.UtcNow, 50));
+                reader.TryRewardFollower("987654", "viewer", followedAt, 50));
             Assert.Equal(50, reader.GetBalance("viewer"));
         }
         finally
@@ -151,14 +152,15 @@ public sealed class EconomyPersistenceTests
     [Fact]
     public void FollowReward_RejectsInvalidIdentityWithoutChargingDatabase()
     {
+        DateTimeOffset followedAt = new(2026, 8, 27, 1, 2, 3, TimeSpan.Zero);
         using TemporaryDirectory directory = new();
         TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
-            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("not-a-user-id", "viewer", DateTimeOffset.UtcNow, 50));
-            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "", DateTimeOffset.UtcNow, 50));
-            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "viewer", DateTimeOffset.UtcNow, 0));
+            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("not-a-user-id", "viewer", followedAt, 50));
+            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "", followedAt, 50));
+            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "viewer", followedAt, 0));
             Assert.Equal(0, store.GetBalance("viewer"));
         }
         finally

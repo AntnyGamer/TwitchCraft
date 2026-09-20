@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using System.Threading;
 using TwitchCraft_V1.Setup;
 
 namespace TwitchCraft_V1;
@@ -11,10 +10,8 @@ public sealed partial class MainHandler
 {
     private static readonly StartingProfile DefaultEffectiveSettings = new();
     private readonly Dictionary<string, long> _viewerLastChatActivity = new(StringComparer.OrdinalIgnoreCase);
-    private int _twitchChatConnected;
-
     public bool ShowConnectionHealth => _activeConfig?.Settings.ShowConnectionHealth ?? false;
-    public bool TwitchChatConnected => Volatile.Read(ref _twitchChatConnected) != 0;
+    public bool TwitchChatConnected => _twitchSession.ChatConnected;
     public bool LowResourceModeEnabled => EffectiveSettings.LowResourceModeEnabled;
     public bool PauseUIUpdatesWhenMinimized => EffectiveSettings.PauseUIUpdatesWhenMinimized || EffectiveSettings.LowResourceModeEnabled;
     public int MaxVisibleTwitchLogLines => EffectiveSettings.LowResourceModeEnabled ? Math.Min(100, EffectiveSettings.MaxVisibleTwitchLogLines) : EffectiveSettings.MaxVisibleTwitchLogLines;
@@ -29,7 +26,6 @@ public sealed partial class MainHandler
 
     internal string CommandPrefix => _activeConfig?.Settings.CommandPrefix ?? "!";
     internal string SecondaryCommandPrefix => _activeConfig?.Settings.SecondaryCommandPrefix ?? string.Empty;
-    internal string MinecraftRelayTextColor => _activeConfig?.Settings.MinecraftRelayTextColor ?? "white";
     internal string BotResponseVerbosity => _activeConfig?.Settings.BotResponseVerbosity ?? BotResponseVerbositySettings.Normal;
 
     internal static string FormatReply(string message, string sender, bool mentionViewer)
@@ -90,14 +86,6 @@ public sealed partial class MainHandler
             : seconds.ToString(CultureInfo.InvariantCulture) + "s";
     }
 
-    internal static string FormatRelay(string sender, string payload, bool includeTimestamp, DateTime localTime)
-    {
-        string prefix = includeTimestamp
-            ? "[" + localTime.ToString("HH:mm", CultureInfo.InvariantCulture) + "] "
-            : string.Empty;
-        return prefix + sender + ": " + payload;
-    }
-
     internal int GetPassivePayoutDelay()
     {
         StartingProfile settings = EffectiveSettings;
@@ -131,32 +119,8 @@ public sealed partial class MainHandler
             nowUnixSeconds - lastActive <= settings.PassiveActivityWindowMinutes * 60L;
     }
 
-    internal bool TryUseRelaySlot(long? nowMilliseconds = null)
-    {
-        StartingProfile settings = EffectiveSettings;
-        int limit = settings.MinecraftRelayMessagesPerSecond;
-        if (settings.LowResourceModeEnabled)
-            limit = limit <= 0 ? 5 : Math.Min(limit, 5);
-        if (limit <= 0)
-            return true;
-
-        long now = nowMilliseconds ?? Environment.TickCount64;
-        lock (_twitchSession.RelayGate)
-        {
-            long cutoff = now - 1000;
-            while (_twitchSession.RelayMessageTimestamps.Count > 0 && _twitchSession.RelayMessageTimestamps.Peek() <= cutoff)
-                _twitchSession.RelayMessageTimestamps.Dequeue();
-            if (_twitchSession.RelayMessageTimestamps.Count >= limit)
-                return false;
-            _twitchSession.RelayMessageTimestamps.Enqueue(now);
-            return true;
-        }
-    }
-
     private bool AreViewerCommandsPaused(string sender)
         => _activeConfig?.Settings.ViewerCommandsPaused == true &&
             !string.Equals(sender, _currentStreamerName, StringComparison.OrdinalIgnoreCase);
 
-    private void SetChatConnected(bool connected)
-        => Volatile.Write(ref _twitchChatConnected, connected ? 1 : 0);
 }

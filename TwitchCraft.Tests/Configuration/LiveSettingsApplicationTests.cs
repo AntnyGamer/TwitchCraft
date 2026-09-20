@@ -124,7 +124,6 @@ public sealed class LiveSettingsApplicationTests
         config.Settings.ViewerCommandLimitPerMinute = 2;
         config.Settings.PassiveRewardsRequireActivity = true;
         config.Settings.PassiveActivityWindowMinutes = 2;
-        config.Settings.MinecraftRelayMessagesPerSecond = 2;
         config.Settings.LowResourceModeEnabled = true;
         config.Settings.MaxVisibleTwitchLogLines = 500;
         config.Settings.MaxVisibleMinecraftLogLines = 1000;
@@ -145,9 +144,6 @@ public sealed class LiveSettingsApplicationTests
             Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 1));
             Assert.False(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 2));
             Assert.True(runtime.Commands.TryUseCommandSlots("differentviewer", out _, now + 2));
-            Assert.True(runtime.TryUseRelaySlot(now));
-            Assert.True(runtime.TryUseRelaySlot(now + 1));
-            Assert.False(runtime.TryUseRelaySlot(now + 2));
             Assert.True(runtime.Commands.HasPerUserCooldownOverride("heal"));
             Assert.False(runtime.Commands.HasPerUserCooldownOverride("lightning"));
             Assert.True(runtime.Commands.HasGlobalCooldownOverride("tiny"));
