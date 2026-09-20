@@ -15,7 +15,6 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    internal const int DefaultFollowRewardAmount = 100;
     private const int MaxEventSubMessageBytes = 256 * 1024;
     private static readonly Uri EventSubWebSocketUri = new("wss://eventsub.wss.twitch.tv/ws");
 
@@ -301,12 +300,12 @@ public sealed partial class MainHandler
     }
 
     internal bool AutomaticFollowRewardsEnabled
-        => _activeConfig?.Settings.AutomaticFollowRewardsEnabled ?? true;
+        => EffectiveSettings.AutomaticFollowRewardsEnabled;
 
     internal bool IsFollowRewardsRunning => AutomaticFollowRewardsEnabled && _twitchSession.FollowRewardsTask is { IsCompleted: false };
 
     internal int FollowRewardAmount
-        => _activeConfig?.Settings.FollowRewardAmount ?? DefaultFollowRewardAmount;
+        => EffectiveSettings.FollowRewardAmount;
 
     private static async Task<HttpStatusCode> SubscribeToFollowsAsync(
         string sessionID,

@@ -68,13 +68,13 @@ public sealed partial class MainHandler
         Commands = new CommandService(RefreshPlayersAsync);
         _commandRegistry = ChatCommandRegistry.CreateDefault(this);
         Statistics = new StatisticsService(new StatisticsDependencies(
-            command => _commandRegistry.GetStatisticFlags(command),
+            _commandRegistry.GetStatisticFlags,
             GetKnownPlayers,
             IsSpectatorPlayer,
             QueueSnapshot,
             QueueGamemode,
-            () => QueueDeathScore(),
-            playerName => QueueDeathScore(playerName),
+            QueueDeathScore,
+            QueueDeathScore,
             QueueRespawn));
         _lifecycleGate = new(1, 1);
         _viewerGate = new();
@@ -84,13 +84,13 @@ public sealed partial class MainHandler
         _timedPlayerScaleController = new(
             (command, token) => SendServerCommandAsync(command, token),
             IsKnownPlayer,
-            TrackTask,
+            _backgroundTaskTracker.Track,
             AddServerLogLine);
         _viewerRewardSchedule = new(StringComparer.OrdinalIgnoreCase);
         _knownViewers = [];
         _knownPlayers = [];
         _lastSidebarPlayers = [];
-        Tokens = new TokenService(tokenStorePath, () => _activeConfig?.Settings.MaximumTokenBalance ?? 0);
+        Tokens = new TokenService(tokenStorePath, () => EffectiveSettings.MaximumTokenBalance);
         _dataMaintenance = new DataMaintenance(
             () => _activeConfig,
             DefaultEffectiveSettings,
@@ -131,12 +131,12 @@ public sealed partial class MainHandler
 
     internal void TrackTask(Task task) => _backgroundTaskTracker.Track(task);
 
-    public bool MultiplayerEnabled => _activeConfig?.Settings.MultiplayerEnabled == true;
+    public bool MultiplayerEnabled => EffectiveSettings.MultiplayerEnabled;
 
-    public bool RemoteControlEnabled => _activeConfig?.Settings.RemoteControlEnabled == true;
+    public bool RemoteControlEnabled => EffectiveSettings.RemoteControlEnabled;
 
     internal bool ProfileApplied => _profileApplied || _runtimeState != RuntimeState.Stopped;
-    public bool RequireOnlineMode => _activeConfig?.Settings.RequireOnlineMode != false;
+    public bool RequireOnlineMode => EffectiveSettings.RequireOnlineMode;
 
     internal void StageLocalRCONPassword(string password) => _minecraftSession.StageLocalRCONPassword(password);
 
@@ -144,7 +144,7 @@ public sealed partial class MainHandler
 
     public bool MinigamesEnabled => _activeConfig?.Settings.MinigamesEnabled == true;
 
-    public int MinigameCooldown => _activeConfig?.Settings.MinigameCooldown ?? 15;
+    public int MinigameCooldown => EffectiveSettings.MinigameCooldown;
 
     private void SetConfig(TwitchCraftConfig config)
     {
