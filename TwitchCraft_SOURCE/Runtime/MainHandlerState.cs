@@ -149,13 +149,9 @@ public sealed partial class MainHandler
     private void SetConfig(TwitchCraftConfig config)
     {
         string previousMinecraftVersion = _activeConfig?.Server.MinecraftVersion ?? string.Empty;
-        string streamerName = NormalizeUser(config.Twitch.StreamerName);
         _activeConfig = config;
-        if (!string.Equals(_currentStreamerName, streamerName, StringComparison.Ordinal))
-        {
-            _currentStreamerName = streamerName;
-            _twitchSession.SetChannel(streamerName);
-        }
+        _currentStreamerName = NormalizeUser(config.Twitch.StreamerName);
+        _twitchSession.SetChannel(_currentStreamerName);
         string configuredMinecraftPlayer = config.Identity.StreamerMinecraftName.Trim();
         _currentStreamerMinecraftName = MinecraftNameHelper.TryNormalizePlayerName(configuredMinecraftPlayer, out string normalizedMinecraftPlayer)
             ? normalizedMinecraftPlayer
