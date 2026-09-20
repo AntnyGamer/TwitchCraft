@@ -27,8 +27,8 @@ public sealed partial class MainHandler
         }
 
         Commands.ResetCommandState();
-        lock (_relayGate)
-            _relayMessageTimestamps.Clear();
+        lock (_twitchSession.RelayGate)
+            _twitchSession.RelayMessageTimestamps.Clear();
 
         lock (_playerGate)
         {

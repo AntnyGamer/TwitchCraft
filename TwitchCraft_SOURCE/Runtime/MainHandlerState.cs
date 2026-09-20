@@ -17,7 +17,6 @@ public sealed partial class MainHandler
     private readonly MinecraftSession _minecraftSession;
     private readonly Lock _viewerGate;
     private readonly Lock _playerGate;
-    private readonly Lock _relayGate;
     private readonly Lock _configPersistenceGate;
     private readonly TimedPlayerScaleController _timedPlayerScaleController;
     private readonly BackgroundTaskTracker _backgroundTaskTracker;
@@ -80,7 +79,6 @@ public sealed partial class MainHandler
         _lifecycleGate = new(1, 1);
         _viewerGate = new();
         _playerGate = new();
-        _relayGate = new();
         _configPersistenceGate = new();
         _backgroundTaskTracker = new();
         _timedPlayerScaleController = new(

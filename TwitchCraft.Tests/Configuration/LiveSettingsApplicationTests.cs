@@ -140,7 +140,7 @@ public sealed class LiveSettingsApplicationTests
         {
             await runtime.ApplySettingsAsync(config);
 
-            long now = DateTime.UtcNow.Ticks;
+            const long now = 10_000;
             Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now));
             Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 1));
             Assert.False(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 2));

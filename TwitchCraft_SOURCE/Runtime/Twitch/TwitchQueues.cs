@@ -10,12 +10,12 @@ public sealed partial class MainHandler
 {
     private async Task WarnQueueOverloadAsync(CancellationToken cancellationToken)
     {
-        long nowTicks = DateTime.UtcNow.Ticks;
-        long previousTicks = Volatile.Read(ref _twitchSession.LastCommandOverflowNoticeTicks);
-        if (previousTicks != 0 && nowTicks - previousTicks < TwitchSession.CommandOverflowNoticeIntervalTicks)
+        long nowMilliseconds = Environment.TickCount64;
+        long previousMilliseconds = Volatile.Read(ref _twitchSession.LastCommandOverflowNoticeMilliseconds);
+        if (previousMilliseconds != 0 && nowMilliseconds - previousMilliseconds < TwitchSession.CommandOverflowNoticeIntervalMilliseconds)
             return;
 
-        if (Interlocked.CompareExchange(ref _twitchSession.LastCommandOverflowNoticeTicks, nowTicks, previousTicks) != previousTicks)
+        if (Interlocked.CompareExchange(ref _twitchSession.LastCommandOverflowNoticeMilliseconds, nowMilliseconds, previousMilliseconds) != previousMilliseconds)
             return;
 
         _shellWindow?.AddChatLogLine("[IRC] Command queue overloaded; skipped commands temporarily.");

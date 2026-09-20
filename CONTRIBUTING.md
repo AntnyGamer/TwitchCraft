@@ -31,7 +31,7 @@ dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build --results-d
 Pop-Location
 ```
 
-No coverage percentage gate is enforced until a stable baseline is measured and documented.
+CI enforces a 10% minimum line-coverage floor to prevent major coverage regressions.
 
 ## Source layout
 

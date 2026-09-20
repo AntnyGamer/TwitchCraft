@@ -126,7 +126,7 @@ public static partial class CommandList
         {
             if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return;
-            if (!runtime.Commands.TryUseLightning(out TimeSpan remaining, out DateTime lightningReservationUtc))
+            if (!runtime.Commands.TryUseLightning(out TimeSpan remaining, out long lightningReservationTimestamp))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
@@ -138,12 +138,12 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.Commands.ClearLightningCooldown(lightningReservationUtc);
+                runtime.Commands.ClearLightningCooldown(lightningReservationTimestamp);
                 throw;
             }
             if (target == null)
             {
-                runtime.Commands.ClearLightningCooldown(lightningReservationUtc);
+                runtime.Commands.ClearLightningCooldown(lightningReservationTimestamp);
                 return;
             }
             int cost = runtime.Commands.ScaleCost(50, target.PlayerCount);
@@ -152,7 +152,7 @@ public static partial class CommandList
                     cost,
                     MinecraftCommandBuilder.Lightning(target.Selector),
                     ct,
-                    () => runtime.Commands.ClearLightningCooldown(lightningReservationUtc)).ConfigureAwait(false))
+                    () => runtime.Commands.ClearLightningCooldown(lightningReservationTimestamp)).ConfigureAwait(false))
             {
                 return;
             }
@@ -318,7 +318,7 @@ public static partial class CommandList
                 return;
             }
 
-            if (!runtime.Commands.TryUseScaleCommand(commandName, out TimeSpan remaining, out DateTime cooldownReservationUtc))
+            if (!runtime.Commands.TryUseScaleCommand(commandName, out TimeSpan remaining, out long cooldownReservationTimestamp))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
@@ -337,13 +337,13 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationUtc);
+                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationTimestamp);
                 throw;
             }
 
             if (!sent)
             {
-                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationUtc);
+                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationTimestamp);
                 return;
             }
 
