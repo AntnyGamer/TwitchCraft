@@ -321,8 +321,8 @@ public sealed partial class MainHandler
 
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(false).ConfigureAwait(false);
-            for (long end = Environment.TickCount64 + 3000; Environment.TickCount64 < end && _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks;)
-                await Task.WhenAny(Task.WhenAll(tasks), Task.Delay((int)Math.Max(1, end - Environment.TickCount64))).ConfigureAwait(false);
+            for (Task timeout = Task.Delay(3000); _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && await Task.WhenAny(Task.WhenAll(tasks), timeout).ConfigureAwait(false) != timeout;)
+            { }
             _backgroundTaskTracker.Clear();
             StatisticsService.FlushForShutdown();
             CloseStores();
@@ -363,8 +363,8 @@ public sealed partial class MainHandler
                 sessionCts.Cancel();
             }
 
-            for (long end = Environment.TickCount64 + 3000; Environment.TickCount64 < end && _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks;)
-                await Task.WhenAny(Task.WhenAll(tasks), Task.Delay((int)Math.Max(1, end - Environment.TickCount64))).ConfigureAwait(false);
+            for (Task timeout = Task.Delay(3000); _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && await Task.WhenAny(Task.WhenAll(tasks), timeout).ConfigureAwait(false) != timeout;)
+            { }
 
             await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
             if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(CancellationToken.None).ConfigureAwait(false);
