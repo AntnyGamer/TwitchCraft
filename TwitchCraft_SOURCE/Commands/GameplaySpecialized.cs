@@ -311,13 +311,16 @@ public static partial class CommandList
             if (target == null) return;
             List<string> players = await GetPlayersAsync(target, ct).ConfigureAwait(false);
             if (players.Count == 0) return;
-            foreach (string player in players)
-                await ResetHeartEffectsAsync(player, false, ct).ConfigureAwait(false);
-            if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
-            { await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false); return; }
-            bool sent = false;
+            await heartGate.WaitAsync(ct).ConfigureAwait(false);
             try
             {
+                foreach (string player in players)
+                    await ResetHeartEffectsCoreAsync(player, false, ct).ConfigureAwait(false);
+                if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
+                { await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false); return; }
+                bool sent = false;
+                try
+                {
                 int delta = hearts * (add ? 2 : -2);
                 foreach (string player in players)
                 {
@@ -337,13 +340,22 @@ public static partial class CommandList
                 sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
                 if (!sent) return;
                 lock (activeHeartEffects) foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, id, false)); }
-                runtime.TrackTask(ResetHeartAsync(id, ct));
-                await ConfirmAsync(sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) + " for 10 minutes.", ct).ConfigureAwait(false);
+                    runtime.TrackTask(ResetHeartAsync(id, ct));
+                    await ConfirmAsync(sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) + " for 10 minutes.", ct).ConfigureAwait(false);
+                }
+                finally { if (!sent) runtime.Commands.ClearTimedCommandCooldown("heart", reservation); }
             }
-            finally { if (!sent) runtime.Commands.ClearTimedCommandCooldown("heart", reservation); }
+            finally { heartGate.Release(); }
         }
 
         async Task ResetHeartEffectsAsync(string? player, bool force, CancellationToken ct)
+        {
+            await heartGate.WaitAsync(ct).ConfigureAwait(false);
+            try { await ResetHeartEffectsCoreAsync(player, force, ct).ConfigureAwait(false); }
+            finally { heartGate.Release(); }
+        }
+
+        async Task ResetHeartEffectsCoreAsync(string? player, bool force, CancellationToken ct)
         {
             if (player != null && await runtime.QueryHeartModifiersAsync(player, ct).ConfigureAwait(false) is { } data)
                 SyncHeartEffects(player, MainHandler.ParseHeartModifierIDs(data, runtime.UsesNamespacedAttributeModifierIDs), true);
@@ -391,12 +403,21 @@ public static partial class CommandList
 
         async Task ResetHeartAsync(string id, CancellationToken ct)
         {
-            try { await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false); } catch (OperationCanceledException) { }
-            lock (activeHeartEffects)
-                foreach (List<(int Delta, string ID, bool Expired)> effects in activeHeartEffects.Values)
-                    for (int i = 0; i < effects.Count; i++)
-                        if (effects[i].ID == id) effects[i] = (effects[i].Delta, id, true);
-            if (!ct.IsCancellationRequested) await ResetHeartEffectsAsync(null, false, CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);
+                await heartGate.WaitAsync(ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { return; }
+            try
+            {
+                lock (activeHeartEffects)
+                    foreach (List<(int Delta, string ID, bool Expired)> effects in activeHeartEffects.Values)
+                        for (int i = 0; i < effects.Count; i++)
+                            if (effects[i].ID == id) effects[i] = (effects[i].Delta, id, true);
+                await ResetHeartEffectsCoreAsync(null, false, CancellationToken.None).ConfigureAwait(false);
+            }
+            finally { heartGate.Release(); }
         }
 
         async Task TimedScaleAsync(
