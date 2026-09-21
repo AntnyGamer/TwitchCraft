@@ -90,10 +90,10 @@ public sealed partial class MainHandler
         _knownViewers = [];
         _knownPlayers = [];
         _lastSidebarPlayers = [];
-        Tokens = new TokenService(tokenStorePath, () => EffectiveSettings.MaximumTokenBalance);
+        Tokens = new TokenService(tokenStorePath, () => CurrentSettings.MaximumTokenBalance);
         _dataMaintenance = new DataMaintenance(
             () => _activeConfig,
-            DefaultEffectiveSettings,
+            DefaultSettings,
             Tokens,
             (token, cancellationToken) => ValidateBotAsync(token, _activeConfig?.Twitch.ClientID ?? string.Empty, cancellationToken),
             SaveBot,
@@ -131,12 +131,12 @@ public sealed partial class MainHandler
 
     internal void TrackTask(Task task) => _backgroundTaskTracker.Track(task);
 
-    public bool MultiplayerEnabled => EffectiveSettings.MultiplayerEnabled;
+    public bool MultiplayerEnabled => CurrentSettings.MultiplayerEnabled;
 
-    public bool RemoteControlEnabled => EffectiveSettings.RemoteControlEnabled;
+    public bool RemoteControlEnabled => CurrentSettings.RemoteControlEnabled;
 
     internal bool ProfileApplied => _profileApplied || _runtimeState != RuntimeState.Stopped;
-    public bool RequireOnlineMode => EffectiveSettings.RequireOnlineMode;
+    public bool RequireOnlineMode => CurrentSettings.RequireOnlineMode;
 
     internal void StageLocalRCONPassword(string password) => _minecraftSession.StageLocalRCONPassword(password);
 
@@ -144,7 +144,7 @@ public sealed partial class MainHandler
 
     public bool MinigamesEnabled => _activeConfig?.Settings.MinigamesEnabled == true;
 
-    public int MinigameCooldown => EffectiveSettings.MinigameCooldown;
+    public int MinigameCooldown => CurrentSettings.MinigameCooldown;
 
     private void SetConfig(TwitchCraftConfig config)
     {

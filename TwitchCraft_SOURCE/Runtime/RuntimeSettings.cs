@@ -8,26 +8,26 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private static readonly StartingProfile DefaultEffectiveSettings = new();
+    private static readonly StartingProfile DefaultSettings = new();
     private readonly Dictionary<string, long> _viewerLastChatActivity = new(StringComparer.OrdinalIgnoreCase);
 
-    public bool ShowConnectionHealth => EffectiveSettings.ShowConnectionHealth;
+    public bool ShowConnectionHealth => CurrentSettings.ShowConnectionHealth;
     public bool TwitchChatConnected => _twitchSession.ChatConnected;
-    public bool LowResourceModeEnabled => EffectiveSettings.LowResourceModeEnabled;
-    public bool PauseUIUpdatesWhenMinimized => EffectiveSettings.PauseUIUpdatesWhenMinimized || EffectiveSettings.LowResourceModeEnabled;
-    public int MaxVisibleTwitchLogLines => EffectiveSettings.LowResourceModeEnabled ? Math.Min(100, EffectiveSettings.MaxVisibleTwitchLogLines) : EffectiveSettings.MaxVisibleTwitchLogLines;
-    public int MaxVisibleMinecraftLogLines => EffectiveSettings.LowResourceModeEnabled ? Math.Min(100, EffectiveSettings.MaxVisibleMinecraftLogLines) : EffectiveSettings.MaxVisibleMinecraftLogLines;
-    internal int ViewerRosterRefreshIntervalSeconds => EffectiveSettings.LowResourceModeEnabled ? Math.Max(60, EffectiveSettings.ViewerRosterRefreshIntervalSeconds) : EffectiveSettings.ViewerRosterRefreshIntervalSeconds;
-    internal int MaxGameplayCommandQueue => EffectiveSettings.LowResourceModeEnabled ? Math.Min(35, EffectiveSettings.MaxGameplayCommandQueue) : EffectiveSettings.MaxGameplayCommandQueue;
-    internal TimeSpan RCONTimeout => TimeSpan.FromSeconds(EffectiveSettings.RCONTimeoutSeconds);
-    internal TimeSpan GracefulShutdownTimeout => TimeSpan.FromSeconds(EffectiveSettings.GracefulShutdownTimeoutSeconds);
+    public bool LowResourceModeEnabled => CurrentSettings.LowResourceModeEnabled;
+    public bool PauseUIUpdatesWhenMinimized => CurrentSettings.PauseUIUpdatesWhenMinimized || CurrentSettings.LowResourceModeEnabled;
+    public int MaxVisibleTwitchLogLines => CurrentSettings.LowResourceModeEnabled ? Math.Min(100, CurrentSettings.MaxVisibleTwitchLogLines) : CurrentSettings.MaxVisibleTwitchLogLines;
+    public int MaxVisibleMinecraftLogLines => CurrentSettings.LowResourceModeEnabled ? Math.Min(100, CurrentSettings.MaxVisibleMinecraftLogLines) : CurrentSettings.MaxVisibleMinecraftLogLines;
+    internal int ViewerRosterRefreshIntervalSeconds => CurrentSettings.LowResourceModeEnabled ? Math.Max(60, CurrentSettings.ViewerRosterRefreshIntervalSeconds) : CurrentSettings.ViewerRosterRefreshIntervalSeconds;
+    internal int MaxGameplayCommandQueue => CurrentSettings.LowResourceModeEnabled ? Math.Min(35, CurrentSettings.MaxGameplayCommandQueue) : CurrentSettings.MaxGameplayCommandQueue;
+    internal TimeSpan RCONTimeout => TimeSpan.FromSeconds(CurrentSettings.RCONTimeoutSeconds);
+    internal TimeSpan GracefulShutdownTimeout => TimeSpan.FromSeconds(CurrentSettings.GracefulShutdownTimeoutSeconds);
     internal IReadOnlyList<string> RegisteredCommandNames => _commandRegistry.CommandNames;
 
-    private StartingProfile EffectiveSettings => _activeConfig?.Settings ?? DefaultEffectiveSettings;
+    private StartingProfile CurrentSettings => _activeConfig?.Settings ?? DefaultSettings;
 
-    internal string CommandPrefix => EffectiveSettings.CommandPrefix;
-    internal string SecondaryCommandPrefix => EffectiveSettings.SecondaryCommandPrefix;
-    internal string BotResponseVerbosity => EffectiveSettings.BotResponseVerbosity;
+    internal string CommandPrefix => CurrentSettings.CommandPrefix;
+    internal string SecondaryCommandPrefix => CurrentSettings.SecondaryCommandPrefix;
+    internal string BotResponseVerbosity => CurrentSettings.BotResponseVerbosity;
 
     internal static string FormatReply(string message, string sender, bool mentionViewer)
     {
@@ -76,7 +76,7 @@ public sealed partial class MainHandler
 
     internal string FormatCooldown(TimeSpan remaining)
     {
-        if (!EffectiveSettings.ShowExactCooldownRemaining)
+        if (!CurrentSettings.ShowExactCooldownRemaining)
             return "a moment";
 
         int seconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds));
@@ -89,17 +89,17 @@ public sealed partial class MainHandler
 
     internal int GetPassivePayoutDelay()
     {
-        StartingProfile settings = EffectiveSettings;
+        StartingProfile settings = CurrentSettings;
         int minimum = settings.PassiveTokenPayoutMinimumSeconds;
         int maximum = settings.PassiveTokenPayoutMaximumSeconds;
         return minimum == maximum ? minimum : Random.Shared.Next(minimum, maximum + 1);
     }
 
-    internal int PassiveTokensPerPayout => EffectiveSettings.PassiveTokensPerPayout;
+    internal int PassiveTokensPerPayout => CurrentSettings.PassiveTokensPerPayout;
 
     internal void RecordChatActivity(string sender, long unixSeconds)
     {
-        if (!EffectiveSettings.PassiveRewardsRequireActivity)
+        if (!CurrentSettings.PassiveRewardsRequireActivity)
             return;
 
         string normalizedSender = NormalizeUser(sender);
@@ -112,7 +112,7 @@ public sealed partial class MainHandler
 
     internal bool IsRewardEligibleNoLock(string viewer, long nowUnixSeconds)
     {
-        StartingProfile settings = EffectiveSettings;
+        StartingProfile settings = CurrentSettings;
         if (!settings.PassiveRewardsRequireActivity)
             return true;
 
@@ -121,6 +121,6 @@ public sealed partial class MainHandler
     }
 
     private bool AreViewerCommandsPaused(string sender)
-        => EffectiveSettings.ViewerCommandsPaused &&
+        => CurrentSettings.ViewerCommandsPaused &&
             !string.Equals(sender, _currentStreamerName, StringComparison.OrdinalIgnoreCase);
 }

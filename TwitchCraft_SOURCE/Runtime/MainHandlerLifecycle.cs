@@ -148,7 +148,7 @@ public sealed partial class MainHandler
         {
             try
             {
-                int delayMinutes = EffectiveSettings.EmptyServerShutdownDelayMinutes;
+                int delayMinutes = CurrentSettings.EmptyServerShutdownDelayMinutes;
                 if (delayMinutes <= 0 || RemoteControlEnabled || !_minecraftSession.ServerReady)
                 {
                     emptySinceTicks = 0;
