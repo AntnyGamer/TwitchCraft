@@ -406,7 +406,7 @@ public static partial class CommandList
                         const string prefix = "twitchcraft:heart_";
                         bool validID = id.StartsWith(prefix, StringComparison.Ordinal)
                             ? Guid.TryParseExact(id[prefix.Length..], "N", out _)
-                            : Guid.TryParse(id, out _);
+                            : Guid.TryParseExact(id, "D", out _);
                         if (!MinecraftNameHelper.IsValidPlayerName(player) || !validID) continue;
                         if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = [];
                         effects.Add((0, id, true));
