@@ -368,7 +368,7 @@ public sealed partial class MainHandler
             for (Task? timeout = null; _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && !(timeout ??= Task.Delay(3000)).IsCompleted;)
                 await Task.WhenAny(tasks.Length == 1 ? tasks[0] : Task.WhenAll(tasks), timeout!).ConfigureAwait(false);
 
-            if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(true, CancellationToken.None).ConfigureAwait(false);
+            if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false);
             _twitchSession.CloseSocket();
             if (!RemoteControlEnabled)
                 await TryStopServerAsync().ConfigureAwait(false);
