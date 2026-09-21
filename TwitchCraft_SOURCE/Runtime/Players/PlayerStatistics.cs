@@ -104,10 +104,8 @@ public sealed partial class MainHandler
                 return true;
 
             TaskCompletionSource<bool> waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            bool sent = await SendProbesAsync(
-                [
-                    "scoreboard objectives add " + DeathScoreObjective + " deathCount"
-                ],
+            bool sent = await SendProbeAsync(
+                "scoreboard objectives add " + DeathScoreObjective + " deathCount",
                 () => waiter.TrySetResult(true),
                 cancellationToken).ConfigureAwait(false);
 
