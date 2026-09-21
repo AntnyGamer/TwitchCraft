@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 
 namespace TwitchCraft_V1;
 
@@ -30,6 +31,7 @@ public static partial class CommandList
         private Dictionary<string, ChatCommandHandler> handlers;
         private Dictionary<string, ChatCommandStatisticFlags>? statisticFlags;
         private readonly Dictionary<string, List<(int Delta, string ID, bool Expired)>> activeHeartEffects = new(StringComparer.OrdinalIgnoreCase);
+        private readonly SemaphoreSlim heartGate = new(1, 1);
 
         internal CommandBuildContext(
             MainHandler runtime,
