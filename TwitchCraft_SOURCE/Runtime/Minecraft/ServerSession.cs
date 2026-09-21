@@ -53,12 +53,9 @@ public sealed partial class MainHandler
         lock (_maxHealthProbeGate)
         {
             foreach (TaskCompletionSource<double?> waiter in _pendingMaxHealthRequests.Values) waiter.TrySetResult(null);
+            foreach (TaskCompletionSource<string?> waiter in _pendingHeartAttributeRequests.Values) waiter.TrySetResult(null);
             _pendingMaxHealthRequests.Clear();
-        }
-        lock (_healthModifierProbeGate)
-        {
-            foreach (TaskCompletionSource<bool?> waiter in _pendingHealthModifierRequests.Values) waiter.TrySetResult(null);
-            _pendingHealthModifierRequests.Clear();
+            _pendingHeartAttributeRequests.Clear();
         }
         lock (_respawnPositionProbeGate)
         {
