@@ -55,7 +55,8 @@ public sealed partial class MainHandler
             {
                 void CompleteProbe() => CompleteRequest(key, gate, pendingRequests, waiter, default!);
                 CancellationToken probeToken = _sessionCts?.Token ?? CancellationToken.None;
-        if (allowAfterSessionCancellation && probeToken.IsCancellationRequested) probeToken = CancellationToken.None;
+                if (allowAfterSessionCancellation && probeToken.IsCancellationRequested)
+                    probeToken = CancellationToken.None;
                 _ = SendPlayerQueryAsync(sendProbe, CompleteProbe, probeToken);
             }
             return await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
