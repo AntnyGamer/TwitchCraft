@@ -171,7 +171,7 @@ public sealed partial class MainHandler
                         else if (nowTicks - emptySinceTicks >= delayMinutes * TimeSpan.TicksPerMinute)
                         {
                             AddServerLogLine("No players have been online for " + delayMinutes + " minutes. Pausing the Minecraft server.");
-                            _ = PauseAsync();
+                            _ = Task.Run(PauseAsync, CancellationToken.None);
                             return;
                         }
                     }
