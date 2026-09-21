@@ -311,8 +311,7 @@ public static partial class CommandList
             if (target == null) return;
             List<string> players = await GetPlayersAsync(target, ct).ConfigureAwait(false);
             if (players.Count == 0) return;
-            long reservation = -1;
-            if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out reservation))
+            if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
             { await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false); return; }
             bool sent = false;
             try
@@ -347,6 +346,17 @@ public static partial class CommandList
                 await ConfirmAsync(sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) + " for 10 minutes.", ct).ConfigureAwait(false);
             }
             finally { if (!sent) runtime.Commands.ClearTimedCommandCooldown("heart", reservation); }
+        }
+
+        Task<bool> ResetHeartEffectsAsync(CancellationToken ct)
+        {
+            List<string> commands = [];
+            lock (activeHeartEffects)
+                foreach (var player in activeHeartEffects)
+                    if (runtime.IsPlayerOnline(player.Key))
+                        foreach ((_, string id) in player.Value)
+                            commands.Add(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player.Key), id, runtime.UsesModernAttributeIDs));
+            return runtime.SendServerCommandsAsync(commands, ct);
         }
 
         async Task ResetHeartAsync(List<string> players, int delta, string id, CancellationToken ct)

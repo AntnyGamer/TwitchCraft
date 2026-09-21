@@ -37,6 +37,7 @@ public static partial class CommandList
         {
             this.runtime = runtime;
             this.statisticFlags = statisticFlags;
+            runtime.Commands.ResetHeartEffectsAsync = ResetHeartEffectsAsync;
             handlers = new Dictionary<string, ChatCommandHandler>(64, StringComparer.OrdinalIgnoreCase);
         }
 

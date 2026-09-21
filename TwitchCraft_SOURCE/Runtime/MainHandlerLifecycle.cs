@@ -363,6 +363,7 @@ public sealed partial class MainHandler
             }
 
             await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
+            if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(CancellationToken.None).ConfigureAwait(false);
             _twitchSession.CloseSocket();
             if (!RemoteControlEnabled)
                 await TryStopServerAsync().ConfigureAwait(false);

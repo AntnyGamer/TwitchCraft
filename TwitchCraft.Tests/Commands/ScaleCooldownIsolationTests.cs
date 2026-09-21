@@ -67,5 +67,4 @@ public sealed class ScaleCooldownIsolationTests
             runtime.Tokens.Close();
         }
     }
-
 }
