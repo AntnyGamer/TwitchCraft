@@ -38,15 +38,11 @@ internal static class PaidCommandTransaction
 
         try
         {
-            if (cost > 0)
+            if (cost > 0 && !trySpendTokens(cost))
             {
-                if (!trySpendTokens(cost))
-                {
-                    notifyFailure?.Invoke();
-                    await reportInsufficientTokensAsync(cost, cancellationToken).ConfigureAwait(false);
-                    return false;
-                }
-
+                notifyFailure?.Invoke();
+                await reportInsufficientTokensAsync(cost, cancellationToken).ConfigureAwait(false);
+                return false;
             }
 
             try
