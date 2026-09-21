@@ -230,7 +230,7 @@ public sealed partial class MainHandler
 
         if (MultiplayerEnabled)
             QueueSidebarRefresh();
-        if (TryGetSessionToken(requireMultiplayer: false, out CancellationToken token)) { TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(token)); if (Commands.ResetHeartEffectsAsync != null) TrackTask(Commands.ResetHeartEffectsAsync(false, token)); }
+        if (TryGetSessionToken(requireMultiplayer: false, out CancellationToken token)) TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(token));
 
         return true;
     }
@@ -284,7 +284,7 @@ public sealed partial class MainHandler
 
                 RemoveSpectator(joinedPlayer);
 
-                Statistics.RecordPlayerJoin(joinedPlayer);
+                RecordPlayerJoin(joinedPlayer);
                 QueueGamemode(joinedPlayer);
                 QueueSnapshot();
             }
