@@ -116,13 +116,13 @@ internal sealed class TimedPlayerScaleController
 
     internal void MarkForRecovery() => Volatile.Write(ref _recoveryGeneration, Volatile.Read(ref _nextGeneration));
 
-    internal async Task ResetAllAsync(CancellationToken cancellationToken, long maxGeneration = long.MaxValue, string? player = null)
+    internal async Task ResetAllAsync(CancellationToken cancellationToken, long maxGeneration = long.MaxValue, string? playerName = null)
     {
         List<string> players;
         lock (_gate)
-            players = player == null ? [.. _states.Keys] : _states.ContainsKey(player) ? [player] : [];
+            players = playerName == null ? [.. _states.Keys] : _states.ContainsKey(playerName) ? [playerName] : [];
 
-        if (player == null) players.Sort(StringComparer.OrdinalIgnoreCase);
+        if (playerName == null) players.Sort(StringComparer.OrdinalIgnoreCase);
         if (players.Count == 0)
             return;
 
