@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace TwitchCraft_V1;
 
@@ -217,10 +218,55 @@ public sealed partial class MainHandler
         return false;
     }
 
+    [GeneratedRegex(@"twitchcraft:heart_[0-9a-f]{32}", RegexOptions.CultureInvariant)]
+    private static partial Regex ModernHeartModifierRegex();
+
+    [GeneratedRegex(@"\{[^{}]*twitchcraft_health[^{}]*\}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LegacyHeartModifierRegex();
+
+    [GeneratedRegex(@"uuid\s*:\s*\[I;\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LegacyHeartUuidRegex();
+
+    internal static List<string> ParseHeartModifierIDs(string data, bool namespaced)
+    {
+        List<string> ids = [];
+        if (namespaced)
+        {
+            foreach (Match match in ModernHeartModifierRegex().Matches(data))
+                ids.Add(match.Value);
+            return ids;
+        }
+
+        foreach (Match modifier in LegacyHeartModifierRegex().Matches(data))
+        {
+            Match uuid = LegacyHeartUuidRegex().Match(modifier.Value);
+            if (!uuid.Success ||
+                !int.TryParse(uuid.Groups[1].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) ||
+                !int.TryParse(uuid.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
+                !int.TryParse(uuid.Groups[3].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int c) ||
+                !int.TryParse(uuid.Groups[4].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int d))
+                continue;
+
+            uint ua = unchecked((uint)a), ub = unchecked((uint)b), uc = unchecked((uint)c), ud = unchecked((uint)d);
+            ids.Add($"{ua:x8}-{(ub >> 16):x4}-{(ub & 0xffff):x4}-{(uc >> 16):x4}-{(uc & 0xffff):x4}{ud:x8}");
+        }
+        return ids;
+    }
+
     private void HandleEntity(string line)
     {
         if (!TryParseEntity(line, out string playerName, out string suffix))
             return;
+
+        if (suffix.Length > 1 && suffix[0] == '[' && suffix.Contains("max_health", StringComparison.OrdinalIgnoreCase))
+        {
+            lock (_healthModifierProbeGate)
+                if (_pendingHeartAttributeRequests.Remove(playerName, out TaskCompletionSource<string?>? waiter))
+                {
+                    waiter.TrySetResult(suffix);
+                    return;
+                }
+        }
 
         if (HasRespawnRequest(playerName) && TryParsePosition(suffix))
         {
