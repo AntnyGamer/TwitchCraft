@@ -81,6 +81,8 @@ public sealed class SharedPlayerProbeTests
         Assert.True(MainHandler.TryParseHealthModifierResponse("Attribute Max Health for entity [VIP] PlayerOne has no modifier twitchcraft:heart_1", "PlayerOne", "twitchcraft:heart_1", out exists));
         Assert.False(exists);
         Assert.False(MainHandler.TryParseHealthModifierResponse("Value of modifier twitchcraft:heart_1 on attribute Max Health for entity PlayerOne2 is -4.0", "PlayerOne", "twitchcraft:heart_1", out _));
+        Assert.Equal(["twitchcraft:heart_0123456789abcdef0123456789abcdef"], MainHandler.ParseHeartModifierIDs("[{id:\"minecraft:max_health\",modifiers:[{id:\"twitchcraft:heart_0123456789abcdef0123456789abcdef\",amount:-4.0d}]}]", true));
+        Assert.Equal(["01234567-89ab-cdef-fedc-ba9876543210"], MainHandler.ParseHeartModifierIDs("[{Name:\"minecraft:generic.max_health\",Modifiers:[{UUID:[I;19088743,-1985229329,-19088744,1985229328],Name:\"twitchcraft_health\",Amount:2.0d}]}]", false));
     }
 
     private static TaskCompletionSource<bool> CreateSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
