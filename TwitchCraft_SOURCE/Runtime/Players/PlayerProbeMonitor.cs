@@ -115,7 +115,7 @@ public sealed partial class MainHandler
     {
         string selector = MinecraftCommandBuilder.SinglePlayerSelector(playerName);
         return QueryPlayerAsync<string?>(playerName, _healthModifierProbeGate, _pendingHeartAttributeRequests,
-            (complete, ct) => SendProbeAsync("data get entity " + selector + " " + (UsesNamespacedAttributeModifierIDs ? "attributes" : "Attributes"), complete, ct), cancellationToken);
+            (complete, ct) => SendProbeAsync("data get entity " + selector + " " + (UsesModernEntityAttributeNbt ? "attributes" : "Attributes"), complete, ct), cancellationToken);
     }
 
     public Task<string?> QueryItemAsync(string playerName, CancellationToken cancellationToken)
