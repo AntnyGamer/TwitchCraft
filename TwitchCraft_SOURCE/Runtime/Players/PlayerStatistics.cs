@@ -208,8 +208,9 @@ public sealed partial class MainHandler
     private void RecordPlayerJoin(string player)
     {
         Statistics.RecordPlayerJoin(player);
-        if (Commands.ResetHeartEffectsAsync != null && TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
-            TrackTask(Commands.ResetHeartEffectsAsync(player, false, token));
+        if (!TryGetSessionToken(requireMultiplayer: false, out CancellationToken token)) return;
+        TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(player, token));
+        if (Commands.ResetHeartEffectsAsync != null) TrackTask(Commands.ResetHeartEffectsAsync(player, false, token));
     }
 
     private void RecordRoster(List<string> previousPlayers, List<string> currentPlayers)
