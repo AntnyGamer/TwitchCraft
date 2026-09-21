@@ -23,8 +23,9 @@ public static partial class MinigameManager
 
     // ===== State model types =====
 
-    private sealed class MinigameLoopState(CancellationTokenSource cts, DateTime nextAtUtc)
+    private sealed class MinigameLoopState(MainHandler runtime, CancellationTokenSource cts, DateTime nextAtUtc)
     {
+        public MainHandler Runtime { get; } = runtime;
         public CancellationTokenSource Cts { get; } = cts;
         public DateTime NextAtUtc { get; set; } = nextAtUtc;
         public Task? Task { get; set; }
