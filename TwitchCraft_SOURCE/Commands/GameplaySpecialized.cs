@@ -340,9 +340,9 @@ public static partial class CommandList
                     }
 
                     string id = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
-                    List<string> commands = new(players.Count);
-                    foreach (string player in players)
-                        commands.Add(MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs));
+                    string[] commands = new string[players.Count];
+                    for (int i = 0; i < players.Count; i++)
+                        commands[i] = MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(players[i]), id, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs);
                     sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
                     if (!sent) return;
                     lock (activeHeartEffects) foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, id, false)); }
