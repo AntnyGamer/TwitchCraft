@@ -30,7 +30,7 @@ public sealed class CommandService
     private long _lastChannelCommandLimitNoticeTimestamp;
     private long _lastCommandStatePruneTimestamp;
     private int _fireworksRepeatActive;
-    internal Func<bool, CancellationToken, Task>? ResetHeartEffectsAsync;
+    internal Func<string?, bool, CancellationToken, Task>? ResetHeartEffectsAsync;
 
     internal CommandService(Func<CancellationToken, Task<List<string>>> refreshPlayers)
     {
