@@ -23,17 +23,17 @@ internal sealed class BackgroundTaskTracker
         lock (_gate)
             _tasks.Add(task);
         _ = task.ContinueWith(
-            completedTask =>
-            {
-                if (completedTask.IsFaulted)
-                    ErrorHandling.LogNonFatal("Background task failed", completedTask.Exception);
-
-                lock (_gate)
-                    _tasks.Remove(completedTask);
-            },
+            static (completedTask, state) => ((BackgroundTaskTracker)state!).Complete(completedTask),
+            this,
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+    }
+
+    private void Complete(Task task)
+    {
+        if (task.IsFaulted) ErrorHandling.LogNonFatal("Background task failed", task.Exception);
+        lock (_gate) _tasks.Remove(task);
     }
 
     internal Task[] Snapshot()
