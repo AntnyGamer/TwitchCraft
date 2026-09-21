@@ -174,14 +174,8 @@ public static partial class MinigameManager
         }
     }
 
-    private static void RefundChickenBets(MainHandler runtime)
+    private static void RefundBets<TBet>(MainHandler runtime, BettingState<TBet> state) where TBet : IMinigameBet
     {
-        ChickenRunState state;
-        lock (MinigameGate)
-        {
-            if (!ChickenRunStates.TryGetValue(runtime, out state!)) return;
-            state.BettingOpen = false;
-        }
         lock (state.SettlementGate)
         {
             List<KeyValuePair<string, int>> adjustments;
@@ -195,6 +189,17 @@ public static partial class MinigameManager
         }
     }
 
+    private static void RefundChickenBets(MainHandler runtime)
+    {
+        ChickenRunState state;
+        lock (MinigameGate)
+        {
+            if (!ChickenRunStates.TryGetValue(runtime, out state!)) return;
+            state.BettingOpen = false;
+        }
+        RefundBets(runtime, state);
+    }
+
     private static void RefundWitherBets(MainHandler runtime)
     {
         WitherBattleState state;
@@ -206,16 +211,24 @@ public static partial class MinigameManager
             state.DefeatedSignal?.TrySetResult(false);
             state.DefeatedSignal = null;
         }
+        RefundBets(runtime, state);
+    }
+
+    private static bool SettleBets<TBet>(MainHandler runtime, BettingState<TBet> state, string kind, long runID, List<KeyValuePair<string, int>> payouts) where TBet : IMinigameBet
+    {
         lock (state.SettlementGate)
         {
-            List<KeyValuePair<string, int>> adjustments;
             lock (MinigameGate)
             {
-                if (state.PendingSettlement == null && state.Bets.Count == 0) return;
-                adjustments = state.PendingSettlement ?? BuildRefunds(state.Bets);
+                if (state.Bets.Count == 0 ||
+                    !ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState) ||
+                    !string.Equals(activeState.Kind, kind, StringComparison.Ordinal) || activeState.RunID != runID)
+                    return false;
+                state.PendingSettlement = payouts;
             }
-            if (runtime.Tokens.Adjust(adjustments))
-                lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
+            if (!runtime.Tokens.Adjust(payouts)) return false;
+            lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
+            return true;
         }
     }
 
