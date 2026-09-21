@@ -362,6 +362,12 @@ public sealed partial class MainHandler
                 sessionCts.Cancel();
             }
 
+            Task[] runningTasks = _backgroundTaskTracker.Snapshot();
+            if (runningTasks.Length > 0)
+            {
+                await Task.WhenAny(Task.WhenAll(runningTasks), Task.Delay(3000)).ConfigureAwait(false);
+            }
+
             await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
             if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(CancellationToken.None).ConfigureAwait(false);
             _twitchSession.CloseSocket();
@@ -369,12 +375,6 @@ public sealed partial class MainHandler
                 await TryStopServerAsync().ConfigureAwait(false);
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(true).ConfigureAwait(false);
-
-            Task[] runningTasks = _backgroundTaskTracker.Snapshot();
-            if (runningTasks.Length > 0)
-            {
-                await Task.WhenAny(Task.WhenAll(runningTasks), Task.Delay(3000)).ConfigureAwait(false);
-            }
 
             Tokens.TryExportJson();
             StatisticsService.FlushForShutdown();
