@@ -233,7 +233,7 @@ public sealed partial class MainHandler
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (EffectiveSettings.RemoteControlEnabled)
+        if (CurrentSettings.RemoteControlEnabled)
         {
             if (await TryRefreshRCONAsync(cancellationToken).ConfigureAwait(false))
                 return true;

@@ -318,7 +318,7 @@ public sealed partial class MainHandler
                     if (message.Bits > 0)
                     {
                         int bitReward = GetBitReward(
-                            EffectiveSettings.AutomaticBitRewardsEnabled,
+                            CurrentSettings.AutomaticBitRewardsEnabled,
                             message.Bits);
                         int awardedBits = bitReward > 0 ? Tokens.Award(sender, bitReward) : 0;
                         string bitsText = message.Bits.ToString(CultureInfo.InvariantCulture);
@@ -340,7 +340,7 @@ public sealed partial class MainHandler
                     }
                     else
                     {
-                        var settings = EffectiveSettings;
+                        var settings = CurrentSettings;
                         if (!settings.NonCommandChatRelayEnabled ||
                             !_twitchSession.TryUseRelaySlot(settings.MinecraftRelayMessagesPerSecond, settings.LowResourceModeEnabled))
                             continue;

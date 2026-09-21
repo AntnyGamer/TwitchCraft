@@ -300,12 +300,12 @@ public sealed partial class MainHandler
     }
 
     internal bool AutomaticFollowRewardsEnabled
-        => EffectiveSettings.AutomaticFollowRewardsEnabled;
+        => CurrentSettings.AutomaticFollowRewardsEnabled;
 
     internal bool IsFollowRewardsRunning => AutomaticFollowRewardsEnabled && _twitchSession.FollowRewardsTask is { IsCompleted: false };
 
     internal int FollowRewardAmount
-        => EffectiveSettings.FollowRewardAmount;
+        => CurrentSettings.FollowRewardAmount;
 
     private static async Task<HttpStatusCode> SubscribeToFollowsAsync(
         string sessionID,

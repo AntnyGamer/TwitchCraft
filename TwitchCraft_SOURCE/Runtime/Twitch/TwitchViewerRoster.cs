@@ -29,7 +29,7 @@ public sealed partial class MainHandler
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (EffectiveSettings.PassiveTokenEarningEnabled)
+            if (CurrentSettings.PassiveTokenEarningEnabled)
             {
                 long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 List<string>? rewarded = null;
