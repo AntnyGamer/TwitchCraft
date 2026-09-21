@@ -348,18 +348,7 @@ internal sealed class TimedPlayerScaleController
     }
 
     private static List<string> NormalizePlayers(IReadOnlyList<string> playerNames)
-    {
-        HashSet<string> unique = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string playerName in playerNames)
-        {
-            if (MinecraftNameHelper.TryNormalizePlayerName(playerName, out string normalized))
-                unique.Add(normalized);
-        }
-
-        List<string> players = [.. unique];
-        players.Sort(StringComparer.OrdinalIgnoreCase);
-        return players;
-    }
+        => SortedListHelper.NormalizePlayerNames(playerNames, StringComparer.OrdinalIgnoreCase);
 
     private static void UnlockPlayers(List<SemaphoreSlim> acquiredGates)
     {

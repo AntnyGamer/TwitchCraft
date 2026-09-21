@@ -67,23 +67,34 @@ public sealed class MinecraftCommandSafetyTests
     {
         Assert.Equal(
             "ban Player rude  reason",
-            MinecraftCommandBuilder.BanPlayer("Player", " rude\r\nreason\t "));
+            MinecraftCommandBuilder.ModeratePlayer("Player", " rude\r\nreason\t ", ban: true));
         Assert.Equal(
             "kick Player rude  reason",
-            MinecraftCommandBuilder.KickPlayer("Player", " rude\r\nreason\t "));
+            MinecraftCommandBuilder.ModeratePlayer("Player", " rude\r\nreason\t ", ban: false));
     }
 
     [Fact]
     public void NewGameplayAndWhitelistCommands_UseModernJavaSyntax()
     {
         Assert.Equal("execute as @a at @s run tp @s ~ ~ ~ ~180 ~", MinecraftCommandBuilder.TurnAround("@a"));
-        Assert.Equal("whitelist add Player", MinecraftCommandBuilder.WhitelistAdd("Player"));
-        Assert.Equal("whitelist remove Player", MinecraftCommandBuilder.WhitelistRemove("Player"));
+        Assert.Equal("whitelist add Player", MinecraftCommandBuilder.Whitelist("Player", add: true));
+        Assert.Equal("whitelist remove Player", MinecraftCommandBuilder.Whitelist("Player", add: false));
     }
 
     [Fact]
-    public void SetScale_UsesTheAttributeNameForTheSelectedMinecraftVersion()
+    public void AttributeCommands_UseVersionAppropriateSyntax()
     {
+        const string Selector = "@a[name=\"Player\",limit=1]";
+        const string UUID = "11111111-1111-1111-1111-111111111111";
+        Assert.Equal(
+            "execute as @a[name=\"Player\",limit=1] run attribute @s minecraft:generic.max_health modifier add 11111111-1111-1111-1111-111111111111 twitchcraft_health -4 add_value",
+            MinecraftCommandBuilder.AddMaxHealthModifier(Selector, UUID, -4, modernAttribute: false, namespacedID: false));
+        Assert.Equal(
+            "execute as @a[name=\"Player\",limit=1] run attribute @s minecraft:generic.max_health modifier add twitchcraft:heart_1 6 add_value",
+            MinecraftCommandBuilder.AddMaxHealthModifier(Selector, "twitchcraft:heart_1", 6, modernAttribute: false, namespacedID: true));
+        Assert.Equal(
+            "execute as @a[name=\"Player\",limit=1] run attribute @s minecraft:max_health modifier remove twitchcraft:heart_1",
+            MinecraftCommandBuilder.RemoveMaxHealthModifier(Selector, "twitchcraft:heart_1", modernAttribute: true));
         Assert.Equal(
             "execute as @a run attribute @s minecraft:generic.scale base set 0.5",
             MinecraftCommandBuilder.SetScale("@a", 0.5, usesModernAttributeIDs: false));

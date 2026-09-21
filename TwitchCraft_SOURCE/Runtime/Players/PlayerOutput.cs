@@ -27,7 +27,7 @@ public sealed partial class MainHandler
 
     private void HandleRCONLine(string line)
     {
-        if (string.IsNullOrWhiteSpace(line))
+        if (string.IsNullOrWhiteSpace(line) || TryHandleHealthProbe(line))
             return;
 
         ServerLogLineFlags flags = new(line);
@@ -55,7 +55,7 @@ public sealed partial class MainHandler
 
                 try
                 {
-                    if (TryHandleProbe(line))
+                    if (TryHandleProbe(line) || TryHandleHealthProbe(line))
                         continue;
 
                     ServerLogLineFlags flags = new(line);

@@ -16,7 +16,7 @@ For paid targeted commands, one target pays the listed base cost. Multiple targe
 
 Paid gameplay commands refund the charged tokens when the Minecraft send path cannot confirm delivery. In Remote Control Mode, TwitchCraft does not interpret Minecraft's response text: a valid RCON command-response packet with the matching request ID and response type confirms delivery. For a multi-command RCON action, one such confirmation is enough to keep the charge even if the rest of the batch is interrupted; if no command in the batch is ever confirmed, the charge is refunded. This avoids language/version-dependent error parsing while still rejecting authentication, connection, timeout-before-confirmation, and malformed-protocol failures.
 
-The optional global gameplay-command cooldown applies to normal gameplay commands. By default, `!lightning`, `!tiny`, and `!giant` each use an independent five-minute cooldown shared by all viewers, while `!gambletokens` uses a five-minute per-viewer cooldown. Per-command cooldown settings can override these defaults.
+The optional global gameplay-command cooldown applies to normal gameplay commands. By default, `!lightning`, `!tiny`, and `!giant` each use an independent five-minute cooldown shared by all viewers. `!addheart` and `!removeheart` share one five-minute cooldown, while `!gambletokens` uses a five-minute per-viewer cooldown. Per-command cooldown settings can override these defaults.
 
 ## Utility and economy
 
@@ -45,6 +45,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 
 | Command | Syntax | Base cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
+| `!addheart` | `!addheart <1-5> [target]` | 50 per heart | Player(s) | Everyone | Adds 1-5 maximum hearts for 10 minutes, up to 20 effective hearts. |
 | `!anvil` | `!anvil [target]` | 5 | Player(s) | Everyone | Clears a short vertical column and drops an anvil. |
 | `!chargedcreeper` | `!chargedcreeper [target]` | 45 | Player(s) | Everyone | Sends a persistent, glowing charged creeper after the target with the same warning-style behavior as `!johnny`. |
 | `!clear` | `!clear [target]` | 125 | Player(s) | Everyone | Clears the target inventory. |
@@ -67,6 +68,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!mob` | `!mob [target]` | 10 | Player(s) | Everyone | Summons a random mob at the target. |
 | `!night` | `!night` | 15 | World | Everyone | Sets the world time to night. |
 | `!removeblock` | `!removeblock [target]` | 50 | Player(s) | Everyone | Removes the block below the target while protecting selected container/bedrock blocks. |
+| `!removeheart` | `!removeheart <1-5> [target]` | 50 per heart | Player(s) | Everyone | Removes 1-5 maximum hearts for 10 minutes, down to 5 effective hearts. |
 | `!rename` | `!rename [target]` | 10 | Player(s) | Everyone | Renames the target's held renameable item after the Twitch sender. |
 | `!scared` | `!scared [target]` | 15 | Player(s) | Everyone | Spawns a bunch of cats and calls the target a scaredy cat. |
 | `!slaughter` | `!slaughter [target]` | 30 | Player(s) | Everyone | Removes nearby mobs around the target. |
@@ -94,6 +96,8 @@ These commands are meaningful only while their matching minigame is active. Paid
 ## Compatibility and failure cases
 
 Gameplay commands are intended for the Minecraft versions listed in [INSTALLATION.md](INSTALLATION.md) and use the application's version-support layer for syntax differences. Local stdin and remote RCON are supported unless a row says local-only.
+
+Heart commands read the target's current effective maximum health before applying their own temporary modifier, so other commands, mods, or plugins that change maximum health are included in the 5-20-heart limit. TwitchCraft removes only its own modifier when the effect expires.
 
 A command can be rejected when:
 

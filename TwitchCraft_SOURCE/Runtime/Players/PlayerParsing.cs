@@ -167,6 +167,56 @@ public sealed partial class MainHandler
         }
     }
 
+    private static bool MatchesPlayer(ReadOnlySpan<char> entity, string player)
+    {
+        int i = entity.IndexOf(player, StringComparison.OrdinalIgnoreCase), end = i + player.Length;
+        return i >= 0 && (i == 0 || !IsPlayerNameChar(entity[i - 1])) && (end == entity.Length || !IsPlayerNameChar(entity[end]));
+    }
+
+    private static bool IsPlayerNameChar(char c) => char.IsAsciiLetterOrDigit(c) || c == '_';
+
+    private bool TryHandleHealthProbe(string line)
+        => line.Contains("attribute", StringComparison.OrdinalIgnoreCase) &&
+            (TryHandleHealthModifier(line) || TryHandleMaxHealth(line));
+
+    internal static bool TryParseMaxHealthResponse(string line, string player, out double health)
+    {
+        int entity = line.LastIndexOf(" for entity ", StringComparison.OrdinalIgnoreCase), value = line.LastIndexOf(" is ", StringComparison.OrdinalIgnoreCase);
+        health = 0;
+        return entity >= 0 && value >= 0 && line.Contains("value of attribute ", StringComparison.OrdinalIgnoreCase) &&
+            (line.Contains("Max Health", StringComparison.OrdinalIgnoreCase) || line.Contains("max_health", StringComparison.OrdinalIgnoreCase)) &&
+            double.TryParse(line.AsSpan(value + 4).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out health) &&
+            MatchesPlayer(line.AsSpan(entity + 12, value - entity - 12).Trim(), player);
+    }
+
+    private bool TryHandleMaxHealth(string line)
+    {
+        lock (_maxHealthProbeGate)
+            foreach (string player in _pendingMaxHealthRequests.Keys)
+                if (TryParseMaxHealthResponse(line, player, out double health) && _pendingMaxHealthRequests.Remove(player, out TaskCompletionSource<double?>? waiter))
+                { waiter.TrySetResult(health); return true; }
+        return false;
+    }
+
+    internal static bool TryParseHealthModifierResponse(string line, string player, string id, out bool exists)
+    {
+        int entity = line.LastIndexOf(" for entity ", StringComparison.OrdinalIgnoreCase);
+        int end = line.LastIndexOf(" is ", StringComparison.OrdinalIgnoreCase);
+        exists = end > entity && line.Contains("Value of modifier ", StringComparison.OrdinalIgnoreCase);
+        if (!exists) end = line.LastIndexOf(" has no modifier ", StringComparison.OrdinalIgnoreCase);
+        return entity >= 0 && end >= 0 && line.Contains(id, StringComparison.OrdinalIgnoreCase) &&
+            MatchesPlayer(line.AsSpan(entity + 12, end - entity - 12).Trim(), player);
+    }
+
+    private bool TryHandleHealthModifier(string line)
+    {
+        lock (_healthModifierProbeGate)
+            foreach (var pair in _pendingHealthModifierRequests)
+                if (TryParseHealthModifierResponse(line, pair.Key.Player, pair.Key.ID, out bool exists))
+                { _pendingHealthModifierRequests.Remove(pair.Key); pair.Value.TrySetResult(exists); return true; }
+        return false;
+    }
+
     private void HandleEntity(string line)
     {
         if (!TryParseEntity(line, out string playerName, out string suffix))

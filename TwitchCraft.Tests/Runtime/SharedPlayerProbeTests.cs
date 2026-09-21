@@ -53,7 +53,7 @@ public sealed class SharedPlayerProbeTests
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
 
             TaskCompletionSource<string?> sharedWaiter = pending["PlayerOne"];
-            MainHandler.CompletePlayer("PlayerOne", gate, pending, sharedWaiter, "diamond");
+            MainHandler.CompleteRequest("PlayerOne", gate, pending, sharedWaiter, "diamond");
             releaseSend.TrySetResult(true);
 
             Assert.Equal("diamond", await survivingTask.WaitAsync(TimeSpan.FromSeconds(10), testCancellation));
@@ -64,6 +64,23 @@ public sealed class SharedPlayerProbeTests
             releaseSend.TrySetResult(true);
             runtime.Tokens.Close();
         }
+    }
+
+    [Fact]
+    public void HealthProbes_ParseVanillaFeedback()
+    {
+        Assert.True(MainHandler.TryParseMaxHealthResponse("Value of attribute Max Health for entity PlayerOne is 20.0", "PlayerOne", out double health));
+        Assert.Equal(20, health);
+        Assert.True(MainHandler.TryParseMaxHealthResponse("The value of attribute Max Health for entity [VIP] PlayerOne is 30.0", "PlayerOne", out health));
+        Assert.Equal(30, health);
+        Assert.True(MainHandler.TryParseMaxHealthResponse("Value of attribute minecraft:max_health for entity PlayerOne is 40", "PlayerOne", out health));
+        Assert.Equal(40, health);
+        Assert.False(MainHandler.TryParseMaxHealthResponse("Value of attribute Max Health for entity PlayerOne2 is 20", "PlayerOne", out _));
+        Assert.True(MainHandler.TryParseHealthModifierResponse("Value of modifier twitchcraft:heart_1 on attribute Max Health for entity PlayerOne is -4.0", "PlayerOne", "twitchcraft:heart_1", out bool exists));
+        Assert.True(exists);
+        Assert.True(MainHandler.TryParseHealthModifierResponse("Attribute Max Health for entity [VIP] PlayerOne has no modifier twitchcraft:heart_1", "PlayerOne", "twitchcraft:heart_1", out exists));
+        Assert.False(exists);
+        Assert.False(MainHandler.TryParseHealthModifierResponse("Value of modifier twitchcraft:heart_1 on attribute Max Health for entity PlayerOne2 is -4.0", "PlayerOne", "twitchcraft:heart_1", out _));
     }
 
     private static TaskCompletionSource<bool> CreateSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);

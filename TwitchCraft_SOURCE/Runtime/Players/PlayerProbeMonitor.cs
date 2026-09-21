@@ -12,68 +12,66 @@ public sealed partial class MainHandler
 
     private readonly Lock _spectatorProbeGate = new();
     private readonly Lock _selectedItemProbeGate = new();
+    private readonly Lock _maxHealthProbeGate = new();
+    private readonly Lock _healthModifierProbeGate = new();
     private readonly Lock _respawnPositionProbeGate = new();
     private readonly SemaphoreSlim _spectatorRefreshGate = new(1, 1);
     private readonly Dictionary<string, TaskCompletionSource<int?>> _pendingGameTypeRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<string?>> _pendingSelectedItemRequests = new(PlayerNameComparer);
+    private readonly Dictionary<string, TaskCompletionSource<double?>> _pendingMaxHealthRequests = new(PlayerNameComparer);
+    private readonly Dictionary<(string Player, string ID), TaskCompletionSource<bool?>> _pendingHealthModifierRequests = [];
     private readonly Dictionary<string, TaskCompletionSource<bool>> _pendingRespawnPositionRequests = new(PlayerNameComparer);
     private HashSet<string> _spectatorPlayers = new(PlayerNameComparer);
     private DateTime _lastSpectatorRefreshUtc = DateTime.MinValue;
     private bool _spectatorSnapshotInitialized;
     private int _spectatorStateRefreshQueued;
 
-    private async Task<TResult> QueryPlayerAsync<TResult>(
+    private Task<TResult> QueryPlayerAsync<TResult>(
         string playerName,
         Lock gate,
         Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
         Func<Action, CancellationToken, Task<bool>> sendProbe,
         CancellationToken cancellationToken)
-    {
-        if (!MinecraftNameHelper.IsValidPlayerName(playerName))
-            return default!;
+        => MinecraftNameHelper.IsValidPlayerName(playerName)
+            ? QueryAsync(playerName, gate, pendingRequests, sendProbe, cancellationToken)
+            : Task.FromResult(default(TResult)!);
 
+    private async Task<TResult> QueryAsync<TKey, TResult>(
+        TKey key,
+        Lock gate,
+        Dictionary<TKey, TaskCompletionSource<TResult>> pendingRequests,
+        Func<Action, CancellationToken, Task<bool>> sendProbe,
+        CancellationToken cancellationToken,
+        bool allowAfterSessionCancellation = false) where TKey : notnull
+    {
         TaskCompletionSource<TResult> waiter;
         bool createdWaiter = false;
-
         lock (gate)
-        {
-            if (!pendingRequests.TryGetValue(playerName, out waiter!))
-            {
-                waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                pendingRequests[playerName] = waiter;
-                createdWaiter = true;
-            }
-        }
+            if (!pendingRequests.TryGetValue(key, out waiter!)) { pendingRequests[key] = waiter = new(TaskCreationOptions.RunContinuationsAsynchronously); createdWaiter = true; }
 
         try
         {
             if (createdWaiter)
             {
-                void CompleteProbe() => CompletePlayer(playerName, gate, pendingRequests, waiter, default!);
-                _ = SendPlayerQueryAsync(sendProbe, CompleteProbe, _sessionCts?.Token ?? CancellationToken.None);
+                void CompleteProbe() => CompleteRequest(key, gate, pendingRequests, waiter, default!);
+                CancellationToken probeToken = _sessionCts?.Token ?? CancellationToken.None;
+                if (allowAfterSessionCancellation && probeToken.IsCancellationRequested) probeToken = CancellationToken.None;
+                _ = SendPlayerQueryAsync(sendProbe, CompleteProbe, probeToken);
             }
-
             return await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            return default!;
-        }
+        catch (Exception ex) when (ex is not OperationCanceledException) { return default!; }
     }
 
-    internal static void CompletePlayer<TResult>(
-        string playerName,
+    internal static void CompleteRequest<TKey, TResult>(
+        TKey key,
         Lock gate,
-        Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
+        Dictionary<TKey, TaskCompletionSource<TResult>> pendingRequests,
         TaskCompletionSource<TResult> waiter,
-        TResult result)
+        TResult result) where TKey : notnull
     {
         lock (gate)
-        {
-            if (pendingRequests.TryGetValue(playerName, out TaskCompletionSource<TResult>? current) && ReferenceEquals(current, waiter))
-                pendingRequests.Remove(playerName);
-        }
-
+            if (pendingRequests.TryGetValue(key, out TaskCompletionSource<TResult>? current) && ReferenceEquals(current, waiter)) pendingRequests.Remove(key);
         waiter.TrySetResult(result);
     }
 
@@ -97,6 +95,18 @@ public sealed partial class MainHandler
 
         completeProbe();
         return false;
+    }
+
+    public Task<double?> QueryMaxHealthAsync(string playerName, CancellationToken cancellationToken)
+        => QueryPlayerAsync<double?>(playerName, _maxHealthProbeGate, _pendingMaxHealthRequests,
+            (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get", complete, ct), cancellationToken);
+
+    public Task<bool?> QueryHealthModifierAsync(string playerName, string id, CancellationToken cancellationToken)
+    {
+        if (!MinecraftNameHelper.IsValidPlayerName(playerName) || string.IsNullOrWhiteSpace(id)) return Task.FromResult<bool?>(null);
+        string attribute = UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health";
+        return QueryAsync((playerName, id), _healthModifierProbeGate, _pendingHealthModifierRequests,
+            (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + attribute + " modifier value get " + id, complete, ct), cancellationToken, allowAfterSessionCancellation: true);
     }
 
     public Task<string?> QueryItemAsync(string playerName, CancellationToken cancellationToken)
@@ -156,7 +166,7 @@ public sealed partial class MainHandler
                         foreach (string player in createdWaiterPlayers)
                         {
                             if (waiters.TryGetValue(player, out TaskCompletionSource<string?>? waiter))
-                                CompletePlayer(player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiter, null);
+                                CompleteRequest(player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiter, null);
                         }
                     },
                     _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -264,7 +274,7 @@ public sealed partial class MainHandler
                 () =>
                 {
                     foreach (KeyValuePair<string, TaskCompletionSource<int?>> entry in waiters)
-                        CompletePlayer(entry.Key, _spectatorProbeGate, _pendingGameTypeRequests, entry.Value, default);
+                        CompleteRequest(entry.Key, _spectatorProbeGate, _pendingGameTypeRequests, entry.Value, default);
                 },
                 _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false))
             {

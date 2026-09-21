@@ -30,6 +30,8 @@ public sealed class CommandCatalogTests
             IReadOnlyList<string> commandNames = registry.CommandNames;
             string[] newCommands =
             [
+                "addheart",
+                "removeheart",
                 "turnaround",
                 "chargedcreeper",
                 "kick",
@@ -50,6 +52,8 @@ public sealed class CommandCatalogTests
             Assert.All(newCommands, command => Assert.True(registry.TryResolve(command, out _), command));
 
             ChatCommandStatisticFlags dangerous = ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Dangerous;
+            Assert.Equal(ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Nice, registry.GetStatisticFlags("addheart"));
+            Assert.Equal(dangerous, registry.GetStatisticFlags("removeheart"));
             Assert.Equal(dangerous, registry.GetStatisticFlags("turnaround"));
             Assert.Equal(dangerous, registry.GetStatisticFlags("chargedcreeper"));
             Assert.Equal(dangerous, registry.GetStatisticFlags("tiny"));
