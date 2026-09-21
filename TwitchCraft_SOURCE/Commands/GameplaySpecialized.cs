@@ -351,19 +351,19 @@ public static partial class CommandList
 
         async Task ResetHeartEffectsAsync(bool force, CancellationToken ct)
         {
-            List<(string Player, int Delta, string ID)> pending = [];
+            List<(string Player, int Delta, string ID)>? pending = null;
             lock (activeHeartEffects)
                 foreach (var player in activeHeartEffects)
                     for (int i = 0; i < player.Value.Count; i++)
                     {
                         (int delta, string id, bool expired) = player.Value[i];
                         if (force && !expired) player.Value[i] = (delta, id, expired = true);
-                        if (expired && runtime.IsPlayerOnline(player.Key)) pending.Add((player.Key, delta, id));
+                        if (expired && runtime.IsPlayerOnline(player.Key)) (pending ??= []).Add((player.Key, delta, id));
                     }
+            if (pending == null) return;
             foreach ((string player, int delta, string id) in pending)
             {
-                string command = MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, runtime.UsesModernAttributeIDs);
-                if (!await runtime.SendServerCommandAsync(command, ct).ConfigureAwait(false) ||
+                if (!await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false) ||
                     await runtime.QueryHealthModifierAsync(player, id, ct).ConfigureAwait(false) != false) continue;
                 lock (activeHeartEffects) if (activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) { effects.Remove((delta, id, true)); if (effects.Count == 0) activeHeartEffects.Remove(player); }
             }
