@@ -387,24 +387,11 @@ public sealed partial class MainHandler
             return;
 
         List<string> snapshot = [.. players];
-        TrackTask(Task.Run(async () =>
-        {
-            try
-            {
-                await RefreshSpectatorsAsync(snapshot, refreshToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                ErrorHandling.LogNonFatal("Background spectator refresh failed", ex);
-            }
-            finally
-            {
-                Interlocked.Exchange(ref _spectatorStateRefreshQueued, 0);
-            }
-        }, CancellationToken.None));
+        RunSessionWork(
+            t => RefreshSpectatorsAsync(snapshot, t),
+            () => Interlocked.Exchange(ref _spectatorStateRefreshQueued, 0),
+            "Background spectator refresh failed",
+            token: refreshToken);
     }
 
     private void RemoveSpectator(string playerName)
