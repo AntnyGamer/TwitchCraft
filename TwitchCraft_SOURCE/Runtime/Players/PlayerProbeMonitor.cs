@@ -101,23 +101,24 @@ public sealed partial class MainHandler
         => QueryPlayerAsync<double?>(playerName, _maxHealthProbeGate, _pendingMaxHealthRequests,
             (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get", complete, ct), cancellationToken);
 
-    public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
+    private Task<string?> QueryEntityDataAsync(
+        string playerName,
+        string path,
+        Lock gate,
+        Dictionary<string, TaskCompletionSource<string?>> pendingRequests,
+        CancellationToken cancellationToken)
     {
-        string selector = MinecraftCommandBuilder.SinglePlayerSelector(playerName);
-        return QueryPlayerAsync<string?>(playerName, _maxHealthProbeGate, _pendingHeartAttributeRequests,
-            (complete, ct) => SendProbeAsync("data get entity " + selector + " " + (UsesModernEntityAttributeNbt ? "attributes" : "Attributes"), complete, ct), cancellationToken);
+        string command = "data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path;
+        return QueryPlayerAsync<string?>(playerName, gate, pendingRequests,
+            (complete, ct) => SendProbeAsync(command, complete, ct), cancellationToken);
     }
 
+    public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
+        => QueryEntityDataAsync(playerName, UsesModernEntityAttributeNbt ? "attributes" : "Attributes",
+            _maxHealthProbeGate, _pendingHeartAttributeRequests, cancellationToken);
+
     public Task<string?> QueryItemAsync(string playerName, CancellationToken cancellationToken)
-    {
-        string selector = MinecraftCommandBuilder.SinglePlayerSelector(playerName);
-        return QueryPlayerAsync<string?>(
-            playerName,
-            _selectedItemProbeGate,
-            _pendingSelectedItemRequests,
-            (complete, ct) => SendProbeAsync("data get entity " + selector + " SelectedItem", complete, ct),
-            cancellationToken);
-    }
+        => QueryEntityDataAsync(playerName, "SelectedItem", _selectedItemProbeGate, _pendingSelectedItemRequests, cancellationToken);
 
     public async Task<Dictionary<string, string?>> QueryItemsAsync(List<string> players, CancellationToken cancellationToken)
     {
