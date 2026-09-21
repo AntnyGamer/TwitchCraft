@@ -146,6 +146,11 @@ public sealed class TimedScaleLifecycleTests
                 sentCommands.Add(command);
                 return Task.FromResult(true);
             },
+            (commands, _) =>
+            {
+                sentCommands.AddRange(commands);
+                return Task.FromResult(true);
+            },
             _ => true,
             trackedTasks.Add,
             _ => { },
