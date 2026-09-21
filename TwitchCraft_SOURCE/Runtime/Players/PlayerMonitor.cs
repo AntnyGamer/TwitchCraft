@@ -435,7 +435,7 @@ public sealed partial class MainHandler
             RecordRoster(previousPlayers, currentPlayers);
             if (MultiplayerEnabled)
                 QueueSidebarRefresh();
-            }
+        }
 
         QueueGamemode();
         if (playersChanged)
