@@ -83,6 +83,7 @@ public sealed partial class MainHandler
         _backgroundTaskTracker = new();
         _timedPlayerScaleController = new(
             (command, token) => SendServerCommandAsync(command, token),
+            (commands, token) => SendServerCommandsAsync(commands, token),
             IsKnownPlayer,
             _backgroundTaskTracker.Track,
             AddServerLogLine);
