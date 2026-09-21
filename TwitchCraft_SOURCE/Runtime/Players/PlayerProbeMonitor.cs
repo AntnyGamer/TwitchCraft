@@ -20,6 +20,7 @@ public sealed partial class MainHandler
     private readonly Dictionary<string, TaskCompletionSource<string?>> _pendingSelectedItemRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<double?>> _pendingMaxHealthRequests = new(PlayerNameComparer);
     private readonly Dictionary<(string Player, string ID), TaskCompletionSource<bool?>> _pendingHealthModifierRequests = [];
+    private readonly Dictionary<string, TaskCompletionSource<string?>> _pendingHeartAttributeRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<bool>> _pendingRespawnPositionRequests = new(PlayerNameComparer);
     private HashSet<string> _spectatorPlayers = new(PlayerNameComparer);
     private DateTime _lastSpectatorRefreshUtc = DateTime.MinValue;
@@ -108,6 +109,13 @@ public sealed partial class MainHandler
         string attribute = UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health";
         return QueryAsync((playerName, id), _healthModifierProbeGate, _pendingHealthModifierRequests,
             (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + attribute + " modifier value get " + id, complete, ct), cancellationToken, allowAfterSessionCancellation: true);
+    }
+
+    public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
+    {
+        string selector = MinecraftCommandBuilder.SinglePlayerSelector(playerName);
+        return QueryPlayerAsync<string?>(playerName, _healthModifierProbeGate, _pendingHeartAttributeRequests,
+            (complete, ct) => SendProbeAsync("data get entity " + selector + " " + (UsesNamespacedAttributeModifierIDs ? "attributes" : "Attributes"), complete, ct), cancellationToken);
     }
 
     public Task<string?> QueryItemAsync(string playerName, CancellationToken cancellationToken)
