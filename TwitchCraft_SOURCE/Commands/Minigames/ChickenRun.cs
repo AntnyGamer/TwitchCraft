@@ -114,24 +114,7 @@ public static partial class MinigameManager
                     payouts.Add(new(bet.Viewer, payout)); //Chicken Run Win
             }
 
-            lock (state.SettlementGate)
-            {
-                lock (MinigameGate)
-                {
-                    if (state.Bets.Count == 0 ||
-                        !ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState) ||
-                        !string.Equals(activeState.Kind, "ChickenRun", StringComparison.Ordinal) || activeState.RunID != runID)
-                        return;
-                    state.PendingSettlement = payouts;
-                }
-                if (!runtime.Tokens.Adjust(payouts))
-                    return;
-                lock (MinigameGate)
-                {
-                    state.Bets.Clear();
-                    state.PendingSettlement = null;
-                }
-            }
+            if (!SettleBets(runtime, state, "ChickenRun", runID, payouts)) return;
 
             await SafeReplyAsync(
                 runtime,
