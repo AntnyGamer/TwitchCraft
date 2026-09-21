@@ -19,9 +19,6 @@ public static partial class CommandList
                 Random.Shared,
                 runtime.UsesInlineTextComponentSyntax,
                 runtime.UsesModernEntityAttributeNbt);
-            commands.Add(MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 100, 10));
-            commands.Add(MinecraftCommandBuilder.Title(target.Selector, " ", "white", runtime.UsesInlineTextComponentSyntax));
-            commands.Add(MinecraftCommandBuilder.Subtitle(target.Selector, "A charged creeper is coming!", "red", runtime.UsesInlineTextComponentSyntax));
             await SendPricedReplyAsync(
                 target,
                 sender,
@@ -106,9 +103,6 @@ public static partial class CommandList
         Task JohnnyAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
             List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
-            commands.Add(MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 100, 10));
-            commands.Add(MinecraftCommandBuilder.Title(target.Selector, " ", "white", runtime.UsesInlineTextComponentSyntax));
-            commands.Add(MinecraftCommandBuilder.Subtitle(target.Selector, "Johnny is coming!", "red", runtime.UsesInlineTextComponentSyntax));
             return SendPricedReplyAsync(
                 target,
                 sender,
