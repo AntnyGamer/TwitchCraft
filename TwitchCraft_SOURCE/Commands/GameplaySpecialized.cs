@@ -311,35 +311,41 @@ public static partial class CommandList
             if (target == null) return;
             List<string> players = await GetPlayersAsync(target, ct).ConfigureAwait(false);
             if (players.Count == 0) return;
+
             await heartGate.WaitAsync(ct).ConfigureAwait(false);
             try
             {
                 foreach (string player in players)
                     await ResetHeartEffectsCoreAsync(player, false, ct).ConfigureAwait(false);
                 if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
-                { await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false); return; }
+                {
+                    await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
+                    return;
+                }
+
                 bool sent = false;
                 try
                 {
-                int delta = hearts * (add ? 2 : -2);
-                foreach (string player in players)
-                {
-                    List<(int Delta, string ID, bool Expired)> effects;
-                    lock (activeHeartEffects) effects = activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? current) ? [.. current] : [];
-                    double? health = await runtime.QueryMaxHealthAsync(player, ct).ConfigureAwait(false);
-                    if (!health.HasValue) { await SayAsync(sender + ", TwitchCraft could not read " + player + "'s maximum health. You were not charged.", ct).ConfigureAwait(false); return; }
-                    double future = health.Value + delta;
-                    bool invalid = future is < 10 or > 40;
-                    if (!invalid) foreach ((int effect, _, _) in effects) if ((future -= effect) is < 10 or > 40) { invalid = true; break; }
-                    if (invalid) { await SayAsync(sender + ", that would put " + player + " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false); return; }
-                }
-                string id = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
-                List<string> commands = new(players.Count);
-                foreach (string player in players)
-                    commands.Add(MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs));
-                sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
-                if (!sent) return;
-                lock (activeHeartEffects) foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, id, false)); }
+                    int delta = hearts * (add ? 2 : -2);
+                    foreach (string player in players)
+                    {
+                        List<(int Delta, string ID, bool Expired)> effects;
+                        lock (activeHeartEffects) effects = activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? current) ? [.. current] : [];
+                        double? health = await runtime.QueryMaxHealthAsync(player, ct).ConfigureAwait(false);
+                        if (!health.HasValue) { await SayAsync(sender + ", TwitchCraft could not read " + player + "'s maximum health. You were not charged.", ct).ConfigureAwait(false); return; }
+                        double future = health.Value + delta;
+                        bool invalid = future is < 10 or > 40;
+                        if (!invalid) foreach ((int effect, _, _) in effects) if ((future -= effect) is < 10 or > 40) { invalid = true; break; }
+                        if (invalid) { await SayAsync(sender + ", that would put " + player + " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false); return; }
+                    }
+
+                    string id = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
+                    List<string> commands = new(players.Count);
+                    foreach (string player in players)
+                        commands.Add(MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs));
+                    sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
+                    if (!sent) return;
+                    lock (activeHeartEffects) foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, id, false)); }
                     runtime.TrackTask(ResetHeartAsync(id, ct));
                     await ConfirmAsync(sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) + " for 10 minutes.", ct).ConfigureAwait(false);
                 }
