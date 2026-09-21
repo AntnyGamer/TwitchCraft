@@ -321,7 +321,7 @@ public sealed partial class MainHandler
 
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(false).ConfigureAwait(false);
-            for (Task? timeout = null; _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && await Task.WhenAny(Task.WhenAll(tasks), timeout ??= Task.Delay(3000)).ConfigureAwait(false) != timeout;)
+            for (Task? timeout = null; _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && await Task.WhenAny(tasks.Length == 1 ? tasks[0] : Task.WhenAll(tasks), timeout ??= Task.Delay(3000)).ConfigureAwait(false) != timeout;)
             { }
             _backgroundTaskTracker.Clear();
             StatisticsService.FlushForShutdown();
@@ -363,7 +363,7 @@ public sealed partial class MainHandler
                 sessionCts.Cancel();
             }
 
-            for (Task? timeout = null; _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && await Task.WhenAny(Task.WhenAll(tasks), timeout ??= Task.Delay(3000)).ConfigureAwait(false) != timeout;)
+            for (Task? timeout = null; _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && await Task.WhenAny(tasks.Length == 1 ? tasks[0] : Task.WhenAll(tasks), timeout ??= Task.Delay(3000)).ConfigureAwait(false) != timeout;)
             { }
 
             await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
