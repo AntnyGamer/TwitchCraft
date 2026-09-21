@@ -111,20 +111,18 @@ internal sealed class TimedPlayerScaleController
         }
     }
 
-    internal Task ResetRecoveredAsync(CancellationToken cancellationToken)
-        => ResetAllAsync(cancellationToken, Volatile.Read(ref _recoveryGeneration));
+    internal Task ResetRecoveredAsync(string player, CancellationToken cancellationToken)
+        => ResetAllAsync(cancellationToken, Volatile.Read(ref _recoveryGeneration), player);
 
     internal void MarkForRecovery() => Volatile.Write(ref _recoveryGeneration, Volatile.Read(ref _nextGeneration));
 
-    internal async Task ResetAllAsync(CancellationToken cancellationToken, long maxGeneration = long.MaxValue)
+    internal async Task ResetAllAsync(CancellationToken cancellationToken, long maxGeneration = long.MaxValue, string? player = null)
     {
         List<string> players;
         lock (_gate)
-        {
-            players = [.. _states.Keys];
-        }
+            players = player == null ? [.. _states.Keys] : _states.ContainsKey(player) ? [player] : [];
 
-        players.Sort(StringComparer.OrdinalIgnoreCase);
+        if (player == null) players.Sort(StringComparer.OrdinalIgnoreCase);
         if (players.Count == 0)
             return;
 
