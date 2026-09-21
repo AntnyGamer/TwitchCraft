@@ -261,11 +261,9 @@ public sealed partial class MainHandler
         if (suffix.Length > 1 && suffix[0] == '[' && suffix.Contains("max_health", StringComparison.OrdinalIgnoreCase))
         {
             lock (_healthModifierProbeGate)
-                if (_pendingHeartAttributeRequests.Remove(playerName, out TaskCompletionSource<string?>? waiter))
-                {
-                    waiter.TrySetResult(suffix);
-                    return;
-                }
+                _pendingHeartAttributeRequests.Remove(playerName, out TaskCompletionSource<string?>? waiter);
+            waiter?.TrySetResult(suffix);
+            return;
         }
 
         if (HasRespawnRequest(playerName) && TryParsePosition(suffix))
