@@ -18,6 +18,7 @@ internal sealed class TimedPlayerScaleController
     private readonly Dictionary<string, SemaphoreSlim> _playerGates = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ScaleState> _states = new(StringComparer.OrdinalIgnoreCase);
     private readonly Func<string, CancellationToken, Task<bool>> _sendCommand;
+    private readonly Func<IReadOnlyList<string>, CancellationToken, Task<bool>> _sendCommands;
     private readonly Func<string, bool> _isPlayerOnline;
     private readonly Action<Task> _trackTask;
     private readonly Action<string> _log;
@@ -27,12 +28,14 @@ internal sealed class TimedPlayerScaleController
 
     internal TimedPlayerScaleController(
         Func<string, CancellationToken, Task<bool>> sendCommand,
+        Func<IReadOnlyList<string>, CancellationToken, Task<bool>> sendCommands,
         Func<string, bool> isPlayerOnline,
         Action<Task> trackTask,
         Action<string> log,
         Func<TimeSpan, CancellationToken, Task>? delay = null)
     {
         _sendCommand = sendCommand ?? throw new ArgumentNullException(nameof(sendCommand));
+        _sendCommands = sendCommands ?? throw new ArgumentNullException(nameof(sendCommands));
         _isPlayerOnline = isPlayerOnline ?? throw new ArgumentNullException(nameof(isPlayerOnline));
         _trackTask = trackTask ?? throw new ArgumentNullException(nameof(trackTask));
         _log = log ?? throw new ArgumentNullException(nameof(log));
@@ -219,12 +222,7 @@ internal sealed class TimedPlayerScaleController
                 MinecraftCommandBuilder.Title(selector, " ", "white", state.UsesInlineTextComponents)
             ];
 
-            foreach (string command in commands)
-            {
-                if (!await _sendCommand(command, cancellationToken).ConfigureAwait(false))
-                    break;
-            }
-
+            _ = await _sendCommands(commands, cancellationToken).ConfigureAwait(false);
             return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
