@@ -352,13 +352,11 @@ internal sealed class MinecraftSession
     {
         try
         {
-            if (process.HasExited)
-                return;
-
-            Task exitTask = process.WaitForExitAsync();
-            Task completed = await Task.WhenAny(exitTask, Task.Delay(timeout)).ConfigureAwait(false);
-            if (ReferenceEquals(completed, exitTask))
-                await exitTask.ConfigureAwait(false);
+            if (!process.HasExited)
+                await process.WaitForExitAsync().WaitAsync(timeout).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
         }
         catch
         {
