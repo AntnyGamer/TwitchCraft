@@ -25,31 +25,15 @@ internal static class PaidCommandTransaction
         if (!cooldownReservation.HasValue)
             return false;
 
-        bool charged = false;
-        bool refundAttempted = false;
-        bool refundSucceeded = false;
-        bool failureNotified = false;
         bool dispatchSucceeded = false;
 
-        bool RefundOnce()
+        bool Refund()
         {
-            if (!charged || cost <= 0) return true;
-            if (refundAttempted) return refundSucceeded;
-
-            refundAttempted = true;
-            refundSucceeded = refundTokens(cost);
-            if (!refundSucceeded)
+            if (cost <= 0) return true;
+            bool refunded = refundTokens(cost);
+            if (!refunded)
                 ErrorHandling.LogNonFatal("A paid command could not fully refund its token charge", new InvalidOperationException("The token refund amount did not match the original charge."));
-            return refundSucceeded;
-        }
-
-        void NotifyFailureOnce()
-        {
-            if (failureNotified)
-                return;
-
-            failureNotified = true;
-            notifyFailure?.Invoke();
+            return refunded;
         }
 
         try
@@ -58,12 +42,11 @@ internal static class PaidCommandTransaction
             {
                 if (!trySpendTokens(cost))
                 {
-                    NotifyFailureOnce();
+                    notifyFailure?.Invoke();
                     await reportInsufficientTokensAsync(cost, cancellationToken).ConfigureAwait(false);
                     return false;
                 }
 
-                charged = true;
             }
 
             try
@@ -72,15 +55,15 @@ internal static class PaidCommandTransaction
             }
             catch
             {
-                RefundOnce();
-                NotifyFailureOnce();
+                Refund();
+                notifyFailure?.Invoke();
                 throw;
             }
 
             if (!dispatchSucceeded)
             {
-                bool refunded = RefundOnce();
-                NotifyFailureOnce();
+                bool refunded = Refund();
+                notifyFailure?.Invoke();
                 await reportDispatchFailureAsync(refunded, cancellationToken).ConfigureAwait(false);
                 return false;
             }
