@@ -363,8 +363,8 @@ public static partial class CommandList
             if (pending == null) return;
             foreach ((string player, int delta, string id) in pending)
             {
-                if (!await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false) ||
-                    await runtime.QueryHealthModifierAsync(player, id, ct).ConfigureAwait(false) != false) continue;
+                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+                if (await runtime.QueryHealthModifierAsync(player, id, ct).ConfigureAwait(false) != false) continue;
                 lock (activeHeartEffects) if (activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) { effects.Remove((delta, id, true)); if (effects.Count == 0) activeHeartEffects.Remove(player); }
             }
         }
