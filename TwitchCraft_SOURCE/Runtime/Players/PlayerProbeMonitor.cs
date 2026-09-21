@@ -102,16 +102,11 @@ public sealed partial class MainHandler
             (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get", complete, ct), cancellationToken);
 
     private Task<string?> QueryEntityDataAsync(
-        string playerName,
-        string path,
-        Lock gate,
+        string playerName, string path, Lock gate,
         Dictionary<string, TaskCompletionSource<string?>> pendingRequests,
         CancellationToken cancellationToken)
-    {
-        string command = "data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path;
-        return QueryPlayerAsync<string?>(playerName, gate, pendingRequests,
-            (complete, ct) => SendProbeAsync(command, complete, ct), cancellationToken);
-    }
+        => QueryPlayerAsync<string?>(playerName, gate, pendingRequests,
+            (complete, ct) => SendProbeAsync("data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path, complete, ct), cancellationToken);
 
     public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
         => QueryEntityDataAsync(playerName, UsesModernEntityAttributeNbt ? "attributes" : "Attributes",
