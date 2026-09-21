@@ -29,7 +29,7 @@ public static partial class CommandList
         private readonly MainHandler runtime;
         private Dictionary<string, ChatCommandHandler> handlers;
         private Dictionary<string, ChatCommandStatisticFlags>? statisticFlags;
-        private readonly Dictionary<string, List<(int Delta, string ID)>> activeHeartEffects = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<(int Delta, string ID, bool Expired)>> activeHeartEffects = new(StringComparer.OrdinalIgnoreCase);
 
         internal CommandBuildContext(
             MainHandler runtime,

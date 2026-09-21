@@ -230,8 +230,7 @@ public sealed partial class MainHandler
 
         if (MultiplayerEnabled)
             QueueSidebarRefresh();
-        if (TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
-            TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(token));
+        if (TryGetSessionToken(requireMultiplayer: false, out CancellationToken token)) { TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(token)); if (Commands.ResetHeartEffectsAsync != null) TrackTask(Commands.ResetHeartEffectsAsync(false, token)); }
 
         return true;
     }
