@@ -25,7 +25,7 @@ public static partial class MinigameManager
 
         try { RefundChickenBets(runtime); RefundWitherBets(runtime); }
         catch { CleanupLoop(loop); throw; }
-        Task loopTask = Task.Run(() => RunLoopAsync(runtime, loop, loop.Cts.Token), CancellationToken.None);
+        Task loopTask = Task.Run(() => RunLoopAsync(loop.Runtime, loop, loop.Cts.Token), CancellationToken.None);
         lock (MinigameGate)
         {
             if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop))
