@@ -150,22 +150,23 @@ public sealed class PaidDispatchAtomicityTests
         internal List<long> ReleasedReservations { get; } = [];
         internal Task<bool> ExecuteAsync(int cost)
         {
-            PaidCommandDependencies dependencies = new()
-            {
-                ReserveCooldownAsync = _ =>
+            return PaidCommandTransaction.ExecuteAsync(
+                cost,
+                CancellationToken.None,
+                _ =>
                 {
                     if (NextReservation.HasValue)
                         CurrentReservation = NextReservation.Value;
 
                     return Task.FromResult(NextReservation);
                 },
-                ReleaseCooldown = reservation =>
+                reservation =>
                 {
                     ReleasedReservations.Add(reservation);
                     if (CurrentReservation == reservation)
                         CurrentReservation = 0;
                 },
-                TrySpendTokens = amount =>
+                amount =>
                 {
                     SpendCalls++;
                     if (Balance < amount)
@@ -174,32 +175,29 @@ public sealed class PaidDispatchAtomicityTests
                     Balance -= amount;
                     return true;
                 },
-                RefundTokens = amount =>
+                amount =>
                 {
                     RefundCalls++;
                     Balance += amount;
                     return true;
                 },
-                DispatchAsync = token =>
+                token =>
                 {
                     DispatchCalls++;
                     return DispatchOverride?.Invoke(token) ?? Task.FromResult(true);
                 },
-                RecordStatistics = _ => StatisticsCalls++,
-                ReportInsufficientTokensAsync = (_, _) =>
+                _ => StatisticsCalls++,
+                (_, _) =>
                 {
                     InsufficientTokenReports++;
                     return Task.CompletedTask;
                 },
-                ReportDispatchFailureAsync = (_, _) =>
+                (_, _) =>
                 {
                     DispatchFailureReports++;
                     return Task.CompletedTask;
                 },
-                NotifyFailure = () => FailureNotifications++
-            };
-
-            return PaidCommandTransaction.ExecuteAsync(dependencies, cost, CancellationToken.None);
+                () => FailureNotifications++);
         }
     }
 }

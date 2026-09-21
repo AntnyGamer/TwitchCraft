@@ -87,27 +87,25 @@ public static partial class CommandList
             CancellationToken ct,
             Action? onSendFailure = null)
         {
-            PaidCommandDependencies dependencies = new()
-            {
-                ReserveCooldownAsync = reserveCooldownAsync,
-                ReleaseCooldown = releaseCooldown,
-                TrySpendTokens = amount => runtime.Tokens.TrySpend(sender, amount),
-                RefundTokens = amount => runtime.Tokens.Adjust(sender, amount) == amount,
-                DispatchAsync = dispatchAsync,
-                RecordStatistics = amount =>
+            return PaidCommandTransaction.ExecuteAsync(
+                cost,
+                ct,
+                reserveCooldownAsync,
+                releaseCooldown,
+                amount => runtime.Tokens.TrySpend(sender, amount),
+                amount => runtime.Tokens.Adjust(sender, amount) == amount,
+                dispatchAsync,
+                amount =>
                 {
                     runtime.Commands.MarkCommandSuccess();
                     runtime.Statistics.RecordCommand(runtime.Commands.CurrentCommandName, sender, amount);
                 },
-                ReportInsufficientTokensAsync = (amount, token) => SayNotEnoughTokensAsync(sender, amount, token),
-                ReportDispatchFailureAsync = (refunded, token) => SayAsync(
+                (amount, token) => SayNotEnoughTokensAsync(sender, amount, token),
+                (refunded, token) => SayAsync(
                     sender + (refunded
                         ? ", the Minecraft command could not be completed, so your tokens were refunded."
                         : ", the Minecraft command could not be completed and the full token refund could not be saved; check your balance."), token),
-                NotifyFailure = onSendFailure
-            };
-
-            return PaidCommandTransaction.ExecuteAsync(dependencies, cost, ct);
+                onSendFailure);
         }
 
         Task<bool> TrySendPaidNoCooldownAsync(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
