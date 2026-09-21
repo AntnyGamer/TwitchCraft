@@ -412,7 +412,7 @@ public static partial class CommandList
                         effects.Add((0, id, true));
                     }
                 }
-                catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to load heart effect recovery state", ex); }
+                catch (Exception ex) { heartEffectsLoaded = false; ErrorHandling.LogNonFatal("Failed to load heart effect recovery state", ex); }
             }
         }
 
