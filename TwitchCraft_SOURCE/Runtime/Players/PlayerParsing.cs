@@ -177,8 +177,7 @@ public sealed partial class MainHandler
     private static bool IsPlayerNameChar(char c) => char.IsAsciiLetterOrDigit(c) || c == '_';
 
     private bool TryHandleHealthProbe(string line)
-        => line.Contains("attribute", StringComparison.OrdinalIgnoreCase) &&
-            (TryHandleHealthModifier(line) || TryHandleMaxHealth(line));
+        => line.Contains("attribute", StringComparison.OrdinalIgnoreCase) && TryHandleMaxHealth(line);
 
     internal static bool TryParseMaxHealthResponse(string line, string player, out double health)
     {
@@ -196,25 +195,6 @@ public sealed partial class MainHandler
             foreach (string player in _pendingMaxHealthRequests.Keys)
                 if (TryParseMaxHealthResponse(line, player, out double health) && _pendingMaxHealthRequests.Remove(player, out TaskCompletionSource<double?>? waiter))
                 { waiter.TrySetResult(health); return true; }
-        return false;
-    }
-
-    internal static bool TryParseHealthModifierResponse(string line, string player, string id, out bool exists)
-    {
-        int entity = line.LastIndexOf(" for entity ", StringComparison.OrdinalIgnoreCase);
-        int end = line.LastIndexOf(" is ", StringComparison.OrdinalIgnoreCase);
-        exists = end > entity && line.Contains("Value of modifier ", StringComparison.OrdinalIgnoreCase);
-        if (!exists) end = line.LastIndexOf(" has no modifier ", StringComparison.OrdinalIgnoreCase);
-        return entity >= 0 && end >= 0 && line.Contains(id, StringComparison.OrdinalIgnoreCase) &&
-            MatchesPlayer(line.AsSpan(entity + 12, end - entity - 12).Trim(), player);
-    }
-
-    private bool TryHandleHealthModifier(string line)
-    {
-        lock (_healthModifierProbeGate)
-            foreach (var pair in _pendingHealthModifierRequests)
-                if (TryParseHealthModifierResponse(line, pair.Key.Player, pair.Key.ID, out bool exists))
-                { _pendingHealthModifierRequests.Remove(pair.Key); pair.Value.TrySetResult(exists); return true; }
         return false;
     }
 
@@ -258,9 +238,9 @@ public sealed partial class MainHandler
         if (!TryParseEntity(line, out string playerName, out string suffix))
             return;
 
-        if (suffix.Length > 1 && suffix[0] == '[' && suffix.Contains("max_health", StringComparison.OrdinalIgnoreCase))
+        if (suffix.Length >= 2 && suffix[0] == '[' && suffix[^1] == ']' && (suffix.Length == 2 || suffix.Contains('{')))
         {
-            lock (_healthModifierProbeGate)
+            lock (_maxHealthProbeGate)
                 _pendingHeartAttributeRequests.Remove(playerName, out TaskCompletionSource<string?>? waiter);
             waiter?.TrySetResult(suffix);
             return;
