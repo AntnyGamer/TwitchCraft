@@ -205,6 +205,13 @@ public sealed partial class MainHandler
         _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Player sidebar refresh failed", ex));
     }
 
+    private void RecordPlayerJoin(string player)
+    {
+        Statistics.RecordPlayerJoin(player);
+        if (Commands.ResetHeartEffectsAsync != null && TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+            TrackTask(Commands.ResetHeartEffectsAsync(player, false, token));
+    }
+
     private void RecordRoster(List<string> previousPlayers, List<string> currentPlayers)
     {
         int previousIndex = 0;
@@ -230,7 +237,7 @@ public sealed partial class MainHandler
                 continue;
             }
 
-            Statistics.RecordPlayerJoin(current);
+            RecordPlayerJoin(current);
             currentIndex++;
         }
 
@@ -242,7 +249,7 @@ public sealed partial class MainHandler
         }
 
         for (; currentIndex < currentPlayers.Count; currentIndex++)
-            Statistics.RecordPlayerJoin(currentPlayers[currentIndex]);
+            RecordPlayerJoin(currentPlayers[currentIndex]);
     }
 
     private static List<string> ParsePlayers(ReadOnlySpan<char> remainder)
