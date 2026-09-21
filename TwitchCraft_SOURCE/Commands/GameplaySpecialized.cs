@@ -311,7 +311,8 @@ public static partial class CommandList
             if (target == null) return;
             List<string> players = await GetPlayersAsync(target, ct).ConfigureAwait(false);
             if (players.Count == 0) return;
-            await ResetHeartEffectsAsync(false, ct).ConfigureAwait(false);
+            foreach (string player in players)
+                await ResetHeartEffectsAsync(player, false, ct).ConfigureAwait(false);
             if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
             { await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false); return; }
             bool sent = false;
@@ -349,8 +350,18 @@ public static partial class CommandList
             finally { if (!sent) runtime.Commands.ClearTimedCommandCooldown("heart", reservation); }
         }
 
-        async Task ResetHeartEffectsAsync(bool force, CancellationToken ct)
+        async Task ResetHeartEffectsAsync(string? player, bool force, CancellationToken ct)
         {
+            if (player != null && await runtime.QueryHeartModifiersAsync(player, ct).ConfigureAwait(false) is { } data)
+            {
+                List<string> recovered = MainHandler.ParseHeartModifierIDs(data, runtime.UsesNamespacedAttributeModifierIDs);
+                if (recovered.Count > 0) lock (activeHeartEffects)
+                {
+                    if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = [];
+                    foreach (string id in recovered)
+                        if (!effects.Exists(effect => effect.ID == id)) effects.Add((0, id, true));
+                }
+            }
             List<(string Player, int Delta, string ID)>? pending = null;
             lock (activeHeartEffects)
                 foreach (var player in activeHeartEffects)
@@ -376,7 +387,7 @@ public static partial class CommandList
                 foreach (List<(int Delta, string ID, bool Expired)> effects in activeHeartEffects.Values)
                     for (int i = 0; i < effects.Count; i++)
                         if (effects[i].ID == id) effects[i] = (effects[i].Delta, id, true);
-            if (!ct.IsCancellationRequested) await ResetHeartEffectsAsync(false, CancellationToken.None).ConfigureAwait(false);
+            if (!ct.IsCancellationRequested) await ResetHeartEffectsAsync(null, false, CancellationToken.None).ConfigureAwait(false);
         }
 
         async Task TimedScaleAsync(
