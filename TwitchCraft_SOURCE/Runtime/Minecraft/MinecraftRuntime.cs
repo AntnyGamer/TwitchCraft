@@ -355,9 +355,6 @@ internal sealed class MinecraftSession
             if (!process.HasExited)
                 await process.WaitForExitAsync().WaitAsync(timeout).ConfigureAwait(false);
         }
-        catch (TimeoutException)
-        {
-        }
         catch
         {
         }
