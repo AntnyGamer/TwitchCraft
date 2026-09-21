@@ -20,7 +20,6 @@ internal sealed partial class TokenHandler(string path)
 {
     private readonly Lock _gate = new();
     private readonly string _dbPath = path;
-    internal string DataDirectory => System.IO.Path.GetDirectoryName(_dbPath) ?? Environment.CurrentDirectory;
     private readonly Dictionary<string, int> _balances = new(StringComparer.Ordinal);
     private readonly HashSet<string> _loadedUsers = new(StringComparer.Ordinal);
     private const string DeleteBalanceSql = "DELETE FROM TokenBalances WHERE Username = $username;";

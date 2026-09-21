@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -316,7 +315,6 @@ public static partial class CommandList
             if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
             { await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false); return; }
             bool sent = false;
-            string? newHeartID = null;
             try
             {
                 int delta = hearts * (add ? 2 : -2);
@@ -330,7 +328,6 @@ public static partial class CommandList
                         (int Delta, string ID, bool Expired) stale = effects[i];
                         effects.RemoveAt(i);
                         lock (activeHeartEffects) if (activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? live)) { live.Remove(stale); if (live.Count == 0) activeHeartEffects.Remove(player); }
-                        FileSystemHelper.DeleteFileSafe(HeartMarkerPath(player, stale.ID));
                     }
                     double? health = await runtime.QueryMaxHealthAsync(player, ct).ConfigureAwait(false);
                     if (!health.HasValue) { await SayAsync(sender + ", TwitchCraft could not read " + player + "'s maximum health. You were not charged.", ct).ConfigureAwait(false); return; }
@@ -339,35 +336,21 @@ public static partial class CommandList
                     if (!invalid) foreach ((int effect, _, _) in effects) if ((future -= effect) is < 10 or > 40) { invalid = true; break; }
                     if (invalid) { await SayAsync(sender + ", that would put " + player + " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false); return; }
                 }
-                string id = newHeartID = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
+                string id = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
                 List<string> commands = new(players.Count);
                 foreach (string player in players)
-                {
                     commands.Add(MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs));
-                    string marker = HeartMarkerPath(player, id);
-                    FileSystemHelper.EnsureParentDir(marker);
-                    File.Create(marker).Dispose();
-                }
                 sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
                 if (!sent) return;
                 lock (activeHeartEffects) foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, id, false)); }
                 runtime.TrackTask(ResetHeartAsync(id, ct));
                 await ConfirmAsync(sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) + " for 10 minutes.", ct).ConfigureAwait(false);
             }
-            finally
-            {
-                if (!sent)
-                {
-                    if (newHeartID != null) lock (activeHeartEffects) foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((0, newHeartID, true)); }
-                    if (newHeartID != null && !ct.IsCancellationRequested) await ResetHeartEffectsAsync(false, CancellationToken.None).ConfigureAwait(false);
-                    runtime.Commands.ClearTimedCommandCooldown("heart", reservation);
-                }
-            }
+            finally { if (!sent) runtime.Commands.ClearTimedCommandCooldown("heart", reservation); }
         }
 
         async Task ResetHeartEffectsAsync(bool force, CancellationToken ct)
         {
-            LoadHeartEffects();
             List<(string Player, int Delta, string ID)>? pending = null;
             lock (activeHeartEffects)
                 foreach (var player in activeHeartEffects)
@@ -383,41 +366,8 @@ public static partial class CommandList
                 _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(player), id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
                 if (await runtime.QueryHealthModifierAsync(player, id, ct).ConfigureAwait(false) != false) continue;
                 lock (activeHeartEffects) if (activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) { effects.Remove((delta, id, true)); if (effects.Count == 0) activeHeartEffects.Remove(player); }
-                FileSystemHelper.DeleteFileSafe(HeartMarkerPath(player, id));
             }
         }
-
-        void LoadHeartEffects()
-        {
-            lock (activeHeartEffects)
-            {
-                if (heartEffectsLoaded) return;
-                heartEffectsLoaded = true;
-                string root = Path.Combine(runtime.Tokens.DataDirectory, "heart_effects");
-                try
-                {
-                    if (!Directory.Exists(root)) return;
-                    foreach (string file in Directory.EnumerateFiles(root))
-                    {
-                        string name = Path.GetFileName(file);
-                        int separator = name.IndexOf('~');
-                        if (separator <= 0) continue;
-                        string player = name[..separator], id = name[(separator + 1)..].Replace('@', ':');
-                        const string prefix = "twitchcraft:heart_";
-                        bool validID = id.StartsWith(prefix, StringComparison.Ordinal)
-                            ? Guid.TryParseExact(id[prefix.Length..], "N", out _)
-                            : Guid.TryParseExact(id, "D", out _);
-                        if (!MinecraftNameHelper.IsValidPlayerName(player) || !validID) continue;
-                        if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = [];
-                        effects.Add((0, id, true));
-                    }
-                }
-                catch (Exception ex) { heartEffectsLoaded = false; ErrorHandling.LogNonFatal("Failed to load heart effect recovery state", ex); }
-            }
-        }
-
-        string HeartMarkerPath(string player, string id)
-            => Path.Combine(runtime.Tokens.DataDirectory, "heart_effects", player + "~" + id.Replace(':', '@'));
 
         async Task ResetHeartAsync(string id, CancellationToken ct)
         {
