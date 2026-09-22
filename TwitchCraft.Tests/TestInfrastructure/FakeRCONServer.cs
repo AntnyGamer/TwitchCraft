@@ -19,14 +19,20 @@ internal sealed class FakeRCONServer : IAsyncDisposable
     private readonly string _password;
     private readonly string? _malformedResponseCommand;
     private readonly string? _wrongTypeResponseCommand;
+    private readonly Func<string, string>? _responseFactory;
     private readonly Lock _gate = new();
     private readonly List<string> _commands = [];
 
-    internal FakeRCONServer(string password, string? malformedResponseCommand = null, string? wrongTypeResponseCommand = null)
+    internal FakeRCONServer(
+        string password,
+        string? malformedResponseCommand = null,
+        string? wrongTypeResponseCommand = null,
+        Func<string, string>? responseFactory = null)
     {
         _password = password;
         _malformedResponseCommand = malformedResponseCommand;
         _wrongTypeResponseCommand = wrongTypeResponseCommand;
+        _responseFactory = responseFactory;
         _listener = new TcpListener(IPAddress.Loopback, 0);
         _listener.Start();
         Port = ((IPEndPoint)_listener.LocalEndpoint).Port;
@@ -129,7 +135,8 @@ internal sealed class FakeRCONServer : IAsyncDisposable
             }
 
             int responseType = string.Equals(packet.Payload, _wrongTypeResponseCommand, StringComparison.Ordinal) ? 2 : 0;
-            await WritePacketAsync(stream, packet.ID, responseType, "OK", cancellationToken).ConfigureAwait(false);
+            string response = _responseFactory?.Invoke(packet.Payload) ?? "OK";
+            await WritePacketAsync(stream, packet.ID, responseType, response, cancellationToken).ConfigureAwait(false);
         }
     }
 
