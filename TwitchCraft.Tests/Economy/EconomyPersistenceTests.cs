@@ -83,10 +83,10 @@ public sealed class EconomyPersistenceTests
         {
             Assert.Equal(
                 FollowRewardResult.Rewarded,
-                store.TryRewardFollower("123456", "FirstName", DateTimeOffset.Parse("2026-08-27T01:02:03Z", System.Globalization.CultureInfo.InvariantCulture), 50));
+                store.TryRewardFollower("123456", "FirstName", DateTimeOffset.Parse("2026-08-27T01:02:03Z", System.Globalization.CultureInfo.InvariantCulture), 50, out _));
             Assert.Equal(
                 FollowRewardResult.AlreadyRewarded,
-                store.TryRewardFollower("123456", "RenamedUser", DateTimeOffset.Parse("2026-08-27T02:03:04Z", System.Globalization.CultureInfo.InvariantCulture), 50));
+                store.TryRewardFollower("123456", "RenamedUser", DateTimeOffset.Parse("2026-08-27T02:03:04Z", System.Globalization.CultureInfo.InvariantCulture), 50, out _));
 
             Assert.Equal(50, store.GetBalance("firstname"));
             Assert.Equal(0, store.GetBalance("renameduser"));
@@ -128,7 +128,7 @@ public sealed class EconomyPersistenceTests
             }
             Assert.Equal(
                 FollowRewardResult.Rewarded,
-                writer.TryRewardFollower("987654", "viewer", followedAt, 50));
+                writer.TryRewardFollower("987654", "viewer", followedAt, 50, out _));
         }
         finally
         {
@@ -140,7 +140,7 @@ public sealed class EconomyPersistenceTests
         {
             Assert.Equal(
                 FollowRewardResult.AlreadyRewarded,
-                reader.TryRewardFollower("987654", "viewer", followedAt, 50));
+                reader.TryRewardFollower("987654", "viewer", followedAt, 50, out _));
             Assert.Equal(50, reader.GetBalance("viewer"));
         }
         finally
@@ -158,9 +158,9 @@ public sealed class EconomyPersistenceTests
 
         try
         {
-            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("not-a-user-id", "viewer", followedAt, 50));
-            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "", followedAt, 50));
-            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "viewer", followedAt, 0));
+            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("not-a-user-id", "viewer", followedAt, 50, out _));
+            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "", followedAt, 50, out _));
+            Assert.Equal(FollowRewardResult.Failed, store.TryRewardFollower("123", "viewer", followedAt, 0, out _));
             Assert.Equal(0, store.GetBalance("viewer"));
         }
         finally

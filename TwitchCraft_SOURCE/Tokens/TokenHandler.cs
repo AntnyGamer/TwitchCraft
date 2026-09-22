@@ -200,14 +200,6 @@ internal sealed partial class TokenHandler(string path)
         string username,
         DateTimeOffset followedAt,
         int amount,
-        int maximumBalance = 0)
-        => TryRewardFollower(twitchUserID, username, followedAt, amount, out _, maximumBalance);
-
-    public FollowRewardResult TryRewardFollower(
-        string twitchUserID,
-        string username,
-        DateTimeOffset followedAt,
-        int amount,
         out int awardedAmount,
         int maximumBalance = 0)
     {

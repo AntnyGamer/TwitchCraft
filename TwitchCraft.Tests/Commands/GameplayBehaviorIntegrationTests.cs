@@ -9,8 +9,6 @@ namespace TwitchCraft.Tests.Commands;
 
 public sealed class GameplayBehaviorIntegrationTests
 {
-    private const string PlayerSelector = "@a[name=\"PlayerOne\",gamemode=!spectator]";
-
     [Fact]
     public async Task Effect_DeliversValidEffectsAndRejectsInvalidCountsWithoutExtraCharge()
     {

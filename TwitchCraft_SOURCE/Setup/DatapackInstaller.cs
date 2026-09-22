@@ -23,7 +23,15 @@ internal static class DatapackInstaller
             SyncLocateDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, ServerPropertyEditor.GetLevelName(config));
 
     public static bool SyncLocateDatapack(string serverDirectory, string minecraftVersion, string? levelName = null)
+        => SyncLocateDatapack(serverDirectory, minecraftVersion, levelName, ReportWarning);
+
+    internal static bool SyncLocateDatapack(
+        string serverDirectory,
+        string minecraftVersion,
+        string? levelName,
+        Action<string, Exception> reportWarning)
     {
+        ArgumentNullException.ThrowIfNull(reportWarning);
         if (string.IsNullOrWhiteSpace(serverDirectory))
             return true;
 
@@ -35,52 +43,8 @@ internal static class DatapackInstaller
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or InvalidDataException)
         {
-            return ReportFailure(ex, ReportWarning);
-        }
-    }
-
-    internal static bool TrySyncDatapack(
-        string sourceDirectory,
-        string destinationDirectory,
-        string minecraftVersion,
-        Action<string, Exception> reportWarning)
-    {
-        ArgumentNullException.ThrowIfNull(reportWarning);
-
-        if (!Directory.Exists(sourceDirectory))
-            return ReportFailure(new DirectoryNotFoundException("Locateplayers datapack source folder is missing: " + sourceDirectory), reportWarning);
-
-        string functionSource = Path.Combine(sourceDirectory, "data", DatapackName, "functions");
-        string tagSource = Path.Combine(sourceDirectory, "data", "minecraft", "tags", "functions");
-        if (!Directory.Exists(functionSource) || !Directory.Exists(tagSource))
-            return ReportFailure(new InvalidDataException("Locateplayers datapack source folder is incomplete: " + sourceDirectory), reportWarning);
-
-        try
-        {
-            SyncFiles(functionSource, tagSource, destinationDirectory, minecraftVersion);
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
-        {
             return ReportFailure(ex, reportWarning);
         }
-    }
-
-    private static void SyncFiles(
-        string functionSource,
-        string tagSource,
-        string destinationDirectory,
-        string minecraftVersion)
-    {
-        (string functionDirectoryName, bool rewriteCommands) = PrepareDestination(destinationDirectory, minecraftVersion);
-        string namespaceDirectory = Path.Combine(destinationDirectory, "data", DatapackName);
-        string minecraftTagsDirectory = Path.Combine(destinationDirectory, "data", "minecraft", "tags");
-
-        TwitchCraft_V1.FileSystemHelper.CopyDirectory(functionSource, Path.Combine(namespaceDirectory, functionDirectoryName), skipReparsePoints: true);
-        TwitchCraft_V1.FileSystemHelper.CopyDirectory(tagSource, Path.Combine(minecraftTagsDirectory, functionDirectoryName), skipReparsePoints: true);
-
-        if (rewriteCommands)
-            RewriteCommands(destinationDirectory);
     }
 
     private static void SyncEmbeddedFiles(string destinationDirectory, string minecraftVersion)

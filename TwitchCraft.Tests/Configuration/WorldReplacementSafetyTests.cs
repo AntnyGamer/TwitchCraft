@@ -67,7 +67,7 @@ public sealed class WorldReplacementSafetyTests
     }
 
     [Fact]
-    public void ReplaceWorld_WhenOptionalDatapackIsMissing_CommitsTheWorldAndReportsWarning()
+    public void ReplaceWorld_WhenOptionalDatapackFails_CommitsTheWorldAndReportsWarning()
     {
         using TemporaryDirectory directory = new();
         string source = System.IO.Path.Combine(directory.Path, "source");
@@ -83,10 +83,10 @@ public sealed class WorldReplacementSafetyTests
 
         MinecraftWorldImporter.ReplaceWorld(plan, () =>
         {
-            bool installed = DatapackInstaller.TrySyncDatapack(
-                System.IO.Path.Combine(directory.Path, "missing-datapack-source"),
-                System.IO.Path.Combine(destination, "datapacks", "locateplayers"),
-                "1.21.11",
+            bool installed = DatapackInstaller.SyncLocateDatapack(
+                directory.Path,
+                "unsupported",
+                "world",
                 (context, exception) => warnings.Add((context, exception)));
             Assert.False(installed);
         });
@@ -97,7 +97,7 @@ public sealed class WorldReplacementSafetyTests
         Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat")));
         Assert.False(Directory.Exists(plan.StagingWorldPath));
         Assert.False(Directory.Exists(plan.BackupWorldPath));
-        Assert.IsType<DirectoryNotFoundException>(Assert.Single(warnings).Exception);
+        Assert.IsType<NotSupportedException>(Assert.Single(warnings).Exception);
     }
 
     [Fact]

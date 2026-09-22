@@ -14,81 +14,58 @@ public sealed class DatapackInstallerTests
     private const string InlineRunTellraw = "tellraw @s {text:'Players online:',color:'yellow',bold:true}";
 
     [Fact]
-    public void TrySyncDatapack_MissingSourceReportsWarningAndContinues()
+    public void SyncLocateDatapack_UnsupportedVersionReportsWarningAndContinues()
     {
         using TemporaryDirectory directory = new();
-        string source = Path.Combine(directory.Path, "missing");
-        string destination = Path.Combine(directory.Path, "world", "datapacks", "locateplayers");
         List<(string Context, Exception Exception)> warnings = [];
 
-        bool installed = DatapackInstaller.TrySyncDatapack(
-            source,
-            destination,
-            "1.21.11",
+        bool installed = DatapackInstaller.SyncLocateDatapack(
+            directory.Path,
+            "unsupported",
+            "world",
             (context, exception) => warnings.Add((context, exception)));
 
         Assert.False(installed);
         (string context, Exception exception) = Assert.Single(warnings);
         Assert.Contains("will continue", context, StringComparison.OrdinalIgnoreCase);
-        Assert.IsType<DirectoryNotFoundException>(exception);
-        Assert.Contains(source, exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.False(Directory.Exists(destination));
+        Assert.IsType<NotSupportedException>(exception);
+        Assert.False(File.Exists(Path.Combine(directory.Path, "world", "datapacks", "locateplayers", "pack.mcmeta")));
     }
 
     [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public void TrySyncDatapack_IncompleteSourceReportsWarningAndContinues(
-        bool includeFunctions,
-        bool includeTags)
+    [InlineData("1.20.5", "1.21.11", "functions", "function")]
+    [InlineData("1.21.11", "1.20.5", "function", "functions")]
+    public void SyncLocateDatapack_ReplacesObsoleteFunctionLayout(
+        string firstVersion,
+        string secondVersion,
+        string firstLayout,
+        string secondLayout)
     {
         using TemporaryDirectory directory = new();
-        string source = Path.Combine(directory.Path, "source");
-        string destination = Path.Combine(directory.Path, "world", "datapacks", "locateplayers");
-        Directory.CreateDirectory(source);
-        if (includeFunctions)
-            Directory.CreateDirectory(Path.Combine(source, "data", "locateplayers", "functions"));
-        if (includeTags)
-            Directory.CreateDirectory(Path.Combine(source, "data", "minecraft", "tags", "functions"));
-        List<(string Context, Exception Exception)> warnings = [];
+        string datapack = Path.Combine(directory.Path, "world", "datapacks", "locateplayers");
 
-        bool installed = DatapackInstaller.TrySyncDatapack(
-            source,
-            destination,
-            "1.21.11",
-            (context, exception) => warnings.Add((context, exception)));
+        Assert.True(DatapackInstaller.SyncLocateDatapack(directory.Path, firstVersion));
+        Assert.True(Directory.Exists(Path.Combine(datapack, "data", "locateplayers", firstLayout)));
 
-        Assert.False(installed);
-        (string context, Exception exception) = Assert.Single(warnings);
-        Assert.Contains("will continue", context, StringComparison.OrdinalIgnoreCase);
-        Assert.IsType<InvalidDataException>(exception);
-        Assert.Contains(source, exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.False(Directory.Exists(destination));
+        Assert.True(DatapackInstaller.SyncLocateDatapack(directory.Path, secondVersion));
+        Assert.True(Directory.Exists(Path.Combine(datapack, "data", "locateplayers", secondLayout)));
+        Assert.False(Directory.Exists(Path.Combine(datapack, "data", "locateplayers", firstLayout)));
     }
 
     [Theory]
     [InlineData("1.20.5", true, false, false)]
     [InlineData("1.21.11", false, true, true)]
-    public void TrySyncDatapack_InstallsTheVersionAppropriateLayout(
+    public void SyncLocateDatapack_InstallsTheVersionAppropriateLayout(
         string minecraftVersion,
         bool expectsPluralLayout,
         bool expectsSingularLayout,
         bool expectsInlineText)
     {
         using TemporaryDirectory directory = new();
-        string source = Path.Combine(directory.Path, "source");
         string destination = Path.Combine(directory.Path, "world", "datapacks", "locateplayers");
-        CreateCompleteSource(source);
-        List<(string Context, Exception Exception)> warnings = [];
 
-        bool installed = DatapackInstaller.TrySyncDatapack(
-            source,
-            destination,
-            minecraftVersion,
-            (context, exception) => warnings.Add((context, exception)));
+        Assert.True(DatapackInstaller.SyncLocateDatapack(directory.Path, minecraftVersion));
 
-        Assert.True(installed);
-        Assert.Empty(warnings);
         string pluralRun = Path.Combine(destination, "data", "locateplayers", "functions", "run.mcfunction");
         string singularRun = Path.Combine(destination, "data", "locateplayers", "function", "run.mcfunction");
         Assert.Equal(expectsPluralLayout, File.Exists(pluralRun));
@@ -132,15 +109,5 @@ public sealed class DatapackInstallerTests
         }
 
         Assert.False(pack.TryGetProperty("supported_formats", out _));
-    }
-
-    private static void CreateCompleteSource(string source)
-    {
-        string functions = Path.Combine(source, "data", "locateplayers", "functions");
-        string tags = Path.Combine(source, "data", "minecraft", "tags", "functions");
-        Directory.CreateDirectory(functions);
-        Directory.CreateDirectory(tags);
-        File.WriteAllText(Path.Combine(functions, "run.mcfunction"), LegacyRunTellraw);
-        File.WriteAllText(Path.Combine(tags, "load.json"), "{}");
     }
 }
