@@ -20,7 +20,7 @@ Friend joins with: your public IP, LAN IP, or VPN IP
 ## Recommended Defaults
 
 Singleplayer or local only: **127.0.0.1**  
-Normal multiplayer: **0.0.0.0** (TwitchCraft will set this for you, do not set the Bind IP to this)
+Normal multiplayer: leave **127.0.0.1**; TwitchCraft uses **0.0.0.0** for the multiplayer session
 
 Only change Bind IP if you know you need a VPN IP or an IPv6 address.
 
