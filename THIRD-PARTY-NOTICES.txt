@@ -51,7 +51,6 @@ and WPF at:
 https://github.com/dotnet/runtime/blob/release/10.0/THIRD-PARTY-NOTICES.TXT
 https://github.com/dotnet/wpf/blob/release/10.0/THIRD-PARTY-NOTICES.TXT
 
-
 ============================================================
                      SQLITEPCLRAW 3.0.5
 ============================================================
@@ -104,7 +103,6 @@ License for MS Open Tech
 //
 // See the Apache 2 License for the specific language governing permissions and
 // limitations under the License.
-
 
 ============================================================
                 APACHE LICENSE, VERSION 2.0
@@ -287,7 +285,6 @@ License for MS Open Tech
 
    END OF TERMS AND CONDITIONS
 
-
 ============================================================
                 SQLITE / SOURCEGEAR.SQLITE3
 ============================================================
@@ -296,7 +293,6 @@ SQLite is public-domain software.
 
 SQLite copyright and public-domain information:
 https://www.sqlite.org/copyright.html
-
 
 ============================================================
                  END OF THIRD-PARTY NOTICES
