@@ -12,6 +12,8 @@ Enabling multiplayer allows more Minecraft players and enables TwitchCraft's pla
 
 Prefer a private VPN or trusted tunnel when practical. If you expose the Minecraft game port directly, restrict access, keep Windows and Java updated, use online mode where appropriate, and share the address only with people you trust.
 
+For VPN, IPv6, localhost, or other custom Bind IP configurations, see the [Bind IP support guide](BIND-IP.md).
+
 ## Router and firewall setup
 
 For direct home-network hosting, the usual game port is TCP `25565`:
