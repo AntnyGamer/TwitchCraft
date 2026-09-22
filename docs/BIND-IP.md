@@ -15,7 +15,7 @@ Example:
 Bind IP: **0.0.0.0**  
 Friend joins with: your public IP, LAN IP, or VPN IP
 
-`0.0.0.0` means TwitchCraft listens on all IPv4 network interfaces.
+`0.0.0.0` means TwitchCraft listens on all normal IPv4 network adapters.
 
 ## Recommended Defaults
 
@@ -78,7 +78,7 @@ IPv6 can be useful if your internet supports IPv6 or if normal IPv4 port forward
 
 `::1` means IPv6 local-only. Only your own computer can connect.
 
-`::` means all IPv6 network interfaces. This is like `0.0.0.0`, but for IPv6.
+`::` means IPv6 all adapters. This is like `0.0.0.0`, but for IPv6.
 
 A specific IPv6 address makes TwitchCraft listen only on that IPv6 address.
 
