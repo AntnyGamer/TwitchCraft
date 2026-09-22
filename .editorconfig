@@ -1,0 +1,46 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+
+[*.xaml]
+indent_style = space
+indent_size = 4
+
+[.github/**/*.yml]
+indent_style = space
+indent_size = 2
+
+[TwitchCraft_SOURCE/TwitchCraft.csproj]
+indent_style = tab
+indent_size = tab
+
+[TwitchCraft.Tests/*.csproj]
+indent_style = space
+indent_size = 2
+
+[TwitchCraft.Tests/**/*.csproj]
+indent_style = space
+indent_size = 2
+
+[*.slnx]
+indent_style = space
+indent_size = 2
+
+[TwitchCraft_SOURCE/Assets/locateplayers/**/*.json]
+indent_style = space
+indent_size = 4
+
+[TwitchCraft.Tests/*.json]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

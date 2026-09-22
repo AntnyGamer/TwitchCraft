@@ -1,5 +1,9 @@
 # TwitchCraft User Guide
 
+[![Build and Test](https://github.com/AntnyGamer/TwitchCraft/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/AntnyGamer/TwitchCraft/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/AntnyGamer/TwitchCraft)](https://github.com/AntnyGamer/TwitchCraft/releases/latest)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](licenses/LICENSE)
+
 **// TWITCHCRAFT SCREENSHOT SHOWCASE**
 
 <p align="center">
