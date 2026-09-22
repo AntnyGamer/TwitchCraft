@@ -110,8 +110,8 @@ internal static partial class ErrorHandling
     {
         const string message = @"Changing TwitchCraft's Bind IP is only recommended for advanced users. If you are seeing this message, there is a chance you may have accidentally edited the Bind IP, entered an invalid IPv4 address, or entered a VPN / non-IPv4 Bind IP. In this case, press Yes to reset the Bind IP to its default.
 
-If you have purposely entered a VPN or non-IPv4 Bind IP, the normal multiplayer instructions may not apply. See the Advanced Bind IP section here:
-https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/MULTIPLAYER.md#advanced-bind-ip
+If you have purposely entered a VPN or non-IPv4 Bind IP, the normal multiplayer instructions may not apply. See the Bind IP support guide here:
+https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/BIND-IP.md
 
 Do you want to reset the Bind IP to its default?";
 
