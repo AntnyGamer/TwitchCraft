@@ -30,6 +30,7 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Configuration](docs/CONFIGURATION.md)
 * [Commands](docs/COMMANDS.md)
 * [Multiplayer](docs/MULTIPLAYER.md)
+* [Bind IP support](docs/BIND-IP.md)
 * [Remote Control](docs/REMOTE-CONTROL.md)
 * [Troubleshooting](docs/TROUBLESHOOTING.md)
 * [Architecture](docs/ARCHITECTURE.md)
