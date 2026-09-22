@@ -4,7 +4,7 @@ In order to use different Bind IPs on TwitchCraft, it is important you know what
 
 Most users should not change the Bind IP. If normal multiplayer works for you, follow the normal [multiplayer guide](MULTIPLAYER.md) instead.
 
-## What Is Bind IP?
+## What Is the Bind IP?
 
 The Bind IP controls what network address the Minecraft server listens on.
 
@@ -15,7 +15,7 @@ Example:
 Bind IP: **0.0.0.0**  
 Friend joins with: your public IP, LAN IP, or VPN IP
 
-`0.0.0.0` means TwitchCraft listens on all normal IPv4 network adapters.
+`0.0.0.0` means TwitchCraft listens on all IPv4 network interfaces.
 
 ## Recommended Defaults
 
@@ -78,7 +78,7 @@ IPv6 can be useful if your internet supports IPv6 or if normal IPv4 port forward
 
 `::1` means IPv6 local-only. Only your own computer can connect.
 
-`::` means IPv6 all adapters. This is like `0.0.0.0`, but for IPv6.
+`::` means all IPv6 network interfaces. This is like `0.0.0.0`, but for IPv6.
 
 A specific IPv6 address makes TwitchCraft listen only on that IPv6 address.
 
@@ -108,7 +108,7 @@ IPv6 only works if:
 
 If IPv6 does not work, use normal IPv4 multiplayer or VPN multiplayer instead.
 
-## localhost Setup
+## `localhost` Setup
 
 `localhost` means your own computer.
 
