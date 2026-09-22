@@ -138,7 +138,6 @@ Moving from Low to Heavy synthetic Twitch traffic increased TwitchCraft's resour
 
 These benchmarks are intended mainly for comparing TwitchCraft CPU and RAM usage under controlled conditions. Results will vary by hardware, Minecraft version, server workload, mods, player count, and other software running at the same time.
 
-
 ---
 
 ## Bottom line
