@@ -60,7 +60,7 @@ internal sealed class TimedPlayerScaleController
         if (players.Count == 0)
             return false;
 
-        List<SemaphoreSlim> acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
+        SemaphoreSlim[] acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
         (string Player, ScaleState Applied, ScaleState? Previous)[] appliedStates = new (string, ScaleState, ScaleState?)[players.Count];
         int appliedCount = 0;
         try
@@ -138,7 +138,7 @@ internal sealed class TimedPlayerScaleController
         if (players.Count == 0)
             return;
 
-        List<SemaphoreSlim> acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
+        SemaphoreSlim[] acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
         try
         {
             foreach (string player in players)
@@ -279,25 +279,27 @@ internal sealed class TimedPlayerScaleController
         return false;
     }
 
-    private async Task<List<SemaphoreSlim>> LockPlayersAsync(
+    private async Task<SemaphoreSlim[]> LockPlayersAsync(
         List<string> players,
         CancellationToken cancellationToken)
     {
-        List<SemaphoreSlim> acquired = new(players.Count);
+        SemaphoreSlim[] acquired = new SemaphoreSlim[players.Count];
+        int acquiredCount = 0;
         try
         {
             foreach (string player in players)
             {
                 SemaphoreSlim playerGate = GetGate(player);
                 await playerGate.WaitAsync(cancellationToken).ConfigureAwait(false);
-                acquired.Add(playerGate);
+                acquired[acquiredCount++] = playerGate;
             }
 
             return acquired;
         }
         catch
         {
-            UnlockPlayers(acquired);
+            for (int i = acquiredCount - 1; i >= 0; i--)
+                acquired[i].Release();
             throw;
         }
     }
@@ -356,9 +358,9 @@ internal sealed class TimedPlayerScaleController
     private static List<string> NormalizePlayers(IReadOnlyList<string> playerNames)
         => SortedListHelper.NormalizePlayerNames(playerNames, StringComparer.OrdinalIgnoreCase);
 
-    private static void UnlockPlayers(List<SemaphoreSlim> acquiredGates)
+    private static void UnlockPlayers(SemaphoreSlim[] acquiredGates)
     {
-        for (int i = acquiredGates.Count - 1; i >= 0; i--)
+        for (int i = acquiredGates.Length - 1; i >= 0; i--)
             acquiredGates[i].Release();
     }
 }

@@ -213,14 +213,14 @@ public sealed partial class MainHandler
         List<string> ids = [];
         if (namespaced)
         {
-            foreach (Match match in ModernHeartModifierRegex().Matches(data))
-                ids.Add(match.Value);
+            foreach (ValueMatch match in ModernHeartModifierRegex().EnumerateMatches(data))
+                ids.Add(data.Substring(match.Index, match.Length));
             return ids;
         }
 
-        foreach (Match modifier in LegacyHeartModifierRegex().Matches(data))
+        foreach (ValueMatch modifier in LegacyHeartModifierRegex().EnumerateMatches(data))
         {
-            Match uuid = LegacyHeartUuidRegex().Match(modifier.Value);
+            Match uuid = LegacyHeartUuidRegex().Match(data, modifier.Index, modifier.Length);
             if (!uuid.Success ||
                 !int.TryParse(uuid.Groups[1].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) ||
                 !int.TryParse(uuid.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
