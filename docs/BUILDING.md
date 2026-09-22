@@ -18,7 +18,7 @@ Pop-Location
 dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
 ```
 
-`TwitchCraft.slnx` is the canonical repository validation entry point. Its Release build compiles the TwitchCraft WPF application, the regression test project, and the test-process helper. The app-only `TwitchCraft_SOURCE\TwitchCraft.slnx` solution may still be used for isolated application development.
+`TwitchCraft.slnx` is the canonical repository validation entry point. Its Release build compiles the TwitchCraft WPF application, the regression test project, and the test-process helper.
 
 To produce a local coverage report equivalent to CI, run:
 

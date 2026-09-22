@@ -83,12 +83,15 @@ public sealed class WorldReplacementSafetyTests
 
         MinecraftWorldImporter.ReplaceWorld(plan, () =>
         {
+            string blockedDatapacksPath = System.IO.Path.Combine(destination, "datapacks");
+            File.WriteAllText(blockedDatapacksPath, "blocked");
             bool installed = DatapackInstaller.SyncLocateDatapack(
                 directory.Path,
-                "unsupported",
+                "1.21.11",
                 "world",
                 (context, exception) => warnings.Add((context, exception)));
             Assert.False(installed);
+            File.Delete(blockedDatapacksPath);
         });
 
         Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
@@ -97,7 +100,7 @@ public sealed class WorldReplacementSafetyTests
         Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat")));
         Assert.False(Directory.Exists(plan.StagingWorldPath));
         Assert.False(Directory.Exists(plan.BackupWorldPath));
-        Assert.IsType<NotSupportedException>(Assert.Single(warnings).Exception);
+        Assert.IsType<IOException>(Assert.Single(warnings).Exception);
     }
 
     [Fact]

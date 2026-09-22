@@ -14,22 +14,26 @@ public sealed class DatapackInstallerTests
     private const string InlineRunTellraw = "tellraw @s {text:'Players online:',color:'yellow',bold:true}";
 
     [Fact]
-    public void SyncLocateDatapack_UnsupportedVersionReportsWarningAndContinues()
+    public void SyncLocateDatapack_FilesystemFailureReportsWarningAndContinues()
     {
         using TemporaryDirectory directory = new();
+        string world = Path.Combine(directory.Path, "world");
+        string blockedDatapacksPath = Path.Combine(world, "datapacks");
+        Directory.CreateDirectory(world);
+        File.WriteAllText(blockedDatapacksPath, "blocked");
         List<(string Context, Exception Exception)> warnings = [];
 
         bool installed = DatapackInstaller.SyncLocateDatapack(
             directory.Path,
-            "unsupported",
+            "1.21.11",
             "world",
             (context, exception) => warnings.Add((context, exception)));
 
         Assert.False(installed);
         (string context, Exception exception) = Assert.Single(warnings);
         Assert.Contains("will continue", context, StringComparison.OrdinalIgnoreCase);
-        Assert.IsType<NotSupportedException>(exception);
-        Assert.False(File.Exists(Path.Combine(directory.Path, "world", "datapacks", "locateplayers", "pack.mcmeta")));
+        Assert.IsType<IOException>(exception);
+        Assert.Equal("blocked", File.ReadAllText(blockedDatapacksPath));
     }
 
     [Theory]
@@ -43,13 +47,18 @@ public sealed class DatapackInstallerTests
     {
         using TemporaryDirectory directory = new();
         string datapack = Path.Combine(directory.Path, "world", "datapacks", "locateplayers");
+        string functions = Path.Combine(datapack, "data", "locateplayers");
+        string tags = Path.Combine(datapack, "data", "minecraft", "tags");
 
         Assert.True(DatapackInstaller.SyncLocateDatapack(directory.Path, firstVersion));
-        Assert.True(Directory.Exists(Path.Combine(datapack, "data", "locateplayers", firstLayout)));
+        Assert.True(Directory.Exists(Path.Combine(functions, firstLayout)));
+        Assert.True(Directory.Exists(Path.Combine(tags, firstLayout)));
 
         Assert.True(DatapackInstaller.SyncLocateDatapack(directory.Path, secondVersion));
-        Assert.True(Directory.Exists(Path.Combine(datapack, "data", "locateplayers", secondLayout)));
-        Assert.False(Directory.Exists(Path.Combine(datapack, "data", "locateplayers", firstLayout)));
+        Assert.True(Directory.Exists(Path.Combine(functions, secondLayout)));
+        Assert.True(Directory.Exists(Path.Combine(tags, secondLayout)));
+        Assert.False(Directory.Exists(Path.Combine(functions, firstLayout)));
+        Assert.False(Directory.Exists(Path.Combine(tags, firstLayout)));
     }
 
     [Theory]
