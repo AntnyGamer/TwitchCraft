@@ -322,11 +322,10 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line) || markerIndex <= 0)
             return string.Empty;
 
-        int start = line.IndexOf("]: ", StringComparison.Ordinal);
-        if (start < 0)
+        int start = line.IndexOf("]: ", StringComparison.Ordinal) + 3;
+        if (start < 3 || start >= markerIndex)
             return string.Empty;
 
-        start += 3;
         ReadOnlySpan<char> name = line.AsSpan(start, markerIndex - start);
         if (name.StartsWith("System chat: ", StringComparison.Ordinal))
             name = name["System chat: ".Length..];
