@@ -122,5 +122,5 @@ public sealed partial class MainHandler
 
     private bool AreViewerCommandsPaused(string sender)
         => CurrentSettings.ViewerCommandsPaused &&
-            !string.Equals(sender, _currentStreamerName, StringComparison.OrdinalIgnoreCase);
+            !string.Equals(sender, _streamerName, StringComparison.OrdinalIgnoreCase);
 }

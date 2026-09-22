@@ -58,7 +58,7 @@ public sealed class EnchantmentCommandTests
 
         for (int seed = 0; seed < 500; seed++)
         {
-            MinecraftItemEnchantHelper.PickEnchant(
+            Enchantments.Pick(
                 new Random(seed),
                 supportsMaceEnchantments: true,
                 out string enchantID,
@@ -79,10 +79,10 @@ public sealed class EnchantmentCommandTests
 
         for (int seed = 0; seed < 500; seed++)
         {
-            MinecraftItemEnchantHelper.PickEnchant(new Random(seed), false, out string oldVersionEnchant, out _, out _);
+            Enchantments.Pick(new Random(seed), false, out string oldVersionEnchant, out _, out _);
             Assert.DoesNotContain(oldVersionEnchant, maceEnchantments);
 
-            MinecraftItemEnchantHelper.PickEnchant(new Random(seed), true, out string newVersionEnchant, out _, out _);
+            Enchantments.Pick(new Random(seed), true, out string newVersionEnchant, out _, out _);
             foundMaceEnchant |= maceEnchantments.Contains(newVersionEnchant);
         }
 
@@ -94,7 +94,7 @@ public sealed class EnchantmentCommandTests
     {
         const string selectedItem = "{id:'minecraft:stone',count:64,components:{\"minecraft:enchantments\":{levels:{\"minecraft:sharpness\":5},show_in_tooltip:1b},\"minecraft:custom_name\":'Rock'}}";
 
-        bool result = MinecraftItemComponentHelper.TryBuildEnchantCommand(
+        bool result = ItemComponents.TryBuildEnchantCommand(
             "@s",
             selectedItem,
             "smite",
@@ -118,7 +118,7 @@ public sealed class EnchantmentCommandTests
     {
         const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{\"minecraft:enchantments\":{levels:{\"minecraft:sharpness\":5,\"minecraft:smite\":2}}}}";
 
-        Assert.True(MinecraftItemComponentHelper.TryBuildEnchantCommand(
+        Assert.True(ItemComponents.TryBuildEnchantCommand(
             "@s",
             selectedItem,
             "smite",
@@ -138,7 +138,7 @@ public sealed class EnchantmentCommandTests
     {
         const string selectedItem = "{id:'minecraft:stick',count:1,components:{\"minecraft:enchantments\":{\"minecraft:infinity\":1}}}";
 
-        Assert.True(MinecraftItemComponentHelper.TryBuildEnchantCommand(
+        Assert.True(ItemComponents.TryBuildEnchantCommand(
             "@p",
             selectedItem,
             "mending",
@@ -158,7 +158,7 @@ public sealed class EnchantmentCommandTests
     [InlineData("{id:'minecraft:air',count:1}")]
     public void TryBuildEnchantCommand_RejectsEmptyHand(string selectedItemData)
     {
-        Assert.False(MinecraftItemComponentHelper.TryBuildEnchantCommand(
+        Assert.False(ItemComponents.TryBuildEnchantCommand(
             "@s",
             selectedItemData,
             "sharpness",
@@ -174,6 +174,6 @@ public sealed class EnchantmentCommandTests
     {
         Assert.Equal(
             "enchant @s minecraft:sharpness 5",
-            MinecraftItemEnchantHelper.BuildEnchant("@s", "sharpness", 5));
+            Enchantments.BuildCommand("@s", "sharpness", 5));
     }
 }

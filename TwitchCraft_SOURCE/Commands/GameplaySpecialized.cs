@@ -14,7 +14,7 @@ public static partial class CommandList
 
         Task ChargedCreeperAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string[] commands = MinecraftCommandFeatureBuilder.BuildChargedCreeper(
+            string[] commands = GameplayCommands.BuildChargedCreeper(
                 target.Selector,
                 Random.Shared,
                 runtime.UsesInlineTextComponentSyntax,
@@ -102,7 +102,7 @@ public static partial class CommandList
         }
         Task JohnnyAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string[] commands = MinecraftCommandFeatureBuilder.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
+            string[] commands = GameplayCommands.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
             return SendPricedReplyAsync(
                 target,
                 sender,
@@ -120,7 +120,7 @@ public static partial class CommandList
         {
             if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return;
-            if (!runtime.Commands.TryUseTimedCommand("lightning", out TimeSpan remaining, out long lightningReservationTimestamp))
+            if (!runtime.Commands.TryUseTimedCommand("lightning", out TimeSpan remaining, out long reservation))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
@@ -132,12 +132,12 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.Commands.ClearTimedCommandCooldown("lightning", lightningReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown("lightning", reservation);
                 throw;
             }
             if (target == null)
             {
-                runtime.Commands.ClearTimedCommandCooldown("lightning", lightningReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown("lightning", reservation);
                 return;
             }
             int cost = runtime.Commands.ScaleCost(50, target.PlayerCount);
@@ -146,7 +146,7 @@ public static partial class CommandList
                     cost,
                     MinecraftCommandBuilder.Lightning(target.Selector),
                     ct,
-                    () => runtime.Commands.ClearTimedCommandCooldown("lightning", lightningReservationTimestamp)).ConfigureAwait(false))
+                    () => runtime.Commands.ClearTimedCommandCooldown("lightning", reservation)).ConfigureAwait(false))
             {
                 return;
             }
@@ -232,7 +232,7 @@ public static partial class CommandList
                 else
                     selectedItemData = await runtime.QueryItemAsync(playerName, ct).ConfigureAwait(false);
                 string singleSelector = MinecraftCommandBuilder.PlayerSelector(playerName);
-                MinecraftItemEnchantHelper.PickEnchant(
+                Enchantments.Pick(
                     Random.Shared,
                     runtime.SupportsMaceEnchantments,
                     out string enchantID,
@@ -241,7 +241,7 @@ public static partial class CommandList
                 string enchantCommand = string.Empty;
                 string prettyItemName = string.Empty;
                 bool hadItem = !string.IsNullOrWhiteSpace(selectedItemData) &&
-                    MinecraftItemComponentHelper.TryBuildEnchantCommand(
+                    ItemComponents.TryBuildEnchantCommand(
                         singleSelector,
                         selectedItemData,
                         enchantID,
@@ -252,7 +252,7 @@ public static partial class CommandList
                 if (!hadItem)
                 {
                     prettyItemName = string.Empty;
-                    enchantCommand = MinecraftItemEnchantHelper.BuildEnchant(singleSelector, enchantID, level);
+                    enchantCommand = Enchantments.BuildCommand(singleSelector, enchantID, level);
                 }
 
                 enchantCommands[i] = enchantCommand;
@@ -433,7 +433,7 @@ public static partial class CommandList
                 return;
             }
 
-            if (!runtime.Commands.TryUseTimedCommand(commandName, out TimeSpan remaining, out long cooldownReservationTimestamp))
+            if (!runtime.Commands.TryUseTimedCommand(commandName, out TimeSpan remaining, out long reservation))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
@@ -452,13 +452,13 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.Commands.ClearTimedCommandCooldown(commandName, cooldownReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown(commandName, reservation);
                 throw;
             }
 
             if (!sent)
             {
-                runtime.Commands.ClearTimedCommandCooldown(commandName, cooldownReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown(commandName, reservation);
                 return;
             }
 
@@ -513,12 +513,12 @@ public static partial class CommandList
                 if (string.IsNullOrWhiteSpace(selectedItemData))
                     continue;
                 string singleSelector = MinecraftCommandBuilder.PlayerSelector(playerName);
-                if (!MinecraftItemComponentHelper.TryBuildRenameCommand(singleSelector, selectedItemData, sender, runtime.UsesInlineTextComponentSyntax, out string renameCommand, out string currentPrettyItemName))
+                if (!ItemComponents.TryBuildRenameCommand(singleSelector, selectedItemData, sender, runtime.UsesInlineTextComponentSyntax, out string renameCommand, out string itemName))
                     continue;
                 renameCommands.Add(renameCommand);
                 renamedPlayers.Add(playerName);
                 if (string.IsNullOrWhiteSpace(prettyItemName))
-                    prettyItemName = currentPrettyItemName;
+                    prettyItemName = itemName;
             }
             if (renameCommands.Count == 0)
             {
@@ -587,18 +587,18 @@ public static partial class CommandList
                 < 75 => ("minecraft:water_bucket", "a water bucket"),
                 _ => ("minecraft:lava_bucket", "a lava bucket")
             };
-            string singleMilkTargetName = GetPlayerName(target);
-            if (target.PlayerCount == 1 && !IsEveryone(target) && singleMilkTargetName.Length == 0)
+            string playerName = GetPlayerName(target);
+            if (target.PlayerCount == 1 && !IsEveryone(target) && playerName.Length == 0)
                 return SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct);
             string switchMilkTag = runtime.Commands.NextSwitchMilkTag();
             string taggedMilkSelector = "@a[tag=" + switchMilkTag + "]";
             List<string> switchMilkCommands = new(7) { "tag @a remove " + switchMilkTag };
             switchMilkCommands.Add("execute as " + target.Selector + " if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + switchMilkTag);
-            if (runtime.MultiTargetingEnabled && target.PlayerCount == 1 && !IsEveryone(target) && runtime.HasOtherPlayer(singleMilkTargetName))
+            if (runtime.MultiTargetingEnabled && target.PlayerCount == 1 && !IsEveryone(target) && runtime.HasOtherPlayer(playerName))
             {
                 switchMilkCommands.Add(
                     "execute if entity " + taggedMilkSelector +
-                    " run " + MinecraftCommandBuilder.Tellraw(MinecraftCommandBuilder.EveryoneExceptSelector(singleMilkTargetName), ((target.DisplayName ?? singleMilkTargetName).ToUpperInvariant()) + " GOT MILK SWITCHED!", "yellow", true, runtime.UsesInlineTextComponentSyntax));
+                    " run " + MinecraftCommandBuilder.Tellraw(MinecraftCommandBuilder.EveryoneExceptSelector(playerName), ((target.DisplayName ?? playerName).ToUpperInvariant()) + " GOT MILK SWITCHED!", "yellow", true, runtime.UsesInlineTextComponentSyntax));
             }
             switchMilkCommands.Add("execute as " + taggedMilkSelector + " run clear @s minecraft:milk_bucket 1");
             switchMilkCommands.Add("execute as " + taggedMilkSelector + " run give @s " + itemID + " 1");
@@ -652,7 +652,7 @@ public static partial class CommandList
                 target,
                 sender,
                 15,
-                _ => MinecraftCommandFeatureBuilder.BuildScared(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax),
+                _ => GameplayCommands.BuildScared(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax),
                 sender + " thinks you're a scaredy cat and spawned cats above you.",
                 "GOT BURIED IN CATS!",
                 sender + ", you spawned 20 cats on " + TargetName(target) + ".",
@@ -665,7 +665,7 @@ public static partial class CommandList
                 target,
                 sender,
                 30,
-                _ => MinecraftCommandFeatureBuilder.BuildSlaughter(target.Selector, runtime.MobLootGameRuleName),
+                _ => GameplayCommands.BuildSlaughter(target.Selector, runtime.MobLootGameRuleName),
                 sender + " slaughtered any nearby mobs.",
                 "GOT THEIR AREA SLAUGHTERED!",
                 sender + ", you slaughtered any nearby mobs around " + TargetName(target) + ".",

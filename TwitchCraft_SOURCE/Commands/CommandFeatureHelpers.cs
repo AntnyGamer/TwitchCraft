@@ -5,7 +5,7 @@ using System.Text;
 
 namespace TwitchCraft_V1;
 
-internal static class MinecraftItemComponentHelper
+internal static class ItemComponents
 {
     public static bool TryBuildRenameCommand(
         string selector,
@@ -369,7 +369,7 @@ internal static class MinecraftItemComponentHelper
     }
 }
 
-internal static class MinecraftCommandFeatureBuilder
+internal static class GameplayCommands
 {
     public static List<string> BuildScared(string selector, Random random, bool usesInlineTextComponents)
     {

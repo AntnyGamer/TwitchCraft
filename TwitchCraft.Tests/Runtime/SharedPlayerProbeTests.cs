@@ -40,7 +40,7 @@ public sealed class SharedPlayerProbeTests
     }
 
     [Fact]
-    public async Task PlayerQueries_ReadHealthItemsAndHeartAttributesFromServerResponses()
+    public async Task PlayerQueries_ReadHealthItemsAndHeartAttributes()
     {
         const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
         const string attributes = "[{id:'minecraft:max_health',modifiers:[{id:'twitchcraft:heart_0123456789abcdef0123456789abcdef',amount:2.0d}]}]";

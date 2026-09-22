@@ -113,7 +113,7 @@ public static partial class CommandList
             AddTargetCommand("switchmilk", SwitchMilkAsync, DangerousCommand, minimumTokenCost: 6);
             AddTargetCommand("tiny", (target, sender, ct) => TimedScaleAsync(target, sender, "tiny", 0.5, "tiny", "BECAME TINY!", ct), DangerousCommand, minimumTokenCost: 20);
             AddCommand("weather", WeatherAsync, DangerousCommand);
-            MinigameManager.AddMinigameHandlers(runtime, handlers, SayAsync, SuccessAsync);
+            MinigameManager.AddHandlers(runtime, handlers, SayAsync, SuccessAsync);
 
             Dictionary<string, ChatCommandHandler> result = handlers;
             handlers = null!;
@@ -122,7 +122,7 @@ public static partial class CommandList
         }
     }
 
-    private sealed record TargetedCommandDefinition(
+    private sealed record TargetCommand(
         string Name,
         int BaseCost,
         Func<ResolvedTarget, IEnumerable<string>> BuildCommands,

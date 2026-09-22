@@ -14,9 +14,9 @@ internal enum FollowRewardResult
 }
 
 internal readonly record struct TokenRankResult(string Username, int Balance, int Rank);
-internal enum ConditionalTokenAdjustmentStatus { Failed, Insufficient, Adjusted }
+internal enum TokenAdjustmentStatus { Failed, Insufficient, Adjusted }
 
-internal sealed partial class TokenHandler(string path)
+internal sealed partial class TokenStore(string path)
 {
     private readonly Lock _gate = new();
     private readonly string _dbPath = path;
@@ -113,7 +113,7 @@ internal sealed partial class TokenHandler(string path)
         }
     }
 
-    internal ConditionalTokenAdjustmentStatus TryAdjustIfAtLeast(
+    internal TokenAdjustmentStatus TryAdjustIfAtLeast(
         string user,
         int requiredBalance,
         int delta,
@@ -124,23 +124,23 @@ internal sealed partial class TokenHandler(string path)
         balance = appliedDelta = 0;
         string normalized = Normalize(user);
         if (normalized.Length == 0 || requiredBalance < 0 || delta == 0)
-            return ConditionalTokenAdjustmentStatus.Failed;
+            return TokenAdjustmentStatus.Failed;
 
         lock (_gate)
         {
             if (!EnsureLoadedNoLock(normalized))
-                return ConditionalTokenAdjustmentStatus.Failed;
+                return TokenAdjustmentStatus.Failed;
             _balances.TryGetValue(normalized, out int current);
             balance = current;
             if (current < requiredBalance)
-                return ConditionalTokenAdjustmentStatus.Insufficient;
+                return TokenAdjustmentStatus.Insufficient;
             int newBalance = ClampAdjusted(current, delta, maximumBalance);
             if (newBalance != current && !SaveChangedNoLock(normalized, newBalance))
-                return ConditionalTokenAdjustmentStatus.Failed;
+                return TokenAdjustmentStatus.Failed;
             SetCacheNoLock(normalized, newBalance);
             balance = newBalance;
             appliedDelta = newBalance - current;
-            return ConditionalTokenAdjustmentStatus.Adjusted;
+            return TokenAdjustmentStatus.Adjusted;
         }
     }
 

@@ -33,8 +33,8 @@ public sealed partial class MainHandler
     private long _lastOnlinePlayersSnapshotTicks;
     private int _lifecycleStopGeneration;
     private int _shutdownRequested;
-    private string _currentStreamerName;
-    private string _currentStreamerMinecraftName;
+    private string _streamerName;
+    private string _streamerMinecraftName;
     private string _lastServerPropertiesPath;
     private string _lastServerPropertiesContent;
     private List<string> _lootList;
@@ -99,8 +99,8 @@ public sealed partial class MainHandler
             (token, cancellationToken) => ValidateBotAsync(token, _activeConfig?.Twitch.ClientID ?? string.Empty, cancellationToken),
             SaveBot,
             TryRefreshAuthAsync);
-        _currentStreamerName = string.Empty;
-        _currentStreamerMinecraftName = string.Empty;
+        _streamerName = string.Empty;
+        _streamerMinecraftName = string.Empty;
         _lastServerPropertiesPath = string.Empty;
         _lastServerPropertiesContent = string.Empty;
         _effectList = Catalogs.BuildEffects();
@@ -152,13 +152,13 @@ public sealed partial class MainHandler
         string previousMinecraftVersion = _activeConfig?.Server.MinecraftVersion ?? string.Empty;
         string streamerName = NormalizeUser(config.Twitch.StreamerName);
         _activeConfig = config;
-        if (!string.Equals(_currentStreamerName, streamerName, StringComparison.Ordinal))
+        if (!string.Equals(_streamerName, streamerName, StringComparison.Ordinal))
         {
-            _currentStreamerName = streamerName;
+            _streamerName = streamerName;
             _twitchSession.SetChannel(streamerName);
         }
         string configuredMinecraftPlayer = config.Identity.StreamerMinecraftName.Trim();
-        _currentStreamerMinecraftName = MinecraftNameHelper.TryNormalizePlayerName(configuredMinecraftPlayer, out string normalizedMinecraftPlayer)
+        _streamerMinecraftName = MinecraftNameHelper.TryNormalizePlayerName(configuredMinecraftPlayer, out string normalizedMinecraftPlayer)
             ? normalizedMinecraftPlayer
             : string.Empty;
 
@@ -174,8 +174,8 @@ public sealed partial class MainHandler
         }
 
         Commands.SetContext(config);
-        Statistics.SetContext(config.Settings.StatisticsEnabled, _currentStreamerName, _currentStreamerMinecraftName, config.Settings.CommandPrefix);
+        Statistics.SetContext(config.Settings.StatisticsEnabled, _streamerName, _streamerMinecraftName, config.Settings.CommandPrefix);
     }
 
-    public string StreamerName => _currentStreamerName;
+    public string StreamerName => _streamerName;
 }

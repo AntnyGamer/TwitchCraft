@@ -5,7 +5,7 @@ using Xunit;
 
 namespace TwitchCraft.Tests.Configuration;
 
-public sealed class SupportedVersionContractTests
+public sealed class MinecraftVersionSupportTests
 {
     [Theory]
     [InlineData("1.20.5", "1.20.5", "1.20.5", 21, 41, 0)]

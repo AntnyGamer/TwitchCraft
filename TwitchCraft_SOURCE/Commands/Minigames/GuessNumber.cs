@@ -9,7 +9,7 @@ public static partial class MinigameManager
 {
     private static async Task RunGuessNumberAsync(MainHandler runtime, CancellationToken cancellationToken)
     {
-        if (!TryStartMinigame(runtime, "GuessNumber", out long runID))
+        if (!TryStart(runtime, "GuessNumber", out long runID))
             return;
 
         try
@@ -27,7 +27,7 @@ public static partial class MinigameManager
             DateTime endAtUtc = DateTime.UtcNow.AddSeconds(60.0);
             while (DateTime.UtcNow < endAtUtc)
             {
-                await Task.Delay(OneSecondMinigameDelay, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(OneSecondDelay, cancellationToken).ConfigureAwait(false);
 
                 if (!IsGuessRoundActive(runtime, roundID))
                     break;
@@ -57,7 +57,7 @@ public static partial class MinigameManager
         }
         finally
         {
-            EndMinigame(runtime, "GuessNumber", runID);
+            End(runtime, "GuessNumber", runID);
         }
     }
 
@@ -72,7 +72,7 @@ public static partial class MinigameManager
 
         lock (MinigameGate)
         {
-            if (!ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? active)
+            if (!ActiveMinigames.TryGetValue(runtime, out ActiveState? active)
                 || !string.Equals(active?.Kind, "GuessNumber", StringComparison.Ordinal))
             {
                 return false;

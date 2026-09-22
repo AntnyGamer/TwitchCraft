@@ -57,13 +57,13 @@ public static partial class CommandList
             double payoutMul = 1.05 + ((risk - 1) * 0.21666666666666667);
             bool win = CommandRandom.Chance(winChance);
             int gain = win ? Math.Max(1, (int)Math.Round(amount * (payoutMul - 1.0))) : 0;
-            ConditionalTokenAdjustmentStatus gambleStatus = runtime.Tokens.TryGamble(who, amount, win ? gain : -amount, out int newBalance, out int actualDelta);
-            if (gambleStatus == ConditionalTokenAdjustmentStatus.Failed)
+            TokenAdjustmentStatus gambleStatus = runtime.Tokens.TryGamble(who, amount, win ? gain : -amount, out int newBalance, out int actualDelta);
+            if (gambleStatus == TokenAdjustmentStatus.Failed)
             {
                 await sayToChannel(who + ", token data is temporarily unavailable. Your gamble was not charged; try again in a moment.", ct).ConfigureAwait(false);
                 return;
             }
-            if (gambleStatus == ConditionalTokenAdjustmentStatus.Insufficient)
+            if (gambleStatus == TokenAdjustmentStatus.Insufficient)
             {
                 await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who}, your balance changed before the gamble could be placed. You currently have {newBalance} tokens."), ct).ConfigureAwait(false);
                 return;

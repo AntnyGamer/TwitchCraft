@@ -33,7 +33,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static bool TryStartMinigame(MainHandler runtime, string kind, out long runID)
+    private static bool TryStart(MainHandler runtime, string kind, out long runID)
     {
         runID = 0;
 
@@ -42,7 +42,7 @@ public static partial class MinigameManager
 
         lock (MinigameGate)
         {
-            ActiveMinigameState state = GetActiveStateNoLock(runtime);
+            ActiveState state = GetActiveStateNoLock(runtime);
             if (!string.IsNullOrWhiteSpace(state.Kind) ||
                 ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) && (chicken.Bets.Count > 0 || chicken.PendingSettlement != null) ||
                 WitherBattleStates.TryGetValue(runtime, out WitherBattleState? wither) && (wither.Bets.Count > 0 || wither.PendingSettlement != null))
@@ -55,14 +55,14 @@ public static partial class MinigameManager
         }
     }
 
-    private static bool IsMinigameActive(MainHandler runtime, string kind, long runID)
+    private static bool IsActive(MainHandler runtime, string kind, long runID)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(kind) || runID <= 0)
             return false;
 
         lock (MinigameGate)
         {
-            return ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? state)
+            return ActiveMinigames.TryGetValue(runtime, out ActiveState? state)
                    && string.Equals(state.Kind, kind, StringComparison.Ordinal)
                    && state.RunID == runID;
         }
@@ -82,7 +82,7 @@ public static partial class MinigameManager
     private static bool IsGuessRoundActiveNoLock(MainHandler runtime, GuessNumberState state, long roundID)
     {
         return roundID > 0
-               && ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState)
+               && ActiveMinigames.TryGetValue(runtime, out ActiveState? activeState)
                && string.Equals(activeState.Kind, "GuessNumber", StringComparison.Ordinal)
                && activeState.RunID > 0
                && state.Active
@@ -91,20 +91,20 @@ public static partial class MinigameManager
 
     private static bool IsWitherBettingOpenNoLock(MainHandler runtime, WitherBattleState state)
     {
-        return ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState)
+        return ActiveMinigames.TryGetValue(runtime, out ActiveState? activeState)
                && string.Equals(activeState.Kind, "WitherBattle", StringComparison.Ordinal)
                && activeState.RunID > 0
                && state.BettingOpen;
     }
 
-    private static void EndMinigame(MainHandler runtime, string kind, long runID)
+    private static void End(MainHandler runtime, string kind, long runID)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(kind) || runID <= 0)
             return;
 
         lock (MinigameGate)
         {
-            if (!ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? state)
+            if (!ActiveMinigames.TryGetValue(runtime, out ActiveState? state)
                 || !string.Equals(state.Kind, kind, StringComparison.Ordinal)
                 || state.RunID != runID)
             {
@@ -173,7 +173,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static void RefundBets<TBet>(MainHandler runtime, BettingState<TBet> state) where TBet : IMinigameBet
+    private static void RefundBets<TBet>(MainHandler runtime, BettingState<TBet> state) where TBet : IBet
     {
         lock (state.SettlementGate)
         {
@@ -213,14 +213,14 @@ public static partial class MinigameManager
         RefundBets(runtime, state);
     }
 
-    private static bool SettleBets<TBet>(MainHandler runtime, BettingState<TBet> state, string kind, long runID, List<KeyValuePair<string, int>> payouts) where TBet : IMinigameBet
+    private static bool SettleBets<TBet>(MainHandler runtime, BettingState<TBet> state, string kind, long runID, List<KeyValuePair<string, int>> payouts) where TBet : IBet
     {
         lock (state.SettlementGate)
         {
             lock (MinigameGate)
             {
                 if (state.Bets.Count == 0 ||
-                    !ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState) ||
+                    !ActiveMinigames.TryGetValue(runtime, out ActiveState? activeState) ||
                     !string.Equals(activeState.Kind, kind, StringComparison.Ordinal) || activeState.RunID != runID)
                     return false;
                 state.PendingSettlement = payouts;
@@ -231,7 +231,7 @@ public static partial class MinigameManager
         }
     }
 
-    internal enum MinigameBetUpdateResult
+    internal enum BetUpdateResult
     {
         Updated,
         NotEnoughTokens,
@@ -244,10 +244,10 @@ public static partial class MinigameManager
         => amount.ToString(CultureInfo.InvariantCulture) + " token" + (amount == 1 ? "" : "s");
 
     private static string MaxBetMessage(string game)
-        => "the max " + game + " bet is " + FormatTokens(MaxMinigameBetPerPlayer) + ".";
+        => "the max " + game + " bet is " + FormatTokens(MaxBetPerPlayer) + ".";
 
     internal static async Task<bool> ReplyBetErrorAsync(
-        MinigameBetUpdateResult result,
+        BetUpdateResult result,
         string sender,
         string game,
         string closedMessage,
@@ -256,9 +256,9 @@ public static partial class MinigameManager
     {
         string? message = result switch
         {
-            MinigameBetUpdateResult.NotEnoughTokens => "you do not have enough tokens for that bet.",
-            MinigameBetUpdateResult.OverMax => MaxBetMessage(game),
-            MinigameBetUpdateResult.Closed => closedMessage,
+            BetUpdateResult.NotEnoughTokens => "you do not have enough tokens for that bet.",
+            BetUpdateResult.OverMax => MaxBetMessage(game),
+            BetUpdateResult.Closed => closedMessage,
             _ => null
         };
 

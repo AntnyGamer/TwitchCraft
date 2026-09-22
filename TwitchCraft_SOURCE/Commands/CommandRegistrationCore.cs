@@ -166,7 +166,7 @@ public static partial class CommandList
             if (IsSingleplayer() && activePlayers.Count == 0 && defaultPlayerIsValid && !runtime.HasOnlinePlayerSnapshot)
                 activePlayers = [defaultMinecraftPlayer];
             int activeCount = activePlayers.Count;
-            bool activePlayersIncludeDefault = defaultPlayerIsValid
+            bool defaultPlayerIsActive = defaultPlayerIsValid
                 && HasPlayer(activePlayers, defaultMinecraftPlayer);
             bool everyone = IsEveryone(target);
             target.TargetablePlayers = activePlayers;
@@ -175,7 +175,7 @@ public static partial class CommandList
                 target.Selector = "@a[gamemode=!spectator]";
                 target.PlayerCount = activeCount;
                 target.DefaultPlayerInclusionKnown = true;
-                target.IncludesDefaultMinecraftPlayer = activePlayersIncludeDefault;
+                target.IncludesDefaultMinecraftPlayer = defaultPlayerIsActive;
                 if (IsSingleplayer() && !string.IsNullOrWhiteSpace(runtime.StreamerName))
                     target.DisplayName = runtime.StreamerName;
                 else if (activeCount == 1)
@@ -206,7 +206,7 @@ public static partial class CommandList
                 target.Selector = "@a[gamemode=!spectator]";
                 target.PlayerCount = activeCount;
                 target.DefaultPlayerInclusionKnown = true;
-                target.IncludesDefaultMinecraftPlayer = activePlayersIncludeDefault;
+                target.IncludesDefaultMinecraftPlayer = defaultPlayerIsActive;
                 if (string.IsNullOrWhiteSpace(target.DisplayName))
                     target.DisplayName = activeCount == 1 ? activePlayers[0] : "everyone";
                 return target;
@@ -494,9 +494,9 @@ public static partial class CommandList
                     await execute(target, sender, ct).ConfigureAwait(false);
             }, commandStatisticFlags);
         }
-        void AddTargetCommands(params TargetedCommandDefinition[] definitions)
+        void AddTargetCommands(params TargetCommand[] definitions)
         {
-            foreach (TargetedCommandDefinition definition in definitions)
+            foreach (TargetCommand definition in definitions)
             {
                 AddTargetCommand(definition.Name, (target, sender, ct) =>
                     SendPricedReplyAsync(

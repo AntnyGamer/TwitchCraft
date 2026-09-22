@@ -39,7 +39,7 @@ public sealed partial class MainHandler
 
         lock (_spectatorProbeGate)
         {
-            _pendingGameTypeRequests.Clear();
+            _pendingGamemodeRequests.Clear();
             _spectatorPlayers.Clear();
             _lastSpectatorRefreshUtc = DateTime.MinValue;
             _spectatorSnapshotInitialized = false;
@@ -57,9 +57,9 @@ public sealed partial class MainHandler
             _pendingMaxHealthRequests.Clear();
             _pendingHeartAttributeRequests.Clear();
         }
-        lock (_respawnPositionProbeGate)
+        lock (_respawnProbeGate)
         {
-            _pendingRespawnPositionRequests.Clear();
+            _pendingRespawnRequests.Clear();
         }
 
         CompleteSnapshot(false);
@@ -73,11 +73,11 @@ public sealed partial class MainHandler
         Interlocked.Exchange(ref _initialPlayerSnapshotQueued, 0);
         Interlocked.Exchange(ref _onlinePlayerSnapshotQueued, 0);
         Interlocked.Exchange(ref _suppressedOnlinePlayersLogLines, 0);
-        Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 0);
-        Interlocked.Exchange(ref _trackedPlayerRespawnPositionRefreshQueued, 0);
+        Interlocked.Exchange(ref _gamemodeRefreshQueued, 0);
+        Interlocked.Exchange(ref _respawnRefreshQueued, 0);
         Interlocked.Exchange(ref _deathScoreObjectiveQueued, 0);
         Interlocked.Exchange(ref _deathScoreObjectiveReady, 0);
-        Interlocked.Exchange(ref _trackedPlayerDeathScoreRefreshQueued, 0);
+        Interlocked.Exchange(ref _deathScoreRefreshQueued, 0);
         Volatile.Write(ref _deathScoreInitializedPlayerName, null);
         Volatile.Write(ref _minecraftQueryUnavailableUntilTicks, 0);
         _minecraftSession.RCONHealthy = false;

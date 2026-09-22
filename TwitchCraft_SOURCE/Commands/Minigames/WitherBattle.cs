@@ -10,7 +10,7 @@ public static partial class MinigameManager
 {
     private static async Task RunWitherAsync(MainHandler runtime, CancellationToken cancellationToken)
     {
-        if (!TryStartMinigame(runtime, "WitherBattle", out long runID))
+        if (!TryStart(runtime, "WitherBattle", out long runID))
             return;
 
         try
@@ -34,7 +34,7 @@ public static partial class MinigameManager
                 "🔴 A Wither Battle has started! Use !damagewither <amount> for the next 5 minutes. Your token bet is your damage dealt. The Wither has " +
                 witherHealth.ToString(CultureInfo.InvariantCulture) +
                 " HP. Max " +
-                MaxMinigameBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
+                MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
                 " tokens per person. If the Wither dies in time, each player gets 1.2x their bet back. If it is not killed in 5 minutes, everyone loses half.",
                 cancellationToken).ConfigureAwait(false);
 
@@ -45,7 +45,7 @@ public static partial class MinigameManager
             List<WitherBattleBet> bets;
             lock (MinigameGate)
             {
-                if (!ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState) ||
+                if (!ActiveMinigames.TryGetValue(runtime, out ActiveState? activeState) ||
                     !string.Equals(activeState.Kind, "WitherBattle", StringComparison.Ordinal) ||
                     activeState.RunID != runID)
                 {
@@ -127,13 +127,13 @@ public static partial class MinigameManager
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            if (IsMinigameActive(runtime, "WitherBattle", runID))
+            if (IsActive(runtime, "WitherBattle", runID))
                 RefundWitherBets(runtime);
             throw;
         }
         finally
         {
-            EndMinigame(runtime, "WitherBattle", runID);
+            End(runtime, "WitherBattle", runID);
         }
     }
 }

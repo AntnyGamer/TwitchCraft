@@ -7,8 +7,8 @@ namespace TwitchCraft_V1;
 
 public static partial class MinigameManager
 {
-    private const int MaxMinigameBetPerPlayer = 200;
-    private static readonly TimeSpan OneSecondMinigameDelay = TimeSpan.FromSeconds(1.0);
+    private const int MaxBetPerPlayer = 200;
+    private static readonly TimeSpan OneSecondDelay = TimeSpan.FromSeconds(1.0);
     private static readonly TimeSpan ChickenRunBettingDelay = TimeSpan.FromMinutes(1.0);
     private static readonly TimeSpan WitherBattleDuration = TimeSpan.FromMinutes(5.0);
 
@@ -16,14 +16,14 @@ public static partial class MinigameManager
     private static readonly Dictionary<MainHandler, ChickenRunState> ChickenRunStates = [];
     private static readonly Dictionary<MainHandler, GuessNumberState> GuessNumberStates = [];
     private static readonly Dictionary<MainHandler, WitherBattleState> WitherBattleStates = [];
-    private static readonly Dictionary<MainHandler, MinigameLoopState> MinigameLoops = [];
-    private static Dictionary<MainHandler, DateTime>? PreservedNextMinigameAtUtc;
-    private static readonly Dictionary<MainHandler, ActiveMinigameState> ActiveMinigames = [];
+    private static readonly Dictionary<MainHandler, LoopState> MinigameLoops = [];
+    private static Dictionary<MainHandler, DateTime>? PreservedNextAtUtc;
+    private static readonly Dictionary<MainHandler, ActiveState> ActiveMinigames = [];
     private static long _nextGeneration;
 
     // ===== State model types =====
 
-    private sealed class MinigameLoopState(MainHandler runtime, CancellationTokenSource cts, DateTime nextAtUtc)
+    private sealed class LoopState(MainHandler runtime, CancellationTokenSource cts, DateTime nextAtUtc)
     {
         public MainHandler Runtime { get; } = runtime;
         public CancellationTokenSource Cts { get; } = cts;
@@ -31,13 +31,13 @@ public static partial class MinigameManager
         public Task? Task { get; set; }
     }
 
-    private interface IMinigameBet
+    private interface IBet
     {
         string Viewer { get; }
         int TokenAmount { get; }
     }
 
-    private abstract class BettingState<TBet> where TBet : IMinigameBet
+    private abstract class BettingState<TBet> where TBet : IBet
     {
         public bool BettingOpen { get; set; }
         public List<TBet> Bets { get; } = [];
@@ -45,7 +45,7 @@ public static partial class MinigameManager
         public Lock SettlementGate { get; } = new();
     }
 
-    private sealed class ChickenRunBet : IMinigameBet
+    private sealed class ChickenRunBet : IBet
     {
         public string Viewer { get; set; } = string.Empty;
         public int TokenAmount { get; set; }
@@ -66,7 +66,7 @@ public static partial class MinigameManager
         public Dictionary<string, DateTime> LastGuessAtUtc { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
-    private sealed class WitherBattleBet : IMinigameBet
+    private sealed class WitherBattleBet : IBet
     {
         public string Viewer { get; set; } = string.Empty;
         public int TokenAmount { get; set; }
@@ -78,7 +78,7 @@ public static partial class MinigameManager
         public TaskCompletionSource? DefeatedSignal { get; set; }
     }
 
-    private sealed class ActiveMinigameState
+    private sealed class ActiveState
     {
         public string Kind { get; set; } = string.Empty;
         public long RunID { get; set; }
@@ -135,9 +135,9 @@ public static partial class MinigameManager
         return state;
     }
 
-    private static ActiveMinigameState GetActiveStateNoLock(MainHandler runtime)
+    private static ActiveState GetActiveStateNoLock(MainHandler runtime)
     {
-        if (!ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? state))
+        if (!ActiveMinigames.TryGetValue(runtime, out ActiveState? state))
         {
             state = new();
             ActiveMinigames[runtime] = state;
@@ -146,7 +146,7 @@ public static partial class MinigameManager
         return state;
     }
 
-    private static TBet? FindBet<TBet>(List<TBet> bets, string viewer) where TBet : class, IMinigameBet
+    private static TBet? FindBet<TBet>(List<TBet> bets, string viewer) where TBet : class, IBet
     {
         for (int i = 0; i < bets.Count; i++)
         {
@@ -157,7 +157,7 @@ public static partial class MinigameManager
         return null;
     }
 
-    private static List<TBet> CloneBets<TBet>(List<TBet> bets, Func<TBet, TBet> cloneBet) where TBet : class, IMinigameBet
+    private static List<TBet> CloneBets<TBet>(List<TBet> bets, Func<TBet, TBet> cloneBet) where TBet : class, IBet
     {
         List<TBet> cloned = new(bets.Count);
         for (int i = 0; i < bets.Count; i++)
@@ -172,7 +172,7 @@ public static partial class MinigameManager
         return cloned;
     }
 
-    private static List<KeyValuePair<string, int>> BuildRefunds<TBet>(List<TBet> bets) where TBet : IMinigameBet
+    private static List<KeyValuePair<string, int>> BuildRefunds<TBet>(List<TBet> bets) where TBet : IBet
     {
         List<KeyValuePair<string, int>> refunds = new(bets.Count);
         for (int i = 0; i < bets.Count; i++)
