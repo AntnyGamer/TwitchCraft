@@ -234,17 +234,11 @@ public sealed partial class MainHandler
         cancellationToken.ThrowIfCancellationRequested();
 
         if (CurrentSettings.RemoteControlEnabled)
-        {
-            if (await TryRefreshRCONAsync(cancellationToken).ConfigureAwait(false))
-                return true;
+            return await TryRefreshRCONAsync(cancellationToken).ConfigureAwait(false) ||
+                await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false);
 
-            return await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        if (await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false))
-            return true;
-
-        return await RefreshListAsync(cancellationToken).ConfigureAwait(false);
+        return await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false) ||
+            await RefreshListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<bool> TryRefreshRCONAsync(CancellationToken cancellationToken)
