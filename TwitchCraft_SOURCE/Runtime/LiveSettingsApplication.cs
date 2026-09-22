@@ -87,11 +87,9 @@ public sealed partial class MainHandler
             return;
         }
 
-        CancellationToken token = _sessionCts?.Token ?? CancellationToken.None;
-        if (token != CancellationToken.None)
-        {
-            MinigameManager.StartLoops(this, token);
-        }
+        CancellationTokenSource? sessionCts = _sessionCts;
+        if (sessionCts != null)
+            MinigameManager.StartLoops(this, sessionCts.Token);
     }
 
     private async Task RestartFollowRewardsAsync()
