@@ -1,84 +1,67 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchCraft.Tests.Economy;
 using TwitchCraft.Tests.TestInfrastructure;
-using TwitchCraft_V1;
 using Xunit;
 
 namespace TwitchCraft.Tests.Runtime;
 
+[Collection(EconomyDatabaseCollection.Name)]
 public sealed class SharedPlayerProbeTests
 {
     [Fact]
-    public async Task QueryPlayerProbe_CancelingOneCallerDoesNotCancelTheSharedProbe()
+    public async Task QueryItem_CancelingOneCallerDoesNotCancelTheSharedServerProbe()
     {
-        CancellationToken testCancellation = TestContext.Current.CancellationToken;
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = new(
-            new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"));
-        MethodInfo query = (typeof(MainHandler).GetMethod(
-            "QueryPlayerAsync",
-            BindingFlags.Instance | BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Player probe method was not found."))
-            .MakeGenericMethod(typeof(string));
-        Lock gate = new();
-        Dictionary<string, TaskCompletionSource<string?>> pending = new(StringComparer.OrdinalIgnoreCase);
-        TaskCompletionSource<bool> sendStarted = CreateSignal();
-        TaskCompletionSource<bool> releaseSend = CreateSignal();
-        Func<Action, CancellationToken, Task<bool>> sendProbe = async (_, cancellationToken) =>
-        {
-            sendStarted.TrySetResult(true);
-            await releaseSend.Task.WaitAsync(cancellationToken);
-            return true;
-        };
+        const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
+        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
+            TestContext.Current.CancellationToken,
+            selectedItem: selectedItem);
+        scenario.SetProbeDelay(250);
+        int cursor = scenario.CaptureCommandCursor();
         using CancellationTokenSource firstCaller = new();
 
-        try
-        {
-#pragma warning disable CS9216
-            Task<string?> canceledTask = (Task<string?>)query.Invoke(
-                runtime,
-                ["PlayerOne", gate, pending, sendProbe, firstCaller.Token])!;
-            Task<string?> survivingTask = (Task<string?>)query.Invoke(
-                runtime,
-                ["PlayerOne", gate, pending, sendProbe, CancellationToken.None])!;
-#pragma warning restore CS9216
+        Task<string?> canceledTask = scenario.Runtime.QueryItemAsync("PlayerOne", firstCaller.Token);
+        Task<string?> survivingTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
 
-            await sendStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), testCancellation);
-            firstCaller.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
+        await FakeJavaServer.WaitUntilAsync(
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
+                .Skip(cursor)
+                .Any(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)),
+            "Shared SelectedItem probe was not sent.",
+            scenario.Token);
 
-            TaskCompletionSource<string?> sharedWaiter = pending["PlayerOne"];
-            MainHandler.CompleteRequest("PlayerOne", gate, pending, sharedWaiter, "diamond");
-            releaseSend.TrySetResult(true);
+        firstCaller.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
+        Assert.Equal(selectedItem, await survivingTask.WaitAsync(TimeSpan.FromSeconds(5), scenario.Token));
 
-            Assert.Equal("diamond", await survivingTask.WaitAsync(TimeSpan.FromSeconds(10), testCancellation));
-            Assert.Empty(pending);
-        }
-        finally
-        {
-            releaseSend.TrySetResult(true);
-            runtime.Tokens.Close();
-        }
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+        Assert.Equal(1, commands.Count(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)));
     }
 
     [Fact]
-    public void HealthProbes_ParseVanillaFeedback()
+    public async Task PlayerQueries_ReadHealthItemsAndHeartAttributesFromServerResponses()
     {
-        Assert.True(MainHandler.TryParseMaxHealthResponse("Value of attribute Max Health for entity PlayerOne is 20.0", "PlayerOne", out double health));
-        Assert.Equal(20, health);
-        Assert.True(MainHandler.TryParseMaxHealthResponse("The value of attribute Max Health for entity [VIP] PlayerOne is 30.0", "PlayerOne", out health));
-        Assert.Equal(30, health);
-        Assert.True(MainHandler.TryParseMaxHealthResponse("Value of attribute minecraft:max_health for entity PlayerOne is 40", "PlayerOne", out health));
-        Assert.Equal(40, health);
-        Assert.False(MainHandler.TryParseMaxHealthResponse("Value of attribute Max Health for entity PlayerOne2 is 20", "PlayerOne", out _));
-        Assert.Equal(["twitchcraft:heart_0123456789abcdef0123456789abcdef"], MainHandler.ParseHeartModifierIDs("[{id:\"minecraft:max_health\",modifiers:[{id:\"twitchcraft:heart_0123456789abcdef0123456789abcdef\",amount:-4.0d}]}]", true));
-        Assert.Equal(["01234567-89ab-cdef-fedc-ba9876543210"], MainHandler.ParseHeartModifierIDs("[{Name:\"minecraft:generic.max_health\",Modifiers:[{UUID:[I;19088743,-1985229329,-19088744,1985229328],Name:\"twitchcraft_health\",Amount:2.0d}]}]", false));
-    }
+        const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
+        const string attributes = "[{id:'minecraft:max_health',modifiers:[{id:'twitchcraft:heart_0123456789abcdef0123456789abcdef',amount:2.0d}]}]";
+        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
+            TestContext.Current.CancellationToken,
+            players: ["PlayerOne", "PlayerTwo"],
+            maxHealth: 36,
+            selectedItem: selectedItem,
+            attributes: attributes);
 
-    private static TaskCompletionSource<bool> CreateSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Assert.Equal(36, await scenario.Runtime.QueryMaxHealthAsync("PlayerOne", scenario.Token));
+        Assert.Equal(selectedItem, await scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token));
+        Assert.Equal(attributes, await scenario.Runtime.QueryHeartModifiersAsync("PlayerOne", scenario.Token));
+
+        Dictionary<string, string?> items = await scenario.Runtime.QueryItemsAsync(
+            ["PlayerTwo", "PlayerOne", "playerone"],
+            scenario.Token);
+        Assert.Equal(2, items.Count);
+        Assert.Equal(selectedItem, items["PlayerOne"]);
+        Assert.Equal(selectedItem, items["PlayerTwo"]);
+    }
 }
