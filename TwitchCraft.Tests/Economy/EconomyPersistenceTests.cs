@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Data.Sqlite;
 using System.Text.Json;
-using TwitchCraft.Tests.TestInfrastructure;
+using Microsoft.Data.Sqlite;
 using TwitchCraft_V1;
+using TwitchCraft.Tests.TestInfrastructure;
 using Xunit;
 
 namespace TwitchCraft.Tests.Economy;

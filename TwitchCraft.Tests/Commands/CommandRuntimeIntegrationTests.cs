@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TwitchCraft.Tests.TestInfrastructure;
-using TwitchCraft.Tests.Economy;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
+using TwitchCraft.Tests.Economy;
+using TwitchCraft.Tests.TestInfrastructure;
 using Xunit;
 
 namespace TwitchCraft.Tests.Commands;

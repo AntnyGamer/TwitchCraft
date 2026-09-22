@@ -11,6 +11,7 @@ indent_style = space
 indent_size = 4
 tab_width = 4
 
+dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 dotnet_style_operator_placement_when_wrapping = end_of_line
 
@@ -59,11 +60,6 @@ csharp_style_namespace_declarations = file_scoped:suggestion
 
 dotnet_diagnostic.IDE0130.severity = none
 
-[TwitchCraft_SOURCE/**/*.cs]
-dotnet_sort_system_directives_first = false
-
-[TwitchCraft.Tests/**/*.cs]
-dotnet_sort_system_directives_first = true
 
 [*.xaml]
 indent_style = space

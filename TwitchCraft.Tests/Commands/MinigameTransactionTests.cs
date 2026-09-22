@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using TwitchCraft.Tests.TestInfrastructure;
-using TwitchCraft.Tests.Economy;
 using TwitchCraft_V1;
+using TwitchCraft.Tests.Economy;
+using TwitchCraft.Tests.TestInfrastructure;
 using Xunit;
 
 namespace TwitchCraft.Tests.Commands;

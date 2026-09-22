@@ -1,8 +1,8 @@
-using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
+using Microsoft.Data.Sqlite;
 
 namespace TwitchCraft_V1;
 
