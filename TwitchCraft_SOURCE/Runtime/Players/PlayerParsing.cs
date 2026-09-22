@@ -218,9 +218,10 @@ public sealed partial class MainHandler
             return ids;
         }
 
+        Regex uuidRegex = LegacyHeartUuidRegex();
         foreach (ValueMatch modifier in LegacyHeartModifierRegex().EnumerateMatches(data))
         {
-            Match uuid = LegacyHeartUuidRegex().Match(data, modifier.Index, modifier.Length);
+            Match uuid = uuidRegex.Match(data, modifier.Index, modifier.Length);
             if (!uuid.Success ||
                 !int.TryParse(uuid.Groups[1].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) ||
                 !int.TryParse(uuid.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
