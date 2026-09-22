@@ -114,12 +114,30 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RemoteController_RejectsMalformedRCONResponse()
+    public async Task RemoteController_QueriesPlayerStateAndRejectsMalformedRCONResponse()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
         const string password = "integration-password";
-        await using FakeRCONServer RCON = new(password, "say malformed");
+        const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
+        const string attributes = "[{id:'minecraft:max_health',modifiers:[]}]";
+        await using FakeRCONServer RCON = new(
+            password,
+            "say malformed",
+            responseFactory: command =>
+            {
+                if (command.StartsWith("attribute ", StringComparison.Ordinal))
+                    return "Value of attribute Max Health for entity PlayerOne is 36";
+                if (command.EndsWith(" SelectedItem", StringComparison.Ordinal))
+                {
+                    string player = command.Contains("PlayerTwo", StringComparison.Ordinal) ? "PlayerTwo" : "PlayerOne";
+                    return player + " has the following entity data: " + selectedItem;
+                }
+                if (command.EndsWith(" attributes", StringComparison.Ordinal) ||
+                    command.EndsWith(" Attributes", StringComparison.Ordinal))
+                    return "PlayerOne has the following entity data: " + attributes;
+                return "OK";
+            });
         TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path);
         config.Settings.RemoteControlEnabled = true;
         config.Server.RemoteHost = "127.0.0.1";
@@ -132,9 +150,20 @@ public sealed class CommandRuntimeIntegrationTests
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
             await runtime.ApplySettingsAsync(config);
 
+            Assert.Equal(36, await runtime.QueryMaxHealthAsync("PlayerOne", cancellationToken));
+            Assert.Equal(selectedItem, await runtime.QueryItemAsync("PlayerOne", cancellationToken));
+            Dictionary<string, string?> items = await runtime.QueryItemsAsync(
+                ["PlayerTwo", "PlayerOne", "playerone"],
+                cancellationToken);
+            Assert.Equal(2, items.Count);
+            Assert.Equal(selectedItem, items["PlayerOne"]);
+            Assert.Equal(selectedItem, items["PlayerTwo"]);
+            Assert.Equal(attributes, await runtime.QueryHeartModifiersAsync("PlayerOne", cancellationToken));
+
             Assert.True(await runtime.RunMinecraftCommandAsync("say remote-integration"));
             Assert.False(await runtime.RunMinecraftCommandAsync("say malformed"));
-            Assert.Equal(["say remote-integration", "say malformed"], RCON.Commands);
+            Assert.Equal("say remote-integration", RCON.Commands[RCON.Commands.Count - 2]);
+            Assert.Equal("say malformed", RCON.Commands[RCON.Commands.Count - 1]);
         }
         finally
         {

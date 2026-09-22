@@ -42,7 +42,7 @@ public sealed class StartupAndEligibilityTests
     }
 
     [Fact]
-    public async Task Eligibility_IncludesExactConfiguredActivityWindowBoundary()
+    public async Task Eligibility_IncludesConfiguredActivityWindowBoundary()
     {
         using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
         {

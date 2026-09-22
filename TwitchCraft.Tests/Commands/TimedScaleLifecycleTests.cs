@@ -59,7 +59,7 @@ public sealed class TimedScaleLifecycleTests
     }
 
     [Fact]
-    public async Task ApplyAsync_NewerSizeChangeSupersedesTheOlderResetTimer()
+    public async Task ApplyAsync_NewerSizeChangeSupersedesOlderResetTimer()
     {
         List<string> sentCommands = [];
         List<Task> trackedTasks = [];

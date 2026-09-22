@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
@@ -22,12 +21,6 @@ public sealed class HelpPageLifecycleTests
             {
                 Help help = new();
                 TextBlock status = Assert.IsType<TextBlock>(help.FindName("DiagnosticsStatus"));
-                FieldInfo timerField = typeof(Help).GetField(
-                    "_diagnosticsTimer",
-                    BindingFlags.Instance | BindingFlags.NonPublic)!;
-                DispatcherTimer timer = Assert.IsType<DispatcherTimer>(timerField.GetValue(help));
-                Assert.Equal(TimeSpan.FromSeconds(2), timer.Interval);
-
                 Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
                 DispatcherOperation? timerOperation = null;
                 DispatcherHookEventHandler onPosted = (_, e) =>

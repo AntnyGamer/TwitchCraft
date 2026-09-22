@@ -8,7 +8,7 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class EnchantmentCommandTests
 {
     [Fact]
-    public void PickEnchant_AlwaysUsesTheVanillaMaximumLevelRange()
+    public void PickEnchant_UsesVanillaMaximumLevelRange()
     {
         Dictionary<string, int> maximumLevels = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -156,7 +156,7 @@ public sealed class EnchantmentCommandTests
     [InlineData("")]
     [InlineData("{}")]
     [InlineData("{id:'minecraft:air',count:1}")]
-    public void TryBuildEnchantCommand_RejectsAnEmptyHand(string selectedItemData)
+    public void TryBuildEnchantCommand_RejectsEmptyHand(string selectedItemData)
     {
         Assert.False(MinecraftItemComponentHelper.TryBuildEnchantCommand(
             "@s",
