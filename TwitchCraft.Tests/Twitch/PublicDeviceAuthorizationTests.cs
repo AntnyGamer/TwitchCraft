@@ -94,7 +94,7 @@ public sealed class PublicDeviceAuthorizationTests
     }
 
     [Fact]
-    public void AcceptsTwitchDeviceAuthorizationWithoutALocalhostRedirect()
+    public void AcceptsTwitchDeviceAuthorizationWithoutLocalhostRedirect()
     {
         using JsonDocument document = JsonDocument.Parse("""
             {

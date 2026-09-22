@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,6 +55,22 @@ internal static class FakeJavaServer
         => new(
             new AppShellViewModel(),
             Path.Combine(directory, "viewer_tokens.db"));
+
+    internal static void ConfigureResponsiveServer(
+        string jarPath,
+        IReadOnlyList<string> players,
+        IReadOnlyList<string>? spectators = null,
+        double maxHealth = 20,
+        string? selectedItem = null,
+        string? attributes = null)
+    {
+        File.WriteAllText(jarPath + ".players", string.Join(",", players));
+        File.WriteAllText(jarPath + ".spectators", string.Join(",", spectators ?? []));
+        File.WriteAllText(jarPath + ".health", maxHealth.ToString(CultureInfo.InvariantCulture));
+        File.WriteAllText(jarPath + ".item", selectedItem ?? "{id:'minecraft:air',count:1}");
+        File.WriteAllText(jarPath + ".attributes", attributes ?? "[]");
+        File.WriteAllText(jarPath + ".probe-delay", "0");
+    }
 
     internal static string GetExecutable()
     {

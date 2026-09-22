@@ -89,12 +89,16 @@ public sealed class CommandCatalogTests
             List<string> knownViewers = Assert.IsType<List<string>>(knownViewersField.GetValue(runtime));
             knownViewers.AddRange(["viewer_one", "randomdudereincarnatedx3", "viewer_two"]);
 
-            ChatCommandRegistry registry = ChatCommandRegistry.CreateDefault(runtime);
-            Assert.True(registry.TryResolve("givetokens", out ChatCommandHandler handler));
+            await runtime.DispatchAsync(
+                "!givetokens all 25",
+                "!",
+                "streamer",
+                isModerator: false,
+                CancellationToken.None);
 
-            await handler(["all", "25"], "streamer", CancellationToken.None);
-
-            Assert.All(knownViewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
+            Assert.All(
+                runtime.GetViewerRosterSnapshot(),
+                viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
         }
         finally
         {
