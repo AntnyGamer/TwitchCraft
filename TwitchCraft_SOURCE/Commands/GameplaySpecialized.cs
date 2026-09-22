@@ -371,8 +371,17 @@ public static partial class CommandList
                 }
             if (pending == null) return;
 
+            string? removalPlayer = null;
+            string removalSelector = string.Empty;
             foreach ((string pendingPlayer, string id) in pending)
-                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(pendingPlayer), id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+            {
+                if (!string.Equals(removalPlayer, pendingPlayer, StringComparison.OrdinalIgnoreCase))
+                {
+                    removalPlayer = pendingPlayer;
+                    removalSelector = MinecraftCommandBuilder.SinglePlayerSelector(pendingPlayer);
+                }
+                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(removalSelector, id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+            }
 
             string? verifiedPlayer = null;
             foreach ((string pendingPlayer, _) in pending)
@@ -394,7 +403,12 @@ public static partial class CommandList
             for (int i = effects.Count - 1; i >= 0; i--)
                 if (!current.Contains(effects[i].ID)) effects.RemoveAt(i);
             if (recover) foreach (string id in current)
-                if (!effects.Exists(effect => effect.ID == id)) effects.Add((0, id, true));
+            {
+                bool exists = false;
+                for (int i = 0; i < effects.Count; i++)
+                    if (effects[i].ID == id) { exists = true; break; }
+                if (!exists) effects.Add((0, id, true));
+            }
             if (effects.Count == 0) activeHeartEffects.Remove(player);
         }
 
