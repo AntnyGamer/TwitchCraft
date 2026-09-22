@@ -43,7 +43,8 @@ internal static class DatapackInstaller
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or InvalidDataException)
         {
-            return ReportFailure(ex, reportWarning);
+            reportWarning(DatapackWarningContext, ex);
+            return false;
         }
     }
 
@@ -90,12 +91,6 @@ internal static class DatapackInstaller
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(minecraftVersion);
         return (version.UsesSingularFunctionDirectories ? "function" : "functions", version.UsesInlineTextComponents);
-    }
-
-    private static bool ReportFailure(Exception exception, Action<string, Exception> reportWarning)
-    {
-        reportWarning(DatapackWarningContext, exception);
-        return false;
     }
 
     private static void ReportWarning(string context, Exception exception)
