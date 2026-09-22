@@ -1,14 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Threading;
-using System;
+using System.Threading.Tasks;
 using TwitchCraft.Tests.Economy;
 using TwitchCraft.Tests.TestInfrastructure;
-using TwitchCraft_V1.Setup;
 using TwitchCraft_V1;
+using TwitchCraft_V1.Setup;
 using Xunit;
 
 namespace TwitchCraft.Tests.Commands;

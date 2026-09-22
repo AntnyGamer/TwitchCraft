@@ -1,8 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System;
 using Microsoft.Data.Sqlite;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
