@@ -1,5 +1,41 @@
 using System;
+using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
+
+static string ReadState(string jarPath, string suffix, string fallback)
+{
+    string path = jarPath + suffix;
+    return File.Exists(path) ? File.ReadAllText(path).Trim() : fallback;
+}
+
+static string[] ReadNames(string jarPath, string suffix)
+    => ReadState(jarPath, suffix, string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+static string GetTargetPlayer(string command)
+{
+    const string marker = "name=\"";
+    int start = command.IndexOf(marker, StringComparison.Ordinal);
+    if (start < 0)
+        return string.Empty;
+    start += marker.Length;
+    int end = command.IndexOf('"', start);
+    return end > start ? command[start..end] : string.Empty;
+}
+
+static string GetQuotedValue(string command)
+{
+    int start = command.IndexOf('"');
+    int end = command.LastIndexOf('"');
+    return start >= 0 && end > start ? command[(start + 1)..end] : string.Empty;
+}
+
+static async Task WriteOutputAsync(string line)
+{
+    await Console.Out.WriteLineAsync(line);
+    await Console.Out.FlushAsync();
+}
 
 string? jarPath = null;
 for (int i = 0; i + 1 < args.Length; i++)
@@ -17,15 +53,23 @@ if (string.IsNullOrWhiteSpace(jarPath))
 string mode = File.Exists(jarPath)
     ? (await File.ReadAllTextAsync(jarPath)).Trim()
     : string.Empty;
+bool responsive = string.Equals(mode, "ready-responsive", StringComparison.Ordinal);
 await File.WriteAllLinesAsync(jarPath + ".args", args);
-await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString(CultureInfo.InvariantCulture));
 
 if (string.Equals(mode, "exit-immediately", StringComparison.Ordinal))
     return 42;
 
-if (string.Equals(mode, "ready", StringComparison.Ordinal))
+if (mode.StartsWith("ready", StringComparison.Ordinal))
 {
     await Console.Out.WriteLineAsync("[Server thread/INFO]: Done (0.500s)! For help, type \"help\"");
+    if (responsive)
+    {
+        string[] players = ReadNames(jarPath, ".players");
+        await Console.Out.WriteLineAsync(
+            "There are " + players.Length.ToString(CultureInfo.InvariantCulture) +
+            " of a max of 20 players online: " + string.Join(", ", players));
+    }
     await Console.Out.FlushAsync();
 }
 
@@ -36,6 +80,7 @@ await using FileStream commandLog = new(
     FileShare.ReadWrite);
 await using StreamWriter commandWriter = new(commandLog);
 
+string probeMarker = string.Empty;
 while (await Console.In.ReadLineAsync() is string line)
 {
     await commandWriter.WriteLineAsync(line);
@@ -46,6 +91,65 @@ while (await Console.In.ReadLineAsync() is string line)
     {
         return 0;
     }
+
+    if (!responsive)
+        continue;
+
+    if (line.StartsWith("data modify storage twitchcraft:probe marker set value ", StringComparison.Ordinal))
+    {
+        probeMarker = GetQuotedValue(line);
+        continue;
+    }
+
+    if (string.Equals(line, "data get storage twitchcraft:probe marker", StringComparison.Ordinal))
+    {
+        if (probeMarker.Length > 0)
+            await WriteOutputAsync("twitchcraft:probe marker: \"" + probeMarker + "\"");
+        continue;
+    }
+
+    if (string.Equals(line, "list", StringComparison.Ordinal))
+    {
+        string[] players = ReadNames(jarPath, ".players");
+        await WriteOutputAsync(
+            "There are " + players.Length.ToString(CultureInfo.InvariantCulture) +
+            " of a max of 20 players online: " + string.Join(", ", players));
+        continue;
+    }
+
+    if (string.Equals(line, "execute as @a run data get entity @s playerGameType", StringComparison.Ordinal))
+    {
+        string[] players = ReadNames(jarPath, ".players");
+        string[] spectators = ReadNames(jarPath, ".spectators");
+        foreach (string player in players)
+        {
+            bool spectator = Array.Exists(spectators, value => string.Equals(value, player, StringComparison.OrdinalIgnoreCase));
+            await WriteOutputAsync(player + " has the following entity data: " + (spectator ? "3" : "0"));
+        }
+        continue;
+    }
+
+    string targetPlayer = GetTargetPlayer(line);
+    if (targetPlayer.Length == 0)
+        continue;
+
+    if (line.StartsWith("attribute ", StringComparison.Ordinal) && line.EndsWith(" get", StringComparison.Ordinal))
+    {
+        string health = ReadState(jarPath, ".health", "20");
+        await WriteOutputAsync("Value of attribute Max Health for entity " + targetPlayer + " is " + health);
+        continue;
+    }
+
+    if (line.EndsWith(" SelectedItem", StringComparison.Ordinal))
+    {
+        if (int.TryParse(ReadState(jarPath, ".probe-delay", "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int delay) && delay > 0)
+            await Task.Delay(delay);
+        await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".item", "{id:'minecraft:air',count:1}"));
+        continue;
+    }
+
+    if (line.EndsWith(" attributes", StringComparison.Ordinal) || line.EndsWith(" Attributes", StringComparison.Ordinal))
+        await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".attributes", "[]"));
 }
 
 return 0;
