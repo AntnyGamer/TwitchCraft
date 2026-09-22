@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,6 +55,59 @@ internal static class FakeJavaServer
         => new(
             new AppShellViewModel(),
             Path.Combine(directory, "viewer_tokens.db"));
+
+    internal static void SetProbePlayers(TwitchCraftConfig config, params (string Name, int GameMode)[] players)
+    {
+        List<string> lines = new(players.Length);
+        foreach ((string name, int gameMode) in players)
+            lines.Add(name + "|" + gameMode.ToString(CultureInfo.InvariantCulture));
+        File.WriteAllLines(config.Server.JarPath + ".players", lines);
+    }
+
+    internal static void SetProbeHealth(TwitchCraftConfig config, double health)
+        => File.WriteAllText(config.Server.JarPath + ".health", health.ToString(CultureInfo.InvariantCulture));
+
+    internal static void SetProbeItem(TwitchCraftConfig config, string itemData)
+        => File.WriteAllText(config.Server.JarPath + ".item", itemData);
+
+    internal static void SetProbeDelay(TwitchCraftConfig config, int milliseconds)
+        => File.WriteAllText(config.Server.JarPath + ".probe-delay-ms", milliseconds.ToString(CultureInfo.InvariantCulture));
+
+    internal static async Task StartReadyRuntimeAsync(
+        MainHandler runtime,
+        TwitchCraftConfig config,
+        CancellationToken cancellationToken)
+    {
+        await runtime.ApplySettingsAsync(config);
+        await runtime.StartServerAsync(config, cancellationToken);
+        _ = runtime.ReadOutputAsync(cancellationToken);
+        await runtime.StartServerIfNeededAsync(cancellationToken);
+        await WaitForReadyAsync(runtime, cancellationToken);
+    }
+
+    internal static async Task QueueCommandAndWaitAsync(
+        MainHandler runtime,
+        string payload,
+        string sender,
+        CancellationToken cancellationToken)
+    {
+        TaskCompletionSource<bool> completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Assert.True(runtime.QueueCommand(
+            ct => runtime.DispatchAsync(payload, "!", sender, isModerator: false, ct),
+            payload,
+            cancellationToken));
+        Assert.True(runtime.QueueCommand(
+            _ =>
+            {
+                completed.TrySetResult(true);
+                return Task.CompletedTask;
+            },
+            "test-barrier",
+            cancellationToken));
+
+        await completed.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+    }
 
     internal static string GetExecutable()
     {
@@ -141,7 +195,7 @@ internal static class FakeJavaServer
 
         int processID = int.Parse(
             await File.ReadAllTextAsync(processIDPath),
-            System.Globalization.CultureInfo.InvariantCulture);
+            CultureInfo.InvariantCulture);
         try
         {
             using Process process = Process.GetProcessById(processID);

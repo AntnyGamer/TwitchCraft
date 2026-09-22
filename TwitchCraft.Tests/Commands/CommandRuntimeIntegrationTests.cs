@@ -29,17 +29,17 @@ public sealed class CommandRuntimeIntegrationTests
 
         try
         {
-            await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
+            await FakeJavaServer.StartReadyRuntimeAsync(runtime, config, serverCts.Token);
             runtime.Tokens.Award("viewer", 100);
 
-            await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
             Assert.Equal(100, runtime.Tokens.GetBalance("viewer"));
             Assert.Empty(FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin"));
 
             config.Settings.CommandCustomizations["night"].Enabled = true;
             await runtime.ApplySettingsAsync(config);
-            await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
             List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
@@ -71,13 +71,13 @@ public sealed class CommandRuntimeIntegrationTests
 
         try
         {
-            await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
+            await FakeJavaServer.StartReadyRuntimeAsync(runtime, config, serverCts.Token);
             runtime.Tokens.Award("alice", 100);
             runtime.Tokens.Award("bob", 100);
 
-            await QueueCommandAndWaitAsync(runtime, "!night", "alice", cancellationToken);
-            await QueueCommandAndWaitAsync(runtime, "!night", "alice", cancellationToken);
-            await QueueCommandAndWaitAsync(runtime, "!night", "bob", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "alice", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "alice", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "bob", cancellationToken);
 
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 4, cancellationToken);
             List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
@@ -95,8 +95,8 @@ public sealed class CommandRuntimeIntegrationTests
             runtime.Tokens.Award("carol", 100);
             runtime.Tokens.Award("dave", 100);
 
-            await QueueCommandAndWaitAsync(runtime, "!night", "carol", cancellationToken);
-            await QueueCommandAndWaitAsync(runtime, "!night", "dave", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "carol", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "dave", cancellationToken);
 
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 6, cancellationToken);
             commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
@@ -248,11 +248,11 @@ public sealed class CommandRuntimeIntegrationTests
 
         try
         {
-            await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
+            await FakeJavaServer.StartReadyRuntimeAsync(runtime, config, serverCts.Token);
             runtime.Tokens.Award("viewer", 100);
 
             await runtime.StopProcessSafeAsync(waitBriefly: false);
-            await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
             Assert.Equal(100, runtime.Tokens.GetBalance("viewer"));
             Assert.Empty(FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin"));
@@ -260,7 +260,7 @@ public sealed class CommandRuntimeIntegrationTests
             await runtime.StartServerAsync(config, serverCts.Token);
             _ = runtime.ReadOutputAsync(serverCts.Token);
             await runtime.StartServerIfNeededAsync(serverCts.Token);
-            await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
+            await FakeJavaServer.QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
             Assert.Equal(85, runtime.Tokens.GetBalance("viewer"));
@@ -272,39 +272,4 @@ public sealed class CommandRuntimeIntegrationTests
         }
     }
 
-    private static async Task StartReadyRuntimeAsync(
-        MainHandler runtime,
-        TwitchCraftConfig config,
-        CancellationToken cancellationToken)
-    {
-        await runtime.ApplySettingsAsync(config);
-        await runtime.StartServerAsync(config, cancellationToken);
-        _ = runtime.ReadOutputAsync(cancellationToken);
-        await runtime.StartServerIfNeededAsync(cancellationToken);
-        await FakeJavaServer.WaitForReadyAsync(runtime, cancellationToken);
-    }
-
-    private static async Task QueueCommandAndWaitAsync(
-        MainHandler runtime,
-        string payload,
-        string sender,
-        CancellationToken cancellationToken)
-    {
-        TaskCompletionSource<bool> completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        Assert.True(runtime.QueueCommand(
-            ct => runtime.DispatchAsync(payload, "!", sender, isModerator: false, ct),
-            payload,
-            cancellationToken));
-        Assert.True(runtime.QueueCommand(
-            _ =>
-            {
-                completed.TrySetResult(true);
-                return Task.CompletedTask;
-            },
-            "test-barrier",
-            cancellationToken));
-
-        await completed.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
-    }
 }
