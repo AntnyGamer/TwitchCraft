@@ -27,7 +27,7 @@ public sealed partial class MainHandler
 
     private void HandleRCONLine(string line)
     {
-        if (string.IsNullOrWhiteSpace(line))
+        if (string.IsNullOrWhiteSpace(line) || TryHandleHealthProbe(line))
             return;
 
         ServerLogLineFlags flags = new(line);
@@ -55,7 +55,7 @@ public sealed partial class MainHandler
 
                 try
                 {
-                    if (TryHandleProbe(line))
+                    if (TryHandleProbe(line) || TryHandleHealthProbe(line))
                         continue;
 
                     ServerLogLineFlags flags = new(line);
@@ -230,8 +230,6 @@ public sealed partial class MainHandler
 
         if (MultiplayerEnabled)
             QueueSidebarRefresh();
-        if (TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
-            TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(token));
 
         return true;
     }
@@ -285,7 +283,7 @@ public sealed partial class MainHandler
 
                 RemoveSpectator(joinedPlayer);
 
-                Statistics.RecordPlayerJoin(joinedPlayer);
+                RecordPlayerJoin(joinedPlayer);
                 QueueGamemode(joinedPlayer);
                 QueueSnapshot();
             }

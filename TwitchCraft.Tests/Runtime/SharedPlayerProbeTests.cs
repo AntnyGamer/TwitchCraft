@@ -53,7 +53,7 @@ public sealed class SharedPlayerProbeTests
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
 
             TaskCompletionSource<string?> sharedWaiter = pending["PlayerOne"];
-            MainHandler.CompletePlayer("PlayerOne", gate, pending, sharedWaiter, "diamond");
+            MainHandler.CompleteRequest("PlayerOne", gate, pending, sharedWaiter, "diamond");
             releaseSend.TrySetResult(true);
 
             Assert.Equal("diamond", await survivingTask.WaitAsync(TimeSpan.FromSeconds(10), testCancellation));
@@ -64,6 +64,20 @@ public sealed class SharedPlayerProbeTests
             releaseSend.TrySetResult(true);
             runtime.Tokens.Close();
         }
+    }
+
+    [Fact]
+    public void HealthProbes_ParseVanillaFeedback()
+    {
+        Assert.True(MainHandler.TryParseMaxHealthResponse("Value of attribute Max Health for entity PlayerOne is 20.0", "PlayerOne", out double health));
+        Assert.Equal(20, health);
+        Assert.True(MainHandler.TryParseMaxHealthResponse("The value of attribute Max Health for entity [VIP] PlayerOne is 30.0", "PlayerOne", out health));
+        Assert.Equal(30, health);
+        Assert.True(MainHandler.TryParseMaxHealthResponse("Value of attribute minecraft:max_health for entity PlayerOne is 40", "PlayerOne", out health));
+        Assert.Equal(40, health);
+        Assert.False(MainHandler.TryParseMaxHealthResponse("Value of attribute Max Health for entity PlayerOne2 is 20", "PlayerOne", out _));
+        Assert.Equal(["twitchcraft:heart_0123456789abcdef0123456789abcdef"], MainHandler.ParseHeartModifierIDs("[{id:\"minecraft:max_health\",modifiers:[{id:\"twitchcraft:heart_0123456789abcdef0123456789abcdef\",amount:-4.0d}]}]", true));
+        Assert.Equal(["01234567-89ab-cdef-fedc-ba9876543210"], MainHandler.ParseHeartModifierIDs("[{Name:\"minecraft:generic.max_health\",Modifiers:[{UUID:[I;19088743,-1985229329,-19088744,1985229328],Name:\"twitchcraft_health\",Amount:2.0d}]}]", false));
     }
 
     private static TaskCompletionSource<bool> CreateSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);

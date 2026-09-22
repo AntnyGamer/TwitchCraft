@@ -12,17 +12,14 @@ public static partial class CommandList
     {
         private static readonly TimeSpan PlayerScaleDuration = TimeSpan.FromSeconds(30);
 
-        async Task ChargedCreeperAsync(ResolvedTarget target, string sender, CancellationToken ct)
+        Task ChargedCreeperAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            List<string> commands = MinecraftCommandFeatureBuilder.BuildChargedCreeper(
+            string[] commands = MinecraftCommandFeatureBuilder.BuildChargedCreeper(
                 target.Selector,
                 Random.Shared,
                 runtime.UsesInlineTextComponentSyntax,
                 runtime.UsesModernEntityAttributeNbt);
-            commands.Add(MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 100, 10));
-            commands.Add(MinecraftCommandBuilder.Title(target.Selector, " ", "white", runtime.UsesInlineTextComponentSyntax));
-            commands.Add(MinecraftCommandBuilder.Subtitle(target.Selector, "A charged creeper is coming!", "red", runtime.UsesInlineTextComponentSyntax));
-            await SendPricedReplyAsync(
+            return SendPricedReplyAsync(
                 target,
                 sender,
                 45,
@@ -33,7 +30,7 @@ public static partial class CommandList
                 "yellow",
                 true,
                 "red",
-                ct).ConfigureAwait(false);
+                ct);
         }
 
         async Task FireworksAsync(ResolvedTarget target, string sender, CancellationToken ct)
@@ -105,10 +102,7 @@ public static partial class CommandList
         }
         Task JohnnyAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            List<string> commands = MinecraftCommandFeatureBuilder.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
-            commands.Add(MinecraftCommandBuilder.TitleTimes(target.Selector, 0, 100, 10));
-            commands.Add(MinecraftCommandBuilder.Title(target.Selector, " ", "white", runtime.UsesInlineTextComponentSyntax));
-            commands.Add(MinecraftCommandBuilder.Subtitle(target.Selector, "Johnny is coming!", "red", runtime.UsesInlineTextComponentSyntax));
+            string[] commands = MinecraftCommandFeatureBuilder.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
             return SendPricedReplyAsync(
                 target,
                 sender,
@@ -126,7 +120,7 @@ public static partial class CommandList
         {
             if (!await RequireMinecraftAsync(sender, ct).ConfigureAwait(false))
                 return;
-            if (!runtime.Commands.TryUseLightning(out TimeSpan remaining, out long lightningReservationTimestamp))
+            if (!runtime.Commands.TryUseTimedCommand("lightning", out TimeSpan remaining, out long lightningReservationTimestamp))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
@@ -138,12 +132,12 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.Commands.ClearLightningCooldown(lightningReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown("lightning", lightningReservationTimestamp);
                 throw;
             }
             if (target == null)
             {
-                runtime.Commands.ClearLightningCooldown(lightningReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown("lightning", lightningReservationTimestamp);
                 return;
             }
             int cost = runtime.Commands.ScaleCost(50, target.PlayerCount);
@@ -152,7 +146,7 @@ public static partial class CommandList
                     cost,
                     MinecraftCommandBuilder.Lightning(target.Selector),
                     ct,
-                    () => runtime.Commands.ClearLightningCooldown(lightningReservationTimestamp)).ConfigureAwait(false))
+                    () => runtime.Commands.ClearTimedCommandCooldown("lightning", lightningReservationTimestamp)).ConfigureAwait(false))
             {
                 return;
             }
@@ -225,11 +219,13 @@ public static partial class CommandList
             Dictionary<string, string?>? selectedItemsByPlayer = playerNames.Count > 1
                 ? await runtime.QueryItemsAsync(playerNames, ct).ConfigureAwait(false)
                 : null;
-            List<string> enchantCommands = new(playerNames.Count);
-            List<(string Player, string Item, string Enchant, int Level, bool HadItem)> rolls = new(playerNames.Count);
+            string[] enchantCommands = new string[playerNames.Count];
+            (string Player, string Item, string Enchant, int Level, bool HadItem)[] rolls =
+                new (string, string, string, int, bool)[playerNames.Count];
 
-            foreach (string playerName in playerNames)
+            for (int i = 0; i < playerNames.Count; i++)
             {
+                string playerName = playerNames[i];
                 string? selectedItemData;
                 if (selectedItemsByPlayer != null)
                     selectedItemsByPlayer.TryGetValue(playerName, out selectedItemData);
@@ -259,8 +255,8 @@ public static partial class CommandList
                     enchantCommand = MinecraftItemEnchantHelper.BuildEnchant(singleSelector, enchantID, level);
                 }
 
-                enchantCommands.Add(enchantCommand);
-                rolls.Add((playerName, prettyItemName, prettyEnchantName, level, hadItem));
+                enchantCommands[i] = enchantCommand;
+                rolls[i] = (playerName, prettyItemName, prettyEnchantName, level, hadItem);
             }
 
             int cost = runtime.Commands.ScaleCost(baseCost, playerNames.Count);
@@ -281,7 +277,7 @@ public static partial class CommandList
                     ct).ConfigureAwait(false);
             }
 
-            if (rolls.Count == 1)
+            if (rolls.Length == 1)
             {
                 (string playerName, string item, string enchant, int enchantLevel, bool hadItem) = rolls[0];
                 string result = hadItem
@@ -293,12 +289,131 @@ public static partial class CommandList
             }
             else if (targetsEveryone)
             {
-                await ConfirmAsync(sender + ", you rolled random enchantments for " + rolls.Count.ToString(CultureInfo.InvariantCulture) + " players.", ct).ConfigureAwait(false);
+                await ConfirmAsync(sender + ", you rolled random enchantments for " + rolls.Length.ToString(CultureInfo.InvariantCulture) + " players.", ct).ConfigureAwait(false);
             }
             else
             {
-                await ConfirmAsync(sender + ", you rolled random enchantments for " + rolls.Count.ToString(CultureInfo.InvariantCulture) + " targets in " + TargetName(target) + ".", ct).ConfigureAwait(false);
+                await ConfirmAsync(sender + ", you rolled random enchantments for " + rolls.Length.ToString(CultureInfo.InvariantCulture) + " targets in " + TargetName(target) + ".", ct).ConfigureAwait(false);
             }
+        }
+
+        async Task HeartAsync(string[]? args, string sender, bool add, CancellationToken ct)
+        {
+            if (!int.TryParse(GetArg(args, 0), out int hearts) || hearts is < 1 or > 5 ||
+                !await RequireCooldownAsync(sender, ct).ConfigureAwait(false) ||
+                !await RequireTokensAsync(sender, hearts * 50, ct).ConfigureAwait(false))
+                return;
+            ResolvedTarget? target = await ResolveTargetAsync(args, 1, sender, ct).ConfigureAwait(false);
+            if (target == null) return;
+            List<string> players = await GetPlayersAsync(target, ct).ConfigureAwait(false);
+            if (players.Count == 0) return;
+
+            await heartGate.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                foreach (string player in players)
+                    await ResetHeartEffectsCoreAsync(player, false, ct).ConfigureAwait(false);
+                if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
+                {
+                    await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
+                    return;
+                }
+
+                bool sent = false;
+                try
+                {
+                    int delta = hearts * (add ? 2 : -2);
+                    foreach (string player in players)
+                    {
+                        activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects);
+                        double? health = await runtime.QueryMaxHealthAsync(player, ct).ConfigureAwait(false);
+                        if (!health.HasValue) { await SayAsync(sender + ", TwitchCraft could not read " + player + "'s maximum health. You were not charged.", ct).ConfigureAwait(false); return; }
+                        double future = health.Value + delta;
+                        bool invalid = future is < 10 or > 40;
+                        if (!invalid && effects != null) foreach ((int effect, _, _) in effects) if ((future -= effect) is < 10 or > 40) { invalid = true; break; }
+                        if (invalid) { await SayAsync(sender + ", that would put " + player + " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false); return; }
+                    }
+
+                    string id = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
+                    string[] commands = new string[players.Count];
+                    for (int i = 0; i < players.Count; i++)
+                        commands[i] = MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(players[i]), id, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs);
+                    sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
+                    if (!sent) return;
+                    foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, id, false)); }
+                    runtime.TrackTask(ResetHeartAsync(id, ct));
+                    await ConfirmAsync(sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) + " for 10 minutes.", ct).ConfigureAwait(false);
+                }
+                finally { if (!sent) runtime.Commands.ClearTimedCommandCooldown("heart", reservation); }
+            }
+            finally { heartGate.Release(); }
+        }
+
+        async Task ResetHeartEffectsAsync(string? player, bool force, CancellationToken ct)
+        {
+            await heartGate.WaitAsync(ct).ConfigureAwait(false);
+            try { await ResetHeartEffectsCoreAsync(player, force, ct).ConfigureAwait(false); }
+            finally { heartGate.Release(); }
+        }
+
+        async Task ResetHeartEffectsCoreAsync(string? player, bool force, CancellationToken ct)
+        {
+            if (player != null && await runtime.QueryHeartModifiersAsync(player, ct).ConfigureAwait(false) is { } data)
+                SyncHeartEffects(player, MainHandler.ParseHeartModifierIDs(data, runtime.UsesNamespacedAttributeModifierIDs), true);
+
+            List<(string Player, string ID)>? pending = null;
+            foreach (var entry in activeHeartEffects)
+                for (int i = 0; i < entry.Value.Count; i++)
+                {
+                    (int delta, string id, bool expired) = entry.Value[i];
+                    if (force && !expired) entry.Value[i] = (delta, id, expired = true);
+                    if (expired && runtime.IsPlayerOnline(entry.Key)) (pending ??= []).Add((entry.Key, id));
+                }
+            if (pending == null) return;
+
+            foreach ((string pendingPlayer, string id) in pending)
+                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(pendingPlayer), id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+
+            string? verifiedPlayer = null;
+            foreach ((string pendingPlayer, _) in pending)
+            {
+                if (string.Equals(verifiedPlayer, pendingPlayer, StringComparison.OrdinalIgnoreCase)) continue;
+                verifiedPlayer = pendingPlayer;
+                if (await runtime.QueryHeartModifiersAsync(pendingPlayer, ct).ConfigureAwait(false) is { } current)
+                    SyncHeartEffects(pendingPlayer, MainHandler.ParseHeartModifierIDs(current, runtime.UsesNamespacedAttributeModifierIDs), false);
+            }
+        }
+
+        void SyncHeartEffects(string player, List<string> current, bool recover)
+        {
+            if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects))
+            {
+                if (!recover || current.Count == 0) return;
+                activeHeartEffects[player] = effects = [];
+            }
+            for (int i = effects.Count - 1; i >= 0; i--)
+                if (!current.Contains(effects[i].ID)) effects.RemoveAt(i);
+            if (recover) foreach (string id in current)
+                if (!effects.Exists(effect => effect.ID == id)) effects.Add((0, id, true));
+            if (effects.Count == 0) activeHeartEffects.Remove(player);
+        }
+
+        async Task ResetHeartAsync(string id, CancellationToken ct)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);
+                await heartGate.WaitAsync(ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { return; }
+            try
+            {
+                foreach (List<(int Delta, string ID, bool Expired)> effects in activeHeartEffects.Values)
+                    for (int i = 0; i < effects.Count; i++)
+                        if (effects[i].ID == id) effects[i] = (effects[i].Delta, id, true);
+                await ResetHeartEffectsCoreAsync(null, false, CancellationToken.None).ConfigureAwait(false);
+            }
+            finally { heartGate.Release(); }
         }
 
         async Task TimedScaleAsync(
@@ -318,7 +433,7 @@ public static partial class CommandList
                 return;
             }
 
-            if (!runtime.Commands.TryUseScaleCommand(commandName, out TimeSpan remaining, out long cooldownReservationTimestamp))
+            if (!runtime.Commands.TryUseTimedCommand(commandName, out TimeSpan remaining, out long cooldownReservationTimestamp))
             {
                 await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
@@ -337,13 +452,13 @@ public static partial class CommandList
             }
             catch
             {
-                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown(commandName, cooldownReservationTimestamp);
                 throw;
             }
 
             if (!sent)
             {
-                runtime.Commands.ClearScaleCooldown(commandName, cooldownReservationTimestamp);
+                runtime.Commands.ClearTimedCommandCooldown(commandName, cooldownReservationTimestamp);
                 return;
             }
 
@@ -376,20 +491,11 @@ public static partial class CommandList
             if (target == null)
                 return;
             bool targetsEveryone = IsEveryone(target);
-            List<string> playerNames;
-            if (targetsEveryone || target.PlayerCount > 1)
+            List<string> playerNames = await GetPlayersAsync(target, ct).ConfigureAwait(false);
+            if (playerNames.Count == 0)
             {
-                playerNames = NormalizeTargets(target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
-            }
-            else
-            {
-                string playerName = GetPlayerName(target);
-                if (playerName.Length == 0)
-                {
-                    await SayAsync(sender + ", that player could not be resolved for !rename.", ct).ConfigureAwait(false);
-                    return;
-                }
-                playerNames = [playerName];
+                await SayAsync(sender + ", that player could not be resolved for !rename.", ct).ConfigureAwait(false);
+                return;
             }
             List<string> renameCommands = new(playerNames.Count);
             List<string> renamedPlayers = new(playerNames.Count);
@@ -445,18 +551,20 @@ public static partial class CommandList
         }
         Task SwarmAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var prettyNames = new List<string>(5);
-            var swarmCommands = new List<string>(10);
-            while (prettyNames.Count < 5)
+            var used = new HashSet<string>(5, StringComparer.OrdinalIgnoreCase);
+            string[] prettyNames = new string[5];
+            string[] swarmCommands = new string[10];
+            int count = 0;
+            while (count < 5)
             {
                 string mob = runtime.GetRandomMob();
                 if (!used.Add(mob))
                     continue;
                 string pretty = PrettyName(mob);
-                prettyNames.Add(pretty);
-                swarmCommands.Add(MinecraftCommandBuilder.SummonMob(target.Selector, mob));
-                swarmCommands.Add(MinecraftCommandBuilder.Tellraw(target.Selector, sender + " spawned a " + pretty + " on you.", "yellow", true, runtime.UsesInlineTextComponentSyntax));
+                prettyNames[count] = pretty;
+                swarmCommands[count * 2] = MinecraftCommandBuilder.SummonMob(target.Selector, mob);
+                swarmCommands[count * 2 + 1] = MinecraftCommandBuilder.Tellraw(target.Selector, sender + " spawned a " + pretty + " on you.", "yellow", true, runtime.UsesInlineTextComponentSyntax);
+                count++;
             }
             return SendPricedReplyAsync(
                 target,
@@ -484,7 +592,7 @@ public static partial class CommandList
                 return SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct);
             string switchMilkTag = runtime.Commands.NextSwitchMilkTag();
             string taggedMilkSelector = "@a[tag=" + switchMilkTag + "]";
-            List<string> switchMilkCommands = ["tag @a remove " + switchMilkTag];
+            List<string> switchMilkCommands = new(7) { "tag @a remove " + switchMilkTag };
             switchMilkCommands.Add("execute as " + target.Selector + " if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + switchMilkTag);
             if (runtime.MultiTargetingEnabled && target.PlayerCount == 1 && !IsEveryone(target) && runtime.HasOtherPlayer(singleMilkTargetName))
             {

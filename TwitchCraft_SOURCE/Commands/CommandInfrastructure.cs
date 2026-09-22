@@ -159,26 +159,25 @@ public static class MinecraftCommandBuilder
             scale.ToString("0.###", CultureInfo.InvariantCulture);
     }
 
-    public static string BanPlayer(string playerName, string reason)
+    public static string AddMaxHealthModifier(string selector, string id, int delta, bool modernAttribute, bool namespacedID)
+        => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") +
+            " modifier add " + id + (namespacedID ? "" : " twitchcraft_health") + " " + delta.ToString(CultureInfo.InvariantCulture) + " add_value";
+
+    public static string RemoveMaxHealthModifier(string selector, string id, bool modernAttribute)
+        => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") + " modifier remove " + id;
+
+    public static string ModeratePlayer(string playerName, string reason, bool ban)
     {
         reason = CleanCommandArg(reason);
-        return reason.Length == 0 ? $"ban {playerName}" : $"ban {playerName} {reason}";
+        string command = ban ? "ban" : "kick";
+        return reason.Length == 0 ? $"{command} {playerName}" : $"{command} {playerName} {reason}";
     }
 
     public static string UnbanPlayer(string playerName)
         => $"pardon {playerName}";
 
-    public static string KickPlayer(string playerName, string reason)
-    {
-        reason = CleanCommandArg(reason);
-        return reason.Length == 0 ? $"kick {playerName}" : $"kick {playerName} {reason}";
-    }
-
-    public static string WhitelistAdd(string playerName)
-        => $"whitelist add {playerName}";
-
-    public static string WhitelistRemove(string playerName)
-        => $"whitelist remove {playerName}";
+    public static string Whitelist(string playerName, bool add)
+        => $"whitelist {(add ? "add" : "remove")} {playerName}";
 
     private static string CleanCommandArg(string? value)
     {

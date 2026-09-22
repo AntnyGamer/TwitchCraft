@@ -50,6 +50,13 @@ public sealed partial class MainHandler
             _pendingSelectedItemRequests.Clear();
         }
 
+        lock (_maxHealthProbeGate)
+        {
+            foreach (TaskCompletionSource<double?> waiter in _pendingMaxHealthRequests.Values) waiter.TrySetResult(null);
+            foreach (TaskCompletionSource<string?> waiter in _pendingHeartAttributeRequests.Values) waiter.TrySetResult(null);
+            _pendingMaxHealthRequests.Clear();
+            _pendingHeartAttributeRequests.Clear();
+        }
         lock (_respawnPositionProbeGate)
         {
             _pendingRespawnPositionRequests.Clear();

@@ -397,14 +397,14 @@ internal static class MinecraftCommandFeatureBuilder
         return commands;
     }
 
-    public static List<string> BuildSlaughter(string selector, string mobLootGameRuleName) =>
+    public static string[] BuildSlaughter(string selector, string mobLootGameRuleName) =>
     [
         "gamerule " + mobLootGameRuleName + " false",
         "execute at " + selector + " as @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:armor_stand,distance=..30] if data entity @s Health run kill @s",
         "gamerule " + mobLootGameRuleName + " true"
     ];
 
-    public static List<string> BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+    public static string[] BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
         => BuildPursuer(
             selector,
             random,
@@ -413,9 +413,10 @@ internal static class MinecraftCommandFeatureBuilder
             "vindicator",
             "Johnny",
             "tc_johnny",
-            string.Empty);
+            string.Empty,
+            "Johnny is coming!");
 
-    public static List<string> BuildChargedCreeper(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+    public static string[] BuildChargedCreeper(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
         => BuildPursuer(
             selector,
             random,
@@ -424,9 +425,10 @@ internal static class MinecraftCommandFeatureBuilder
             "creeper",
             "Charged Creeper",
             "tc_charged_creeper",
-            "powered:1b,");
+            "powered:1b,",
+            "A charged creeper is coming!");
 
-    private static List<string> BuildPursuer(
+    private static string[] BuildPursuer(
         string selector,
         Random random,
         bool usesInlineTextComponents,
@@ -434,7 +436,8 @@ internal static class MinecraftCommandFeatureBuilder
         string entityID,
         string displayName,
         string entityTag,
-        string additionalNbt)
+        string additionalNbt,
+        string warning)
     {
         ArgumentNullException.ThrowIfNull(random);
 
@@ -458,7 +461,10 @@ internal static class MinecraftCommandFeatureBuilder
         [
             "execute at " + selector + " run summon minecraft:" + entityID + " ~" + offsetX.ToString(CultureInfo.InvariantCulture) + " ~100 ~" + offsetZ.ToString(CultureInfo.InvariantCulture) + " " + summonData,
             "execute at " + selector + " as " + entitySelector + " run effect give @s minecraft:glowing 255 0 true",
-            "execute at " + selector + " as " + entitySelector + " run tag @s remove " + newEntityTag
+            "execute at " + selector + " as " + entitySelector + " run tag @s remove " + newEntityTag,
+            MinecraftCommandBuilder.TitleTimes(selector, 0, 100, 10),
+            MinecraftCommandBuilder.Title(selector, " ", "white", usesInlineTextComponents),
+            MinecraftCommandBuilder.Subtitle(selector, warning, "red", usesInlineTextComponents)
         ];
     }
 

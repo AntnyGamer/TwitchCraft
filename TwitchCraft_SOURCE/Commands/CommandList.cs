@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 
 namespace TwitchCraft_V1;
 
@@ -29,6 +30,8 @@ public static partial class CommandList
         private readonly MainHandler runtime;
         private Dictionary<string, ChatCommandHandler> handlers;
         private Dictionary<string, ChatCommandStatisticFlags>? statisticFlags;
+        private readonly Dictionary<string, List<(int Delta, string ID, bool Expired)>> activeHeartEffects = new(StringComparer.OrdinalIgnoreCase);
+        private readonly SemaphoreSlim heartGate = new(1, 1);
 
         internal CommandBuildContext(
             MainHandler runtime,
@@ -36,11 +39,13 @@ public static partial class CommandList
         {
             this.runtime = runtime;
             this.statisticFlags = statisticFlags;
+            runtime.Commands.ResetHeartEffectsAsync = ResetHeartEffectsAsync;
             handlers = new Dictionary<string, ChatCommandHandler>(64, StringComparer.OrdinalIgnoreCase);
         }
 
         internal Dictionary<string, ChatCommandHandler> Build()
         {
+            AddCommand("addheart", (args, sender, ct) => HeartAsync(args, sender, true, ct), NiceCommand);
             AddCommand("ban", BanAsync);
             AddTokenHandlers(runtime, handlers, SayAsync, SuccessAsync, ConfirmAsync, RequirePermissionAsync);
             AddCommand("commandstats", CommandStatsAsync);
@@ -101,6 +106,7 @@ public static partial class CommandList
             AddTargetCommand("mob", MobAsync, DangerousCommand, minimumTokenCost: 10);
             AddCommand("night", NightAsync, DangerousCommand);
             AddCommand("rename", RenameAsync, GameCommand);
+            AddCommand("removeheart", (args, sender, ct) => HeartAsync(args, sender, false, ct), DangerousCommand);
             AddTargetCommand("scared", ScaredAsync, DangerousCommand, minimumTokenCost: 15);
             AddTargetCommand("slaughter", SlaughterAsync, DangerousCommand, minimumTokenCost: 30);
             AddTargetCommand("swarm", SwarmAsync, DangerousCommand, minimumTokenCost: 45);

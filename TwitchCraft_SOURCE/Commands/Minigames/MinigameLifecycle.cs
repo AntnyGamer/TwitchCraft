@@ -19,15 +19,13 @@ public static partial class MinigameManager
                 && existing.Task is not { IsCompleted: true })
                 return;
 
-            loop = new(
-                CancellationTokenSource.CreateLinkedTokenSource(sessionToken),
-                TakeNextTimeNoLock(runtime));
+            loop = new(runtime, CancellationTokenSource.CreateLinkedTokenSource(sessionToken), TakeNextTimeNoLock(runtime));
             MinigameLoops[runtime] = loop;
         }
 
         try { RefundChickenBets(runtime); RefundWitherBets(runtime); }
-        catch { CleanupLoop(runtime, loop); throw; }
-        Task loopTask = Task.Run(() => RunLoopAsync(runtime, loop, loop.Cts.Token), CancellationToken.None);
+        catch { CleanupLoop(loop); throw; }
+        Task loopTask = Task.Run(() => RunLoopAsync(loop.Runtime, loop, loop.Cts.Token), CancellationToken.None);
         lock (MinigameGate)
         {
             if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop))
@@ -35,7 +33,8 @@ public static partial class MinigameManager
         }
 
         _ = loopTask.ContinueWith(
-            _ => CleanupLoop(runtime, loop),
+            static (_, state) => CleanupLoop((MinigameLoopState)state!),
+            loop,
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
@@ -95,7 +94,7 @@ public static partial class MinigameManager
             {
                 witherState.BettingOpen = false;
                 witherState.CurrentHealth = 0;
-                witherState.DefeatedSignal?.TrySetResult(false);
+                witherState.DefeatedSignal?.TrySetResult();
                 witherState.DefeatedSignal = null;
             }
         }
@@ -111,12 +110,12 @@ public static partial class MinigameManager
         return loop?.Task;
     }
 
-    private static void CleanupLoop(MainHandler runtime, MinigameLoopState loop)
+    private static void CleanupLoop(MinigameLoopState loop)
     {
         lock (MinigameGate)
         {
-            if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop))
-                MinigameLoops.Remove(runtime);
+            if (MinigameLoops.TryGetValue(loop.Runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop))
+                MinigameLoops.Remove(loop.Runtime);
         }
 
         try { loop.Cts.Dispose(); } catch { }

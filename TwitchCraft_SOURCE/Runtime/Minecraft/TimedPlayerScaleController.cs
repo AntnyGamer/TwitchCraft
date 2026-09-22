@@ -18,6 +18,7 @@ internal sealed class TimedPlayerScaleController
     private readonly Dictionary<string, SemaphoreSlim> _playerGates = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ScaleState> _states = new(StringComparer.OrdinalIgnoreCase);
     private readonly Func<string, CancellationToken, Task<bool>> _sendCommand;
+    private readonly Func<IReadOnlyList<string>, CancellationToken, Task<bool>> _sendCommands;
     private readonly Func<string, bool> _isPlayerOnline;
     private readonly Action<Task> _trackTask;
     private readonly Action<string> _log;
@@ -27,12 +28,14 @@ internal sealed class TimedPlayerScaleController
 
     internal TimedPlayerScaleController(
         Func<string, CancellationToken, Task<bool>> sendCommand,
+        Func<IReadOnlyList<string>, CancellationToken, Task<bool>> sendCommands,
         Func<string, bool> isPlayerOnline,
         Action<Task> trackTask,
         Action<string> log,
         Func<TimeSpan, CancellationToken, Task>? delay = null)
     {
         _sendCommand = sendCommand ?? throw new ArgumentNullException(nameof(sendCommand));
+        _sendCommands = sendCommands ?? throw new ArgumentNullException(nameof(sendCommands));
         _isPlayerOnline = isPlayerOnline ?? throw new ArgumentNullException(nameof(isPlayerOnline));
         _trackTask = trackTask ?? throw new ArgumentNullException(nameof(trackTask));
         _log = log ?? throw new ArgumentNullException(nameof(log));
@@ -58,26 +61,28 @@ internal sealed class TimedPlayerScaleController
             return false;
 
         List<SemaphoreSlim> acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
-        Dictionary<string, ScaleState?> previousStates = new(players.Count, StringComparer.OrdinalIgnoreCase);
-        List<(string Player, ScaleState State)> appliedStates = new(players.Count);
+        (string Player, ScaleState Applied, ScaleState? Previous)[] appliedStates = new (string, ScaleState, ScaleState?)[players.Count];
+        int appliedCount = 0;
         try
         {
-            List<string> commands = new(players.Count);
+            string[] commands = new string[players.Count];
             lock (_gate)
             {
-                foreach (string player in players)
+                for (int i = 0; i < players.Count; i++)
                 {
-                    previousStates[player] = _states.TryGetValue(player, out ScaleState previous) ? previous : null;
+                    string player = players[i];
+                    ScaleState? previous = _states.TryGetValue(player, out ScaleState existing) ? existing : null;
                     ScaleState applied = new(
                         Interlocked.Increment(ref _nextGeneration),
                         usesModernAttributeIDs,
                         usesInlineTextComponents);
                     _states[player] = applied;
-                    appliedStates.Add((player, applied));
-                    commands.Add(MinecraftCommandBuilder.SetScale(
+                    appliedStates[i] = (player, applied, previous);
+                    appliedCount++;
+                    commands[i] = MinecraftCommandBuilder.SetScale(
                         MinecraftCommandBuilder.SinglePlayerSelector(player),
                         scale,
-                        usesModernAttributeIDs));
+                        usesModernAttributeIDs);
                 }
             }
 
@@ -88,18 +93,19 @@ internal sealed class TimedPlayerScaleController
             }
             catch
             {
-                RestoreStates(appliedStates, previousStates);
+                RestoreStates(appliedStates, appliedCount);
                 throw;
             }
 
             if (!dispatched)
             {
-                RestoreStates(appliedStates, previousStates);
+                RestoreStates(appliedStates, appliedCount);
                 return false;
             }
 
-            foreach ((string player, ScaleState state) in appliedStates)
+            for (int i = 0; i < appliedCount; i++)
             {
+                (string player, ScaleState state, _) = appliedStates[i];
                 _trackTask(ResetLaterAsync(player, state, duration, cancellationToken));
             }
 
@@ -111,20 +117,24 @@ internal sealed class TimedPlayerScaleController
         }
     }
 
-    internal Task ResetRecoveredAsync(CancellationToken cancellationToken)
-        => ResetAllAsync(cancellationToken, Volatile.Read(ref _recoveryGeneration));
+    internal Task ResetRecoveredAsync(string player, CancellationToken cancellationToken)
+    {
+        long maxGeneration = Volatile.Read(ref _recoveryGeneration);
+        lock (_gate)
+            if (!_states.TryGetValue(player, out ScaleState state) || state.Generation > maxGeneration)
+                return Task.CompletedTask;
+        return ResetAllAsync(cancellationToken, maxGeneration, player);
+    }
 
     internal void MarkForRecovery() => Volatile.Write(ref _recoveryGeneration, Volatile.Read(ref _nextGeneration));
 
-    internal async Task ResetAllAsync(CancellationToken cancellationToken, long maxGeneration = long.MaxValue)
+    internal async Task ResetAllAsync(CancellationToken cancellationToken, long maxGeneration = long.MaxValue, string? playerName = null)
     {
         List<string> players;
         lock (_gate)
-        {
-            players = [.. _states.Keys];
-        }
+            players = playerName == null ? [.. _states.Keys] : _states.ContainsKey(playerName) ? [playerName] : [];
 
-        players.Sort(StringComparer.OrdinalIgnoreCase);
+        if (playerName == null) players.Sort(StringComparer.OrdinalIgnoreCase);
         if (players.Count == 0)
             return;
 
@@ -221,12 +231,7 @@ internal sealed class TimedPlayerScaleController
                 MinecraftCommandBuilder.Title(selector, " ", "white", state.UsesInlineTextComponents)
             ];
 
-            foreach (string command in commands)
-            {
-                if (!await _sendCommand(command, cancellationToken).ConfigureAwait(false))
-                    break;
-            }
-
+            _ = await _sendCommands(commands, cancellationToken).ConfigureAwait(false);
             return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -329,17 +334,18 @@ internal sealed class TimedPlayerScaleController
     }
 
     private void RestoreStates(
-        IReadOnlyList<(string Player, ScaleState State)> appliedStates,
-        IReadOnlyDictionary<string, ScaleState?> previousStates)
+        IReadOnlyList<(string Player, ScaleState Applied, ScaleState? Previous)> appliedStates,
+        int count)
     {
         lock (_gate)
         {
-            foreach ((string player, ScaleState applied) in appliedStates)
+            for (int i = 0; i < count; i++)
             {
+                (string player, ScaleState applied, ScaleState? previous) = appliedStates[i];
                 if (!_states.TryGetValue(player, out ScaleState current) || current != applied)
                     continue;
 
-                if (previousStates.TryGetValue(player, out ScaleState? previous) && previous.HasValue)
+                if (previous.HasValue)
                     _states[player] = previous.Value;
                 else
                     _states.Remove(player);
@@ -348,18 +354,7 @@ internal sealed class TimedPlayerScaleController
     }
 
     private static List<string> NormalizePlayers(IReadOnlyList<string> playerNames)
-    {
-        HashSet<string> unique = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string playerName in playerNames)
-        {
-            if (MinecraftNameHelper.TryNormalizePlayerName(playerName, out string normalized))
-                unique.Add(normalized);
-        }
-
-        List<string> players = [.. unique];
-        players.Sort(StringComparer.OrdinalIgnoreCase);
-        return players;
-    }
+        => SortedListHelper.NormalizePlayerNames(playerNames, StringComparer.OrdinalIgnoreCase);
 
     private static void UnlockPlayers(List<SemaphoreSlim> acquiredGates)
     {

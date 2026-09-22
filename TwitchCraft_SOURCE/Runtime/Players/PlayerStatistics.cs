@@ -103,12 +103,10 @@ public sealed partial class MainHandler
             if (Volatile.Read(ref _deathScoreObjectiveReady) != 0)
                 return true;
 
-            TaskCompletionSource<bool> waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            bool sent = await SendProbesAsync(
-                [
-                    "scoreboard objectives add " + DeathScoreObjective + " deathCount"
-                ],
-                () => waiter.TrySetResult(true),
+            TaskCompletionSource waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            bool sent = await SendProbeAsync(
+                "scoreboard objectives add " + DeathScoreObjective + " deathCount",
+                () => waiter.TrySetResult(),
                 cancellationToken).ConfigureAwait(false);
 
             if (!sent)
@@ -205,6 +203,14 @@ public sealed partial class MainHandler
         _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Player sidebar refresh failed", ex));
     }
 
+    private void RecordPlayerJoin(string player)
+    {
+        Statistics.RecordPlayerJoin(player);
+        if (!TryGetSessionToken(requireMultiplayer: false, out CancellationToken token)) return;
+        TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(player, token));
+        if (Commands.ResetHeartEffectsAsync != null) TrackTask(Commands.ResetHeartEffectsAsync(player, false, token));
+    }
+
     private void RecordRoster(List<string> previousPlayers, List<string> currentPlayers)
     {
         int previousIndex = 0;
@@ -230,7 +236,7 @@ public sealed partial class MainHandler
                 continue;
             }
 
-            Statistics.RecordPlayerJoin(current);
+            RecordPlayerJoin(current);
             currentIndex++;
         }
 
@@ -242,7 +248,7 @@ public sealed partial class MainHandler
         }
 
         for (; currentIndex < currentPlayers.Count; currentIndex++)
-            Statistics.RecordPlayerJoin(currentPlayers[currentIndex]);
+            RecordPlayerJoin(currentPlayers[currentIndex]);
     }
 
     private static List<string> ParsePlayers(ReadOnlySpan<char> remainder)

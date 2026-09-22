@@ -23,8 +23,9 @@ public static partial class MinigameManager
 
     // ===== State model types =====
 
-    private sealed class MinigameLoopState(CancellationTokenSource cts, DateTime nextAtUtc)
+    private sealed class MinigameLoopState(MainHandler runtime, CancellationTokenSource cts, DateTime nextAtUtc)
     {
+        public MainHandler Runtime { get; } = runtime;
         public CancellationTokenSource Cts { get; } = cts;
         public DateTime NextAtUtc { get; set; } = nextAtUtc;
         public Task? Task { get; set; }
@@ -36,6 +37,14 @@ public static partial class MinigameManager
         int TokenAmount { get; }
     }
 
+    private abstract class BettingState<TBet> where TBet : IMinigameBet
+    {
+        public bool BettingOpen { get; set; }
+        public List<TBet> Bets { get; } = [];
+        public List<KeyValuePair<string, int>>? PendingSettlement { get; set; }
+        public Lock SettlementGate { get; } = new();
+    }
+
     private sealed class ChickenRunBet : IMinigameBet
     {
         public string Viewer { get; set; } = string.Empty;
@@ -43,15 +52,10 @@ public static partial class MinigameManager
         public int BetSeconds { get; set; }
     }
 
-    private sealed class ChickenRunState
+    private sealed class ChickenRunState : BettingState<ChickenRunBet>
     {
-        public bool BettingOpen { get; set; }
         public int MinSeconds { get; set; }
         public int MaxSeconds { get; set; }
-        public int KillAtSeconds { get; set; }
-        public List<ChickenRunBet> Bets { get; } = [];
-        public List<KeyValuePair<string, int>>? PendingSettlement { get; set; }
-        public Lock SettlementGate { get; } = new();
     }
 
     private sealed class GuessNumberState
@@ -68,14 +72,10 @@ public static partial class MinigameManager
         public int TokenAmount { get; set; }
     }
 
-    private sealed class WitherBattleState
+    private sealed class WitherBattleState : BettingState<WitherBattleBet>
     {
-        public bool BettingOpen { get; set; }
         public int CurrentHealth { get; set; }
-        public TaskCompletionSource<bool>? DefeatedSignal { get; set; }
-        public List<WitherBattleBet> Bets { get; } = [];
-        public List<KeyValuePair<string, int>>? PendingSettlement { get; set; }
-        public Lock SettlementGate { get; } = new();
+        public TaskCompletionSource? DefeatedSignal { get; set; }
     }
 
     private sealed class ActiveMinigameState

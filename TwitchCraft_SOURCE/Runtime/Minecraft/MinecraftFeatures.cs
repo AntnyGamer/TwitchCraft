@@ -86,6 +86,7 @@ public sealed partial class MainHandler
     public bool UsesInlineTextComponentSyntax => GetMinecraftVersion().UsesInlineTextComponents;
 
     public bool UsesModernEntityAttributeNbt => GetMinecraftVersion().DataPackFormatMajor >= 48;
+    public bool UsesNamespacedAttributeModifierIDs => GetMinecraftVersion().DataPackFormatMajor >= 48;
 
     public bool UsesModernAttributeIDs => GetMinecraftVersion().DataPackFormatMajor >= 57;
 
@@ -96,6 +97,8 @@ public sealed partial class MainHandler
     public bool UsesNamespacedGameRules => GetMinecraftVersion().UsesNamespacedGameRules;
 
     public string MobLootGameRuleName => UsesNamespacedGameRules ? "minecraft:mob_drops" : "doMobLoot";
+
+    internal bool IsPlayerOnline(string playerName) => IsKnownPlayer(playerName) && (MinecraftProcessRunning || RCONConnected);
 
     internal bool MinecraftProcessRunning => _minecraftSession.ProcessRunning;
 

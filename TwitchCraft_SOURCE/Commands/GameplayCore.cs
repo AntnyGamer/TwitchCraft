@@ -10,32 +10,9 @@ public static partial class CommandList
 {
     private sealed partial class CommandBuildContext
     {
-        async Task BanAsync(string[]? args, string sender, CancellationToken ct)
-        {
-            const string commandName = "ban";
-            if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
-                !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
-                return;
-            if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
-            {
-                await SayAsync(sender + ", please provide a valid Minecraft username to ban.", ct).ConfigureAwait(false);
-                return;
-            }
-            if (string.Equals(playerName, runtime.Commands.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
-            {
-                await SayAsync(sender + ", the streamer account cannot be banned.", ct).ConfigureAwait(false);
-                return;
-            }
-            string reason = args is { Length: > 1 }
-                ? string.Join(" ", args, 1, args.Length - 1)
-                : string.Empty;
-            if (!await runtime.SendServerCommandAsync(MinecraftCommandBuilder.BanPlayer(playerName, reason), ct).ConfigureAwait(false))
-            {
-                await SayAsync(sender + ", the ban command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
-                return;
-            }
-            await ConfirmAsync(sender + ", banned " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
-        }
+        Task BanAsync(string[]? args, string sender, CancellationToken ct)
+            => ModerateAsync(args, sender, ban: true, ct);
+
         async Task CommandStatsAsync(string[]? _, string sender, CancellationToken ct)
         {
             StatisticsSnapshot stats = runtime.Statistics.GetSnapshot(ct);
@@ -83,32 +60,36 @@ public static partial class CommandList
             }
             await SuccessAsync(sender + ", active players (" + players.Count.ToString(CultureInfo.InvariantCulture) + "): " + string.Join(", ", players) + ".", ct).ConfigureAwait(false);
         }
-        async Task KickAsync(string[]? args, string sender, CancellationToken ct)
+        Task KickAsync(string[]? args, string sender, CancellationToken ct)
+            => ModerateAsync(args, sender, ban: false, ct);
+
+        async Task ModerateAsync(string[]? args, string sender, bool ban, CancellationToken ct)
         {
-            const string commandName = "kick";
+            string commandName = ban ? "ban" : "kick";
+            string past = ban ? "banned" : "kicked";
             if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
                 !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
-                await SayAsync(sender + ", please provide a valid Minecraft username to kick.", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", please provide a valid Minecraft username to " + commandName + ".", ct).ConfigureAwait(false);
                 return;
             }
             if (string.Equals(playerName, runtime.Commands.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
             {
-                await SayAsync(sender + ", the streamer account cannot be kicked.", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", the streamer account cannot be " + past + ".", ct).ConfigureAwait(false);
                 return;
             }
-            string reason = args is { Length: > 1 }
-                ? string.Join(" ", args, 1, args.Length - 1)
-                : string.Empty;
-            if (!await runtime.SendServerCommandAsync(MinecraftCommandBuilder.KickPlayer(playerName, reason), ct).ConfigureAwait(false))
+            string reason = args is { Length: > 1 } ? string.Join(" ", args, 1, args.Length - 1) : string.Empty;
+            string command = MinecraftCommandBuilder.ModeratePlayer(playerName, reason, ban);
+            if (!await runtime.SendServerCommandAsync(command, ct).ConfigureAwait(false))
             {
-                await SayAsync(sender + ", the kick command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", the " + commandName + " command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
                 return;
             }
-            await ConfirmAsync(sender + ", kicked " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
+            await ConfirmAsync(sender + ", " + past + " " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
         }
+
         async Task UnbanAsync(string[]? args, string sender, CancellationToken ct)
         {
             const string commandName = "unban";
@@ -151,9 +132,7 @@ public static partial class CommandList
                 return;
             }
 
-            string serverCommand = add
-                ? MinecraftCommandBuilder.WhitelistAdd(playerName)
-                : MinecraftCommandBuilder.WhitelistRemove(playerName);
+            string serverCommand = MinecraftCommandBuilder.Whitelist(playerName, add);
             if (!await runtime.SendServerCommandAsync(serverCommand, ct).ConfigureAwait(false))
             {
                 await SayAsync(sender + ", the whitelist command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
@@ -207,8 +186,8 @@ public static partial class CommandList
             }
             string channelTargetName = TargetName(target);
             int cost = runtime.Commands.ScaleCost(count, target.PlayerCount);
-            List<string> effectCommands = new(count);
-            List<string> effectNames = new(count);
+            string[] effectCommands = new string[count];
+            string[] effectNames = new string[count];
             for (int i = 0; i < count; i++)
             {
                 EffectDefinition effect = runtime.GetRandomEffect();
@@ -217,8 +196,8 @@ public static partial class CommandList
                 string level = EffectLevels[Math.Clamp(amplifier, 0, 4)];
                 string effectPretty = PrettyName(effect.ID) + " " + level +
                                       (seconds == 1 ? string.Empty : " for " + seconds.ToString(CultureInfo.InvariantCulture) + " seconds");
-                effectNames.Add(effectPretty);
-                effectCommands.Add(MinecraftCommandBuilder.ApplyEffect(target.Selector, effect.ID, seconds, amplifier));
+                effectNames[i] = effectPretty;
+                effectCommands[i] = MinecraftCommandBuilder.ApplyEffect(target.Selector, effect.ID, seconds, amplifier);
             }
             if (!await TrySendPricedAsync(sender, cost, () => effectCommands, ct).ConfigureAwait(false))
                 return;

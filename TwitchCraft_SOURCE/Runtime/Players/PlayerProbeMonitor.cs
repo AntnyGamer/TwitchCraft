@@ -8,14 +8,17 @@ namespace TwitchCraft_V1;
 public sealed partial class MainHandler
 {
     private static readonly TimeSpan SpectatorRefreshInterval = TimeSpan.FromSeconds(5);
-    private static readonly string[] SpectatorGameTypeProbeCommands = ["execute as @a run data get entity @s playerGameType"];
+    private const string SpectatorGameTypeProbeCommand = "execute as @a run data get entity @s playerGameType";
 
     private readonly Lock _spectatorProbeGate = new();
     private readonly Lock _selectedItemProbeGate = new();
+    private readonly Lock _maxHealthProbeGate = new();
     private readonly Lock _respawnPositionProbeGate = new();
     private readonly SemaphoreSlim _spectatorRefreshGate = new(1, 1);
     private readonly Dictionary<string, TaskCompletionSource<int?>> _pendingGameTypeRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<string?>> _pendingSelectedItemRequests = new(PlayerNameComparer);
+    private readonly Dictionary<string, TaskCompletionSource<double?>> _pendingMaxHealthRequests = new(PlayerNameComparer);
+    private readonly Dictionary<string, TaskCompletionSource<string?>> _pendingHeartAttributeRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<bool>> _pendingRespawnPositionRequests = new(PlayerNameComparer);
     private HashSet<string> _spectatorPlayers = new(PlayerNameComparer);
     private DateTime _lastSpectatorRefreshUtc = DateTime.MinValue;
@@ -34,25 +37,20 @@ public sealed partial class MainHandler
 
         TaskCompletionSource<TResult> waiter;
         bool createdWaiter = false;
-
         lock (gate)
-        {
             if (!pendingRequests.TryGetValue(playerName, out waiter!))
             {
-                waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                pendingRequests[playerName] = waiter;
+                pendingRequests[playerName] = waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 createdWaiter = true;
             }
-        }
 
         try
         {
             if (createdWaiter)
             {
-                void CompleteProbe() => CompletePlayer(playerName, gate, pendingRequests, waiter, default!);
+                void CompleteProbe() => CompleteRequest(playerName, gate, pendingRequests, waiter, default!);
                 _ = SendPlayerQueryAsync(sendProbe, CompleteProbe, _sessionCts?.Token ?? CancellationToken.None);
             }
-
             return await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -61,7 +59,7 @@ public sealed partial class MainHandler
         }
     }
 
-    internal static void CompletePlayer<TResult>(
+    internal static void CompleteRequest<TResult>(
         string playerName,
         Lock gate,
         Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
@@ -69,11 +67,8 @@ public sealed partial class MainHandler
         TResult result)
     {
         lock (gate)
-        {
             if (pendingRequests.TryGetValue(playerName, out TaskCompletionSource<TResult>? current) && ReferenceEquals(current, waiter))
                 pendingRequests.Remove(playerName);
-        }
-
         waiter.TrySetResult(result);
     }
 
@@ -99,16 +94,23 @@ public sealed partial class MainHandler
         return false;
     }
 
+    public Task<double?> QueryMaxHealthAsync(string playerName, CancellationToken cancellationToken)
+        => QueryPlayerAsync<double?>(playerName, _maxHealthProbeGate, _pendingMaxHealthRequests,
+            (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get", complete, ct), cancellationToken);
+
+    private Task<string?> QueryEntityDataAsync(
+        string playerName, string path, Lock gate,
+        Dictionary<string, TaskCompletionSource<string?>> pendingRequests,
+        CancellationToken cancellationToken)
+        => QueryPlayerAsync<string?>(playerName, gate, pendingRequests,
+            (complete, ct) => SendProbeAsync("data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path, complete, ct), cancellationToken);
+
+    public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
+        => QueryEntityDataAsync(playerName, UsesModernEntityAttributeNbt ? "attributes" : "Attributes",
+            _maxHealthProbeGate, _pendingHeartAttributeRequests, cancellationToken);
+
     public Task<string?> QueryItemAsync(string playerName, CancellationToken cancellationToken)
-    {
-        string selector = MinecraftCommandBuilder.SinglePlayerSelector(playerName);
-        return QueryPlayerAsync<string?>(
-            playerName,
-            _selectedItemProbeGate,
-            _pendingSelectedItemRequests,
-            (complete, ct) => SendProbeAsync("data get entity " + selector + " SelectedItem", complete, ct),
-            cancellationToken);
-    }
+        => QueryEntityDataAsync(playerName, "SelectedItem", _selectedItemProbeGate, _pendingSelectedItemRequests, cancellationToken);
 
     public async Task<Dictionary<string, string?>> QueryItemsAsync(List<string> players, CancellationToken cancellationToken)
     {
@@ -156,7 +158,7 @@ public sealed partial class MainHandler
                         foreach (string player in createdWaiterPlayers)
                         {
                             if (waiters.TryGetValue(player, out TaskCompletionSource<string?>? waiter))
-                                CompletePlayer(player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiter, null);
+                                CompleteRequest(player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiter, null);
                         }
                     },
                     _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -195,38 +197,36 @@ public sealed partial class MainHandler
             cancellationToken);
     }
 
-    private Dictionary<string, TaskCompletionSource<int?>> CreateGamemodeWaiters(List<string> players)
+    private TaskCompletionSource<int?>[] CreateGamemodeWaiters(List<string> players)
     {
-        Dictionary<string, TaskCompletionSource<int?>> waiters = new(players.Count, PlayerNameComparer);
+        TaskCompletionSource<int?>[] waiters = new TaskCompletionSource<int?>[players.Count];
         lock (_spectatorProbeGate)
         {
-            foreach (string player in players)
+            for (int i = 0; i < players.Count; i++)
             {
-                if (_pendingGameTypeRequests.TryGetValue(player, out TaskCompletionSource<int?>? waiter))
+                string player = players[i];
+                if (!_pendingGameTypeRequests.TryGetValue(player, out TaskCompletionSource<int?>? waiter))
                 {
-                    waiters[player] = waiter;
-                    continue;
+                    waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                    _pendingGameTypeRequests[player] = waiter;
                 }
-
-                waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                _pendingGameTypeRequests[player] = waiter;
-                waiters[player] = waiter;
+                waiters[i] = waiter;
             }
         }
 
         return waiters;
     }
 
-    private static Task WaitForGamemodesAsync(Dictionary<string, TaskCompletionSource<int?>> waiters, CancellationToken cancellationToken)
+    private static Task WaitForGamemodesAsync(TaskCompletionSource<int?>[] waiters, CancellationToken cancellationToken)
     {
-        if (waiters.Count == 0)
+        if (waiters.Length == 0)
             return Task.CompletedTask;
+        if (waiters.Length == 1)
+            return waiters[0].Task.WaitAsync(cancellationToken);
 
-        Task<int?>[] tasks = new Task<int?>[waiters.Count];
-        int index = 0;
-        foreach (TaskCompletionSource<int?> waiter in waiters.Values)
-            tasks[index++] = waiter.Task;
-
+        Task<int?>[] tasks = new Task<int?>[waiters.Length];
+        for (int i = 0; i < waiters.Length; i++)
+            tasks[i] = waiters[i].Task;
         return Task.WhenAll(tasks).WaitAsync(cancellationToken);
     }
 
@@ -246,7 +246,6 @@ public sealed partial class MainHandler
                     _lastSpectatorRefreshUtc = DateTime.UtcNow;
                     _spectatorSnapshotInitialized = true;
                 }
-
                 return;
             }
 
@@ -256,15 +255,14 @@ public sealed partial class MainHandler
                     return;
             }
 
-            Dictionary<string, TaskCompletionSource<int?>> waiters = CreateGamemodeWaiters(players);
+            TaskCompletionSource<int?>[] waiters = CreateGamemodeWaiters(players);
             bool refreshCompleted = false;
-            HashSet<string> nextSpectators;
             if (await SendPlayerQueryAsync(
-                (complete, ct) => SendProbesAsync(SpectatorGameTypeProbeCommands, complete, ct),
+                (complete, ct) => SendProbeAsync(SpectatorGameTypeProbeCommand, complete, ct),
                 () =>
                 {
-                    foreach (KeyValuePair<string, TaskCompletionSource<int?>> entry in waiters)
-                        CompletePlayer(entry.Key, _spectatorProbeGate, _pendingGameTypeRequests, entry.Value, default);
+                    for (int i = 0; i < waiters.Length; i++)
+                        CompleteRequest(players[i], _spectatorProbeGate, _pendingGameTypeRequests, waiters[i], default);
                 },
                 _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -273,9 +271,9 @@ public sealed partial class MainHandler
             }
 
             bool canReplaceSpectatorSnapshot = refreshCompleted;
-            foreach (KeyValuePair<string, TaskCompletionSource<int?>> entry in waiters)
+            for (int i = 0; i < waiters.Length; i++)
             {
-                Task<int?> task = entry.Value.Task;
+                Task<int?> task = waiters[i].Task;
                 if (!task.IsCompletedSuccessfully || !task.Result.HasValue)
                 {
                     canReplaceSpectatorSnapshot = false;
@@ -285,30 +283,31 @@ public sealed partial class MainHandler
 
             if (canReplaceSpectatorSnapshot)
             {
-                nextSpectators = new HashSet<string>(players.Count, PlayerNameComparer);
-            }
-            else
-            {
                 lock (_spectatorProbeGate)
                 {
-                    nextSpectators = new HashSet<string>(_spectatorPlayers, PlayerNameComparer);
+                    _spectatorPlayers.Clear();
+                    for (int i = 0; i < waiters.Length; i++)
+                        if (waiters[i].Task.Result == 3)
+                            _spectatorPlayers.Add(players[i]);
+                    _lastSpectatorRefreshUtc = DateTime.UtcNow;
+                    _spectatorSnapshotInitialized = true;
                 }
+                return;
             }
 
-            foreach (KeyValuePair<string, TaskCompletionSource<int?>> entry in waiters)
+            HashSet<string> nextSpectators;
+            lock (_spectatorProbeGate)
+                nextSpectators = new HashSet<string>(_spectatorPlayers, PlayerNameComparer);
+
+            for (int i = 0; i < waiters.Length; i++)
             {
-                Task<int?> task = entry.Value.Task;
-                if (!task.IsCompletedSuccessfully)
+                Task<int?> task = waiters[i].Task;
+                if (!task.IsCompletedSuccessfully || !task.Result.HasValue)
                     continue;
-
-                int? gameType = task.Result;
-                if (!gameType.HasValue)
-                    continue;
-
-                if (gameType.Value == 3)
-                    nextSpectators.Add(entry.Key);
-                else if (!canReplaceSpectatorSnapshot)
-                    nextSpectators.Remove(entry.Key);
+                if (task.Result.Value == 3)
+                    nextSpectators.Add(players[i]);
+                else
+                    nextSpectators.Remove(players[i]);
             }
 
             lock (_spectatorProbeGate)

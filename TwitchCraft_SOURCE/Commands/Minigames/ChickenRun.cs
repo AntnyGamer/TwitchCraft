@@ -27,7 +27,6 @@ public static partial class MinigameManager
                 state.BettingOpen = true;
                 state.MinSeconds = min;
                 state.MaxSeconds = min + span;
-                state.KillAtSeconds = 0;
                 state.Bets.Clear();
 
                 minSeconds = state.MinSeconds;
@@ -60,7 +59,6 @@ public static partial class MinigameManager
                 if (!hasBets)
                 {
                     state.BettingOpen = false;
-                    state.KillAtSeconds = 0;
                 }
             }
 
@@ -75,8 +73,7 @@ public static partial class MinigameManager
             {
                 state = GetChickenStateNoLock(runtime);
                 state.BettingOpen = false;
-                state.KillAtSeconds = CommandRandom.Next(state.MinSeconds, state.MaxSeconds + 1);
-                killAtSeconds = state.KillAtSeconds;
+                killAtSeconds = CommandRandom.Next(state.MinSeconds, state.MaxSeconds + 1);
             }
 
             await PlaySoundAsync(runtime, "minecraft:entity.chicken.ambient", cancellationToken).ConfigureAwait(false);
@@ -114,24 +111,7 @@ public static partial class MinigameManager
                     payouts.Add(new(bet.Viewer, payout)); //Chicken Run Win
             }
 
-            lock (state.SettlementGate)
-            {
-                lock (MinigameGate)
-                {
-                    if (state.Bets.Count == 0 ||
-                        !ActiveMinigames.TryGetValue(runtime, out ActiveMinigameState? activeState) ||
-                        !string.Equals(activeState.Kind, "ChickenRun", StringComparison.Ordinal) || activeState.RunID != runID)
-                        return;
-                    state.PendingSettlement = payouts;
-                }
-                if (!runtime.Tokens.Adjust(payouts))
-                    return;
-                lock (MinigameGate)
-                {
-                    state.Bets.Clear();
-                    state.PendingSettlement = null;
-                }
-            }
+            if (!SettleBets(runtime, state, "ChickenRun", runID, payouts)) return;
 
             await SafeReplyAsync(
                 runtime,
