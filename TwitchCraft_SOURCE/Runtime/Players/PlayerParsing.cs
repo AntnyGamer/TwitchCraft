@@ -213,8 +213,8 @@ public sealed partial class MainHandler
         List<string> ids = [];
         if (namespaced)
         {
-            foreach (Match match in ModernHeartModifierRegex().Matches(data))
-                ids.Add(match.Value);
+            foreach (ValueMatch match in ModernHeartModifierRegex().EnumerateMatches(data))
+                ids.Add(data.Substring(match.Index, match.Length));
             return ids;
         }
 
