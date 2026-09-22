@@ -34,7 +34,7 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Troubleshooting](docs/TROUBLESHOOTING.md)
 * [Architecture](docs/ARCHITECTURE.md)
 * [Contributing](CONTRIBUTING.md)
-* [Release process](docs/RELEASING.md)
+* [Releasing](docs/RELEASING.md)
 * [Changelog](CHANGELOG.md)
 * [Security policy](SECURITY.md)
 * [Privacy policy](docs/PRIVACY.md)
