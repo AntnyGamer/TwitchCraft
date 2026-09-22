@@ -12,6 +12,29 @@ Enabling multiplayer allows more Minecraft players and enables TwitchCraft's pla
 
 Prefer a private VPN or trusted tunnel when practical. If you expose the Minecraft game port directly, restrict access, keep Windows and Java updated, use online mode where appropriate, and share the address only with people you trust.
 
+
+## Advanced Bind IP
+
+The **Server Bind IP** in Setup controls which local address or network interface the managed Minecraft server listens on. Leave it at the default unless you intentionally need a specific interface.
+
+TwitchCraft defaults to `127.0.0.1`. When local multiplayer is enabled, TwitchCraft automatically broadens the default loopback bind to `0.0.0.0` for that session so the server can accept IPv4 connections on the computer's available interfaces. The IPv6 loopback address `::1` is similarly broadened to `::`. A deliberately configured non-loopback Bind IP is preserved instead.
+
+Use a custom Bind IP only when you need to bind Minecraft to a particular address, such as a VPN or virtual-network adapter, a specific LAN interface, or IPv6. The value must be an IP address assigned to the computer running TwitchCraft; it is not the address that every player should necessarily type into Minecraft.
+
+If you are using a VPN or virtual network:
+
+1. Connect the host computer to the VPN or virtual network before starting TwitchCraft.
+2. Use the IP address assigned to that adapter as the Bind IP.
+3. Make sure the other players can reach the host through the same VPN or tunnel.
+4. Allow Java/Minecraft through Windows Firewall for the network profile used by that adapter.
+5. Follow that VPN or tunnel's connection instructions instead of assuming normal router port forwarding applies.
+
+TwitchCraft shows the **Advanced Bind IP** warning for addresses that need extra care, including IPv6 and address ranges commonly used by VPN, virtual-network, or carrier-grade NAT setups. If you entered the address intentionally, choose **No** on the reset prompt and continue with the appropriate network setup. If you did not intend to change the Bind IP, choose **Yes** to restore the default.
+
+For normal home multiplayer with router port forwarding, you generally do not need to enter your public IP as the Bind IP. Keep the default Bind IP and let TwitchCraft expose the local server when multiplayer is enabled. The router forwards the Minecraft port to the host computer's LAN address.
+
+If a custom Bind IP stops working, run `ipconfig` and confirm that the address still belongs to an active adapter on the TwitchCraft computer. VPN, virtual-network, DHCP, and IPv6 addresses can change between sessions.
+
 ## Router and firewall setup
 
 For direct home-network hosting, the usual game port is TCP `25565`:
