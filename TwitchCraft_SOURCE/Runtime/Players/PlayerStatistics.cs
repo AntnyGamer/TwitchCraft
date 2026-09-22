@@ -12,7 +12,7 @@ public sealed partial class MainHandler
         if (!Statistics.Enabled)
             return;
 
-        string playerName = _currentStreamerMinecraftName;
+        string playerName = _streamerMinecraftName;
         if (playerName.Length == 0)
             return;
 
@@ -30,7 +30,7 @@ public sealed partial class MainHandler
         if (!Statistics.Enabled ||
             !Statistics.ShouldTrackPlayer(playerName) ||
             !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
-            Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 1) != 0)
+            Interlocked.Exchange(ref _gamemodeRefreshQueued, 1) != 0)
         {
             return;
         }
@@ -42,11 +42,11 @@ public sealed partial class MainHandler
                 _ = await QueryPlayerAsync<int?>(
                     playerName,
                     _spectatorProbeGate,
-                    _pendingGameTypeRequests,
+                    _pendingGamemodeRequests,
                     (complete, ct) => SendProbeAsync($"data get entity {playerName} playerGameType", complete, ct),
                     t).ConfigureAwait(false);
             },
-            () => Interlocked.Exchange(ref _trackedPlayerGamemodeRefreshQueued, 0),
+            () => Interlocked.Exchange(ref _gamemodeRefreshQueued, 0),
             "Tracked player gamemode refresh failed",
             token: token);
     }
@@ -55,7 +55,7 @@ public sealed partial class MainHandler
     {
         if (!Statistics.NeedsRespawnRefresh(playerName) ||
             !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token) ||
-            Interlocked.Exchange(ref _trackedPlayerRespawnPositionRefreshQueued, 1) != 0)
+            Interlocked.Exchange(ref _respawnRefreshQueued, 1) != 0)
         {
             return;
         }
@@ -67,7 +67,7 @@ public sealed partial class MainHandler
                 if (await QueryRespawnAsync(playerName, t).ConfigureAwait(false))
                     Statistics.RecordRespawn(playerName);
             },
-            () => Interlocked.Exchange(ref _trackedPlayerRespawnPositionRefreshQueued, 0),
+            () => Interlocked.Exchange(ref _respawnRefreshQueued, 0),
             "Tracked player respawn position refresh failed",
             token: token);
     }
@@ -128,7 +128,7 @@ public sealed partial class MainHandler
         if (!Statistics.Enabled)
             return;
 
-        string playerName = _currentStreamerMinecraftName;
+        string playerName = _streamerMinecraftName;
         if (playerName.Length == 0)
             return;
 
@@ -151,7 +151,7 @@ public sealed partial class MainHandler
             return;
         }
 
-        if (Interlocked.Exchange(ref _trackedPlayerDeathScoreRefreshQueued, 1) != 0)
+        if (Interlocked.Exchange(ref _deathScoreRefreshQueued, 1) != 0)
             return;
 
         RunSessionWork(
@@ -184,7 +184,7 @@ public sealed partial class MainHandler
                     }
                 }
             },
-            () => Interlocked.Exchange(ref _trackedPlayerDeathScoreRefreshQueued, 0),
+            () => Interlocked.Exchange(ref _deathScoreRefreshQueued, 0),
             "Tracked player death score refresh failed",
             token: token);
     }

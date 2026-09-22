@@ -18,7 +18,7 @@ public sealed class EconomyPersistenceTests
     {
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
-        TokenHandler store = new(databasePath);
+        TokenStore store = new(databasePath);
 
         try
         {
@@ -61,7 +61,7 @@ public sealed class EconomyPersistenceTests
             store.CloseConnection();
         }
 
-        TokenHandler reader = new(databasePath);
+        TokenStore reader = new(databasePath);
         try
         {
             Assert.Equal(2, reader.GetBalance("viewer"));
@@ -77,7 +77,7 @@ public sealed class EconomyPersistenceTests
     public void FollowReward_IsPaidOnlyOncePerTwitchAccount()
     {
         using TemporaryDirectory directory = new();
-        TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
@@ -105,7 +105,7 @@ public sealed class EconomyPersistenceTests
         DateTimeOffset followedAt = new(2026, 8, 27, 1, 2, 3, TimeSpan.Zero);
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
-        TokenHandler writer = new(databasePath);
+        TokenStore writer = new(databasePath);
 
         try
         {
@@ -135,7 +135,7 @@ public sealed class EconomyPersistenceTests
             writer.CloseConnection();
         }
 
-        TokenHandler reader = new(databasePath);
+        TokenStore reader = new(databasePath);
         try
         {
             Assert.Equal(
@@ -154,7 +154,7 @@ public sealed class EconomyPersistenceTests
     {
         DateTimeOffset followedAt = new(2026, 8, 27, 1, 2, 3, TimeSpan.Zero);
         using TemporaryDirectory directory = new();
-        TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
@@ -175,7 +175,7 @@ public sealed class EconomyPersistenceTests
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
         string backupPath = Path.Combine(directory.Path, "backup", "viewer_tokens.db");
-        TokenHandler store = new(databasePath);
+        TokenStore store = new(databasePath);
 
         try
         {
@@ -188,7 +188,7 @@ public sealed class EconomyPersistenceTests
             store.CloseConnection();
         }
 
-        TokenHandler backup = new(backupPath);
+        TokenStore backup = new(backupPath);
         try
         {
             Assert.Equal(42, backup.GetBalance("alice"));
@@ -205,7 +205,7 @@ public sealed class EconomyPersistenceTests
     {
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
-        TokenHandler store = new(databasePath);
+        TokenStore store = new(databasePath);
 
         try
         {

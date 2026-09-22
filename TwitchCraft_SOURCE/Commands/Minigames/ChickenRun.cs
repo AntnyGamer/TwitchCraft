@@ -10,7 +10,7 @@ public static partial class MinigameManager
 {
     private static async Task RunChickenAsync(MainHandler runtime, CancellationToken cancellationToken)
     {
-        if (!TryStartMinigame(runtime, "ChickenRun", out long runID))
+        if (!TryStart(runtime, "ChickenRun", out long runID))
             return;
 
         try
@@ -41,13 +41,13 @@ public static partial class MinigameManager
                 minSeconds.ToString(CultureInfo.InvariantCulture) + "-" +
                 maxSeconds.ToString(CultureInfo.InvariantCulture) +
                 " seconds for how long the chicken survives! Max " +
-                MaxMinigameBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
+                MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
                 " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
                 cancellationToken).ConfigureAwait(false);
 
             await Task.Delay(ChickenRunBettingDelay, cancellationToken).ConfigureAwait(false);
 
-            if (!IsMinigameActive(runtime, "ChickenRun", runID))
+            if (!IsActive(runtime, "ChickenRun", runID))
                 return;
 
             bool hasBets;
@@ -80,7 +80,7 @@ public static partial class MinigameManager
             await SafeReplyAsync(runtime, "Chicken Run has started! The chicken is now running...", cancellationToken).ConfigureAwait(false);
             await Task.Delay(TimeSpan.FromSeconds(killAtSeconds), cancellationToken).ConfigureAwait(false);
 
-            if (!IsMinigameActive(runtime, "ChickenRun", runID))
+            if (!IsActive(runtime, "ChickenRun", runID))
                 return;
 
             List<ChickenRunBet> bets;
@@ -122,14 +122,14 @@ public static partial class MinigameManager
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            if (IsMinigameActive(runtime, "ChickenRun", runID))
+            if (IsActive(runtime, "ChickenRun", runID))
                 RefundChickenBets(runtime);
 
             throw;
         }
         finally
         {
-            EndMinigame(runtime, "ChickenRun", runID);
+            End(runtime, "ChickenRun", runID);
         }
     }
 }

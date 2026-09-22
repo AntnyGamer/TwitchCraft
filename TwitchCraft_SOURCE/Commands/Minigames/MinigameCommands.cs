@@ -10,7 +10,7 @@ public static partial class MinigameManager
 {
     // ===== Chat command registration =====
 
-    public static void AddMinigameHandlers(
+    public static void AddHandlers(
         MainHandler runtime,
         Dictionary<string, ChatCommandHandler> handlers,
         Func<string, CancellationToken, Task> sayToChannel,
@@ -37,7 +37,7 @@ public static partial class MinigameManager
                 return;
             }
 
-            if (tokenAmount > MaxMinigameBetPerPlayer)
+            if (tokenAmount > MaxBetPerPlayer)
             {
                 await sayToChannel(sender + ", " + MaxBetMessage("Chicken Run"), ct).ConfigureAwait(false);
                 return;
@@ -46,20 +46,20 @@ public static partial class MinigameManager
             int minSeconds = 0, maxSeconds = 0, finalTokenAmount = tokenAmount, finalBetSeconds = betSeconds;
             bool addedToExistingBet = false;
 
-            MinigameBetUpdateResult updateResult;
+            BetUpdateResult updateResult;
             lock (MinigameGate)
             {
                 ChickenRunState state = GetChickenStateNoLock(runtime);
                 minSeconds = state.MinSeconds;
                 maxSeconds = state.MaxSeconds;
-                if (!state.BettingOpen) updateResult = MinigameBetUpdateResult.Closed;
-                else if (betSeconds < minSeconds || betSeconds > maxSeconds) updateResult = MinigameBetUpdateResult.OutOfRange;
+                if (!state.BettingOpen) updateResult = BetUpdateResult.Closed;
+                else if (betSeconds < minSeconds || betSeconds > maxSeconds) updateResult = BetUpdateResult.OutOfRange;
                 else
                 {
                     ChickenRunBet? existing = FindBet(state.Bets, sender);
                     int updatedTokenAmount = (existing?.TokenAmount ?? 0) + tokenAmount;
-                    if (updatedTokenAmount > MaxMinigameBetPerPlayer) updateResult = MinigameBetUpdateResult.OverMax;
-                    else if (!runtime.Tokens.TrySpend(sender, tokenAmount)) updateResult = MinigameBetUpdateResult.NotEnoughTokens;
+                    if (updatedTokenAmount > MaxBetPerPlayer) updateResult = BetUpdateResult.OverMax;
+                    else if (!runtime.Tokens.TrySpend(sender, tokenAmount)) updateResult = BetUpdateResult.NotEnoughTokens;
                     else
                     {
                         if (existing == null)
@@ -71,12 +71,12 @@ public static partial class MinigameManager
                             finalBetSeconds = existing.BetSeconds;
                             addedToExistingBet = true;
                         }
-                        updateResult = MinigameBetUpdateResult.Updated;
+                        updateResult = BetUpdateResult.Updated;
                     }
                 }
             }
 
-            if (updateResult == MinigameBetUpdateResult.OutOfRange)
+            if (updateResult == BetUpdateResult.OutOfRange)
             {
                 await sayToChannel(sender + ", your bet must be between " + minSeconds.ToString(CultureInfo.InvariantCulture) + " and " + maxSeconds.ToString(CultureInfo.InvariantCulture) + " seconds.", ct).ConfigureAwait(false);
                 return;
@@ -183,7 +183,7 @@ public static partial class MinigameManager
                 return;
             }
 
-            if (tokenAmount > MaxMinigameBetPerPlayer)
+            if (tokenAmount > MaxBetPerPlayer)
             {
                 await sayToChannel(sender + ", " + MaxBetMessage("Wither Battle"), ct).ConfigureAwait(false);
                 return;
@@ -192,17 +192,17 @@ public static partial class MinigameManager
             int finalTokenAmount = tokenAmount, remainingHealth = 0;
             bool addedToExistingBet = false;
 
-            MinigameBetUpdateResult updateResult;
+            BetUpdateResult updateResult;
             lock (MinigameGate)
             {
                 WitherBattleState state = GetWitherStateNoLock(runtime);
-                if (!IsWitherBettingOpenNoLock(runtime, state)) updateResult = MinigameBetUpdateResult.Closed;
+                if (!IsWitherBettingOpenNoLock(runtime, state)) updateResult = BetUpdateResult.Closed;
                 else
                 {
                     WitherBattleBet? existing = FindBet(state.Bets, sender);
                     int updatedTokenAmount = (existing?.TokenAmount ?? 0) + tokenAmount;
-                    if (updatedTokenAmount > MaxMinigameBetPerPlayer) updateResult = MinigameBetUpdateResult.OverMax;
-                    else if (!runtime.Tokens.TrySpend(sender, tokenAmount)) updateResult = MinigameBetUpdateResult.NotEnoughTokens;
+                    if (updatedTokenAmount > MaxBetPerPlayer) updateResult = BetUpdateResult.OverMax;
+                    else if (!runtime.Tokens.TrySpend(sender, tokenAmount)) updateResult = BetUpdateResult.NotEnoughTokens;
                     else
                     {
                         if (existing == null)
@@ -221,7 +221,7 @@ public static partial class MinigameManager
                             state.BettingOpen = false;
                             state.DefeatedSignal?.TrySetResult();
                         }
-                        updateResult = MinigameBetUpdateResult.Updated;
+                        updateResult = BetUpdateResult.Updated;
                     }
                 }
             }

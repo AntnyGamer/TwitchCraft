@@ -48,7 +48,7 @@ MainHandler (application coordinator)
 * `TwitchSession` owns the live IRC socket/writer, Twitch write/rate-limit and identity/token-refresh synchronization, IRC work queues, message de-duplication, send-rate/channel state, and follow-reward task lifetime.
 * `MinecraftSession` owns the local Java process, serialized Minecraft writes, server readiness, RCON-health state, expected-exit state, staged local RCON state, and process cleanup.
 * `CommandService` owns command execution context, rate limits and cooldowns, command cost scaling, moderator authorization, and player-target resolution.
-* `TokenService` owns the `TokenHandler` database and all balance/reward operations.
+* `TokenService` owns the `TokenStore` database and all balance/reward operations.
 * `StatisticsService` owns statistics locks, session/lifetime state, persistence deltas, death tracking, and snapshot caches.
 * `DataMaintenance` owns backup schedules, retention, SQLite optimization, and periodic Twitch-token validation.
 * `BackgroundTaskTracker` owns tracked task state and observes task faults.

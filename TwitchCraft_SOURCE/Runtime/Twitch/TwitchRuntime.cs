@@ -133,7 +133,7 @@ public sealed partial class MainHandler
             return;
         }
 
-        string channelLogin = _currentStreamerName;
+        string channelLogin = _streamerName;
         int reconnectDelayMs = 1000;
 
         while (!cancellationToken.IsCancellationRequested)

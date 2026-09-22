@@ -6,7 +6,7 @@ namespace TwitchCraft_V1;
 /// Owns viewer balances, follower rewards, and token-database maintenance.
 public sealed class TokenService
 {
-    private readonly TokenHandler _store;
+    private readonly TokenStore _store;
     private readonly Func<int> _maximumBalance;
 
     internal TokenService(string storePath, Func<int> maximumBalance)
@@ -14,7 +14,7 @@ public sealed class TokenService
         ArgumentException.ThrowIfNullOrWhiteSpace(storePath);
         ArgumentNullException.ThrowIfNull(maximumBalance);
 
-        _store = new TokenHandler(storePath);
+        _store = new TokenStore(storePath);
         _maximumBalance = maximumBalance;
     }
 
@@ -27,7 +27,7 @@ public sealed class TokenService
 
     internal bool TryGetRank(string user, out TokenRankResult? result) => _store.TryGetRank(user, out result);
 
-    internal ConditionalTokenAdjustmentStatus TryGamble(string user, int stake, int delta, out int balance, out int appliedDelta)
+    internal TokenAdjustmentStatus TryGamble(string user, int stake, int delta, out int balance, out int appliedDelta)
         => _store.TryAdjustIfAtLeast(user, stake, delta, MaximumBalance, out balance, out appliedDelta);
 
     public bool TrySpend(string user, int amount)

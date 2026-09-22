@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace TwitchCraft_V1;
 
-internal static class MinecraftItemEnchantHelper
+internal static class Enchantments
 {
     private readonly record struct EnchantOption(string ID, int MaxLevel);
 
@@ -57,7 +57,7 @@ internal static class MinecraftItemEnchantHelper
         new("wind_burst", 3)
     ];
 
-    internal static void PickEnchant(
+    internal static void Pick(
         Random random,
         bool supportsMaceEnchantments,
         out string enchantID,
@@ -77,6 +77,6 @@ internal static class MinecraftItemEnchantHelper
         level = random.Next(1, selected.MaxLevel + 1);
     }
 
-    internal static string BuildEnchant(string selector, string enchantID, int level)
+    internal static string BuildCommand(string selector, string enchantID, int level)
         => "enchant " + selector + " minecraft:" + enchantID + " " + Math.Max(1, level).ToString(CultureInfo.InvariantCulture);
 }

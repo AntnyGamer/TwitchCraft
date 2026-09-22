@@ -58,8 +58,8 @@ public sealed partial class MainHandler
 
     private bool HasRespawnRequest(string playerName)
     {
-        lock (_respawnPositionProbeGate)
-            return _pendingRespawnPositionRequests.ContainsKey(playerName);
+        lock (_respawnProbeGate)
+            return _pendingRespawnRequests.ContainsKey(playerName);
     }
 
     internal static bool TryParseGamemode(string line, out string playerName, out int gameType)
@@ -144,7 +144,7 @@ public sealed partial class MainHandler
             else
                 _spectatorPlayers.Remove(playerName);
 
-            _pendingGameTypeRequests.Remove(playerName, out TaskCompletionSource<int?>? waiter);
+            _pendingGamemodeRequests.Remove(playerName, out TaskCompletionSource<int?>? waiter);
             waiter?.TrySetResult(gameType);
         }
 
@@ -153,9 +153,9 @@ public sealed partial class MainHandler
 
     private void HandleRespawn(string playerName)
     {
-        lock (_respawnPositionProbeGate)
+        lock (_respawnProbeGate)
         {
-            _pendingRespawnPositionRequests.Remove(playerName, out TaskCompletionSource<bool>? waiter);
+            _pendingRespawnRequests.Remove(playerName, out TaskCompletionSource<bool>? waiter);
             waiter?.TrySetResult(true);
         }
     }

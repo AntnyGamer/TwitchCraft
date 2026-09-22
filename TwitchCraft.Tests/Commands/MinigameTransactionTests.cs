@@ -23,11 +23,11 @@ public sealed class MinigameTransactionTests
             return Task.CompletedTask;
         };
 
-        foreach (MinigameManager.MinigameBetUpdateResult result in new[]
+        foreach (MinigameManager.BetUpdateResult result in new[]
         {
-            MinigameManager.MinigameBetUpdateResult.NotEnoughTokens,
-            MinigameManager.MinigameBetUpdateResult.OverMax,
-            MinigameManager.MinigameBetUpdateResult.Closed
+            MinigameManager.BetUpdateResult.NotEnoughTokens,
+            MinigameManager.BetUpdateResult.OverMax,
+            MinigameManager.BetUpdateResult.Closed
         })
             Assert.True(await MinigameManager.ReplyBetErrorAsync(
                 result, "viewer", "chicken run", "betting is closed.", capture, CancellationToken.None), result.ToString());
@@ -47,7 +47,7 @@ public sealed class MinigameTransactionTests
         bool sent = false;
 
         bool handled = await MinigameManager.ReplyBetErrorAsync(
-            MinigameManager.MinigameBetUpdateResult.Updated,
+            MinigameManager.BetUpdateResult.Updated,
             "viewer",
             "chicken run",
             "betting is closed.",
@@ -69,7 +69,7 @@ public sealed class MinigameTransactionTests
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
         MainHandler runtime = new(new AppShellViewModel(), databasePath);
         Dictionary<string, ChatCommandHandler> handlers = new(StringComparer.OrdinalIgnoreCase);
-        MinigameManager.AddMinigameHandlers(
+        MinigameManager.AddHandlers(
             runtime,
             handlers,
             static (_, _) => Task.CompletedTask,
@@ -133,7 +133,7 @@ public sealed class MinigameTransactionTests
             arguments.Add(secondArgument);
 
         runtime.Tokens.Award("viewer", 500);
-        MinigameManager.AddMinigameHandlers(
+        MinigameManager.AddHandlers(
             runtime,
             handlers,
             (message, _) =>

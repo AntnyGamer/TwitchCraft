@@ -8,18 +8,18 @@ namespace TwitchCraft_V1;
 public sealed partial class MainHandler
 {
     private static readonly TimeSpan SpectatorRefreshInterval = TimeSpan.FromSeconds(5);
-    private const string SpectatorGameTypeProbeCommand = "execute as @a run data get entity @s playerGameType";
+    private const string SpectatorGamemodeProbeCommand = "execute as @a run data get entity @s playerGameType";
 
     private readonly Lock _spectatorProbeGate = new();
     private readonly Lock _selectedItemProbeGate = new();
     private readonly Lock _maxHealthProbeGate = new();
-    private readonly Lock _respawnPositionProbeGate = new();
+    private readonly Lock _respawnProbeGate = new();
     private readonly SemaphoreSlim _spectatorRefreshGate = new(1, 1);
-    private readonly Dictionary<string, TaskCompletionSource<int?>> _pendingGameTypeRequests = new(PlayerNameComparer);
+    private readonly Dictionary<string, TaskCompletionSource<int?>> _pendingGamemodeRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<string?>> _pendingSelectedItemRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<double?>> _pendingMaxHealthRequests = new(PlayerNameComparer);
     private readonly Dictionary<string, TaskCompletionSource<string?>> _pendingHeartAttributeRequests = new(PlayerNameComparer);
-    private readonly Dictionary<string, TaskCompletionSource<bool>> _pendingRespawnPositionRequests = new(PlayerNameComparer);
+    private readonly Dictionary<string, TaskCompletionSource<bool>> _pendingRespawnRequests = new(PlayerNameComparer);
     private HashSet<string> _spectatorPlayers = new(PlayerNameComparer);
     private DateTime _lastSpectatorRefreshUtc = DateTime.MinValue;
     private bool _spectatorSnapshotInitialized;
@@ -191,8 +191,8 @@ public sealed partial class MainHandler
         string selector = "@a[name=\"" + MinecraftCommandBuilder.EscapeSelector(playerName) + "\",limit=1,gamemode=!spectator,nbt={DeathTime:0s}]";
         return QueryPlayerAsync(
             playerName,
-            _respawnPositionProbeGate,
-            _pendingRespawnPositionRequests,
+            _respawnProbeGate,
+            _pendingRespawnRequests,
             (complete, ct) => SendProbeAsync("data get entity " + selector + " Pos", complete, ct),
             cancellationToken);
     }
@@ -205,10 +205,10 @@ public sealed partial class MainHandler
             for (int i = 0; i < players.Count; i++)
             {
                 string player = players[i];
-                if (!_pendingGameTypeRequests.TryGetValue(player, out TaskCompletionSource<int?>? waiter))
+                if (!_pendingGamemodeRequests.TryGetValue(player, out TaskCompletionSource<int?>? waiter))
                 {
                     waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                    _pendingGameTypeRequests[player] = waiter;
+                    _pendingGamemodeRequests[player] = waiter;
                 }
                 waiters[i] = waiter;
             }
@@ -258,11 +258,11 @@ public sealed partial class MainHandler
             TaskCompletionSource<int?>[] waiters = CreateGamemodeWaiters(players);
             bool refreshCompleted = false;
             if (await SendPlayerQueryAsync(
-                (complete, ct) => SendProbeAsync(SpectatorGameTypeProbeCommand, complete, ct),
+                (complete, ct) => SendProbeAsync(SpectatorGamemodeProbeCommand, complete, ct),
                 () =>
                 {
                     for (int i = 0; i < waiters.Length; i++)
-                        CompleteRequest(players[i], _spectatorProbeGate, _pendingGameTypeRequests, waiters[i], default);
+                        CompleteRequest(players[i], _spectatorProbeGate, _pendingGamemodeRequests, waiters[i], default);
                 },
                 _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false))
             {

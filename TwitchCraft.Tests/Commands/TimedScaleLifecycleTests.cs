@@ -11,7 +11,7 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class TimedScaleLifecycleTests
 {
     [Fact]
-    public async Task ApplyAsync_SendsVersionCorrectScaleAndRestoresNormalSizeAfterDelay()
+    public async Task ApplyAsync_SendsVersionCorrectScaleAndRestoresAfterDelay()
     {
         List<string> sentCommands = [];
         List<string> initialCommands = [];

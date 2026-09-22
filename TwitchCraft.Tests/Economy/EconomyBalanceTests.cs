@@ -16,7 +16,7 @@ public sealed class EconomyBalanceTests
     public void AdjustBalances_HandlesSingleAndDuplicateNormalizedUsers()
     {
         using TemporaryDirectory directory = new();
-        TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
@@ -39,7 +39,7 @@ public sealed class EconomyBalanceTests
     {
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
-        TokenHandler store = new(databasePath);
+        TokenStore store = new(databasePath);
         List<string> liveRoster = Enumerable.Range(0, 600)
             .Select(index => $"viewer_{index:D4}")
             .ToList();
@@ -59,7 +59,7 @@ public sealed class EconomyBalanceTests
             store.CloseConnection();
         }
 
-        TokenHandler reopened = new(databasePath);
+        TokenStore reopened = new(databasePath);
         try
         {
             Assert.All(liveRoster, viewer => Assert.Equal(
@@ -75,7 +75,7 @@ public sealed class EconomyBalanceTests
     public void PositiveAwards_RespectMaximumBalanceWithoutBreakingSpending()
     {
         using TemporaryDirectory directory = new();
-        TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
@@ -97,7 +97,7 @@ public sealed class EconomyBalanceTests
     public void FollowReward_ReportsActualAwardWhenMaximumBalanceIsReached()
     {
         using TemporaryDirectory directory = new();
-        TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
@@ -124,7 +124,7 @@ public sealed class EconomyBalanceTests
     public void GetTopBalances_SortsByBalanceThenUsernameAndHonorsLimit()
     {
         using TemporaryDirectory directory = new();
-        TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
@@ -148,7 +148,7 @@ public sealed class EconomyBalanceTests
     public void GetRank_ReturnsExactLeaderboardPositionAndBalance()
     {
         using TemporaryDirectory directory = new();
-        TokenHandler store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
@@ -173,7 +173,7 @@ public sealed class EconomyBalanceTests
     {
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
-        TokenHandler store = new(databasePath);
+        TokenStore store = new(databasePath);
 
         try
         {
@@ -197,7 +197,7 @@ public sealed class EconomyBalanceTests
             Assert.Equal(0L, (long)command.ExecuteScalar()!);
         }
 
-        TokenHandler reader = new(databasePath);
+        TokenStore reader = new(databasePath);
         try
         {
             Assert.Equal(0, reader.GetBalance("viewer"));

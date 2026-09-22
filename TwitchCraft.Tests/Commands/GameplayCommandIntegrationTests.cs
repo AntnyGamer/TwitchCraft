@@ -7,7 +7,7 @@ using Xunit;
 
 namespace TwitchCraft.Tests.Commands;
 
-public sealed class GameplayBehaviorIntegrationTests
+public sealed class GameplayCommandIntegrationTests
 {
     [Fact]
     public async Task Effect_DeliversValidEffectsAndRejectsInvalidCountsWithoutExtraCharge()

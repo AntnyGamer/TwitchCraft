@@ -85,11 +85,11 @@ public sealed partial class MainHandler
     private TaskCompletionSource<bool>? _onlinePlayerSnapshotRequest;
     private DateTime _lastPlayerSidebarRefreshErrorUtc = DateTime.MinValue;
     private int _playerSidebarRefreshQueued;
-    private int _trackedPlayerGamemodeRefreshQueued;
-    private int _trackedPlayerRespawnPositionRefreshQueued;
+    private int _gamemodeRefreshQueued;
+    private int _respawnRefreshQueued;
     private int _deathScoreObjectiveQueued;
     private int _deathScoreObjectiveReady;
-    private int _trackedPlayerDeathScoreRefreshQueued;
+    private int _deathScoreRefreshQueued;
     private string? _deathScoreInitializedPlayerName;
 
     private bool TryGetSessionToken(bool requireMultiplayer, out CancellationToken token)

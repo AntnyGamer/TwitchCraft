@@ -8,7 +8,7 @@ using System.Text;
 
 namespace TwitchCraft_V1;
 
-internal sealed partial class TokenHandler
+internal sealed partial class TokenStore
 {
     public IReadOnlyList<KeyValuePair<string, int>> GetTopBalances(int limit)
     {

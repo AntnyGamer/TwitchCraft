@@ -11,10 +11,10 @@ public static partial class MinigameManager
         if (runtime == null || !runtime.MinigamesEnabled)
             return;
 
-        MinigameLoopState loop;
+        LoopState loop;
         lock (MinigameGate)
         {
-            if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? existing)
+            if (MinigameLoops.TryGetValue(runtime, out LoopState? existing)
                 && !existing.Cts.IsCancellationRequested
                 && existing.Task is not { IsCompleted: true })
                 return;
@@ -28,12 +28,12 @@ public static partial class MinigameManager
         Task loopTask = Task.Run(() => RunLoopAsync(loop.Runtime, loop, loop.Cts.Token), CancellationToken.None);
         lock (MinigameGate)
         {
-            if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop))
+            if (MinigameLoops.TryGetValue(runtime, out LoopState? current) && ReferenceEquals(current, loop))
                 loop.Task = loopTask;
         }
 
         _ = loopTask.ContinueWith(
-            static (_, state) => CleanupLoop((MinigameLoopState)state!),
+            static (_, state) => CleanupLoop((LoopState)state!),
             loop,
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
@@ -75,16 +75,16 @@ public static partial class MinigameManager
 
     private static Task? StopLoopsCore(MainHandler runtime, bool preserveSchedule)
     {
-        MinigameLoopState? loop;
+        LoopState? loop;
 
         lock (MinigameGate)
         {
             MinigameLoops.Remove(runtime, out loop);
             if (loop != null && preserveSchedule)
-                (PreservedNextMinigameAtUtc ??= [])[runtime] = loop.NextAtUtc;
+                (PreservedNextAtUtc ??= [])[runtime] = loop.NextAtUtc;
             else if (!preserveSchedule)
             {
-                PreservedNextMinigameAtUtc?.Remove(runtime);
+                PreservedNextAtUtc?.Remove(runtime);
                 ClearScheduleNoLock();
             }
 
@@ -110,11 +110,11 @@ public static partial class MinigameManager
         return loop?.Task;
     }
 
-    private static void CleanupLoop(MinigameLoopState loop)
+    private static void CleanupLoop(LoopState loop)
     {
         lock (MinigameGate)
         {
-            if (MinigameLoops.TryGetValue(loop.Runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop))
+            if (MinigameLoops.TryGetValue(loop.Runtime, out LoopState? current) && ReferenceEquals(current, loop))
                 MinigameLoops.Remove(loop.Runtime);
         }
 
@@ -132,15 +132,15 @@ public static partial class MinigameManager
         }
     }
 
-    private static bool IsCurrentLoop(MainHandler runtime, MinigameLoopState loop)
+    private static bool IsCurrentLoop(MainHandler runtime, LoopState loop)
     {
         lock (MinigameGate)
         {
-            return MinigameLoops.TryGetValue(runtime, out MinigameLoopState? current) && ReferenceEquals(current, loop);
+            return MinigameLoops.TryGetValue(runtime, out LoopState? current) && ReferenceEquals(current, loop);
         }
     }
 
-    private static async Task RunLoopAsync(MainHandler runtime, MinigameLoopState loop, CancellationToken cancellationToken)
+    private static async Task RunLoopAsync(MainHandler runtime, LoopState loop, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -150,7 +150,7 @@ public static partial class MinigameManager
                 DateTime nextAtUtc;
                 lock (MinigameGate)
                 {
-                    if (!MinigameLoops.TryGetValue(runtime, out MinigameLoopState? current) || !ReferenceEquals(current, loop))
+                    if (!MinigameLoops.TryGetValue(runtime, out LoopState? current) || !ReferenceEquals(current, loop))
                         break;
                     nextAtUtc = loop.NextAtUtc;
                 }
@@ -200,7 +200,7 @@ public static partial class MinigameManager
 
                 try
                 {
-                    await Task.Delay(OneSecondMinigameDelay, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(OneSecondDelay, cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -212,7 +212,7 @@ public static partial class MinigameManager
 
     private static DateTime TakeNextTimeNoLock(MainHandler runtime)
     {
-        if (PreservedNextMinigameAtUtc?.Remove(runtime, out DateTime nextAtUtc) == true)
+        if (PreservedNextAtUtc?.Remove(runtime, out DateTime nextAtUtc) == true)
         {
             ClearScheduleNoLock();
             return nextAtUtc;
@@ -223,25 +223,25 @@ public static partial class MinigameManager
 
     private static void ClearScheduleNoLock()
     {
-        if (PreservedNextMinigameAtUtc?.Count == 0)
-            PreservedNextMinigameAtUtc = null;
+        if (PreservedNextAtUtc?.Count == 0)
+            PreservedNextAtUtc = null;
     }
 
     internal static void SetNextTime(MainHandler runtime, double minutesFromNow)
     {
         lock (MinigameGate)
         {
-            if (MinigameLoops.TryGetValue(runtime, out MinigameLoopState? loop))
+            if (MinigameLoops.TryGetValue(runtime, out LoopState? loop))
                 loop.NextAtUtc = DateTime.UtcNow.AddMinutes(minutesFromNow);
         }
     }
 
-    private static async Task WaitForDelayAsync(MainHandler runtime, MinigameLoopState expectedLoop, CancellationToken cancellationToken)
+    private static async Task WaitForDelayAsync(MainHandler runtime, LoopState expectedLoop, CancellationToken cancellationToken)
     {
         TimeSpan delay;
         lock (MinigameGate)
         {
-            if (!MinigameLoops.TryGetValue(runtime, out MinigameLoopState? loop) || !ReferenceEquals(loop, expectedLoop))
+            if (!MinigameLoops.TryGetValue(runtime, out LoopState? loop) || !ReferenceEquals(loop, expectedLoop))
                 return;
 
             delay = loop.NextAtUtc - DateTime.UtcNow;
