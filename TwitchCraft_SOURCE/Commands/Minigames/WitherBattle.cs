@@ -17,7 +17,7 @@ public static partial class MinigameManager
         {
             WitherBattleState state = GetWitherState(runtime);
             int witherHealth = CommandRandom.Next(300, 501);
-            TaskCompletionSource<bool> defeatedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource defeatedSignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             lock (MinigameGate)
             {

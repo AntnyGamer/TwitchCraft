@@ -27,7 +27,6 @@ public static partial class MinigameManager
                 state.BettingOpen = true;
                 state.MinSeconds = min;
                 state.MaxSeconds = min + span;
-                state.KillAtSeconds = 0;
                 state.Bets.Clear();
 
                 minSeconds = state.MinSeconds;
@@ -60,7 +59,6 @@ public static partial class MinigameManager
                 if (!hasBets)
                 {
                     state.BettingOpen = false;
-                    state.KillAtSeconds = 0;
                 }
             }
 
@@ -75,8 +73,7 @@ public static partial class MinigameManager
             {
                 state = GetChickenStateNoLock(runtime);
                 state.BettingOpen = false;
-                state.KillAtSeconds = CommandRandom.Next(state.MinSeconds, state.MaxSeconds + 1);
-                killAtSeconds = state.KillAtSeconds;
+                killAtSeconds = CommandRandom.Next(state.MinSeconds, state.MaxSeconds + 1);
             }
 
             await PlaySoundAsync(runtime, "minecraft:entity.chicken.ambient", cancellationToken).ConfigureAwait(false);

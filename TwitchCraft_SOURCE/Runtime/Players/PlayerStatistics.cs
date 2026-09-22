@@ -103,10 +103,10 @@ public sealed partial class MainHandler
             if (Volatile.Read(ref _deathScoreObjectiveReady) != 0)
                 return true;
 
-            TaskCompletionSource<bool> waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
             bool sent = await SendProbeAsync(
                 "scoreboard objectives add " + DeathScoreObjective + " deathCount",
-                () => waiter.TrySetResult(true),
+                () => waiter.TrySetResult(),
                 cancellationToken).ConfigureAwait(false);
 
             if (!sent)

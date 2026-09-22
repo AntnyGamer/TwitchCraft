@@ -56,7 +56,6 @@ public static partial class MinigameManager
     {
         public int MinSeconds { get; set; }
         public int MaxSeconds { get; set; }
-        public int KillAtSeconds { get; set; }
     }
 
     private sealed class GuessNumberState
@@ -76,7 +75,7 @@ public static partial class MinigameManager
     private sealed class WitherBattleState : BettingState<WitherBattleBet>
     {
         public int CurrentHealth { get; set; }
-        public TaskCompletionSource<bool>? DefeatedSignal { get; set; }
+        public TaskCompletionSource? DefeatedSignal { get; set; }
     }
 
     private sealed class ActiveMinigameState

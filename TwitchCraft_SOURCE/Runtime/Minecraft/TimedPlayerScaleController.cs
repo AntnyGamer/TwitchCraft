@@ -61,26 +61,28 @@ internal sealed class TimedPlayerScaleController
             return false;
 
         List<SemaphoreSlim> acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
-        Dictionary<string, ScaleState?> previousStates = new(players.Count, StringComparer.OrdinalIgnoreCase);
-        List<(string Player, ScaleState State)> appliedStates = new(players.Count);
+        (string Player, ScaleState Applied, ScaleState? Previous)[] appliedStates = new (string, ScaleState, ScaleState?)[players.Count];
+        int appliedCount = 0;
         try
         {
-            List<string> commands = new(players.Count);
+            string[] commands = new string[players.Count];
             lock (_gate)
             {
-                foreach (string player in players)
+                for (int i = 0; i < players.Count; i++)
                 {
-                    previousStates[player] = _states.TryGetValue(player, out ScaleState previous) ? previous : null;
+                    string player = players[i];
+                    ScaleState? previous = _states.TryGetValue(player, out ScaleState existing) ? existing : null;
                     ScaleState applied = new(
                         Interlocked.Increment(ref _nextGeneration),
                         usesModernAttributeIDs,
                         usesInlineTextComponents);
                     _states[player] = applied;
-                    appliedStates.Add((player, applied));
-                    commands.Add(MinecraftCommandBuilder.SetScale(
+                    appliedStates[i] = (player, applied, previous);
+                    appliedCount++;
+                    commands[i] = MinecraftCommandBuilder.SetScale(
                         MinecraftCommandBuilder.SinglePlayerSelector(player),
                         scale,
-                        usesModernAttributeIDs));
+                        usesModernAttributeIDs);
                 }
             }
 
@@ -91,18 +93,19 @@ internal sealed class TimedPlayerScaleController
             }
             catch
             {
-                RestoreStates(appliedStates, previousStates);
+                RestoreStates(appliedStates, appliedCount);
                 throw;
             }
 
             if (!dispatched)
             {
-                RestoreStates(appliedStates, previousStates);
+                RestoreStates(appliedStates, appliedCount);
                 return false;
             }
 
-            foreach ((string player, ScaleState state) in appliedStates)
+            for (int i = 0; i < appliedCount; i++)
             {
+                (string player, ScaleState state, _) = appliedStates[i];
                 _trackTask(ResetLaterAsync(player, state, duration, cancellationToken));
             }
 
@@ -115,7 +118,13 @@ internal sealed class TimedPlayerScaleController
     }
 
     internal Task ResetRecoveredAsync(string player, CancellationToken cancellationToken)
-        => ResetAllAsync(cancellationToken, Volatile.Read(ref _recoveryGeneration), player);
+    {
+        long maxGeneration = Volatile.Read(ref _recoveryGeneration);
+        lock (_gate)
+            if (!_states.TryGetValue(player, out ScaleState state) || state.Generation > maxGeneration)
+                return Task.CompletedTask;
+        return ResetAllAsync(cancellationToken, maxGeneration, player);
+    }
 
     internal void MarkForRecovery() => Volatile.Write(ref _recoveryGeneration, Volatile.Read(ref _nextGeneration));
 
@@ -325,17 +334,18 @@ internal sealed class TimedPlayerScaleController
     }
 
     private void RestoreStates(
-        IReadOnlyList<(string Player, ScaleState State)> appliedStates,
-        IReadOnlyDictionary<string, ScaleState?> previousStates)
+        IReadOnlyList<(string Player, ScaleState Applied, ScaleState? Previous)> appliedStates,
+        int count)
     {
         lock (_gate)
         {
-            foreach ((string player, ScaleState applied) in appliedStates)
+            for (int i = 0; i < count; i++)
             {
+                (string player, ScaleState applied, ScaleState? previous) = appliedStates[i];
                 if (!_states.TryGetValue(player, out ScaleState current) || current != applied)
                     continue;
 
-                if (previousStates.TryGetValue(player, out ScaleState? previous) && previous.HasValue)
+                if (previous.HasValue)
                     _states[player] = previous.Value;
                 else
                     _states.Remove(player);

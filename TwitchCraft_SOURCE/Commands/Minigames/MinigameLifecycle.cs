@@ -94,7 +94,7 @@ public static partial class MinigameManager
             {
                 witherState.BettingOpen = false;
                 witherState.CurrentHealth = 0;
-                witherState.DefeatedSignal?.TrySetResult(false);
+                witherState.DefeatedSignal?.TrySetResult();
                 witherState.DefeatedSignal = null;
             }
         }

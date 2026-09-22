@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -240,10 +241,14 @@ public sealed partial class MainHandler
 
         if (suffix.Length >= 2 && suffix[0] == '[' && suffix[^1] == ']' && (suffix.Length == 2 || suffix.Contains('{')))
         {
+            TaskCompletionSource<string?>? waiter;
             lock (_maxHealthProbeGate)
-                _pendingHeartAttributeRequests.Remove(playerName, out TaskCompletionSource<string?>? waiter);
-            waiter?.TrySetResult(suffix);
-            return;
+                _pendingHeartAttributeRequests.Remove(playerName, out waiter);
+            if (waiter != null)
+            {
+                waiter.TrySetResult(suffix);
+                return;
+            }
         }
 
         if (HasRespawnRequest(playerName) && TryParsePosition(suffix))

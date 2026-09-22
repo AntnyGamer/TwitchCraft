@@ -265,7 +265,7 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<List<string?>?> ExecuteRCONQueriesAsync(List<string> commands, CancellationToken cancellationToken)
+    private async Task<List<string?>?> ExecuteRCONQueriesAsync(IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config?.Settings.RemoteControlEnabled != true || commands.Count == 0)

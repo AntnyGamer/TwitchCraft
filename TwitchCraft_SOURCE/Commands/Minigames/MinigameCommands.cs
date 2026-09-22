@@ -219,7 +219,7 @@ public static partial class MinigameManager
                         if (remainingHealth == 0)
                         {
                             state.BettingOpen = false;
-                            state.DefeatedSignal?.TrySetResult(true);
+                            state.DefeatedSignal?.TrySetResult();
                         }
                         updateResult = MinigameBetUpdateResult.Updated;
                     }

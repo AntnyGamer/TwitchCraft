@@ -15,7 +15,6 @@ public static partial class MinigameManager
             chickenState.BettingOpen = false;
             chickenState.MinSeconds = 0;
             chickenState.MaxSeconds = 0;
-            chickenState.KillAtSeconds = 0;
         }
 
         if (GuessNumberStates.TryGetValue(runtime, out GuessNumberState? guessState))
@@ -29,7 +28,7 @@ public static partial class MinigameManager
         {
             witherState.BettingOpen = false;
             witherState.CurrentHealth = 0;
-            witherState.DefeatedSignal?.TrySetResult(false);
+            witherState.DefeatedSignal?.TrySetResult();
             witherState.DefeatedSignal = null;
         }
     }
@@ -208,7 +207,7 @@ public static partial class MinigameManager
             if (!WitherBattleStates.TryGetValue(runtime, out state!)) return;
             state.BettingOpen = false;
             state.CurrentHealth = 0;
-            state.DefeatedSignal?.TrySetResult(false);
+            state.DefeatedSignal?.TrySetResult();
             state.DefeatedSignal = null;
         }
         RefundBets(runtime, state);

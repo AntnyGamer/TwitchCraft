@@ -186,8 +186,8 @@ public static partial class CommandList
             }
             string channelTargetName = TargetName(target);
             int cost = runtime.Commands.ScaleCost(count, target.PlayerCount);
-            List<string> effectCommands = new(count);
-            List<string> effectNames = new(count);
+            string[] effectCommands = new string[count];
+            string[] effectNames = new string[count];
             for (int i = 0; i < count; i++)
             {
                 EffectDefinition effect = runtime.GetRandomEffect();
@@ -196,8 +196,8 @@ public static partial class CommandList
                 string level = EffectLevels[Math.Clamp(amplifier, 0, 4)];
                 string effectPretty = PrettyName(effect.ID) + " " + level +
                                       (seconds == 1 ? string.Empty : " for " + seconds.ToString(CultureInfo.InvariantCulture) + " seconds");
-                effectNames.Add(effectPretty);
-                effectCommands.Add(MinecraftCommandBuilder.ApplyEffect(target.Selector, effect.ID, seconds, amplifier));
+                effectNames[i] = effectPretty;
+                effectCommands[i] = MinecraftCommandBuilder.ApplyEffect(target.Selector, effect.ID, seconds, amplifier);
             }
             if (!await TrySendPricedAsync(sender, cost, () => effectCommands, ct).ConfigureAwait(false))
                 return;

@@ -397,14 +397,14 @@ internal static class MinecraftCommandFeatureBuilder
         return commands;
     }
 
-    public static List<string> BuildSlaughter(string selector, string mobLootGameRuleName) =>
+    public static string[] BuildSlaughter(string selector, string mobLootGameRuleName) =>
     [
         "gamerule " + mobLootGameRuleName + " false",
         "execute at " + selector + " as @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:armor_stand,distance=..30] if data entity @s Health run kill @s",
         "gamerule " + mobLootGameRuleName + " true"
     ];
 
-    public static List<string> BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+    public static string[] BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
         => BuildPursuer(
             selector,
             random,
@@ -416,7 +416,7 @@ internal static class MinecraftCommandFeatureBuilder
             string.Empty,
             "Johnny is coming!");
 
-    public static List<string> BuildChargedCreeper(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
+    public static string[] BuildChargedCreeper(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
         => BuildPursuer(
             selector,
             random,
@@ -428,7 +428,7 @@ internal static class MinecraftCommandFeatureBuilder
             "powered:1b,",
             "A charged creeper is coming!");
 
-    private static List<string> BuildPursuer(
+    private static string[] BuildPursuer(
         string selector,
         Random random,
         bool usesInlineTextComponents,

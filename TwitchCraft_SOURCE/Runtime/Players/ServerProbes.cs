@@ -160,25 +160,11 @@ public sealed partial class MainHandler
         if (commands.Length == 0)
             return false;
 
-        bool remoteControlEnabled = RemoteControlEnabled;
-        List<string> probeCommands = new(remoteControlEnabled ? commands.Length : commands.Length + 2);
-        for (int i = 0; i < commands.Length; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(commands[i]))
-                probeCommands.Add(commands[i]);
-        }
-
-        if (probeCommands.Count == 0)
-        {
-            onProbeCompleted();
-            return false;
-        }
-
-        if (remoteControlEnabled)
+        if (RemoteControlEnabled)
         {
             try
             {
-                List<string?>? responses = await ExecuteRCONQueriesAsync(probeCommands, cancellationToken).ConfigureAwait(false);
+                List<string?>? responses = await ExecuteRCONQueriesAsync(commands, cancellationToken).ConfigureAwait(false);
                 if (responses == null)
                     return false;
 
@@ -200,6 +186,17 @@ public sealed partial class MainHandler
             {
                 onProbeCompleted();
             }
+        }
+
+        List<string> probeCommands = new(commands.Length + 2);
+        for (int i = 0; i < commands.Length; i++)
+            if (!string.IsNullOrWhiteSpace(commands[i]))
+                probeCommands.Add(commands[i]);
+
+        if (probeCommands.Count == 0)
+        {
+            onProbeCompleted();
+            return false;
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
