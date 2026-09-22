@@ -324,6 +324,7 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 * TwitchCraft creates backup config and token database files. These are for reference and are not normally used by TwitchCraft
 * Special thanks to Lil_KleinStein, whose Minecraft streams inspired TwitchCraft's theme and creation!
 
+
 ---
 
 TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
