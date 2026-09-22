@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Linq;
@@ -8,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using Newtonsoft.Json.Linq;
 using TwitchCraft_V1.Setup;
 
 namespace TwitchCraft_V1.Frames;

@@ -322,10 +322,17 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line) || markerIndex <= 0)
             return string.Empty;
 
-        int prefixEnd = line.IndexOf("]: ", StringComparison.Ordinal);
-        return prefixEnd < 0 || prefixEnd + 3 >= markerIndex
-            ? string.Empty
-            : TextSegmentHelper.TrimSegment(line, prefixEnd + 3, markerIndex - prefixEnd - 3);
+        int start = line.IndexOf("]: ", StringComparison.Ordinal) + 3;
+        if (start < 3 || start >= markerIndex)
+            return string.Empty;
+
+        ReadOnlySpan<char> name = line.AsSpan(start, markerIndex - start);
+        if (name.StartsWith("System chat: ", StringComparison.Ordinal))
+            name = name["System chat: ".Length..];
+
+        return MinecraftNameHelper.TryNormalizePlayerName(name, out string normalizedPlayer)
+            ? normalizedPlayer
+            : string.Empty;
     }
 
     private static string AfterLastColon(string value, int length)

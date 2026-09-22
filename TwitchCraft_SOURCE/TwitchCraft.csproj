@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows</TargetFramework>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<UseWPF>true</UseWPF>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
@@ -15,6 +16,9 @@
 		<AssemblyTitle>TwitchCraft</AssemblyTitle>
 		<Description>Twitch viewers control your Minecraft!</Description>
 		<Product>TwitchCraft</Product>
+		<Authors>AntnyGamer</Authors>
+		<RepositoryUrl>https://github.com/AntnyGamer/TwitchCraft</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
 		<Copyright>© 2026 AntnyGamer. Licensed under AGPL v3.</Copyright>
 
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -41,7 +45,7 @@
 
 	<ItemGroup>
 		<None Update="Assets\README.txt" TargetPath="README.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-		<None Include="..\licenses\**\*" TargetPath="licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<None Include="..\LICENSE;..\THIRD-PARTY-NOTICES.txt" TargetPath="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,21 +1,25 @@
-# TwitchCraft User Guide
+# TwitchCraft
 
-**// TWITCHCRAFT SCREENSHOT SHOWCASE**
+Transform your Minecraft world into a live, interactive experience where Twitch chat can trigger events, influence gameplay, and determine your fate!
+
+[![Build and Test](https://github.com/AntnyGamer/TwitchCraft/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/AntnyGamer/TwitchCraft/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/AntnyGamer/TwitchCraft)](https://github.com/AntnyGamer/TwitchCraft/releases/latest)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
 <p align="center">
-  <img src="screenshots/1TC_Setup.png" width="700">
+  <img src="screenshots/1TC_Setup.png" alt="TwitchCraft setup screen" width="700">
 </p>
 <p align="center">
-  <img src="screenshots/2TC_Start.png" width="700">
+  <img src="screenshots/2TC_Start.png" alt="TwitchCraft start screen" width="700">
 </p>
 <p align="center">
-  <img src="screenshots/3TC_Start_MP.png" width="700">
+  <img src="screenshots/3TC_Start_MP.png" alt="TwitchCraft multiplayer start screen" width="700">
 </p>
 <p align="center">
-  <img src="screenshots/4TC_Main.png" width="700">
+  <img src="screenshots/4TC_Main.png" alt="TwitchCraft main screen" width="700">
 </p>
 <p align="center">
-  <img src="screenshots/5TC_Settings.png" width="700">
+  <img src="screenshots/5TC_Settings.png" alt="TwitchCraft settings screen" width="700">
 </p>
 
 ## Documentation
@@ -34,7 +38,8 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Changelog](CHANGELOG.md)
 * [Security policy](SECURITY.md)
 * [Privacy policy](docs/PRIVACY.md)
-* [License](licenses/LICENSE)
+* [License](LICENSE)
+* [Third-party notices](THIRD-PARTY-NOTICES.txt)
 
 External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
 

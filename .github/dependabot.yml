@@ -1,0 +1,15 @@
+version: 2
+
+updates:
+  - package-ecosystem: nuget
+    directories:
+      - /TwitchCraft_SOURCE
+      - /TwitchCraft.Tests
+      - /TwitchCraft.Tests/TestInfrastructure/TestProcess
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

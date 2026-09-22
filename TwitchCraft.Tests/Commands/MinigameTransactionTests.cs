@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft.Tests.Economy;
+using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
 using Xunit;
 
