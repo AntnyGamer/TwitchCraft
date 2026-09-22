@@ -44,7 +44,7 @@
 
 	<ItemGroup>
 		<None Update="Assets\README.txt" TargetPath="README.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-		<None Include="..\licenses\**\*" TargetPath="licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<None Include="..\LICENSE;..\THIRD-PARTY-NOTICES.txt" TargetPath="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
 	</ItemGroup>
 
 	<ItemGroup>

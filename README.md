@@ -38,7 +38,8 @@ The repository-local documentation is the canonical source for TwitchCraft setup
 * [Changelog](CHANGELOG.md)
 * [Security policy](SECURITY.md)
 * [Privacy policy](docs/PRIVACY.md)
-* [License](licenses/LICENSE)
+* [License](LICENSE)
+* [Third-party notices](THIRD-PARTY-NOTICES.txt)
 
 External tutorials and short links later in this guide are supplemental mirrors. If they disagree with this repository, use the repository-local documentation
 
