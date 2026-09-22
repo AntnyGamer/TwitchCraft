@@ -1,6 +1,6 @@
 # TwitchCraft Bind IP Support Guide
 
-In order to use different Bind IPs on TwitchCraft, it is important you know what each one does and how to use it properly.
+To use different Bind IPs in TwitchCraft, it is important to understand what each one does and how to use it properly.
 
 Most users should not change the Bind IP. If normal multiplayer works for you, follow the normal [multiplayer guide](MULTIPLAYER.md) instead.
 
@@ -114,7 +114,7 @@ If IPv6 does not work, use normal IPv4 multiplayer or VPN multiplayer instead.
 
 It is similar to `127.0.0.1`.
 
-`localhost` is supported as a formality, as TwitchCraft will just convert the Bind IP to `127.0.0.1`.
+TwitchCraft accepts `localhost` and converts the Bind IP to `127.0.0.1`.
 
 Friends cannot join by typing `localhost`.
 
