@@ -12,15 +12,15 @@ The Bind IP is not always the same address your friends use to join.
 
 Example:
 
-Bind IP: **0.0.0.0**  
-Friend joins with: your public IP, LAN IP, or VPN IP
+- Bind IP: **0.0.0.0**
+- Friend joins with: your public IP, LAN IP, or VPN IP
 
 `0.0.0.0` means TwitchCraft listens on all normal IPv4 network adapters.
 
 ## Recommended Defaults
 
-Singleplayer or local only: **127.0.0.1**  
-Normal multiplayer: leave **127.0.0.1**; TwitchCraft uses **0.0.0.0** for the multiplayer session
+- Singleplayer or local only: **127.0.0.1**
+- Normal multiplayer: leave **127.0.0.1**; TwitchCraft uses **0.0.0.0** for the multiplayer session
 
 Only change Bind IP if you know you need a VPN IP or an IPv6 address.
 
@@ -43,8 +43,8 @@ Then have your friends join using your VPN IP.
 
 Example:
 
-Your VPN IP: **25.50.100.20**  
-Friend joins: **25.50.100.20**
+- Your VPN IP: **25.50.100.20**
+- Friend joins: **25.50.100.20**
 
 This works because `0.0.0.0` listens on all IPv4 adapters, including most VPN adapters. With this recommended method, you normally will not see the Advanced Bind IP warning.
 
@@ -54,8 +54,8 @@ You can also put your actual VPN IP as the Bind IP.
 
 Example:
 
-Bind IP: **25.50.100.20**  
-Friend joins: **25.50.100.20**
+- Bind IP: **25.50.100.20**
+- Friend joins: **25.50.100.20**
 
 This makes TwitchCraft listen only on the VPN adapter.
 
@@ -126,15 +126,15 @@ Recommended local-only Bind IP: **127.0.0.1**
 
 ### Normal Public Multiplayer
 
-Effective multiplayer Bind IP: **0.0.0.0** (set automatically by TwitchCraft)  
-Friends join with: your public IP
+- Effective multiplayer Bind IP: **0.0.0.0** (set automatically by TwitchCraft)
+- Friends join with: your public IP
 
 This usually needs port forwarding and Windows Firewall access.
 
 ### Same Wi-Fi or LAN Multiplayer
 
-Effective multiplayer Bind IP: **0.0.0.0** (set automatically by TwitchCraft)  
-Friends join with: your LAN IP
+- Effective multiplayer Bind IP: **0.0.0.0** (set automatically by TwitchCraft)
+- Friends join with: your LAN IP
 
 Example:
 
@@ -142,18 +142,18 @@ Example:
 
 ### VPN Multiplayer
 
-Effective multiplayer Bind IP: **0.0.0.0** (set automatically by TwitchCraft)  
-Friends join with: your VPN IP
+- Effective multiplayer Bind IP: **0.0.0.0** (set automatically by TwitchCraft)
+- Friends join with: your VPN IP
 
 Advanced VPN-only option:
 
-Bind IP: your VPN IP  
-Friends join with: your VPN IP
+- Bind IP: your VPN IP
+- Friends join with: your VPN IP
 
 ### IPv6 Multiplayer
 
-Bind IP: **::**  
-Friends join with: your IPv6 address
+- Bind IP: **::**
+- Friends join with: your IPv6 address
 
 With a port, they may need this format:
 
@@ -161,12 +161,12 @@ With a port, they may need this format:
 
 ## Quick Guide
 
-Local only: **127.0.0.1**  
-Normal multiplayer: leave **127.0.0.1**; TwitchCraft uses **0.0.0.0** when multiplayer is enabled  
-VPN multiplayer: leave **127.0.0.1**; TwitchCraft uses **0.0.0.0**, then friends join your VPN IP  
-VPN-only multiplayer: your VPN IP  
-IPv6 multiplayer: **::**, then friends join your IPv6 address  
-`localhost`: same as **127.0.0.1**
+- Local only: **127.0.0.1**
+- Normal multiplayer: leave **127.0.0.1**; TwitchCraft uses **0.0.0.0** when multiplayer is enabled
+- VPN multiplayer: leave **127.0.0.1**; TwitchCraft uses **0.0.0.0**, then friends join your VPN IP
+- VPN-only multiplayer: your VPN IP
+- IPv6 multiplayer: **::**, then friends join your IPv6 address
+- `localhost`: same as **127.0.0.1**
 
 ## Resetting Bind IP
 
