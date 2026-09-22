@@ -371,8 +371,16 @@ public static partial class CommandList
                 }
             if (pending == null) return;
 
+            string? selectorPlayer = null, selector = null;
             foreach ((string pendingPlayer, string id) in pending)
-                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(pendingPlayer), id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+            {
+                if (!string.Equals(selectorPlayer, pendingPlayer, StringComparison.OrdinalIgnoreCase))
+                {
+                    selectorPlayer = pendingPlayer;
+                    selector = MinecraftCommandBuilder.SinglePlayerSelector(pendingPlayer);
+                }
+                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(selector!, id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+            }
 
             string? verifiedPlayer = null;
             foreach ((string pendingPlayer, _) in pending)
