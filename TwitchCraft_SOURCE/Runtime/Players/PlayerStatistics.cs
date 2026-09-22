@@ -322,11 +322,17 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line) || markerIndex <= 0)
             return string.Empty;
 
-        ReadOnlySpan<char> text = line.AsSpan(0, markerIndex).TrimEnd();
-        int start = text.LastIndexOf(' ') + 1;
-        ReadOnlySpan<char> prefix = text[..start].TrimEnd();
-        return start > 0 && (prefix.EndsWith("]:", StringComparison.Ordinal) || prefix.EndsWith("]: System chat:", StringComparison.Ordinal))
-            ? text[start..].Trim().ToString()
+        int start = line.IndexOf("]: ", StringComparison.Ordinal);
+        if (start < 0)
+            return string.Empty;
+
+        start += 3;
+        ReadOnlySpan<char> name = line.AsSpan(start, markerIndex - start);
+        if (name.StartsWith("System chat: ", StringComparison.Ordinal))
+            name = name["System chat: ".Length..];
+
+        return MinecraftNameHelper.TryNormalizePlayerName(name, out string normalizedPlayer)
+            ? normalizedPlayer
             : string.Empty;
     }
 
