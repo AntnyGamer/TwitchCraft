@@ -12,7 +12,6 @@ Enabling multiplayer allows more Minecraft players and enables TwitchCraft's pla
 
 Prefer a private VPN or trusted tunnel when practical. If you expose the Minecraft game port directly, restrict access, keep Windows and Java updated, use online mode where appropriate, and share the address only with people you trust.
 
-
 ## Advanced Bind IP
 
 The **Server Bind IP** in Setup controls which local address or network interface the managed Minecraft server listens on. Leave it at the default unless you intentionally need a specific interface.
