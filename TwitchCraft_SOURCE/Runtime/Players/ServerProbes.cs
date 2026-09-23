@@ -330,7 +330,39 @@ public sealed partial class MainHandler
             line.Contains("Unable to execute command", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Error trying to execute", StringComparison.OrdinalIgnoreCase));
 
-    private bool ShouldHideLogLine(
+    private void SaveHiddenContext(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+            return;
+
+        lock (_suppressedServerLogContextGate)
+        {
+            if (_suppressedServerLogContextLines.Count >= 8)
+                _suppressedServerLogContextLines.Dequeue();
+
+            _suppressedServerLogContextLines.Enqueue(line);
+        }
+    }
+
+    private void ShowHiddenContext()
+    {
+        string[] lines;
+        lock (_suppressedServerLogContextGate)
+        {
+            if (_suppressedServerLogContextLines.Count == 0)
+                return;
+
+            lines = [.. _suppressedServerLogContextLines];
+            _suppressedServerLogContextLines.Clear();
+        }
+
+        foreach (string contextLine in lines)
+        {
+            _shellWindow?.AddServerLogLine(contextLine);
+        }
+    }
+
+    private static bool ShouldHideLogLine(
         string line,
         in ServerLogLineFlags flags,
         bool isCommandParserError,
@@ -344,16 +376,12 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) || line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase) || isSidebarObjectiveIssue)
+        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (isUnexpectedCommandError)
-        {
-            long now = Environment.TickCount64;
-            return now - Interlocked.Exchange(ref _lastUnexpectedCommandErrorTicks, now) < 5000;
-        }
-        if (isCommandParserError || isMinecraftCommandErrorContext)
+        if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
 
         if (!flags.HasObjective &&
@@ -375,6 +403,7 @@ public sealed partial class MainHandler
             line.Contains("Created new objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot sidebar to show objective Player List:", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot list to show objective Health", StringComparison.OrdinalIgnoreCase) ||
+            isSidebarObjectiveIssue ||
             (flags.HasTcPlayerList && flags.hasAlreadyExists) ||
             (flags.HasTcHealth && flags.hasAlreadyExists) ||
             flags.HasTcDeaths ||
@@ -388,4 +417,16 @@ public sealed partial class MainHandler
            line.Contains("Unknown or incomplete command", StringComparison.OrdinalIgnoreCase) &&
            line.Contains("See below for error", StringComparison.OrdinalIgnoreCase);
 
+    private bool TryConsumeError()
+    {
+        while (true)
+        {
+            int pending = Volatile.Read(ref _serverCommandErrorContextLines);
+            if (pending <= 0)
+                return false;
+
+            if (Interlocked.CompareExchange(ref _serverCommandErrorContextLines, pending - 1, pending) == pending)
+                return true;
+        }
+    }
 }
