@@ -41,17 +41,21 @@ public sealed partial class MainHandler
     }
 
     private void ApplyPVPGameRule()
+        => TrackTask(ApplyPVPGameRuleAsync());
+
+    internal async Task ApplyPVPGameRuleAsync()
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
             return;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
-        if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+        if (!version.UsesServerSettingGameRules || !_minecraftSession.ServerReady)
             return;
 
+        CancellationToken token = _sessionCts?.Token ?? CancellationToken.None;
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
-        TrackTask(SendServerCommandAsync(pvp, token));
+        await SendServerCommandAsync(pvp, token).ConfigureAwait(false);
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
