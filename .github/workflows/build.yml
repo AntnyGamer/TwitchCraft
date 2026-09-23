@@ -28,6 +28,36 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: TEMP diagnose exact Minecraft 26.3 probe batches
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "tc-probe-batch"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest -Uri "https://piston-data.mojang.com/v1/objects/33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c/server.jar" -OutFile (Join-Path $dir "server.jar")
+          Set-Content (Join-Path $dir "eula.txt") "eula=true"
+          $p = New-Object System.Diagnostics.Process
+          $p.StartInfo = New-Object System.Diagnostics.ProcessStartInfo
+          $p.StartInfo.FileName = "java"
+          $p.StartInfo.Arguments = "-Xms512M -Xmx1G -jar server.jar nogui"
+          $p.StartInfo.WorkingDirectory = $dir
+          $p.StartInfo.UseShellExecute = $false
+          $p.StartInfo.RedirectStandardInput = $true
+          $p.StartInfo.RedirectStandardOutput = $true
+          $p.StartInfo.RedirectStandardError = $true
+          [void]$p.Start()
+          do { $line = $p.StandardOutput.ReadLine(); Write-Host "MC> $line" } until ($line -match 'Done \(')
+          $m1 = "tc_probe_0123456789abcdef0123456789abcdef_1"
+          $m2 = "tc_probe_0123456789abcdef0123456789abcdef_2"
+          $batch = "list`r`ndata modify storage twitchcraft:probe marker set value `"$m1`"`r`ndata get storage twitchcraft:probe marker`r`n" +
+                   "scoreboard objectives add tc_deaths deathCount`r`ndata modify storage twitchcraft:probe marker set value `"$m2`"`r`ndata get storage twitchcraft:probe marker`r`n" +
+                   "gamerule minecraft:pvp false`r`nsay tc_diag_done`r`n"
+          $p.StandardInput.Write($batch)
+          $p.StandardInput.Flush()
+          do { $line = $p.StandardOutput.ReadLine(); Write-Host "MC> $line" } until ($line -match 'tc_diag_done')
+          $p.StandardInput.WriteLine("stop")
+          $p.StandardInput.Flush()
+          $p.WaitForExit(30000) | Out-Null
+
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
 
