@@ -152,6 +152,52 @@ public sealed partial class MainHandler
         }
     }
 
+    private async Task<bool> SendInternalServerCommandAsync(string command, CancellationToken cancellationToken)
+    {
+        if (!RemoteControlEnabled && _minecraftSession.ServerReady)
+        {
+            string? response = await ExecuteRCONQueryAsync(command, cancellationToken, allowLocal: true).ConfigureAwait(false);
+            if (response != null)
+            {
+                if (!string.IsNullOrWhiteSpace(response))
+                    HandleRCONResponse(response);
+                return true;
+            }
+        }
+
+        return await SendServerCommandAsync(command, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<bool> SendInternalServerCommandsAsync(IEnumerable<string> commands, CancellationToken cancellationToken)
+    {
+        List<string> snapshot = SnapshotCommands(commands);
+        if (snapshot.Count == 0)
+            return false;
+
+        if (!RemoteControlEnabled && _minecraftSession.ServerReady)
+        {
+            List<string?>? responses = await ExecuteRCONQueriesAsync(snapshot, cancellationToken, allowLocal: true).ConfigureAwait(false);
+            if (responses != null)
+            {
+                bool delivered = false;
+                foreach (string? response in responses)
+                {
+                    if (response == null)
+                        continue;
+
+                    delivered = true;
+                    if (!string.IsNullOrWhiteSpace(response))
+                        HandleRCONResponse(response);
+                }
+
+                if (delivered)
+                    return true;
+            }
+        }
+
+        return await SendServerCommandsAsync(snapshot, cancellationToken).ConfigureAwait(false);
+    }
+
     private async Task<bool> SendRCONCommandAsync(TwitchCraftConfig config, string command, CancellationToken cancellationToken, bool applyTimeout = true)
     {
         await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -227,10 +273,13 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<string?> ExecuteRCONQueryAsync(string command, CancellationToken cancellationToken)
+    private async Task<string?> ExecuteRCONQueryAsync(string command, CancellationToken cancellationToken, bool allowLocal = false)
     {
         TwitchCraftConfig? config = _activeConfig;
-        if (config?.Settings.RemoteControlEnabled != true)
+        bool local = config?.Settings.RemoteControlEnabled != true;
+        if (config == null || local && !allowLocal)
+            return null;
+        if (local && Volatile.Read(ref _localRCONUnavailableUntilTicks) > DateTime.UtcNow.Ticks)
             return null;
 
         string commandText = CleanServerCommand(command);
@@ -241,22 +290,31 @@ public sealed partial class MainHandler
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(RCONTimeout);
-            return await MinecraftRCONClient.ExecuteQueryAsync(
-                GetRCONHost(config),
+            timeoutCts.CancelAfter(local ? LocalRCONTimeout : RCONTimeout);
+            string? response = await MinecraftRCONClient.ExecuteQueryAsync(
+                local ? "127.0.0.1" : GetRCONHost(config),
                 config.Server.RCON.Port,
                 config.Server.RCON.Password,
                 commandText,
                 timeoutCts.Token).ConfigureAwait(false);
+            if (local)
+                Volatile.Write(ref _localRCONUnavailableUntilTicks, response == null ? DateTime.UtcNow.Add(LocalRCONFailureBackoff).Ticks : 0);
+            return response;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            _shellWindow?.AddServerLogLine("RCON query timed out.");
+            if (local)
+                Volatile.Write(ref _localRCONUnavailableUntilTicks, DateTime.UtcNow.Add(LocalRCONFailureBackoff).Ticks);
+            else
+                _shellWindow?.AddServerLogLine("RCON query timed out.");
             return null;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("RCON query failed", ex));
+            if (local)
+                Volatile.Write(ref _localRCONUnavailableUntilTicks, DateTime.UtcNow.Add(LocalRCONFailureBackoff).Ticks);
+            else
+                _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("RCON query failed", ex));
             return null;
         }
         finally
@@ -265,10 +323,13 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<List<string?>?> ExecuteRCONQueriesAsync(IReadOnlyList<string> commands, CancellationToken cancellationToken)
+    private async Task<List<string?>?> ExecuteRCONQueriesAsync(IReadOnlyList<string> commands, CancellationToken cancellationToken, bool allowLocal = false)
     {
         TwitchCraftConfig? config = _activeConfig;
-        if (config?.Settings.RemoteControlEnabled != true || commands.Count == 0)
+        bool local = config?.Settings.RemoteControlEnabled != true;
+        if (config == null || commands.Count == 0 || local && !allowLocal)
+            return null;
+        if (local && Volatile.Read(ref _localRCONUnavailableUntilTicks) > DateTime.UtcNow.Ticks)
             return null;
 
         List<string> commandTexts = new(commands.Count);
@@ -286,22 +347,31 @@ public sealed partial class MainHandler
         try
         {
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(GetRCONTimeout(commandTexts.Count));
-            return await MinecraftRCONClient.ExecuteQueriesAsync(
-                GetRCONHost(config),
+            timeoutCts.CancelAfter(local ? LocalRCONTimeout : GetRCONTimeout(commandTexts.Count));
+            List<string?>? responses = await MinecraftRCONClient.ExecuteQueriesAsync(
+                local ? "127.0.0.1" : GetRCONHost(config),
                 config.Server.RCON.Port,
                 config.Server.RCON.Password,
                 commandTexts,
                 timeoutCts.Token).ConfigureAwait(false);
+            if (local)
+                Volatile.Write(ref _localRCONUnavailableUntilTicks, responses == null ? DateTime.UtcNow.Add(LocalRCONFailureBackoff).Ticks : 0);
+            return responses;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            _shellWindow?.AddServerLogLine("RCON query timed out.");
+            if (local)
+                Volatile.Write(ref _localRCONUnavailableUntilTicks, DateTime.UtcNow.Add(LocalRCONFailureBackoff).Ticks);
+            else
+                _shellWindow?.AddServerLogLine("RCON query timed out.");
             return null;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("RCON query failed", ex));
+            if (local)
+                Volatile.Write(ref _localRCONUnavailableUntilTicks, DateTime.UtcNow.Add(LocalRCONFailureBackoff).Ticks);
+            else
+                _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("RCON query failed", ex));
             return null;
         }
         finally

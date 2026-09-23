@@ -10,6 +10,25 @@ namespace TwitchCraft.Tests.Runtime;
 
 public sealed class SharedPlayerProbeTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PVPSetting_AppliesToRunningMultiplayerServer(bool enabled)
+    {
+        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
+            TestContext.Current.CancellationToken,
+            multiplayer: true);
+
+        scenario.Config.Settings.MultiplayerPVPEnabled = enabled;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.Runtime.ApplyPVPGameRuleAsync();
+
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+        Assert.Contains("gamerule minecraft:pvp " + enabled.ToString().ToLowerInvariant(), commands);
+    }
+
     [Fact]
     public async Task QueryItem_CancelingOneCallerDoesNotCancelTheSharedServerProbe()
     {

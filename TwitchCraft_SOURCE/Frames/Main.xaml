@@ -48,8 +48,8 @@
 
                 <TextBlock Text="Twitch Log:" Width="268" FontFamily="Arial Rounded MT Bold" FontSize="18" TextAlignment="Center" Margin="14,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-                <Border x:Name="ConnectionHealthPanel" Width="181" Height="44" Background="Transparent" BorderBrush="#FF545454" BorderThickness="1" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="395,84,0,0">
-                    <StackPanel Margin="4,3,4,3">
+                <Border x:Name="ConnectionHealthPanel" Width="180" Height="44" Background="Transparent" BorderBrush="#FF545454" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="395,84,0,0">
+                    <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="TwitchConnectionHealth" Text="Twitch: Connecting" FontFamily="Arial Rounded MT Bold" FontSize="12" TextAlignment="Center" AutomationProperties.LiveSetting="Polite" />
                         <TextBlock x:Name="MinecraftConnectionHealth" Text="Minecraft: Starting" FontFamily="Arial Rounded MT Bold" FontSize="12" TextAlignment="Center" AutomationProperties.LiveSetting="Polite" />
                     </StackPanel>

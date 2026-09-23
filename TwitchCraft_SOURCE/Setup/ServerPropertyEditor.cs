@@ -25,11 +25,13 @@ public sealed class ServerPropertyEditor
         "max-players",
         "motd",
         "online-mode",
+        "broadcast-console-to-ops",
         "server-ip",
         "server-port",
         "enable-query",
         "query.port",
         "enable-rcon",
+        "broadcast-rcon-to-ops",
         "rcon.port"
     ];
 
@@ -193,7 +195,7 @@ public sealed class ServerPropertyEditor
         SetDefault(props, "use-native-transport", "true");
         SetDefault(props, "enable-status", "true");
         SetDefault(props, "allow-flight", "false");
-        SetDefault(props, "broadcast-rcon-to-ops", "false");
+        props["broadcast-rcon-to-ops"] = "false";
         SetDefault(props, "resource-pack-prompt", string.Empty);
         SetDefault(props, "sync-chunk-writes", "true");
         SetDefault(props, "op-permission-level", "4");
@@ -203,7 +205,7 @@ public sealed class ServerPropertyEditor
         SetDefault(props, "player-idle-timeout", "500");
         SetDefault(props, "force-gamemode", "true");
         SetDefault(props, "rate-limit", "0");
-        SetDefault(props, "broadcast-console-to-ops", "false");
+        props["broadcast-console-to-ops"] = "false";
         SetDefault(props, "previews-chat", "false");
         SetDefault(props, "function-permission-level", "2");
         SetDefault(props, "level-type", "minecraft:normal");

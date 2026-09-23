@@ -34,16 +34,18 @@ public sealed partial class MainHandler
         if (!mentionViewer || sender.Length == 0 || string.IsNullOrWhiteSpace(message))
             return message;
 
-        if (message.Length > sender.Length &&
-            message[0] == '@' &&
-            message.AsSpan(1).StartsWith(sender.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        static bool HasNameBoundary(string value, int index)
+            => index >= value.Length || !char.IsLetterOrDigit(value[index]) && value[index] != '_';
+
+        if (message[0] == '@' &&
+            message.AsSpan(1).StartsWith(sender.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
+            HasNameBoundary(message, sender.Length + 1))
         {
             return message;
         }
 
-        if (message.Length > sender.Length &&
-            message[sender.Length] == ',' &&
-            message.AsSpan(0, sender.Length).Equals(sender.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        if (message.AsSpan().StartsWith(sender.AsSpan(), StringComparison.OrdinalIgnoreCase) &&
+            HasNameBoundary(message, sender.Length))
         {
             return "@" + message;
         }

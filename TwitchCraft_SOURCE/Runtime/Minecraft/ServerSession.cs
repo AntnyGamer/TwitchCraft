@@ -80,6 +80,7 @@ public sealed partial class MainHandler
         Interlocked.Exchange(ref _deathScoreRefreshQueued, 0);
         Volatile.Write(ref _deathScoreInitializedPlayerName, null);
         Volatile.Write(ref _minecraftQueryUnavailableUntilTicks, 0);
+        Volatile.Write(ref _localRCONUnavailableUntilTicks, 0);
         _minecraftSession.RCONHealthy = false;
         _minecraftSession.ServerReady = false;
 

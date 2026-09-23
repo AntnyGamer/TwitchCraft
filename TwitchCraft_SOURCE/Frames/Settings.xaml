@@ -316,8 +316,8 @@
                                                 <CheckBox x:Name="AllowAllTargetsCheckbox" AutomationProperties.Name="Allow targeting all players" Checked="AllowAllTargets_Changed" Unchecked="AllowAllTargets_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
-                                                <TextBlock Text="Allow random player targeting:" Style="{StaticResource SettingLabel}" />
-                                                <CheckBox x:Name="AllowRandomTargetsCheckbox" AutomationProperties.Name="Allow random player targeting" Checked="AllowRandomTargets_Changed" Unchecked="AllowRandomTargets_Changed" />
+                                                <TextBlock Text="Allow targeting random players:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="AllowRandomTargetsCheckbox" AutomationProperties.Name="Allow targeting random players" Checked="AllowRandomTargets_Changed" Unchecked="AllowRandomTargets_Changed" />
                                             </DockPanel>
                                         </StackPanel>
                                     </ScrollViewer>

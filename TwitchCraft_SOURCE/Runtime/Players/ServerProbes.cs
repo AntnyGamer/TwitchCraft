@@ -32,7 +32,7 @@ public sealed partial class MainHandler
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
-        ApplyPVPGameRule();
+        TrackTask(ApplyPVPGameRuleAsync());
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();
@@ -40,7 +40,7 @@ public sealed partial class MainHandler
         QueueDeathScore();
     }
 
-    private void ApplyPVPGameRule()
+    internal async Task ApplyPVPGameRuleAsync()
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
@@ -51,7 +51,7 @@ public sealed partial class MainHandler
             return;
 
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
-        TrackTask(SendServerCommandAsync(pvp, token));
+        await SendInternalServerCommandAsync(pvp, token).ConfigureAwait(false);
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
@@ -115,6 +115,15 @@ public sealed partial class MainHandler
             {
                 onProbeCompleted();
             }
+        }
+
+        string? localResponse = await ExecuteRCONQueryAsync(command, cancellationToken, allowLocal: true).ConfigureAwait(false);
+        if (localResponse != null)
+        {
+            if (!string.IsNullOrWhiteSpace(localResponse))
+                HandleRCONResponse(localResponse);
+            onProbeCompleted();
+            return true;
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
@@ -197,6 +206,27 @@ public sealed partial class MainHandler
         {
             onProbeCompleted();
             return false;
+        }
+
+        List<string?>? localResponses = await ExecuteRCONQueriesAsync(probeCommands, cancellationToken, allowLocal: true).ConfigureAwait(false);
+        if (localResponses != null)
+        {
+            bool delivered = false;
+            foreach (string? response in localResponses)
+            {
+                if (response == null)
+                    continue;
+
+                delivered = true;
+                if (!string.IsNullOrWhiteSpace(response))
+                    HandleRCONResponse(response);
+            }
+
+            if (delivered)
+            {
+                onProbeCompleted();
+                return true;
+            }
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
