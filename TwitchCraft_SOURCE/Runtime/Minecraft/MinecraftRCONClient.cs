@@ -242,7 +242,7 @@ internal static class MinecraftRCONClient
         int commandID = NextRequestID();
         int sentinelID = NextRequestID();
         await WritePacketAsync(stream, commandID, CommandPacketType, command, cancellationToken).ConfigureAwait(false);
-        await WritePacketAsync(stream, sentinelID, CommandPacketType, "list", cancellationToken).ConfigureAwait(false);
+        await WritePacketAsync(stream, sentinelID, ResponseValuePacketType, string.Empty, cancellationToken).ConfigureAwait(false);
 
         StringBuilder response = new();
         Decoder decoder = RCONEncoding.GetDecoder();
