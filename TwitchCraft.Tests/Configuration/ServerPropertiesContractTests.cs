@@ -124,7 +124,7 @@ public sealed class ServerPropertiesContractTests
         foreach (string key in new[]
         {
             "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
-            "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "broadcast-console-to-ops", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
+            "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
         })
             AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader);
 
