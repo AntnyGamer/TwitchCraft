@@ -78,12 +78,7 @@ public sealed partial class MainHandler
                     bool isCommandParserError = mightContainCommandError && IsParserError(line);
                     bool isUnexpectedCommandError = mightContainCommandError && IsUnexpectedError(line);
                     bool isMinecraftCommandErrorContext = mightContainCommandError && IsErrorContext(line);
-                    bool isSidebarObjectiveIssue = IsSidebarErrorLine(
-                        line,
-                        flags,
-                        isCommandParserError,
-                        isUnexpectedCommandError,
-                        isMinecraftCommandErrorContext);
+                    bool isSidebarObjectiveIssue = IsSidebarErrorLine(line, flags);
 
                     HandleReadyState(line);
                     RestoreSidebar(isSidebarObjectiveIssue);
@@ -107,21 +102,12 @@ public sealed partial class MainHandler
                         isMinecraftCommandErrorContext,
                         isSidebarObjectiveIssue);
                     bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
-                    bool shouldShowLogLine = showCommandErrorContext ||
-                        (!suppressServerLogLine && !suppressOnlinePlayersLogLine);
-
-                    if (isUnexpectedCommandError && shouldShowLogLine)
-                    {
-                        ShowHiddenContext();
-                    }
+                    bool shouldShowLogLine = !suppressServerLogLine &&
+                        (showCommandErrorContext || !suppressOnlinePlayersLogLine);
 
                     if (shouldShowLogLine)
                     {
                         _shellWindow?.AddServerLogLine(line);
-                    }
-                    else if (suppressServerLogLine && !flags.HasEntityData)
-                    {
-                        SaveHiddenContext(line);
                     }
 
                     CapturePlayers(line);
