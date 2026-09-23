@@ -28,6 +28,48 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: TEMP test 26.3 attribute cleanup
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "tc-attribute-diag"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest -Uri "https://piston-data.mojang.com/v1/objects/33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c/server.jar" -OutFile (Join-Path $dir "server.jar")
+          Set-Content (Join-Path $dir "eula.txt") "eula=true"
+          @"
+          online-mode=false
+          spawn-protection=0
+          view-distance=2
+          simulation-distance=2
+          "@ | Set-Content (Join-Path $dir "server.properties")
+          $info = [Diagnostics.ProcessStartInfo]::new()
+          $info.FileName = "java"
+          $info.Arguments = "-Xms512M -Xmx1G -jar server.jar nogui"
+          $info.WorkingDirectory = $dir
+          $info.UseShellExecute = $false
+          $info.RedirectStandardInput = $true
+          $info.RedirectStandardOutput = $true
+          $p = [Diagnostics.Process]::new()
+          $p.StartInfo = $info
+          $null = $p.Start()
+          do { $line = $p.StandardOutput.ReadLine(); Write-Host "MC> $line" } until ($line -match 'Done \(')
+          $commands = @(
+            'summon minecraft:zombie ~ ~ ~',
+            'attribute @e[type=minecraft:zombie,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
+            'attribute @e[type=minecraft:zombie,limit=1] minecraft:max_health modifier add twitchcraft:heart_0123456789abcdef0123456789abcdef 2 add_value',
+            'attribute @e[type=minecraft:zombie,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
+            'attribute @e[type=minecraft:zombie,limit=1] minecraft:scale base set 1'
+          )
+          foreach ($command in $commands) {
+            Write-Host "COMMAND> $command"
+            $p.StandardInput.WriteLine($command)
+            $p.StandardInput.WriteLine("say tc_attr_marker")
+            $p.StandardInput.Flush()
+            do { $line = $p.StandardOutput.ReadLine(); Write-Host "MC> $line" } until ($line -match 'tc_attr_marker')
+          }
+          $p.StandardInput.WriteLine("stop")
+          $p.StandardInput.Flush()
+          $p.WaitForExit(30000) | Out-Null
+
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
 
