@@ -344,7 +344,8 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) || line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) || line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase) || isSidebarObjectiveIssue)
+        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) || line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase) || isSidebarObjectiveIssue)
             return true;
 
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
@@ -369,7 +370,6 @@ public sealed partial class MainHandler
             line.Contains("Created new objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot sidebar to show objective Player List:", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot list to show objective Health", StringComparison.OrdinalIgnoreCase) ||
-            isSidebarObjectiveIssue ||
             (flags.HasTcPlayerList && flags.hasAlreadyExists) ||
             (flags.HasTcHealth && flags.hasAlreadyExists) ||
             flags.HasTcDeaths ||
