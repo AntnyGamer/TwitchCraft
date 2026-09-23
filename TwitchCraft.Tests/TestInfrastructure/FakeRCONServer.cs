@@ -22,7 +22,6 @@ internal sealed class FakeRCONServer : IAsyncDisposable
     private readonly Func<string, string>? _responseFactory;
     private readonly Lock _gate = new();
     private readonly List<string> _commands = [];
-    private int _emptyCommandCount;
 
     internal FakeRCONServer(
         string password,
@@ -50,8 +49,6 @@ internal sealed class FakeRCONServer : IAsyncDisposable
                 return [.. _commands];
         }
     }
-
-    internal int EmptyCommandCount => Volatile.Read(ref _emptyCommandCount);
 
     public async ValueTask DisposeAsync()
     {
@@ -127,10 +124,6 @@ internal sealed class FakeRCONServer : IAsyncDisposable
             {
                 lock (_gate)
                     _commands.Add(packet.Payload);
-            }
-            else
-            {
-                Interlocked.Increment(ref _emptyCommandCount);
             }
 
             if (string.Equals(packet.Payload, _malformedResponseCommand, StringComparison.Ordinal))
