@@ -127,12 +127,10 @@ public sealed partial class MainHandler
 
         try
         {
-            string escapedMarker = MinecraftCommandBuilder.EscapeJson(marker);
             string[] probeCommands =
             [
                 command,
-                "data modify storage " + ProbeMarkerStorage + " " + ProbeMarkerPath + " set value \"" + escapedMarker + "\"",
-                "data get storage " + ProbeMarkerStorage + " " + ProbeMarkerPath
+                "data get storage " + ProbeMarkerNamespace + marker
             ];
 
             if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
@@ -188,7 +186,7 @@ public sealed partial class MainHandler
             }
         }
 
-        List<string> probeCommands = new(commands.Length + 2);
+        List<string> probeCommands = new(commands.Length + 1);
         for (int i = 0; i < commands.Length; i++)
             if (!string.IsNullOrWhiteSpace(commands[i]))
                 probeCommands.Add(commands[i]);
@@ -209,9 +207,7 @@ public sealed partial class MainHandler
 
         try
         {
-            string escapedMarker = MinecraftCommandBuilder.EscapeJson(marker);
-            probeCommands.Add("data modify storage " + ProbeMarkerStorage + " " + ProbeMarkerPath + " set value \"" + escapedMarker + "\"");
-            probeCommands.Add("data get storage " + ProbeMarkerStorage + " " + ProbeMarkerPath);
+            probeCommands.Add("data get storage " + ProbeMarkerNamespace + marker);
             if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
             {
                 QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
