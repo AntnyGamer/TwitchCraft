@@ -59,9 +59,6 @@ public sealed partial class MainHandler
                         continue;
 
                     ServerLogLineFlags flags = new(line);
-                    if (flags.HasProbeMarkerStorage)
-                        continue;
-
                     if (flags.HasEntityData)
                     {
                         HandleEntity(line);
