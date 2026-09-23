@@ -89,16 +89,6 @@ public sealed partial class MainHandler
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 
-                    bool showCommandErrorContext = TryConsumeError();
-                    if (isCommandParserError)
-                    {
-                        Interlocked.Exchange(ref _serverCommandErrorContextLines, 1);
-                    }
-                    else if (isUnexpectedCommandError)
-                    {
-                        Interlocked.Exchange(ref _serverCommandErrorContextLines, 8);
-                    }
-
                     bool suppressServerLogLine = ShouldHideLogLine(
                         line,
                         flags,
@@ -107,22 +97,8 @@ public sealed partial class MainHandler
                         isMinecraftCommandErrorContext,
                         isSidebarObjectiveIssue);
                     bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
-                    bool shouldShowLogLine = showCommandErrorContext ||
-                        (!suppressServerLogLine && !suppressOnlinePlayersLogLine);
-
-                    if (isUnexpectedCommandError && shouldShowLogLine)
-                    {
-                        ShowHiddenContext();
-                    }
-
-                    if (shouldShowLogLine)
-                    {
+                    if (!suppressServerLogLine && !suppressOnlinePlayersLogLine)
                         _shellWindow?.AddServerLogLine(line);
-                    }
-                    else if (suppressServerLogLine && !flags.HasEntityData)
-                    {
-                        SaveHiddenContext(line);
-                    }
 
                     CapturePlayers(line);
                 }
