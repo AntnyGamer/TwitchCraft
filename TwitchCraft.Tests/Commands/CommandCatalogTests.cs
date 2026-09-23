@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.Economy;
@@ -82,12 +81,7 @@ public sealed class CommandCatalogTests
             config.Twitch.StreamerName = "streamer";
             await runtime.ApplySettingsAsync(config);
 
-            FieldInfo knownViewersField = typeof(MainHandler).GetField(
-                "_knownViewers",
-                BindingFlags.Instance | BindingFlags.NonPublic)!;
-            Assert.NotNull(knownViewersField);
-            List<string> knownViewers = Assert.IsType<List<string>>(knownViewersField.GetValue(runtime));
-            knownViewers.AddRange(["viewer_one", "randomdudereincarnatedx3", "viewer_two"]);
+            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "viewer_two"]);
 
             await runtime.DispatchAsync(
                 "!givetokens all 25",
