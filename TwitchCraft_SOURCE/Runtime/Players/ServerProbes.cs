@@ -41,36 +41,18 @@ public sealed partial class MainHandler
     }
 
     private void ApplyPVPGameRule()
-        => TrackTask(ApplyPVPGameRuleAsync());
-
-    private async Task ApplyPVPGameRuleAsync()
     {
         TwitchCraftConfig? config = _activeConfig;
-        if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled || !_minecraftSession.ServerReady)
+        if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
             return;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
-        if (!version.UsesServerSettingGameRules)
+        if (!version.UsesServerSettingGameRules || !_minecraftSession.ServerReady)
             return;
 
         CancellationToken token = _sessionCts?.Token ?? CancellationToken.None;
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
-        await SendServerCommandAsync(pvp, token).ConfigureAwait(false);
-    }
-
-    private async Task ApplyDifficultyAsync()
-    {
-        TwitchCraftConfig? config = _activeConfig;
-        if (config == null || config.Settings.RemoteControlEnabled || !_minecraftSession.ServerReady)
-            return;
-
-        string difficulty = ConfigurationStore.NormalizeDifficulty(config.Settings.Difficulty) switch
-        {
-            "Easy" => "easy",
-            "Hard" => "hard",
-            _ => "normal"
-        };
-        await SendServerCommandAsync("difficulty " + difficulty, _sessionCts?.Token ?? CancellationToken.None).ConfigureAwait(false);
+        TrackTask(SendServerCommandAsync(pvp, token));
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
@@ -395,13 +377,10 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("Gamerule pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("Game rule pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("The difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
+        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase))
-        {
             return true;
-        }
 
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
