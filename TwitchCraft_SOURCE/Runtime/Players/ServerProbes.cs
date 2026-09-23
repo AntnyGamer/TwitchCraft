@@ -47,10 +47,9 @@ public sealed partial class MainHandler
             return;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
-        if (!version.UsesServerSettingGameRules || !_minecraftSession.ServerReady)
+        if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
             return;
 
-        CancellationToken token = _sessionCts?.Token ?? CancellationToken.None;
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
         TrackTask(SendServerCommandAsync(pvp, token));
     }
