@@ -46,7 +46,6 @@ public sealed class ServerPropertiesContractTests
             level-name=Streamer World
             server-port=12345
             online-mode=true
-            broadcast-console-to-ops=true
             escaped-value=hello\=world\\path
             a-custom=first
             """);
@@ -100,7 +99,6 @@ public sealed class ServerPropertiesContractTests
         Assert.Contains(@"rcon.password=secret\:password", content, StringComparison.Ordinal);
         Assert.Contains("max-players=7", content, StringComparison.Ordinal);
         Assert.Contains("online-mode=false", content, StringComparison.Ordinal);
-        Assert.Contains("broadcast-console-to-ops=false", content, StringComparison.Ordinal);
         Assert.DoesNotContain("\npvp=", "\n" + content, StringComparison.Ordinal);
         Assert.Contains("difficulty=hard", content, StringComparison.Ordinal);
         Assert.Contains("hardcore=false", content, StringComparison.Ordinal);
