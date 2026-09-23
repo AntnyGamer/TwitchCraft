@@ -25,7 +25,6 @@ public sealed class ServerPropertyEditor
         "max-players",
         "motd",
         "online-mode",
-        "broadcast-console-to-ops",
         "server-ip",
         "server-port",
         "enable-query",
@@ -204,7 +203,7 @@ public sealed class ServerPropertyEditor
         SetDefault(props, "player-idle-timeout", "500");
         SetDefault(props, "force-gamemode", "true");
         SetDefault(props, "rate-limit", "0");
-        props["broadcast-console-to-ops"] = "false";
+        SetDefault(props, "broadcast-console-to-ops", "false");
         SetDefault(props, "previews-chat", "false");
         SetDefault(props, "function-permission-level", "2");
         SetDefault(props, "level-type", "minecraft:normal");
