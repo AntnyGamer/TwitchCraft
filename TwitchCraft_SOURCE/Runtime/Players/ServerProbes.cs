@@ -47,11 +47,11 @@ public sealed partial class MainHandler
             return;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
-        if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+        if (!version.UsesServerSettingGameRules || !_minecraftSession.ServerReady)
             return;
 
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
-        TrackTask(SendServerCommandAsync(pvp, token));
+        TrackTask(SendServerCommandAsync(pvp, _sessionCts?.Token ?? CancellationToken.None));
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
