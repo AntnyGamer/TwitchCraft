@@ -385,16 +385,4 @@ public sealed partial class MainHandler
            line.Contains("Unknown or incomplete command", StringComparison.OrdinalIgnoreCase) &&
            line.Contains("See below for error", StringComparison.OrdinalIgnoreCase);
 
-    private bool TryConsumeError()
-    {
-        while (true)
-        {
-            int pending = Volatile.Read(ref _serverCommandErrorContextLines);
-            if (pending <= 0)
-                return false;
-
-            if (Interlocked.CompareExchange(ref _serverCommandErrorContextLines, pending - 1, pending) == pending)
-                return true;
-        }
-    }
 }
