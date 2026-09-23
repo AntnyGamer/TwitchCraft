@@ -86,6 +86,9 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
     internal void SetProbeDelay(int milliseconds)
         => File.WriteAllText(JarPath + ".probe-delay", Math.Max(0, milliseconds).ToString(CultureInfo.InvariantCulture));
 
+    internal void SetSelectedItem(string playerName, string selectedItem)
+        => File.WriteAllText(JarPath + ".item." + playerName.ToLowerInvariant(), selectedItem);
+
     internal void DropNextProbeResponses(int count = 1)
         => File.WriteAllText(JarPath + ".drop-probe-responses", Math.Max(0, count).ToString(CultureInfo.InvariantCulture));
 
