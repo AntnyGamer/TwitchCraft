@@ -28,6 +28,12 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Set up Java 25 for Minecraft 26.3 diagnostic
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
       - name: Diagnose Minecraft 26.3 startup commands
         shell: pwsh
         run: |
