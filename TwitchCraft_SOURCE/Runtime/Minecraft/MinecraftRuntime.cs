@@ -22,8 +22,6 @@ public sealed partial class MainHandler
     private int _initialPlayerSnapshotQueued;
     private int _suppressedOnlinePlayersLogLines;
     private int _serverCommandErrorContextLines;
-    private readonly Lock _suppressedServerLogContextGate = new();
-    private readonly Queue<string> _suppressedServerLogContextLines = new();
 
     private async Task TryStopServerAsync()
     {
