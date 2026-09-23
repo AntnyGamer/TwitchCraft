@@ -68,12 +68,12 @@ public sealed partial class MainHandler
             if (refreshMinigameLoops || minigamesEnabledChanged)
                 RefreshMinigames(activeConfig.Settings.MinigamesEnabled);
 
-            if (_minecraftSession.ServerReady)
+            if (_minecraftSession.ServerReady && !activeConfig.Settings.RemoteControlEnabled)
             {
                 if (difficultyChanged)
-                    await ApplyDifficultyAsync().ConfigureAwait(false);
+                    await SendServerCommandAsync("difficulty " + (activeConfig.Settings.Difficulty == "Medium" ? "normal" : activeConfig.Settings.Difficulty.ToLowerInvariant()), _sessionCts?.Token ?? CancellationToken.None).ConfigureAwait(false);
                 if (PVPChanged)
-                    await ApplyPVPGameRuleAsync().ConfigureAwait(false);
+                    ApplyPVPGameRule();
             }
         }
         finally
