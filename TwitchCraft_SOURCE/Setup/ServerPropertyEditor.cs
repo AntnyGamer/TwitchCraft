@@ -31,7 +31,6 @@ public sealed class ServerPropertyEditor
         "enable-query",
         "query.port",
         "enable-rcon",
-        "broadcast-rcon-to-ops",
         "rcon.port"
     ];
 
@@ -195,7 +194,7 @@ public sealed class ServerPropertyEditor
         SetDefault(props, "use-native-transport", "true");
         SetDefault(props, "enable-status", "true");
         SetDefault(props, "allow-flight", "false");
-        props["broadcast-rcon-to-ops"] = "false";
+        SetDefault(props, "broadcast-rcon-to-ops", "false");
         SetDefault(props, "resource-pack-prompt", string.Empty);
         SetDefault(props, "sync-chunk-writes", "true");
         SetDefault(props, "op-permission-level", "4");
