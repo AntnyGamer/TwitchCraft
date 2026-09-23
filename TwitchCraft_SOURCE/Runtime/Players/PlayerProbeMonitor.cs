@@ -119,40 +119,41 @@ public sealed partial class MainHandler
         if (players.Count == 0)
             return results;
 
-        (string Player, TaskCompletionSource<string?> Waiter, bool Created)[] waiters =
-            new (string, TaskCompletionSource<string?>, bool)[players.Count];
+        (string Player, TaskCompletionSource<string?> Waiter)[] waiters =
+            new (string, TaskCompletionSource<string?>)[players.Count];
+        List<(string Player, TaskCompletionSource<string?> Waiter)> createdWaiters = new(players.Count);
         lock (_selectedItemProbeGate)
         {
             for (int i = 0; i < players.Count; i++)
             {
                 string player = players[i];
-                bool created = !_pendingSelectedItemRequests.TryGetValue(player, out TaskCompletionSource<string?>? waiter);
-                if (created)
+                if (!_pendingSelectedItemRequests.TryGetValue(player, out TaskCompletionSource<string?>? waiter))
+                {
                     _pendingSelectedItemRequests[player] = waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                waiters[i] = (player, waiter!, created);
+                    createdWaiters.Add((player, waiter));
+                }
+                waiters[i] = (player, waiter!);
             }
         }
 
         try
         {
             Task<string?>[] tasks = new Task<string?>[waiters.Length];
-            List<string> commands = new(waiters.Length);
             for (int i = 0; i < waiters.Length; i++)
-            {
                 tasks[i] = waiters[i].Waiter.Task;
-                if (waiters[i].Created)
-                    commands.Add("data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(waiters[i].Player) + " SelectedItem");
-            }
 
-            if (commands.Count > 0)
+            if (createdWaiters.Count > 0)
             {
+                string[] commands = new string[createdWaiters.Count];
+                for (int i = 0; i < createdWaiters.Count; i++)
+                    commands[i] = "data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(createdWaiters[i].Player) + " SelectedItem";
+
                 await SendPlayerQueryAsync(
-                    (complete, ct) => SendProbesAsync([.. commands], complete, ct),
+                    (complete, ct) => SendProbesAsync(commands, complete, ct),
                     () =>
                     {
-                        for (int i = 0; i < waiters.Length; i++)
-                            if (waiters[i].Created)
-                                CompleteRequest(waiters[i].Player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiters[i].Waiter, null);
+                        for (int i = 0; i < createdWaiters.Count; i++)
+                            CompleteRequest(createdWaiters[i].Player, _selectedItemProbeGate, _pendingSelectedItemRequests, createdWaiters[i].Waiter, null);
                     },
                     _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -167,7 +168,7 @@ public sealed partial class MainHandler
 
             for (int i = 0; i < waiters.Length; i++)
             {
-                (string player, TaskCompletionSource<string?> waiter, _) = waiters[i];
+                (string player, TaskCompletionSource<string?> waiter) = waiters[i];
                 Task<string?> task = waiter.Task;
                 results[player] = task.IsCompletedSuccessfully ? task.Result : null;
             }
