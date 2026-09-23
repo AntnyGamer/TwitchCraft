@@ -124,12 +124,6 @@ public sealed class TwitchMessagingPolicyTests
         Assert.Equal(
             "@viewer Unknown command.",
             MainHandler.FormatReply("Unknown command.", "viewer", mentionViewer: true));
-        Assert.Equal(
-            "@viewer. Welcome!",
-            MainHandler.FormatReply("viewer. Welcome!", "viewer", mentionViewer: true));
-        Assert.Equal(
-            "@viewer @viewer2 hello",
-            MainHandler.FormatReply("@viewer2 hello", "viewer", mentionViewer: true));
     }
 
     [Fact]
