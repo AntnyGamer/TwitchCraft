@@ -68,7 +68,8 @@ public sealed class SharedPlayerProbeTests
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
             multiplayer: true);
-        List<string> commands = FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin");
+        await Task.Delay(2500, scenario.Token);
+        List<string> commands = await scenario.DrainCommandsAsync(0);
         Assert.Fail(string.Join("\n", commands));
     }
 
