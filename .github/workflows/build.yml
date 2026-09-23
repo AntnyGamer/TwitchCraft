@@ -85,10 +85,23 @@ jobs:
             'scoreboard objectives setdisplay list tc_health',
             'scoreboard players set DiagnosticPlayer tc_playerlist 1',
             'scoreboard players reset DiagnosticPlayer tc_playerlist',
-            'data get entity @a[name="NoSuchPlayer",limit=1] attributes',
-            'data get entity @a[name="NoSuchPlayer",limit=1] playerGameType',
+            'scoreboard objectives add locateplayers trigger',
+            'scoreboard objectives add locateplayers trigger',
+            'scoreboard objectives add lp_math dummy',
+            'scoreboard objectives add lp_math dummy',
+            'summon minecraft:zombie 0 100 0 {Tags:["tcdiag"]}',
+            'data get entity @e[tag=tcdiag,limit=1] attributes',
+            'data get entity @e[tag=tcdiag,limit=1] playerGameType',
+            'attribute @e[tag=tcdiag,limit=1] minecraft:scale base set 1',
+            'attribute @e[tag=tcdiag,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
+            'attribute @e[tag=tcdiag,limit=1] minecraft:max_health modifier add twitchcraft:heart_0123456789abcdef0123456789abcdef 2 add_value',
+            'attribute @e[tag=tcdiag,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
             'scoreboard objectives add tc_deaths deathCount',
-            'gamerule minecraft:pvp false'
+            'scoreboard objectives add tc_deaths deathCount',
+            'scoreboard players add DiagnosticPlayer tc_deaths 0',
+            'scoreboard players get DiagnosticPlayer tc_deaths',
+            'gamerule minecraft:pvp false',
+            'difficulty normal'
           )
 
           for ($i = 0; $i -lt $commands.Count; $i++) {
