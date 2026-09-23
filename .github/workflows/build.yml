@@ -56,23 +56,18 @@ jobs:
           $info.WorkingDirectory = $dir
           $info.UseShellExecute = $false
           $info.RedirectStandardInput = $true
-          $info.RedirectStandardOutput = $true
-          $info.RedirectStandardError = $true
-
           $process = [System.Diagnostics.Process]::new()
           $process.StartInfo = $info
           if (-not $process.Start()) { throw "Could not start Minecraft 26.3 server." }
 
+          $log = Join-Path $dir "logs\latest.log"
           $deadline = [DateTime]::UtcNow.AddMinutes(4)
-          $ready = $false
           while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
-            $line = $process.StandardOutput.ReadLine()
-            if ($null -eq $line) { break }
-            Write-Host "MC> $line"
-            if ($line -match 'Done \(') { $ready = $true; break }
+            if ((Test-Path $log) -and (Get-Content $log -Raw) -match 'Done \(') { break }
+            Start-Sleep -Milliseconds 250
           }
-          if (-not $ready) {
-            throw "Minecraft 26.3 did not become ready. STDERR: $($process.StandardError.ReadToEnd())"
+          if ($process.HasExited -or -not (Test-Path $log) -or -not ((Get-Content $log -Raw) -match 'Done \(')) {
+            throw "Minecraft 26.3 did not become ready."
           }
 
           $commands = @(
@@ -87,21 +82,20 @@ jobs:
           )
 
           for ($i = 0; $i -lt $commands.Count; $i++) {
-            $marker = "tc_diag_$i"
-            Write-Host "COMMAND> $($commands[$i])"
+            Write-Host "COMMAND $($i + 1)> $($commands[$i])"
             $process.StandardInput.WriteLine($commands[$i])
-            $process.StandardInput.WriteLine("say $marker")
+            $process.StandardInput.WriteLine("say TC_DIAG_$($i + 1)")
             $process.StandardInput.Flush()
-            do {
-              $line = $process.StandardOutput.ReadLine()
-              if ($null -eq $line) { throw "Minecraft 26.3 exited during diagnostic command $i." }
-              Write-Host "MC> $line"
-            } while ($line -notmatch $marker)
+            Start-Sleep -Milliseconds 500
           }
 
+          Start-Sleep -Seconds 2
           $process.StandardInput.WriteLine("stop")
           $process.StandardInput.Flush()
-          $process.WaitForExit(30000) | Out-Null
+          if (-not $process.WaitForExit(30000)) { $process.Kill($true) }
+
+          Write-Host "----- VANILLA 26.3 DIAGNOSTIC LOG -----"
+          Get-Content $log | Select-String 'TC_DIAG_|unexpected error|twitchcraft:probe|objective|pvp|No entity|Found no elements|entity data' | ForEach-Object { Write-Host $_.Line }
 
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
