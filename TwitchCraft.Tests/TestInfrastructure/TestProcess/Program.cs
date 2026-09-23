@@ -143,7 +143,13 @@ while (await Console.In.ReadLineAsync() is string line)
         if (int.TryParse(ReadState(jarPath, ".probe-delay", "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int delay) && delay > 0)
             await Task.Delay(delay);
         if (!ConsumeCount(jarPath + ".drop-probe-responses"))
-            await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".item", "{id:'minecraft:air',count:1}"));
+        {
+            string item = ReadState(
+                jarPath,
+                ".item." + targetPlayer.ToLowerInvariant(),
+                ReadState(jarPath, ".item", "{id:'minecraft:air',count:1}"));
+            await WriteOutputAsync(targetPlayer + " has the following entity data: " + item);
+        }
         continue;
     }
 
