@@ -97,12 +97,8 @@ public sealed partial class MainHandler
                         isMinecraftCommandErrorContext,
                         isSidebarObjectiveIssue);
                     bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
-                    bool shouldShowLogLine = !suppressServerLogLine && !suppressOnlinePlayersLogLine;
-
-                    if (shouldShowLogLine)
-                    {
+                    if (!suppressServerLogLine && !suppressOnlinePlayersLogLine)
                         _shellWindow?.AddServerLogLine(line);
-                    }
 
                     CapturePlayers(line);
                 }
