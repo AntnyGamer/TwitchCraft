@@ -338,7 +338,7 @@ public sealed partial class MainHandler
         bool isMinecraftCommandErrorContext,
         bool isSidebarObjectiveIssue)
     {
-        if (flags.HasEntityData || isUnexpectedCommandError)
+        if (flags.HasEntityData)
             return true;
 
         if (string.IsNullOrEmpty(line))
@@ -352,7 +352,7 @@ public sealed partial class MainHandler
         if (isSidebarObjectiveIssue)
             return true;
 
-        if (isCommandParserError || isMinecraftCommandErrorContext)
+        if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
 
         if (!flags.HasObjective &&
