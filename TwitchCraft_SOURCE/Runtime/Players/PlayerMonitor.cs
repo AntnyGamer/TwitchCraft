@@ -451,14 +451,9 @@ public sealed partial class MainHandler
         waiter.TrySetResult(result);
     }
 
-    private static bool IsSidebarErrorLine(
-        string line,
-        in ServerLogLineFlags flags,
-        bool isCommandParserError,
-        bool isUnexpectedCommandError,
-        bool isMinecraftCommandErrorContext)
+    private static bool IsSidebarErrorLine(string line, in ServerLogLineFlags flags)
     {
-        if (string.IsNullOrEmpty(line) || isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
+        if (string.IsNullOrEmpty(line))
             return false;
 
         if (!flags.HasObjective && !flags.HasTcPlayerList && !flags.HasTcHealth && !flags.HasHealth)
