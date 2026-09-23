@@ -13,6 +13,15 @@ static string[] ReadNames(string jarPath, string suffix)
     => ReadState(jarPath, suffix, string.Empty)
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
+static bool ConsumeCount(string path)
+{
+    if (!int.TryParse(ReadState(path, string.Empty, "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int count) || count <= 0)
+        return false;
+
+    File.WriteAllText(path, (count - 1).ToString(CultureInfo.InvariantCulture));
+    return true;
+}
+
 static string GetTargetPlayer(string command)
 {
     const string marker = "name=\"";
@@ -89,7 +98,8 @@ while (await Console.In.ReadLineAsync() is string line)
 
     if (line.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal))
     {
-        await WriteOutputAsync("Storage " + line["data get storage ".Length..] + " has the following contents: {}");
+        if (!ConsumeCount(jarPath + ".drop-marker-responses"))
+            await WriteOutputAsync("Storage " + line["data get storage ".Length..] + " has the following contents: {}");
         continue;
     }
 
@@ -120,8 +130,11 @@ while (await Console.In.ReadLineAsync() is string line)
 
     if (line.StartsWith("attribute ", StringComparison.Ordinal) && line.EndsWith(" get", StringComparison.Ordinal))
     {
-        string health = ReadState(jarPath, ".health", "20");
-        await WriteOutputAsync("Value of attribute Max Health for entity " + targetPlayer + " is " + health);
+        if (!ConsumeCount(jarPath + ".drop-probe-responses"))
+        {
+            string health = ReadState(jarPath, ".health", "20");
+            await WriteOutputAsync("Value of attribute Max Health for entity " + targetPlayer + " is " + health);
+        }
         continue;
     }
 
@@ -129,12 +142,16 @@ while (await Console.In.ReadLineAsync() is string line)
     {
         if (int.TryParse(ReadState(jarPath, ".probe-delay", "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int delay) && delay > 0)
             await Task.Delay(delay);
-        await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".item", "{id:'minecraft:air',count:1}"));
+        if (!ConsumeCount(jarPath + ".drop-probe-responses"))
+            await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".item", "{id:'minecraft:air',count:1}"));
         continue;
     }
 
-    if (line.EndsWith(" attributes", StringComparison.Ordinal) || line.EndsWith(" Attributes", StringComparison.Ordinal))
+    if ((line.EndsWith(" attributes", StringComparison.Ordinal) || line.EndsWith(" Attributes", StringComparison.Ordinal)) &&
+        !ConsumeCount(jarPath + ".drop-probe-responses"))
+    {
         await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".attributes", "[]"));
+    }
 }
 
 return 0;
