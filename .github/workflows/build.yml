@@ -64,6 +64,73 @@ jobs:
           $p.StandardInput.Flush()
           $p.WaitForExit(30000) | Out-Null
 
+      - name: Set up Java 25 for Minecraft 26.3 diagnostic
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Diagnose Minecraft 26.3 player-style recovery commands
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "twitchcraft-mc263-entity-diagnostic"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest -Uri "https://piston-data.mojang.com/v1/objects/33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c/server.jar" -OutFile (Join-Path $dir "server.jar")
+          Set-Content -Path (Join-Path $dir "eula.txt") -Value "eula=true" -Encoding ascii
+          @"
+          online-mode=false
+          spawn-protection=0
+          view-distance=2
+          simulation-distance=2
+          "@ | Set-Content -Path (Join-Path $dir "server.properties") -Encoding ascii
+
+          $info = [System.Diagnostics.ProcessStartInfo]::new()
+          $info.FileName = "java"
+          $info.Arguments = "-DMC_DEBUG_VERBOSE_COMMAND_ERRORS=true -Xms512M -Xmx1G -jar server.jar nogui"
+          $info.WorkingDirectory = $dir
+          $info.UseShellExecute = $false
+          $info.RedirectStandardInput = $true
+          $info.RedirectStandardOutput = $true
+          $info.RedirectStandardError = $true
+          $process = [System.Diagnostics.Process]::new()
+          $process.StartInfo = $info
+          if (-not $process.Start()) { throw "Could not start Minecraft 26.3 server." }
+
+          while (-not $process.HasExited) {
+            $line = $process.StandardOutput.ReadLine()
+            if ($null -eq $line) { throw "Minecraft exited before ready." }
+            Write-Host "MC> $line"
+            if ($line -match 'Done \(') { break }
+          }
+
+          $commands = @(
+            'execute in minecraft:overworld run summon minecraft:zombie 0 100 0 {PersistenceRequired:1b,Tags:["tcdiag"]}',
+            'data get entity @e[type=minecraft:zombie,tag=tcdiag,limit=1] attributes',
+            'execute as @e[type=minecraft:zombie,tag=tcdiag,limit=1] run attribute @s minecraft:scale base set 1',
+            'execute as @e[type=minecraft:zombie,tag=tcdiag,limit=1] run attribute @s minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
+            'execute as @e[type=minecraft:zombie,tag=tcdiag,limit=1] run attribute @s minecraft:max_health modifier add twitchcraft:heart_0123456789abcdef0123456789abcdef 2 add_value',
+            'data get entity @e[type=minecraft:zombie,tag=tcdiag,limit=1] attributes',
+            'execute as @e[type=minecraft:zombie,tag=tcdiag,limit=1] run attribute @s minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
+            'data get entity @e[type=minecraft:zombie,tag=tcdiag,limit=1] playerGameType'
+          )
+
+          for ($i = 0; $i -lt $commands.Count; $i++) {
+            $marker = "tc_diag_$i"
+            Write-Host "COMMAND> $($commands[$i])"
+            $process.StandardInput.WriteLine($commands[$i])
+            $process.StandardInput.WriteLine("say $marker")
+            $process.StandardInput.Flush()
+            do {
+              $line = $process.StandardOutput.ReadLine()
+              if ($null -eq $line) { throw "Minecraft exited during command $i." }
+              Write-Host "MC> $line"
+            } while ($line -notmatch $marker)
+          }
+
+          $process.StandardInput.WriteLine("stop")
+          $process.StandardInput.Flush()
+          $process.WaitForExit(30000) | Out-Null
+
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
 
