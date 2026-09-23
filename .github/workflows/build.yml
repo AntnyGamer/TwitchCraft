@@ -85,7 +85,15 @@ jobs:
             throw "Minecraft 26.3 did not become ready. STDERR: $($process.StandardError.ReadToEnd())"
           }
 
-          $commands = @('reload')
+          $commands = @(
+            'reload',
+            'forceload add 0 0',
+            'summon minecraft:zombie 0 100 0 {Tags:["tcdiag"],NoAI:1b,PersistenceRequired:1b}',
+            'attribute @e[type=minecraft:zombie,tag=tcdiag,limit=1] minecraft:scale base set 1',
+            'attribute @e[type=minecraft:zombie,tag=tcdiag,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
+            'attribute @e[type=minecraft:zombie,tag=tcdiag,limit=1] minecraft:max_health modifier add twitchcraft:heart_0123456789abcdef0123456789abcdef 2 add_value',
+            'attribute @e[type=minecraft:zombie,tag=tcdiag,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef'
+          )
 
           for ($i = 0; $i -lt $commands.Count; $i++) {
             $command = $commands[$i]
