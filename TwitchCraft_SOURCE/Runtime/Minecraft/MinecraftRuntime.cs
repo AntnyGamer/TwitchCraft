@@ -19,9 +19,6 @@ public sealed partial class MainHandler
     private static readonly TimeSpan ServerLogUnlockWaitTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan StopCommandTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan ManualCommandTimeout = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan LocalRCONTimeout = TimeSpan.FromMilliseconds(500);
-    private static readonly TimeSpan LocalRCONFailureBackoff = TimeSpan.FromSeconds(30);
-    private long _localRCONUnavailableUntilTicks;
     private int _initialPlayerSnapshotQueued;
     private int _suppressedOnlinePlayersLogLines;
     private int _serverCommandErrorContextLines;
