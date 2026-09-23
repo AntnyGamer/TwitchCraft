@@ -28,6 +28,69 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: TEMP diagnose 26.3 datapack restart load
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "tc-datapack-restart"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest -Uri "https://piston-data.mojang.com/v1/objects/33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c/server.jar" -OutFile (Join-Path $dir "server.jar")
+          Set-Content (Join-Path $dir "eula.txt") "eula=true"
+          @"
+          online-mode=false
+          max-players=1
+          spawn-protection=0
+          view-distance=2
+          simulation-distance=2
+          "@ | Set-Content (Join-Path $dir "server.properties")
+
+          $pack = Join-Path $dir "world/datapacks/locateplayers"
+          New-Item -ItemType Directory -Force -Path (Join-Path $pack "data/locateplayers/function") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $pack "data/minecraft/tags/function") | Out-Null
+          @'
+          {
+            "pack": {
+              "min_format": [121, 0],
+              "max_format": [121, 0],
+              "description": "Locate players command for TwitchCraft"
+            }
+          }
+          '@ | Set-Content (Join-Path $pack "pack.mcmeta")
+          @'
+          scoreboard objectives add locateplayers trigger
+          scoreboard objectives add lp_math dummy
+          '@ | Set-Content (Join-Path $pack "data/locateplayers/function/load.mcfunction")
+          @'
+          {
+            "values": ["locateplayers:load"]
+          }
+          '@ | Set-Content (Join-Path $pack "data/minecraft/tags/function/load.json")
+
+          function Start-MC([string] $label) {
+            Write-Host "=== $label ==="
+            $info = [System.Diagnostics.ProcessStartInfo]::new()
+            $info.FileName = "java"
+            $info.Arguments = "-Xms512M -Xmx1G -jar server.jar nogui"
+            $info.WorkingDirectory = $dir
+            $info.UseShellExecute = $false
+            $info.RedirectStandardInput = $true
+            $info.RedirectStandardOutput = $true
+            $info.RedirectStandardError = $true
+            $p = [System.Diagnostics.Process]::new()
+            $p.StartInfo = $info
+            if (-not $p.Start()) { throw "Could not start Minecraft." }
+            do {
+              $line = $p.StandardOutput.ReadLine()
+              if ($null -eq $line) { throw "Minecraft exited before ready." }
+              Write-Host "MC> $line"
+            } until ($line -match 'Done \(')
+            $p.StandardInput.WriteLine("stop")
+            $p.StandardInput.Flush()
+            $p.WaitForExit(30000) | Out-Null
+          }
+
+          Start-MC "FIRST START"
+          Start-MC "SECOND START"
+
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
 
