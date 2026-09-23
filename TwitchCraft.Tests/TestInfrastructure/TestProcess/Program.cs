@@ -98,7 +98,7 @@ while (await Console.In.ReadLineAsync() is string line)
 
     if (line.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal))
     {
-        if (!ConsumeCount(jarPath + ".drop-marker-responses"))
+        if (!ConsumeCount(jarPath + ".drop-responses"))
             await WriteOutputAsync("Storage " + line["data get storage ".Length..] + " has the following contents: {}");
         continue;
     }
@@ -130,7 +130,7 @@ while (await Console.In.ReadLineAsync() is string line)
 
     if (line.StartsWith("attribute ", StringComparison.Ordinal) && line.EndsWith(" get", StringComparison.Ordinal))
     {
-        if (!ConsumeCount(jarPath + ".drop-probe-responses"))
+        if (!ConsumeCount(jarPath + ".drop-responses"))
         {
             string health = ReadState(jarPath, ".health", "20");
             await WriteOutputAsync("Value of attribute Max Health for entity " + targetPlayer + " is " + health);
@@ -142,7 +142,7 @@ while (await Console.In.ReadLineAsync() is string line)
     {
         if (int.TryParse(ReadState(jarPath, ".probe-delay", "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int delay) && delay > 0)
             await Task.Delay(delay);
-        if (!ConsumeCount(jarPath + ".drop-probe-responses"))
+        if (!ConsumeCount(jarPath + ".drop-responses"))
         {
             string item = ReadState(
                 jarPath,
@@ -154,7 +154,7 @@ while (await Console.In.ReadLineAsync() is string line)
     }
 
     if ((line.EndsWith(" attributes", StringComparison.Ordinal) || line.EndsWith(" Attributes", StringComparison.Ordinal)) &&
-        !ConsumeCount(jarPath + ".drop-probe-responses"))
+        !ConsumeCount(jarPath + ".drop-responses"))
     {
         await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".attributes", "[]"));
     }
