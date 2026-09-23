@@ -71,7 +71,7 @@ public sealed partial class MainHandler
             if (difficultyChanged && _minecraftSession.ServerReady && !activeConfig.Settings.RemoteControlEnabled)
                 await SendServerCommandAsync("difficulty " + (activeConfig.Settings.Difficulty == "Medium" ? "normal" : activeConfig.Settings.Difficulty.ToLowerInvariant()), _sessionCts?.Token ?? CancellationToken.None).ConfigureAwait(false);
             if (pvpChanged)
-                await ApplyPVPGameRule().ConfigureAwait(false);
+                ApplyPVPGameRule();
         }
         finally
         {
