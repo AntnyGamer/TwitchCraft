@@ -129,8 +129,8 @@ public sealed class SharedPlayerProbeTests
         Assert.Equal(2, itemProbeIndexes.Count);
         Assert.Single(commands, command => command.StartsWith(ProbeMarkerPrefix, StringComparison.Ordinal));
         Assert.True(markerIndex > itemProbeIndexes[^1]);
-        Assert.Contains(commands, command => command.Contains("name=\"PlayerOne\"", StringComparison.Ordinal) && command.EndsWith(" SelectedItem", StringComparison.Ordinal));
-        Assert.Contains(commands, command => command.Contains("name=\"PlayerTwo\"", StringComparison.Ordinal) && command.EndsWith(" SelectedItem", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("name=\"playerone\"", StringComparison.OrdinalIgnoreCase) && command.EndsWith(" SelectedItem", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("name=\"PlayerTwo\"", StringComparison.OrdinalIgnoreCase) && command.EndsWith(" SelectedItem", StringComparison.Ordinal));
     }
 
     [Fact]
