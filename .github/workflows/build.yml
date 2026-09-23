@@ -70,6 +70,89 @@ jobs:
           $p.StandardInput.Flush()
           $p.WaitForExit(30000) | Out-Null
 
+      - name: TEMP set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: TEMP validate exact 26.3 locateplayers datapack
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "tc-pack-exact"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest -Uri "https://piston-data.mojang.com/v1/objects/33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c/server.jar" -OutFile (Join-Path $dir "server.jar")
+          Set-Content (Join-Path $dir "eula.txt") "eula=true"
+          @"
+          online-mode=false
+          max-players=1
+          spawn-protection=0
+          view-distance=2
+          simulation-distance=2
+          "@ | Set-Content (Join-Path $dir "server.properties")
+
+          $pack = Join-Path $dir "world/datapacks/locateplayers"
+          New-Item -ItemType Directory -Force -Path $pack | Out-Null
+          Copy-Item -Recurse "TwitchCraft_SOURCE/Assets/locateplayers/data" $pack
+          @'
+          {
+            "pack": {
+              "min_format": [121, 0],
+              "max_format": [121, 0],
+              "description": "Locate players command for TwitchCraft"
+            }
+          }
+          '@ | Set-Content (Join-Path $pack "pack.mcmeta")
+
+          Rename-Item (Join-Path $pack "data/locateplayers/functions") "function"
+          Rename-Item (Join-Path $pack "data/minecraft/tags/functions") "function"
+
+          $run = Join-Path $pack "data/locateplayers/function/run.mcfunction"
+          (Get-Content $run -Raw).Replace(
+            'tellraw @s {"text":"Players online:","color":"yellow","bold":true}',
+            "tellraw @s {text:'Players online:',color:'yellow',bold:true}") | Set-Content $run -NoNewline
+
+          $print = Join-Path $pack "data/locateplayers/function/print_one.mcfunction"
+          (Get-Content $print -Raw).Replace(
+            'tellraw @a[tag=lp_requester] [{"selector":"@s","color":"aqua"},{"text":": ","color":"gray"},{"text":"X=","color":"gold"},{"score":{"name":"$x","objective":"lp_math"}},{"text":" Y=","color":"gold"},{"score":{"name":"$y","objective":"lp_math"}},{"text":" Z=","color":"gold"},{"score":{"name":"$z","objective":"lp_math"}},{"text":" Dimension=","color":"gray"},{"nbt":"Dimension","entity":"@s","color":"light_purple"}]',
+            "tellraw @a[tag=lp_requester,limit=1] [{selector:'@s',color:'aqua'},{text:': ',color:'gray'},{text:'X=',color:'gold'},{score:{name:'$x',objective:'lp_math'}},{text:' Y=',color:'gold'},{score:{name:'$y',objective:'lp_math'}},{text:' Z=',color:'gold'},{score:{name:'$z',objective:'lp_math'}},{text:' Dimension=',color:'gray'},{nbt:'Dimension',entity:'@s',color:'light_purple'}]") | Set-Content $print -NoNewline
+
+          function Run-MC([string] $label) {
+            Write-Host "=== $label ==="
+            $info = [System.Diagnostics.ProcessStartInfo]::new()
+            $info.FileName = "java"
+            $info.Arguments = "-Xms512M -Xmx1G -jar server.jar nogui"
+            $info.WorkingDirectory = $dir
+            $info.UseShellExecute = $false
+            $info.RedirectStandardInput = $true
+            $info.RedirectStandardOutput = $true
+            $info.RedirectStandardError = $true
+            $p = [System.Diagnostics.Process]::new()
+            $p.StartInfo = $info
+            if (-not $p.Start()) { throw "Could not start Minecraft." }
+            do {
+              $line = $p.StandardOutput.ReadLine()
+              if ($null -eq $line) { throw "Minecraft exited before ready: $($p.StandardError.ReadToEnd())" }
+              Write-Host "MC> $line"
+            } until ($line -match 'Done \(')
+            $p.StandardInput.WriteLine("reload")
+            $p.StandardInput.WriteLine("function locateplayers:load")
+            $p.StandardInput.WriteLine("function locateplayers:tick")
+            $p.StandardInput.WriteLine("say tc_diag_done")
+            $p.StandardInput.Flush()
+            do {
+              $line = $p.StandardOutput.ReadLine()
+              if ($null -eq $line) { throw "Minecraft exited during pack diagnostic." }
+              Write-Host "MC> $line"
+            } until ($line -match 'tc_diag_done')
+            $p.StandardInput.WriteLine("stop")
+            $p.StandardInput.Flush()
+            $p.WaitForExit(30000) | Out-Null
+          }
+
+          Run-MC "FIRST START"
+          Run-MC "SECOND START"
+
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
 
