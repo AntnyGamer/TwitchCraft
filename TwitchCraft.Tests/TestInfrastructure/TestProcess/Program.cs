@@ -24,13 +24,6 @@ static string GetTargetPlayer(string command)
     return end > start ? command[start..end] : string.Empty;
 }
 
-static string GetQuotedValue(string command)
-{
-    int start = command.IndexOf('"');
-    int end = command.LastIndexOf('"');
-    return start >= 0 && end > start ? command[(start + 1)..end] : string.Empty;
-}
-
 static async Task WriteOutputAsync(string line)
 {
     await Console.Out.WriteLineAsync(line);
@@ -80,7 +73,6 @@ await using FileStream commandLog = new(
     FileShare.ReadWrite);
 await using StreamWriter commandWriter = new(commandLog);
 
-string probeMarker = string.Empty;
 while (await Console.In.ReadLineAsync() is string line)
 {
     await commandWriter.WriteLineAsync(line);
@@ -95,16 +87,9 @@ while (await Console.In.ReadLineAsync() is string line)
     if (!responsive)
         continue;
 
-    if (line.StartsWith("data modify storage twitchcraft:probe marker set value ", StringComparison.Ordinal))
+    if (line.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal))
     {
-        probeMarker = GetQuotedValue(line);
-        continue;
-    }
-
-    if (string.Equals(line, "data get storage twitchcraft:probe marker", StringComparison.Ordinal))
-    {
-        if (probeMarker.Length > 0)
-            await WriteOutputAsync("twitchcraft:probe marker: \"" + probeMarker + "\"");
+        await WriteOutputAsync("Storage " + line["data get storage ".Length..] + " has the following contents: {}");
         continue;
     }
 
