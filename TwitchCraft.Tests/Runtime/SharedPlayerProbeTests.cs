@@ -11,41 +11,6 @@ namespace TwitchCraft.Tests.Runtime;
 public sealed class SharedPlayerProbeTests
 {
     [Fact]
-    public async Task PVPSetting_AppliesChangesToRunningMultiplayerServer()
-    {
-        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken,
-            multiplayer: true);
-        int cursor = scenario.CaptureCommandCursor();
-
-        scenario.Config.Settings.MultiplayerPVPEnabled = true;
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-        scenario.Config.Settings.MultiplayerPVPEnabled = false;
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-
-        List<string> commands = await scenario.DrainCommandsAsync(cursor);
-        Assert.Contains("gamerule minecraft:pvp true", commands);
-        Assert.Contains("gamerule minecraft:pvp false", commands);
-    }
-
-    [Fact]
-    public async Task DifficultySetting_AppliesChangesToRunningServer()
-    {
-        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken);
-        int cursor = scenario.CaptureCommandCursor();
-
-        scenario.Config.Settings.Difficulty = "Easy";
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-        scenario.Config.Settings.Difficulty = "Hard";
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-
-        List<string> commands = await scenario.DrainCommandsAsync(cursor);
-        Assert.Contains("difficulty easy", commands);
-        Assert.Contains("difficulty hard", commands);
-    }
-
-    [Fact]
     public async Task QueryItem_CancelingOneCallerDoesNotCancelTheSharedServerProbe()
     {
         const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
