@@ -276,20 +276,21 @@ public sealed partial class MainHandler
     {
         lock (_serverProbeMarkerGate)
         {
-            if (!ReferenceEquals(marker.List, _pendingServerProbeMarkers) || marker.Value == null)
+            if (!ReferenceEquals(marker.List, _pendingServerProbeMarkers))
                 return false;
 
+            bool pending = marker.Value != null;
             if (removeMarker)
             {
                 _pendingServerProbeMarkers.Remove(marker);
                 Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
             }
-            else
+            else if (pending)
             {
                 marker.Value = null;
             }
 
-            return true;
+            return pending;
         }
     }
 
