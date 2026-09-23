@@ -32,7 +32,7 @@ public sealed partial class MainHandler
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
-        TrackTask(ApplyPVPGameRuleAsync());
+        ApplyPVPGameRule();
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();
@@ -40,19 +40,18 @@ public sealed partial class MainHandler
         QueueDeathScore();
     }
 
-    internal async Task ApplyPVPGameRuleAsync()
+    private void ApplyPVPGameRule()
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
             return;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
-        if (!version.UsesServerSettingGameRules || !_minecraftSession.ServerReady)
+        if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
             return;
 
-        CancellationToken token = _sessionCts?.Token ?? CancellationToken.None;
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
-        await SendInternalServerCommandAsync(pvp, token).ConfigureAwait(false);
+        TrackTask(SendServerCommandAsync(pvp, token));
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
@@ -116,15 +115,6 @@ public sealed partial class MainHandler
             {
                 onProbeCompleted();
             }
-        }
-
-        string? localResponse = await ExecuteRCONQueryAsync(command, cancellationToken, allowLocal: true).ConfigureAwait(false);
-        if (localResponse != null)
-        {
-            if (!string.IsNullOrWhiteSpace(localResponse))
-                HandleRCONResponse(localResponse);
-            onProbeCompleted();
-            return true;
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
@@ -207,27 +197,6 @@ public sealed partial class MainHandler
         {
             onProbeCompleted();
             return false;
-        }
-
-        List<string?>? localResponses = await ExecuteRCONQueriesAsync(probeCommands, cancellationToken, allowLocal: true).ConfigureAwait(false);
-        if (localResponses != null)
-        {
-            bool delivered = false;
-            foreach (string? response in localResponses)
-            {
-                if (response == null)
-                    continue;
-
-                delivered = true;
-                if (!string.IsNullOrWhiteSpace(response))
-                    HandleRCONResponse(response);
-            }
-
-            if (delivered)
-            {
-                onProbeCompleted();
-                return true;
-            }
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
@@ -407,6 +376,9 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
+        if (line.Contains("Gamerule pvp is now set to:", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
 
@@ -422,7 +394,6 @@ public sealed partial class MainHandler
         return
             line.Contains("An objective already exists by that name", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("Reset [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_playerlist]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_health]", StringComparison.OrdinalIgnoreCase) ||
