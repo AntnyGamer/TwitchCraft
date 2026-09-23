@@ -80,7 +80,7 @@ public sealed class SharedPlayerProbeTests
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken);
-        scenario.DropNextProbeResponses();
+        scenario.DropNextServerResponses();
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(scenario.Token);
         timeout.CancelAfter(TimeSpan.FromSeconds(1));
 
@@ -95,11 +95,10 @@ public sealed class SharedPlayerProbeTests
             TestContext.Current.CancellationToken,
             selectedItem: selectedItem);
 
-        scenario.DropNextProbeResponses();
-        scenario.DropNextProbeMarkerResponses();
+        scenario.DropNextServerResponses(2);
         Assert.Null(await scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token));
 
-        scenario.DropNextProbeResponses();
+        scenario.DropNextServerResponses();
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(scenario.Token);
         timeout.CancelAfter(TimeSpan.FromSeconds(1));
         Assert.Null(await scenario.Runtime.QueryItemAsync("PlayerOne", timeout.Token));
