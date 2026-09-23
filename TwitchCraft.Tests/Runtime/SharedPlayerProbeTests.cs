@@ -19,11 +19,10 @@ public sealed class SharedPlayerProbeTests
             TestContext.Current.CancellationToken,
             multiplayer: true);
 
-        scenario.Config.Settings.MultiplayerPVPEnabled = enabled;
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
         int cursor = scenario.CaptureCommandCursor();
+        scenario.Config.Settings.MultiplayerPVPEnabled = enabled;
 
-        await scenario.Runtime.ApplyPVPGameRuleAsync();
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
 
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
         Assert.Contains("gamerule minecraft:pvp " + enabled.ToString().ToLowerInvariant(), commands);
