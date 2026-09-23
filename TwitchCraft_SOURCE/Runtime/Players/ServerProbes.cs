@@ -406,8 +406,11 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("Gamerule pvp is now set to:", StringComparison.OrdinalIgnoreCase))
+        if (line.Contains("Gamerule pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Game rule pvp is now set to", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
@@ -424,6 +427,7 @@ public sealed partial class MainHandler
         return
             line.Contains("An objective already exists by that name", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Reset [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_playerlist]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_health]", StringComparison.OrdinalIgnoreCase) ||
