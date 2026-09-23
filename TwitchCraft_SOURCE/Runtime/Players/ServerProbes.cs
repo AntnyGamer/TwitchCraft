@@ -330,38 +330,6 @@ public sealed partial class MainHandler
             line.Contains("Unable to execute command", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Error trying to execute", StringComparison.OrdinalIgnoreCase));
 
-    private void SaveHiddenContext(string line)
-    {
-        if (string.IsNullOrWhiteSpace(line))
-            return;
-
-        lock (_suppressedServerLogContextGate)
-        {
-            if (_suppressedServerLogContextLines.Count >= 8)
-                _suppressedServerLogContextLines.Dequeue();
-
-            _suppressedServerLogContextLines.Enqueue(line);
-        }
-    }
-
-    private void ShowHiddenContext()
-    {
-        string[] lines;
-        lock (_suppressedServerLogContextGate)
-        {
-            if (_suppressedServerLogContextLines.Count == 0)
-                return;
-
-            lines = [.. _suppressedServerLogContextLines];
-            _suppressedServerLogContextLines.Clear();
-        }
-
-        foreach (string contextLine in lines)
-        {
-            _shellWindow?.AddServerLogLine(contextLine);
-        }
-    }
-
     private static bool ShouldHideLogLine(
         string line,
         in ServerLogLineFlags flags,
@@ -370,7 +338,7 @@ public sealed partial class MainHandler
         bool isMinecraftCommandErrorContext,
         bool isSidebarObjectiveIssue)
     {
-        if (flags.HasEntityData)
+        if (flags.HasEntityData || isUnexpectedCommandError)
             return true;
 
         if (string.IsNullOrEmpty(line))
@@ -381,7 +349,10 @@ public sealed partial class MainHandler
             line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
+        if (isSidebarObjectiveIssue)
+            return true;
+
+        if (isCommandParserError || isMinecraftCommandErrorContext)
             return false;
 
         if (!flags.HasObjective &&
