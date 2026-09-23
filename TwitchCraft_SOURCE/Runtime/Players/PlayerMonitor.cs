@@ -11,6 +11,8 @@ public sealed partial class MainHandler
 {
     private const string EntityDataMarker = " has the following entity data: ";
     private const string DeathScoreObjective = "tc_deaths";
+    private const string ProbeMarkerNamespace = "twitchcraft:";
+    private const string ProbeMarkerPrefix = "tc_probe_";
     private static readonly StringComparer PlayerNameComparer = StringComparer.OrdinalIgnoreCase;
     private static readonly string MinecraftQueryLoopbackHost = IPAddress.Loopback.ToString();
     private static readonly TimeSpan OnlinePlayersRefreshInterval = TimeSpan.FromSeconds(5);
@@ -70,10 +72,11 @@ public sealed partial class MainHandler
     private int _onlinePlayerSnapshotQueued;
     private readonly Lock _onlinePlayerSnapshotRequestGate = new();
     private readonly Lock _serverProbeMarkerGate = new();
-    private readonly SemaphoreSlim _serverProbeSendGate = new(1, 1);
     private readonly SemaphoreSlim _deathScoreObjectiveGate = new(1, 1);
-    private readonly LinkedList<Action?> _pendingServerProbeMarkers = new();
+    private readonly Dictionary<string, Action> _pendingServerProbeMarkers = new(StringComparer.Ordinal);
     private int _pendingServerProbeMarkerCount;
+    private readonly string _serverProbeMarkerSessionPrefix = ProbeMarkerPrefix + Guid.NewGuid().ToString("N") + "_";
+    private long _serverProbeMarkerCounter;
     private long _minecraftQueryUnavailableUntilTicks;
     private TaskCompletionSource<bool>? _onlinePlayerSnapshotRequest;
     private DateTime _lastPlayerSidebarRefreshErrorUtc = DateTime.MinValue;
