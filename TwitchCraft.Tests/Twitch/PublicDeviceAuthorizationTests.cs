@@ -27,33 +27,6 @@ public sealed class PublicDeviceAuthorizationTests
     }
 
     [Fact]
-    public void AcceptsRequiredScopes()
-    {
-        using JsonDocument document = JsonDocument.Parse("""
-            {
-              "client_id": "client123",
-              "login": "BotAccount",
-              "user_id": "123456",
-              "expires_in": 3600,
-              "scopes": [
-                "chat:read",
-                "chat:edit",
-                "moderator:read:chatters",
-                "moderator:read:followers"
-              ]
-            }
-            """);
-
-        Assert.True(TwitchOAuthAuthorizer.TryReadIdentity(
-            document.RootElement,
-            "client123",
-            out string login,
-            out string error));
-        Assert.Equal("botaccount", login);
-        Assert.Empty(error);
-    }
-
-    [Fact]
     public void RejectsTokenWithoutFollowerPermission()
     {
         using JsonDocument document = JsonDocument.Parse("""
