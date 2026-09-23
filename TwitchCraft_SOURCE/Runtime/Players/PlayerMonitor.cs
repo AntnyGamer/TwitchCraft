@@ -11,8 +11,7 @@ public sealed partial class MainHandler
 {
     private const string EntityDataMarker = " has the following entity data: ";
     private const string DeathScoreObjective = "tc_deaths";
-    private const string ProbeMarkerStorage = "twitchcraft:probe";
-    private const string ProbeMarkerPath = "marker";
+    private const string ProbeMarkerNamespace = "twitchcraft:";
     private const string ProbeMarkerPrefix = "tc_probe_";
     private static readonly StringComparer PlayerNameComparer = StringComparer.OrdinalIgnoreCase;
     private static readonly string MinecraftQueryLoopbackHost = IPAddress.Loopback.ToString();
@@ -44,7 +43,7 @@ public sealed partial class MainHandler
 
             bool hasTcMarker = line.Contains("tc_", StringComparison.Ordinal);
             bool hasEntityData = line.Contains(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-            bool hasProbeMarkerStorage = line.Contains(ProbeMarkerStorage, StringComparison.Ordinal);
+            bool hasProbeMarkerStorage = line.Contains(ProbeMarkerNamespace + ProbeMarkerPrefix, StringComparison.Ordinal);
             bool hasGameMode = line.Contains("game mode", StringComparison.OrdinalIgnoreCase);
             bool hasObjective = line.Contains("objective", StringComparison.OrdinalIgnoreCase);
             bool hasPlayerList = line.Contains("Player List", StringComparison.OrdinalIgnoreCase);
