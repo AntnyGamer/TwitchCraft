@@ -117,6 +117,12 @@ internal sealed class FakeRCONServer : IAsyncDisposable
                 continue;
             }
 
+            if (packet.Type == 0 && authenticated)
+            {
+                await WritePacketAsync(stream, packet.ID, 0, "Unknown request 0", cancellationToken).ConfigureAwait(false);
+                continue;
+            }
+
             if (packet.Type != 2 || !authenticated)
                 continue;
 
