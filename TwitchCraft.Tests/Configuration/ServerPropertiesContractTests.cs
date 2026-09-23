@@ -47,7 +47,6 @@ public sealed class ServerPropertiesContractTests
             server-port=12345
             online-mode=true
             broadcast-console-to-ops=true
-            broadcast-rcon-to-ops=true
             escaped-value=hello\=world\\path
             a-custom=first
             """);
@@ -102,7 +101,6 @@ public sealed class ServerPropertiesContractTests
         Assert.Contains("max-players=7", content, StringComparison.Ordinal);
         Assert.Contains("online-mode=false", content, StringComparison.Ordinal);
         Assert.Contains("broadcast-console-to-ops=false", content, StringComparison.Ordinal);
-        Assert.Contains("broadcast-rcon-to-ops=false", content, StringComparison.Ordinal);
         Assert.DoesNotContain("\npvp=", "\n" + content, StringComparison.Ordinal);
         Assert.Contains("difficulty=hard", content, StringComparison.Ordinal);
         Assert.Contains("hardcore=false", content, StringComparison.Ordinal);
@@ -126,7 +124,7 @@ public sealed class ServerPropertiesContractTests
         foreach (string key in new[]
         {
             "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
-            "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "broadcast-console-to-ops", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "broadcast-rcon-to-ops", "rcon.port"
+            "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "broadcast-console-to-ops", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
         })
             AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader);
 
