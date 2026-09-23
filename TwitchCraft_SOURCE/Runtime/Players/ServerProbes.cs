@@ -376,9 +376,7 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase))
+        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase))
             return true;
 
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
