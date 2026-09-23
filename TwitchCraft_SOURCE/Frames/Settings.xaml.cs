@@ -725,11 +725,7 @@ public partial class Settings : UserControl
     }
 
     private async void PVP_Changed(object sender, RoutedEventArgs e)
-    {
-        await SaveGameplayAsync();
-        if (!_initializing && AppHelpers.GetTwitchCraftWindow(this) is TwitchCraft parent)
-            await parent.Runtime.ApplyPVPGameRuleAsync();
-    }
+        => await SaveGameplayAsync();
 
     private async void Hardcore_Changed(object sender, RoutedEventArgs e)
         => await SaveGameplayAsync();
