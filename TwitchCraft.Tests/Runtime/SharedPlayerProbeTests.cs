@@ -62,17 +62,4 @@ public sealed class SharedPlayerProbeTests
         Assert.Equal(selectedItem, items["PlayerOne"]);
         Assert.Equal(selectedItem, items["PlayerTwo"]);
     }
-    [Fact]
-    public async Task Diagnostic_StartupCommands()
-    {
-        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken,
-            multiplayer: true,
-            statistics: true,
-            version: "26.3.0");
-        await Task.Delay(2500, scenario.Token);
-        List<string> commands = await scenario.DrainCommandsAsync(0);
-        Assert.Fail(string.Join("\n", commands));
-    }
-
 }
