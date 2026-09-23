@@ -78,7 +78,12 @@ public sealed partial class MainHandler
                     bool isCommandParserError = mightContainCommandError && IsParserError(line);
                     bool isUnexpectedCommandError = mightContainCommandError && IsUnexpectedError(line);
                     bool isMinecraftCommandErrorContext = mightContainCommandError && IsErrorContext(line);
-                    bool isSidebarObjectiveIssue = IsSidebarErrorLine(line, flags);
+                    bool isSidebarObjectiveIssue = IsSidebarErrorLine(
+                        line,
+                        flags,
+                        isCommandParserError,
+                        isUnexpectedCommandError,
+                        isMinecraftCommandErrorContext);
 
                     HandleReadyState(line);
                     RestoreSidebar(isSidebarObjectiveIssue);
