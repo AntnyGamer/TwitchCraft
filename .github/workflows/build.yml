@@ -58,21 +58,23 @@ jobs:
           $info.RedirectStandardInput = $true
           $info.RedirectStandardOutput = $true
           $info.RedirectStandardError = $true
+
+          $output = [System.Collections.Concurrent.ConcurrentQueue[string]]::new()
+          $errors = [System.Collections.Concurrent.ConcurrentQueue[string]]::new()
           $process = [System.Diagnostics.Process]::new()
           $process.StartInfo = $info
+          $process.add_OutputDataReceived({ param($sender, $e) if ($null -ne $e.Data) { $output.Enqueue($e.Data) } })
+          $process.add_ErrorDataReceived({ param($sender, $e) if ($null -ne $e.Data) { $errors.Enqueue($e.Data) } })
           if (-not $process.Start()) { throw "Could not start Minecraft 26.3 server." }
+          $process.BeginOutputReadLine()
+          $process.BeginErrorReadLine()
 
           $deadline = [DateTime]::UtcNow.AddMinutes(4)
-          $ready = $false
-          while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
-            $line = $process.StandardOutput.ReadLine()
-            if ($null -eq $line) { Start-Sleep -Milliseconds 50; continue }
-            Write-Host "MC> $line"
-            if ($line -match 'Done \(') { $ready = $true; break }
+          while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline -and -not ($output.ToArray() -match 'Done \(')) {
+            Start-Sleep -Milliseconds 100
           }
-          if (-not $ready) {
-            $stderr = $process.StandardError.ReadToEnd()
-            throw "Minecraft 26.3 did not become ready. STDERR: $stderr"
+          if (-not ($output.ToArray() -match 'Done \(')) {
+            throw "Minecraft 26.3 did not become ready. STDERR: $($errors.ToArray() -join ' | ')"
           }
 
           $commands = @(
@@ -86,19 +88,25 @@ jobs:
             'gamerule minecraft:pvp false'
           )
 
-          foreach ($command in $commands) {
+          for ($i = 0; $i -lt $commands.Count; $i++) {
+            $command = $commands[$i]
+            $marker = "tc_diag_$i"
+            $before = $output.Count
             Write-Host "COMMAND> $command"
             $process.StandardInput.WriteLine($command)
+            $process.StandardInput.WriteLine("say $marker")
             $process.StandardInput.Flush()
-            Start-Sleep -Milliseconds 350
-            while ($process.StandardOutput.Peek() -ge 0) {
-              Write-Host "MC> $($process.StandardOutput.ReadLine())"
+            $commandDeadline = [DateTime]::UtcNow.AddSeconds(5)
+            while ([DateTime]::UtcNow -lt $commandDeadline -and -not ($output.ToArray() -match $marker)) {
+              Start-Sleep -Milliseconds 50
             }
+            $snapshot = $output.ToArray()
+            for ($j = $before; $j -lt $snapshot.Length; $j++) { Write-Host "MC> $($snapshot[$j])" }
           }
+
           $process.StandardInput.WriteLine("stop")
           $process.StandardInput.Flush()
           $process.WaitForExit(30000) | Out-Null
-          while ($process.StandardOutput.Peek() -ge 0) { Write-Host "MC> $($process.StandardOutput.ReadLine())" }
 
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
