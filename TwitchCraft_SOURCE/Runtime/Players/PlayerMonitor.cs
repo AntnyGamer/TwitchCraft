@@ -11,8 +11,6 @@ public sealed partial class MainHandler
 {
     private const string EntityDataMarker = " has the following entity data: ";
     private const string DeathScoreObjective = "tc_deaths";
-    private const string ProbeMarkerNamespace = "twitchcraft:";
-    private const string ProbeMarkerPrefix = "tc_probe_";
     private static readonly StringComparer PlayerNameComparer = StringComparer.OrdinalIgnoreCase;
     private static readonly string MinecraftQueryLoopbackHost = IPAddress.Loopback.ToString();
     private static readonly TimeSpan OnlinePlayersRefreshInterval = TimeSpan.FromSeconds(5);
@@ -33,7 +31,6 @@ public sealed partial class MainHandler
         internal readonly bool HasTcPlayerList;
         internal readonly bool HasTcHealth;
         internal readonly bool HasTcDeaths;
-        internal readonly bool HasProbeMarkerStorage;
         internal readonly bool hasAlreadyExists;
         internal readonly bool hasDoesNotExist;
 
@@ -43,14 +40,13 @@ public sealed partial class MainHandler
 
             bool hasTcMarker = line.Contains("tc_", StringComparison.Ordinal);
             bool hasEntityData = line.Contains(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-            bool hasProbeMarkerStorage = line.Contains(ProbeMarkerNamespace + ProbeMarkerPrefix, StringComparison.Ordinal);
             bool hasGameMode = line.Contains("game mode", StringComparison.OrdinalIgnoreCase);
             bool hasObjective = line.Contains("objective", StringComparison.OrdinalIgnoreCase);
             bool hasPlayerList = line.Contains("Player List", StringComparison.OrdinalIgnoreCase);
             bool hasHealth = line.Contains("Health", StringComparison.OrdinalIgnoreCase);
             bool hasDisplaySlot = line.Contains("display slot", StringComparison.OrdinalIgnoreCase);
 
-            if (!hasTcMarker && !hasEntityData && !hasProbeMarkerStorage &&
+            if (!hasTcMarker && !hasEntityData &&
                 !hasGameMode && !hasObjective && !hasPlayerList && !hasHealth && !hasDisplaySlot)
             {
                 return;
@@ -58,7 +54,6 @@ public sealed partial class MainHandler
 
             HasTcMarker = hasTcMarker;
             HasEntityData = hasEntityData;
-            HasProbeMarkerStorage = hasProbeMarkerStorage;
             HasGameMode = hasGameMode;
             HasObjective = hasObjective;
             HasPlayerList = hasPlayerList;
@@ -75,11 +70,10 @@ public sealed partial class MainHandler
     private int _onlinePlayerSnapshotQueued;
     private readonly Lock _onlinePlayerSnapshotRequestGate = new();
     private readonly Lock _serverProbeMarkerGate = new();
+    private readonly SemaphoreSlim _serverProbeSendGate = new(1, 1);
     private readonly SemaphoreSlim _deathScoreObjectiveGate = new(1, 1);
-    private readonly Dictionary<string, Action> _pendingServerProbeMarkers = new(StringComparer.Ordinal);
+    private readonly LinkedList<Action?> _pendingServerProbeMarkers = new();
     private int _pendingServerProbeMarkerCount;
-    private readonly string _serverProbeMarkerSessionPrefix = ProbeMarkerPrefix + Guid.NewGuid().ToString("N") + "_";
-    private long _serverProbeMarkerCounter;
     private long _minecraftQueryUnavailableUntilTicks;
     private TaskCompletionSource<bool>? _onlinePlayerSnapshotRequest;
     private DateTime _lastPlayerSidebarRefreshErrorUtc = DateTime.MinValue;
