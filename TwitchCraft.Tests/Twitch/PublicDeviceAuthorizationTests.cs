@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json;
+using Newtonsoft.Json.Linq;
 using TwitchCraft_V1.Setup;
 using Xunit;
 
@@ -19,8 +20,9 @@ public sealed class PublicDeviceAuthorizationTests
         Assert.False(TwitchOAuthAuthorizer.ShouldUseDeviceAuth("missing client secret"));
         Assert.True(TwitchOAuthAuthorizer.IsClientSecretFailure("missing client secret"));
         Assert.False(TwitchOAuthAuthorizer.IsClientSecretFailure("invalid refresh token"));
+        JObject persistedConfig = JObject.FromObject(new TwitchConfig());
         Assert.DoesNotContain(
-            typeof(TwitchConfig).GetProperties(),
+            persistedConfig.Properties(),
             property => property.Name.Contains("Secret", StringComparison.OrdinalIgnoreCase));
     }
 
