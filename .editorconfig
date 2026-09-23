@@ -62,17 +62,13 @@ dotnet_diagnostic.IDE0130.severity = none
 indent_style = space
 indent_size = 4
 
-[.github/**/*.yml]
+[*.{yml,yaml}]
 indent_style = space
 indent_size = 2
 
-[TwitchCraft_SOURCE/TwitchCraft.csproj]
+[*.csproj]
 indent_style = tab
 indent_size = tab
-
-[TwitchCraft.Tests/**.csproj]
-indent_style = space
-indent_size = 2
 
 [*.slnx]
 indent_style = space
