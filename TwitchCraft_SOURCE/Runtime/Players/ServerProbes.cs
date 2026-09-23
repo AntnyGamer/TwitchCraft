@@ -406,12 +406,6 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("Gamerule pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("Game rule pvp is now set to", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
 
