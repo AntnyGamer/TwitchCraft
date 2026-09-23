@@ -28,6 +28,72 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Diagnose Minecraft 26.3 startup commands
+        shell: pwsh
+        run: |
+          java -version
+          $dir = Join-Path $env:RUNNER_TEMP "twitchcraft-mc263-diagnostic"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest -Uri "https://piston-data.mojang.com/v1/objects/33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c/server.jar" -OutFile (Join-Path $dir "server.jar")
+          Set-Content -Path (Join-Path $dir "eula.txt") -Value "eula=true" -Encoding ascii
+          @"
+          online-mode=false
+          max-players=1
+          spawn-protection=0
+          view-distance=2
+          simulation-distance=2
+          "@ | Set-Content -Path (Join-Path $dir "server.properties") -Encoding ascii
+
+          $info = [System.Diagnostics.ProcessStartInfo]::new()
+          $info.FileName = "java"
+          $info.Arguments = "-Xms512M -Xmx1G -jar server.jar nogui"
+          $info.WorkingDirectory = $dir
+          $info.UseShellExecute = $false
+          $info.RedirectStandardInput = $true
+          $info.RedirectStandardOutput = $true
+          $info.RedirectStandardError = $true
+          $process = [System.Diagnostics.Process]::new()
+          $process.StartInfo = $info
+          if (-not $process.Start()) { throw "Could not start Minecraft 26.3 server." }
+
+          $deadline = [DateTime]::UtcNow.AddMinutes(4)
+          $ready = $false
+          while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
+            $line = $process.StandardOutput.ReadLine()
+            if ($null -eq $line) { Start-Sleep -Milliseconds 50; continue }
+            Write-Host "MC> $line"
+            if ($line -match 'Done \(') { $ready = $true; break }
+          }
+          if (-not $ready) {
+            $stderr = $process.StandardError.ReadToEnd()
+            throw "Minecraft 26.3 did not become ready. STDERR: $stderr"
+          }
+
+          $commands = @(
+            'data modify storage twitchcraft:probe marker set value "tc_probe_test"',
+            'data get storage twitchcraft:probe marker',
+            'scoreboard objectives remove tc_playerlist',
+            'scoreboard objectives remove tc_health',
+            'data get entity @a[name="NoSuchPlayer",limit=1] attributes',
+            'data get entity @a[name="NoSuchPlayer",limit=1] playerGameType',
+            'scoreboard objectives add tc_deaths deathCount',
+            'gamerule minecraft:pvp false'
+          )
+
+          foreach ($command in $commands) {
+            Write-Host "COMMAND> $command"
+            $process.StandardInput.WriteLine($command)
+            $process.StandardInput.Flush()
+            Start-Sleep -Milliseconds 350
+            while ($process.StandardOutput.Peek() -ge 0) {
+              Write-Host "MC> $($process.StandardOutput.ReadLine())"
+            }
+          }
+          $process.StandardInput.WriteLine("stop")
+          $process.StandardInput.Flush()
+          $process.WaitForExit(30000) | Out-Null
+          while ($process.StandardOutput.Peek() -ge 0) { Write-Host "MC> $($process.StandardOutput.ReadLine())" }
+
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
 
