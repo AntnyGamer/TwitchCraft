@@ -50,6 +50,18 @@ jobs:
           simulation-distance=2
           "@ | Set-Content -Path (Join-Path $dir "server.properties") -Encoding ascii
 
+          $pack = Join-Path $dir "world\datapacks\locateplayers"
+          New-Item -ItemType Directory -Force -Path (Join-Path $pack "data\locateplayers\function") | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $pack "data\minecraft\tags\function") | Out-Null
+          '{"pack":{"min_format":[121,0],"max_format":[121,0],"description":"TwitchCraft diagnostic"}}' |
+            Set-Content -Path (Join-Path $pack "pack.mcmeta") -Encoding ascii
+          @"
+          scoreboard objectives add locateplayers trigger
+          scoreboard objectives add lp_math dummy
+          "@ | Set-Content -Path (Join-Path $pack "data\locateplayers\function\load.mcfunction") -Encoding ascii
+          '{"values":["locateplayers:load"]}' |
+            Set-Content -Path (Join-Path $pack "data\minecraft\tags\function\load.json") -Encoding ascii
+
           $info = [System.Diagnostics.ProcessStartInfo]::new()
           $info.FileName = "java"
           $info.Arguments = "-Xms512M -Xmx1G -jar server.jar nogui"
@@ -73,36 +85,7 @@ jobs:
             throw "Minecraft 26.3 did not become ready. STDERR: $($process.StandardError.ReadToEnd())"
           }
 
-          $commands = @(
-            'data modify storage twitchcraft:probe marker set value "tc_probe_test"',
-            'data get storage twitchcraft:probe marker',
-            'scoreboard objectives remove tc_playerlist',
-            'scoreboard objectives remove tc_health',
-            "scoreboard objectives add tc_playerlist dummy {text:'Player List:'}",
-            "scoreboard objectives add tc_health health {text:'Health'}",
-            'scoreboard objectives modify tc_health rendertype hearts',
-            'scoreboard objectives setdisplay sidebar tc_playerlist',
-            'scoreboard objectives setdisplay list tc_health',
-            'scoreboard players set DiagnosticPlayer tc_playerlist 1',
-            'scoreboard players reset DiagnosticPlayer tc_playerlist',
-            'scoreboard objectives add locateplayers trigger',
-            'scoreboard objectives add locateplayers trigger',
-            'scoreboard objectives add lp_math dummy',
-            'scoreboard objectives add lp_math dummy',
-            'summon minecraft:zombie 0 100 0 {Tags:["tcdiag"]}',
-            'data get entity @e[tag=tcdiag,limit=1] attributes',
-            'data get entity @e[tag=tcdiag,limit=1] playerGameType',
-            'attribute @e[tag=tcdiag,limit=1] minecraft:scale base set 1',
-            'attribute @e[tag=tcdiag,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
-            'attribute @e[tag=tcdiag,limit=1] minecraft:max_health modifier add twitchcraft:heart_0123456789abcdef0123456789abcdef 2 add_value',
-            'attribute @e[tag=tcdiag,limit=1] minecraft:max_health modifier remove twitchcraft:heart_0123456789abcdef0123456789abcdef',
-            'scoreboard objectives add tc_deaths deathCount',
-            'scoreboard objectives add tc_deaths deathCount',
-            'scoreboard players add DiagnosticPlayer tc_deaths 0',
-            'scoreboard players get DiagnosticPlayer tc_deaths',
-            'gamerule minecraft:pvp false',
-            'difficulty normal'
-          )
+          $commands = @('reload')
 
           for ($i = 0; $i -lt $commands.Count; $i++) {
             $command = $commands[$i]
