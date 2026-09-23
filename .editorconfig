@@ -62,7 +62,7 @@ dotnet_diagnostic.IDE0130.severity = none
 indent_style = space
 indent_size = 4
 
-[.github/**/*.yml]
+[*.{yml,yaml}]
 indent_style = space
 indent_size = 2
 
