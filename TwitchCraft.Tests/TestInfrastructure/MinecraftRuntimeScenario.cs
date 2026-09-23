@@ -39,14 +39,18 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         bool multiplayer = false,
         double maxHealth = 20,
         string? selectedItem = null,
-        string? attributes = null)
+        string? attributes = null,
+        bool statistics = false,
+        string version = "26.1.0")
     {
         TemporaryDirectory directory = new();
         CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready-responsive");
         IReadOnlyList<string> playerList = players ?? ["PlayerOne"];
         config.Identity.StreamerMinecraftName = playerList.Count > 0 ? playerList[0] : "PlayerOne";
+        config.Server.MinecraftVersion = version;
         config.Settings.MultiplayerEnabled = multiplayer;
+        config.Settings.StatisticsEnabled = statistics;
         FakeJavaServer.ConfigureResponsiveServer(
             config.Server.JarPath,
             playerList,
