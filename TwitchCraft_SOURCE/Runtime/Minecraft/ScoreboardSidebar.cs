@@ -11,7 +11,7 @@ public sealed partial class MainHandler
     private async Task ClearSidebarAsync(CancellationToken cancellationToken)
     {
         if (_minecraftSession.ServerReady)
-            await SendInternalServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
+            await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
 
         lock (_playerGate)
         {
@@ -67,7 +67,7 @@ public sealed partial class MainHandler
         if (commands.Count == 0)
             return;
 
-        if (!await SendInternalServerCommandsAsync(commands, cancellationToken).ConfigureAwait(false))
+        if (!await SendServerCommandsAsync(commands, cancellationToken).ConfigureAwait(false))
             return;
 
         lock (_playerGate)
