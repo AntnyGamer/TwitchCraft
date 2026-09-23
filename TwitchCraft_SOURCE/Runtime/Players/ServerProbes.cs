@@ -347,10 +347,8 @@ public sealed partial class MainHandler
         if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) || line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) || line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase) || isSidebarObjectiveIssue)
             return true;
 
-        if (isUnexpectedCommandError)
-            return true;
-        if (isCommandParserError || isMinecraftCommandErrorContext)
-            return false;
+        if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
+            return isUnexpectedCommandError;
 
         if (!flags.HasObjective &&
             !flags.HasPlayerList &&
