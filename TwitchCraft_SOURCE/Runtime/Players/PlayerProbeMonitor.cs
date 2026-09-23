@@ -119,47 +119,40 @@ public sealed partial class MainHandler
         if (players.Count == 0)
             return results;
 
-        Dictionary<string, TaskCompletionSource<string?>> waiters = new(players.Count, PlayerNameComparer);
-        List<string> createdWaiterPlayers = new(players.Count);
+        (string Player, TaskCompletionSource<string?> Waiter, bool Created)[] waiters =
+            new (string, TaskCompletionSource<string?>, bool)[players.Count];
         lock (_selectedItemProbeGate)
         {
-            foreach (string player in players)
+            for (int i = 0; i < players.Count; i++)
             {
-                if (!_pendingSelectedItemRequests.TryGetValue(player, out TaskCompletionSource<string?>? waiter))
-                {
-                    waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                    _pendingSelectedItemRequests[player] = waiter;
-                    createdWaiterPlayers.Add(player);
-                }
-
-                waiters[player] = waiter;
+                string player = players[i];
+                bool created = !_pendingSelectedItemRequests.TryGetValue(player, out TaskCompletionSource<string?>? waiter);
+                if (created)
+                    _pendingSelectedItemRequests[player] = waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                waiters[i] = (player, waiter!, created);
             }
         }
 
         try
         {
-            Task<string?>[] tasks = new Task<string?>[waiters.Count];
-            int taskIndex = 0;
-            foreach (TaskCompletionSource<string?> waiter in waiters.Values)
-                tasks[taskIndex++] = waiter.Task;
-
-            if (createdWaiterPlayers.Count > 0)
+            Task<string?>[] tasks = new Task<string?>[waiters.Length];
+            List<string> commands = new(waiters.Length);
+            for (int i = 0; i < waiters.Length; i++)
             {
-                string[] commands = new string[createdWaiterPlayers.Count];
-                for (int i = 0; i < createdWaiterPlayers.Count; i++)
-                {
-                    commands[i] = "data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(createdWaiterPlayers[i]) + " SelectedItem";
-                }
+                tasks[i] = waiters[i].Waiter.Task;
+                if (waiters[i].Created)
+                    commands.Add("data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(waiters[i].Player) + " SelectedItem");
+            }
 
+            if (commands.Count > 0)
+            {
                 await SendPlayerQueryAsync(
-                    (complete, ct) => SendProbesAsync(commands, complete, ct),
+                    (complete, ct) => SendProbesAsync([.. commands], complete, ct),
                     () =>
                     {
-                        foreach (string player in createdWaiterPlayers)
-                        {
-                            if (waiters.TryGetValue(player, out TaskCompletionSource<string?>? waiter))
-                                CompleteRequest(player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiter, null);
-                        }
+                        for (int i = 0; i < waiters.Length; i++)
+                            if (waiters[i].Created)
+                                CompleteRequest(waiters[i].Player, _selectedItemProbeGate, _pendingSelectedItemRequests, waiters[i].Waiter, null);
                     },
                     _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -172,16 +165,17 @@ public sealed partial class MainHandler
             {
             }
 
-            foreach (KeyValuePair<string, TaskCompletionSource<string?>> entry in waiters)
+            for (int i = 0; i < waiters.Length; i++)
             {
-                Task<string?> task = entry.Value.Task;
-                results[entry.Key] = task.IsCompletedSuccessfully ? task.Result : null;
+                (string player, TaskCompletionSource<string?> waiter, _) = waiters[i];
+                Task<string?> task = waiter.Task;
+                results[player] = task.IsCompletedSuccessfully ? task.Result : null;
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            foreach (string player in players)
-                results[player] = null;
+            for (int i = 0; i < waiters.Length; i++)
+                results[waiters[i].Player] = null;
         }
         return results;
     }
