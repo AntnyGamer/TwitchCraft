@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft_V1.Setup;
@@ -9,6 +8,9 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
+    private const string ProbeMarkerCommand = "difficulty";
+    private const string ProbeMarkerResponse = "The difficulty is ";
+
     private void HandleReadyState(string line)
     {
         if (_minecraftSession.ServerReady || string.IsNullOrEmpty(line))
@@ -117,39 +119,40 @@ public sealed partial class MainHandler
             }
         }
 
-        string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
-        {
-            (MainHandler handler, string marker, Action onCompleted) = ((MainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelProbe(marker))
-                onCompleted();
-        }, (this, marker, onProbeCompleted));
-
+        await _serverProbeSendGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        LinkedListNode<Action?>? marker = null;
         try
         {
-            string[] probeCommands =
-            [
-                command,
-                "data get storage " + ProbeMarkerNamespace + marker
-            ];
+            marker = AddProbeMarker(onProbeCompleted);
+            using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
+            {
+                (MainHandler handler, LinkedListNode<Action?> marker, Action onCompleted) =
+                    ((MainHandler Handler, LinkedListNode<Action?> Marker, Action OnCompleted))state!;
+                if (handler.TryCancelProbe(marker))
+                    onCompleted();
+            }, (this, marker, onProbeCompleted));
 
-            if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
+            if (await SendServerCommandsAsync([command, ProbeMarkerCommand], cancellationToken).ConfigureAwait(false))
             {
                 QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
                 return true;
             }
 
-            if (TryCancelProbe(marker))
+            if (TryCancelProbe(marker, removeMarker: true))
                 onProbeCompleted();
 
             return false;
         }
         catch
         {
-            if (TryCancelProbe(marker))
+            if (marker != null && TryCancelProbe(marker))
                 onProbeCompleted();
 
             throw;
+        }
+        finally
+        {
+            _serverProbeSendGate.Release();
         }
     }
 
@@ -197,50 +200,55 @@ public sealed partial class MainHandler
             return false;
         }
 
-        string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
-        {
-            (MainHandler handler, string marker, Action onCompleted) = ((MainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelProbe(marker))
-                onCompleted();
-        }, (this, marker, onProbeCompleted));
-
+        await _serverProbeSendGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        LinkedListNode<Action?>? marker = null;
         try
         {
-            probeCommands.Add("data get storage " + ProbeMarkerNamespace + marker);
+            marker = AddProbeMarker(onProbeCompleted);
+            using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
+            {
+                (MainHandler handler, LinkedListNode<Action?> marker, Action onCompleted) =
+                    ((MainHandler Handler, LinkedListNode<Action?> Marker, Action OnCompleted))state!;
+                if (handler.TryCancelProbe(marker))
+                    onCompleted();
+            }, (this, marker, onProbeCompleted));
+
+            probeCommands.Add(ProbeMarkerCommand);
             if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
             {
                 QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
                 return true;
             }
 
-            if (TryCancelProbe(marker))
+            if (TryCancelProbe(marker, removeMarker: true))
                 onProbeCompleted();
 
             return false;
         }
         catch
         {
-            if (TryCancelProbe(marker))
+            if (marker != null && TryCancelProbe(marker))
                 onProbeCompleted();
 
             throw;
         }
+        finally
+        {
+            _serverProbeSendGate.Release();
+        }
     }
 
-    private string AddProbeMarker(Action onProbeCompleted)
+    private LinkedListNode<Action?> AddProbeMarker(Action onProbeCompleted)
     {
-        string marker = string.Create(CultureInfo.InvariantCulture, $"{_serverProbeMarkerSessionPrefix}{Interlocked.Increment(ref _serverProbeMarkerCounter)}");
         lock (_serverProbeMarkerGate)
         {
-            _pendingServerProbeMarkers[marker] = onProbeCompleted;
+            LinkedListNode<Action?> marker = _pendingServerProbeMarkers.AddLast(onProbeCompleted);
             Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
+            return marker;
         }
-
-        return marker;
     }
 
-    private void QueueProbeFallback(string marker, Action onProbeCompleted, CancellationToken cancellationToken)
+    private void QueueProbeFallback(LinkedListNode<Action?> marker, Action onProbeCompleted, CancellationToken cancellationToken)
     {
         _ = CompleteLaterAsync();
 
@@ -264,54 +272,50 @@ public sealed partial class MainHandler
         }
     }
 
-    private bool TryCancelProbe(string marker)
+    private bool TryCancelProbe(LinkedListNode<Action?> marker, bool removeMarker = false)
     {
         lock (_serverProbeMarkerGate)
         {
-            bool removed = _pendingServerProbeMarkers.Remove(marker);
-            if (removed)
-                Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
+            if (!ReferenceEquals(marker.List, _pendingServerProbeMarkers) || marker.Value == null)
+                return false;
 
-            return removed;
+            if (removeMarker)
+            {
+                _pendingServerProbeMarkers.Remove(marker);
+                Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
+            }
+            else
+            {
+                marker.Value = null;
+            }
+
+            return true;
         }
     }
 
     private bool TryHandleProbe(string line)
     {
-        if (Volatile.Read(ref _pendingServerProbeMarkerCount) <= 0)
+        if (Volatile.Read(ref _pendingServerProbeMarkerCount) <= 0 ||
+            string.IsNullOrEmpty(line) ||
+            !line.Contains(ProbeMarkerResponse, StringComparison.OrdinalIgnoreCase))
+        {
             return false;
-
-        string marker = GetProbeMarker(line);
-        if (marker.Length == 0)
-            return false;
+        }
 
         Action? onCompleted;
         lock (_serverProbeMarkerGate)
         {
-            if (!_pendingServerProbeMarkers.Remove(marker, out onCompleted))
+            LinkedListNode<Action?>? marker = _pendingServerProbeMarkers.First;
+            if (marker == null)
                 return false;
 
+            onCompleted = marker.Value;
+            _pendingServerProbeMarkers.RemoveFirst();
             Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
         }
 
-        onCompleted();
+        onCompleted?.Invoke();
         return true;
-    }
-
-    private static string GetProbeMarker(string line)
-    {
-        if (string.IsNullOrEmpty(line))
-            return string.Empty;
-
-        int markerIndex = line.IndexOf(ProbeMarkerPrefix, StringComparison.Ordinal);
-        if (markerIndex < 0)
-            return string.Empty;
-
-        int end = markerIndex + ProbeMarkerPrefix.Length;
-        while (end < line.Length && (char.IsAsciiLetterOrDigit(line[end]) || line[end] == '_'))
-            end++;
-
-        return line[markerIndex..end];
     }
 
     private static bool IsUnexpectedError(string line)
