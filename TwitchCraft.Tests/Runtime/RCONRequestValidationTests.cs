@@ -29,7 +29,7 @@ public sealed class RCONRequestValidationTests
     }
 
     [Fact]
-    public async Task Query_UsesValidCommandSentinel()
+    public async Task Query_UsesNonCommandSentinel()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         const string password = "query-sentinel-password";
@@ -40,7 +40,7 @@ public sealed class RCONRequestValidationTests
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
             Assert.Equal("OK", await MinecraftRCONClient.ExecuteQueryAsync(
                 "127.0.0.1", RCON.Port, password, "list", cancellationToken));
-            Assert.Equal(["list", "list"], RCON.Commands);
+            Assert.Equal(["list"], RCON.Commands);
         }
         finally
         {
