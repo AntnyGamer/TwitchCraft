@@ -165,18 +165,23 @@ public sealed partial class MainHandler
                             StringComparison.OrdinalIgnoreCase))
                     {
                         string initializeCommand = "scoreboard players add " + normalizedPlayerName + " " + DeathScoreObjective + " 0";
-                        if (!await SendInternalServerCommandAsync(initializeCommand, t).ConfigureAwait(false))
+                        if (!await SendServerCommandAsync(initializeCommand, t).ConfigureAwait(false))
                             return;
 
                         Volatile.Write(ref _deathScoreInitializedPlayerName, normalizedPlayerName);
                     }
 
                     string command = "scoreboard players get " + normalizedPlayerName + " " + DeathScoreObjective;
-                    string? response = await ExecuteRCONQueryAsync(command, t, allowLocal: true).ConfigureAwait(false);
-                    if (!string.IsNullOrWhiteSpace(response))
-                        HandleRCONResponse(response);
-                    else if (response == null && !RemoteControlEnabled)
-                        await SendInternalServerCommandAsync(command, t).ConfigureAwait(false);
+                    if (RemoteControlEnabled)
+                    {
+                        string? response = await ExecuteRCONQueryAsync(command, t).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(response))
+                            HandleRCONResponse(response);
+                    }
+                    else
+                    {
+                        await SendServerCommandAsync(command, t).ConfigureAwait(false);
+                    }
                 }
             },
             () => Interlocked.Exchange(ref _deathScoreRefreshQueued, 0),
