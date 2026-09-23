@@ -21,7 +21,6 @@ public sealed partial class MainHandler
     private static readonly TimeSpan ManualCommandTimeout = TimeSpan.FromSeconds(5);
     private int _initialPlayerSnapshotQueued;
     private int _suppressedOnlinePlayersLogLines;
-    private int _serverCommandErrorContextLines;
 
     private async Task TryStopServerAsync()
     {
