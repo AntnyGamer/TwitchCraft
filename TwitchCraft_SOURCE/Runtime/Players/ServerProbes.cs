@@ -386,12 +386,6 @@ public sealed partial class MainHandler
             return true;
         }
 
-        if (line.Contains("The difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
-            line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
 
