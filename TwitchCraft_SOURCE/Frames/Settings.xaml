@@ -295,7 +295,7 @@
                                                 <TextBlock Text="Cooldown between minigames:" Style="{StaticResource SettingLabel}" />
                                                 <ComboBox x:Name="MinigameCooldownDropdown" AutomationProperties.Name="Cooldown between minigames" SelectionChanged="MinigameCooldown_Changed" />
                                             </DockPanel>
-                                            <DockPanel Style="{StaticResource SettingRow}" ToolTip="Takes effect after the Minecraft server restarts.">
+                                            <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Enable hardcore mode:" Style="{StaticResource SettingLabel}" />
                                                 <CheckBox x:Name="HardcoreCheckbox" AutomationProperties.Name="Enable hardcore mode" Checked="Hardcore_Changed" Unchecked="Hardcore_Changed" />
                                             </DockPanel>
