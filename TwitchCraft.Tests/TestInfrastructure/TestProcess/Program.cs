@@ -87,9 +87,9 @@ while (await Console.In.ReadLineAsync() is string line)
     if (!responsive)
         continue;
 
-    if (line.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal))
+    if (string.Equals(line, "difficulty", StringComparison.Ordinal))
     {
-        await WriteOutputAsync("Storage " + line["data get storage ".Length..] + " has the following contents: {}");
+        await WriteOutputAsync("The difficulty is normal");
         continue;
     }
 
