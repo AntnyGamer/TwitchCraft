@@ -16,13 +16,13 @@ public sealed class SharedPlayerProbeTests
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(TestContext.Current.CancellationToken, multiplayer: true);
         int cursor = scenario.CaptureCommandCursor();
         scenario.Config.Settings.Difficulty = "Hard";
-        scenario.Config.Settings.MultiplayerPVPEnabled = false;
+        scenario.Config.Settings.MultiplayerPVPEnabled = true;
 
         await scenario.Runtime.ApplySettingsAsync(scenario.Config);
 
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
         Assert.Contains("difficulty hard", commands);
-        Assert.Contains("gamerule minecraft:pvp false", commands);
+        Assert.Contains("gamerule minecraft:pvp true", commands);
     }
 
     [Fact]
