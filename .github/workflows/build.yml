@@ -34,6 +34,12 @@ jobs:
           distribution: temurin
           java-version: "25"
 
+      - name: Set up Java 25 for datapack diagnostic
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
       - name: TEMP diagnose 26.3 datapack restart load
         shell: pwsh
         run: |
