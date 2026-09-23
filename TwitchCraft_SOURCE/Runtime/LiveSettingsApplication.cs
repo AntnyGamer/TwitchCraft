@@ -68,7 +68,7 @@ public sealed partial class MainHandler
             if (refreshMinigameLoops || minigamesEnabledChanged)
                 RefreshMinigames(activeConfig.Settings.MinigamesEnabled);
 
-            if (_runtimeState == RuntimeState.Running)
+            if (_minecraftSession.ServerReady)
             {
                 if (difficultyChanged)
                     await ApplyDifficultyAsync().ConfigureAwait(false);
