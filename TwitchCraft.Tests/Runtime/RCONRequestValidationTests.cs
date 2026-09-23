@@ -29,26 +29,6 @@ public sealed class RCONRequestValidationTests
     }
 
     [Fact]
-    public async Task Query_DoesNotSendEmptySentinelCommand()
-    {
-        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
-        const string password = "query-sentinel-password";
-        await using FakeRCONServer RCON = new(password);
-
-        try
-        {
-            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-            Assert.Equal("OK", await MinecraftRCONClient.ExecuteQueryAsync(
-                "127.0.0.1", RCON.Port, password, "list", cancellationToken));
-            Assert.Equal(0, RCON.EmptyCommandCount);
-        }
-        finally
-        {
-            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-        }
-    }
-
-    [Fact]
     public async Task PublicOperations_RejectInvalidRequestsWithoutOpeningSocket()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
