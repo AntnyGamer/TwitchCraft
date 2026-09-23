@@ -43,19 +43,34 @@ public sealed partial class MainHandler
     private void ApplyPVPGameRule()
         => TrackTask(ApplyPVPGameRuleAsync());
 
-    internal async Task ApplyPVPGameRuleAsync()
+    private async Task ApplyPVPGameRuleAsync()
     {
         TwitchCraftConfig? config = _activeConfig;
-        if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
+        if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled || !_minecraftSession.ServerReady)
             return;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
-        if (!version.UsesServerSettingGameRules || !_minecraftSession.ServerReady)
+        if (!version.UsesServerSettingGameRules)
             return;
 
         CancellationToken token = _sessionCts?.Token ?? CancellationToken.None;
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
         await SendServerCommandAsync(pvp, token).ConfigureAwait(false);
+    }
+
+    private async Task ApplyDifficultyAsync()
+    {
+        TwitchCraftConfig? config = _activeConfig;
+        if (config == null || config.Settings.RemoteControlEnabled || !_minecraftSession.ServerReady)
+            return;
+
+        string difficulty = ConfigurationStore.NormalizeDifficulty(config.Settings.Difficulty) switch
+        {
+            "Easy" => "easy",
+            "Hard" => "hard",
+            _ => "normal"
+        };
+        await SendServerCommandAsync("difficulty " + difficulty, _sessionCts?.Token ?? CancellationToken.None).ConfigureAwait(false);
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
@@ -380,8 +395,17 @@ public sealed partial class MainHandler
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("Gamerule pvp is now set to:", StringComparison.OrdinalIgnoreCase))
+        if (line.Contains("Gamerule pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Game rule pvp is now set to", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
+
+        if (line.Contains("The difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
 
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
@@ -398,6 +422,7 @@ public sealed partial class MainHandler
         return
             line.Contains("An objective already exists by that name", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Reset [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_playerlist]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_health]", StringComparison.OrdinalIgnoreCase) ||
