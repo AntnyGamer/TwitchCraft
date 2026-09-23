@@ -326,7 +326,7 @@ public sealed partial class MainHandler
             line.Contains("Unable to execute command", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Error trying to execute", StringComparison.OrdinalIgnoreCase));
 
-    private bool ShouldHideLogLine(
+    private static bool ShouldHideLogLine(
         string line,
         in ServerLogLineFlags flags,
         bool isCommandParserError,
@@ -344,12 +344,7 @@ public sealed partial class MainHandler
             line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase) || isSidebarObjectiveIssue)
             return true;
 
-        if (isUnexpectedCommandError)
-        {
-            long now = Environment.TickCount64;
-            return now - Interlocked.Exchange(ref _lastUnexpectedCommandErrorTicks, now) < 5000;
-        }
-        if (isCommandParserError || isMinecraftCommandErrorContext)
+        if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
 
         if (!flags.HasObjective &&
