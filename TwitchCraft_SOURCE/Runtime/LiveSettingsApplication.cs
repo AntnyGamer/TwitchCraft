@@ -16,13 +16,15 @@ public sealed partial class MainHandler
         {
             TwitchCraftConfig activeConfig = ConfigurationStore.Clone(config);
             ConfigurationStore.NormalizeRuntime(activeConfig);
-            bool minigamesEnabledChanged = false, passiveScheduleChanged = false, followRewardsChanged = false, twitchAuthChanged = false, maximumBalanceNeedsClamp = false;
+            bool minigamesEnabledChanged = false, difficultyChanged = false, PVPChanged = false, passiveScheduleChanged = false, followRewardsChanged = false, twitchAuthChanged = false, maximumBalanceNeedsClamp = false;
 
             lock (_configPersistenceGate)
             {
                 if (_activeConfig != null)
                 {
                     minigamesEnabledChanged = _activeConfig.Settings.MinigamesEnabled != activeConfig.Settings.MinigamesEnabled;
+                    difficultyChanged = !string.Equals(_activeConfig.Settings.Difficulty, activeConfig.Settings.Difficulty, StringComparison.OrdinalIgnoreCase);
+                    PVPChanged = _activeConfig.Settings.MultiplayerPVPEnabled != activeConfig.Settings.MultiplayerPVPEnabled;
                     followRewardsChanged = _activeConfig.Settings.AutomaticFollowRewardsEnabled != activeConfig.Settings.AutomaticFollowRewardsEnabled;
                     twitchAuthChanged = !preserveTwitchAuth && !string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), NormalizeToken(activeConfig.Twitch.BotToken), StringComparison.Ordinal);
                     maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 && (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
@@ -64,8 +66,14 @@ public sealed partial class MainHandler
             }
 
             if (refreshMinigameLoops || minigamesEnabledChanged)
-            {
                 RefreshMinigames(activeConfig.Settings.MinigamesEnabled);
+
+            if (_runtimeState == RuntimeState.Running)
+            {
+                if (difficultyChanged)
+                    await ApplyDifficultyAsync().ConfigureAwait(false);
+                if (PVPChanged)
+                    await ApplyPVPGameRuleAsync().ConfigureAwait(false);
             }
         }
         finally
