@@ -37,6 +37,8 @@ public sealed class SharedPlayerProbeTests
 
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
         Assert.Equal(1, commands.Count(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)));
+        Assert.DoesNotContain(commands, command => command.StartsWith("data modify storage twitchcraft:", StringComparison.Ordinal));
+        Assert.Single(commands.Where(command => command.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal)));
     }
 
     [Fact]
