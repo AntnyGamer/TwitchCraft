@@ -28,6 +28,12 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: TEMP set up Java 25 for datapack diagnostic
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
       - name: TEMP diagnose 26.3 datapack restart load
         shell: pwsh
         run: |
