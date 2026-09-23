@@ -86,6 +86,12 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
     internal void SetProbeDelay(int milliseconds)
         => File.WriteAllText(JarPath + ".probe-delay", Math.Max(0, milliseconds).ToString(CultureInfo.InvariantCulture));
 
+    internal void DropNextProbeResponses(int count = 1)
+        => File.WriteAllText(JarPath + ".drop-probe-responses", Math.Max(0, count).ToString(CultureInfo.InvariantCulture));
+
+    internal void DropNextProbeMarkerResponses(int count = 1)
+        => File.WriteAllText(JarPath + ".drop-marker-responses", Math.Max(0, count).ToString(CultureInfo.InvariantCulture));
+
     internal async Task<List<string>> DrainCommandsAsync(int cursor)
     {
         string barrier = "say tc_test_barrier_" + Interlocked.Increment(ref _barrierID).ToString(CultureInfo.InvariantCulture);
