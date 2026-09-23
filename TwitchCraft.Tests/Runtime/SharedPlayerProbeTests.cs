@@ -62,21 +62,4 @@ public sealed class SharedPlayerProbeTests
         Assert.Equal(selectedItem, items["PlayerOne"]);
         Assert.Equal(selectedItem, items["PlayerTwo"]);
     }
-    [Fact]
-    public async Task Diagnostic_Full263StartupCommandSequence()
-    {
-        const string attributes = "[{id:'minecraft:max_health',modifiers:[{id:'twitchcraft:heart_11111111111111111111111111111111',amount:2.0d},{id:'twitchcraft:heart_22222222222222222222222222222222',amount:2.0d},{id:'twitchcraft:heart_33333333333333333333333333333333',amount:2.0d},{id:'twitchcraft:heart_44444444444444444444444444444444',amount:2.0d}]}]";
-        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken,
-            players: ["Cenothrepticye3"],
-            multiplayer: true,
-            attributes: attributes,
-            statistics: true,
-            version: "26.3.0");
-
-        await Task.Delay(3000, scenario.Token);
-        List<string> commands = FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin");
-        Assert.Fail(string.Join(" || ", commands.Select((command, index) => index.ToString() + ":" + command)));
-    }
-
 }
