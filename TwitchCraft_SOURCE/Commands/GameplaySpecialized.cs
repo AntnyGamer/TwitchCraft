@@ -334,14 +334,14 @@ public static partial class CommandList
                         if (invalid) { await SayAsync(sender + ", that would put " + player + " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false); return; }
                     }
 
-                    string id = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
+                    string ID = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
                     string[] commands = new string[players.Count];
                     for (int i = 0; i < players.Count; i++)
-                        commands[i] = MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(players[i]), id, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs);
+                        commands[i] = MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(players[i]), ID, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs);
                     sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
                     if (!sent) return;
-                    foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, id, false)); }
-                    runtime.TrackTask(ResetHeartAsync(id, ct));
+                    foreach (string player in players) { if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects)) activeHeartEffects[player] = effects = []; effects.Add((delta, ID, false)); }
+                    runtime.TrackTask(ResetHeartAsync(ID, ct));
                     await ConfirmAsync(sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) + " for 10 minutes.", ct).ConfigureAwait(false);
                 }
                 finally { if (!sent) runtime.Commands.ClearTimedCommandCooldown("heart", reservation); }
@@ -365,21 +365,21 @@ public static partial class CommandList
             foreach (var entry in activeHeartEffects)
                 for (int i = 0; i < entry.Value.Count; i++)
                 {
-                    (int delta, string id, bool expired) = entry.Value[i];
-                    if (force && !expired) entry.Value[i] = (delta, id, expired = true);
-                    if (expired && runtime.IsPlayerOnline(entry.Key)) (pending ??= []).Add((entry.Key, id));
+                    (int delta, string ID, bool expired) = entry.Value[i];
+                    if (force && !expired) entry.Value[i] = (delta, ID, expired = true);
+                    if (expired && runtime.IsPlayerOnline(entry.Key)) (pending ??= []).Add((entry.Key, ID));
                 }
             if (pending == null) return;
 
             string? selectorPlayer = null, selector = null;
-            foreach ((string pendingPlayer, string id) in pending)
+            foreach ((string pendingPlayer, string ID) in pending)
             {
                 if (!string.Equals(selectorPlayer, pendingPlayer, StringComparison.OrdinalIgnoreCase))
                 {
                     selectorPlayer = pendingPlayer;
                     selector = MinecraftCommandBuilder.SinglePlayerSelector(pendingPlayer);
                 }
-                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(selector!, id, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(selector!, ID, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
             }
 
             string? verifiedPlayer = null;
@@ -401,17 +401,17 @@ public static partial class CommandList
             }
             for (int i = effects.Count - 1; i >= 0; i--)
                 if (!current.Contains(effects[i].ID)) effects.RemoveAt(i);
-            if (recover) foreach (string id in current)
+            if (recover) foreach (string ID in current)
             {
                 bool exists = false;
                 for (int i = 0; i < effects.Count; i++)
-                    if (effects[i].ID == id) { exists = true; break; }
-                if (!exists) effects.Add((0, id, true));
+                    if (effects[i].ID == ID) { exists = true; break; }
+                if (!exists) effects.Add((0, ID, true));
             }
             if (effects.Count == 0) activeHeartEffects.Remove(player);
         }
 
-        async Task ResetHeartAsync(string id, CancellationToken ct)
+        async Task ResetHeartAsync(string ID, CancellationToken ct)
         {
             try
             {
@@ -423,7 +423,7 @@ public static partial class CommandList
             {
                 foreach (List<(int Delta, string ID, bool Expired)> effects in activeHeartEffects.Values)
                     for (int i = 0; i < effects.Count; i++)
-                        if (effects[i].ID == id) effects[i] = (effects[i].Delta, id, true);
+                        if (effects[i].ID == ID) effects[i] = (effects[i].Delta, ID, true);
                 await ResetHeartEffectsCoreAsync(null, false, CancellationToken.None).ConfigureAwait(false);
             }
             finally { heartGate.Release(); }

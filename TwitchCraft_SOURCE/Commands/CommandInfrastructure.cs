@@ -159,12 +159,12 @@ public static class MinecraftCommandBuilder
             scale.ToString("0.###", CultureInfo.InvariantCulture);
     }
 
-    public static string AddMaxHealthModifier(string selector, string id, int delta, bool modernAttribute, bool namespacedID)
+    public static string AddMaxHealthModifier(string selector, string ID, int delta, bool modernAttribute, bool namespacedID)
         => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") +
-            " modifier add " + id + (namespacedID ? "" : " twitchcraft_health") + " " + delta.ToString(CultureInfo.InvariantCulture) + " add_value";
+            " modifier add " + ID + (namespacedID ? "" : " twitchcraft_health") + " " + delta.ToString(CultureInfo.InvariantCulture) + " add_value";
 
-    public static string RemoveMaxHealthModifier(string selector, string id, bool modernAttribute)
-        => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") + " modifier remove " + id;
+    public static string RemoveMaxHealthModifier(string selector, string ID, bool modernAttribute)
+        => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") + " modifier remove " + ID;
 
     public static string ModeratePlayer(string playerName, string reason, bool ban)
     {

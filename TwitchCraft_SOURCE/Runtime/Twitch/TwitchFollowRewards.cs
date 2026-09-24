@@ -295,7 +295,7 @@ public sealed partial class MainHandler
                 (awardedAmount > 0
                     ? " You received " + awardedAmount.ToString(CultureInfo.InvariantCulture) + " tokens!"
                     : " Your token balance is already at the maximum."),
-            BotResponseKind.Announcement,
+            BotResponseKind.Confirmation,
             cancellationToken));
     }
 

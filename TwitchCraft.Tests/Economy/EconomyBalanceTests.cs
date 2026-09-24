@@ -121,50 +121,53 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void GetTopBalances_SortsByBalanceThenUsernameAndHonorsLimit()
+    public void TokenLeaderboard_SortsByBalanceThenUsernameAndHonorsLimit()
     {
         using TemporaryDirectory directory = new();
-        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenService tokens = new(Path.Combine(directory.Path, "viewer_tokens.db"), static () => 0);
 
         try
         {
-            store.AdjustBalance("charlie", 25);
-            store.AdjustBalance("Bob", 50);
-            store.AdjustBalance("alice", 50);
-            store.AdjustBalance("delta", 10);
+            tokens.Award("charlie", 25);
+            tokens.Award("Bob", 50);
+            tokens.Award("alice", 50);
+            tokens.Award("delta", 10);
 
-            IReadOnlyList<KeyValuePair<string, int>> leaders = store.GetTopBalances(3);
-
+            Assert.True(tokens.TryGetTopBalances(3, out IReadOnlyList<KeyValuePair<string, int>> leaders));
             Assert.Equal(["alice", "bob", "charlie"], leaders.Select(entry => entry.Key));
             Assert.Equal([50, 50, 25], leaders.Select(entry => entry.Value));
         }
         finally
         {
-            store.CloseConnection();
+            tokens.Close();
         }
     }
 
     [Fact]
-    public void GetRank_ReturnsExactLeaderboardPositionAndBalance()
+    public void TokenRank_ReturnsExactLeaderboardPositionAndBalance()
     {
         using TemporaryDirectory directory = new();
-        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
+        TokenService tokens = new(Path.Combine(directory.Path, "viewer_tokens.db"), static () => 0);
 
         try
         {
-            store.AdjustBalance("charlie", 25);
-            store.AdjustBalance("Bob", 50);
-            store.AdjustBalance("alice", 50);
-            store.AdjustBalance("delta", 10);
+            tokens.Award("charlie", 25);
+            tokens.Award("Bob", 50);
+            tokens.Award("alice", 50);
+            tokens.Award("delta", 10);
 
-            Assert.Equal(new TokenRankResult("alice", 50, 1), store.GetRank("@ALICE"));
-            Assert.Equal(new TokenRankResult("bob", 50, 2), store.GetRank("bob"));
-            Assert.Equal(new TokenRankResult("charlie", 25, 3), store.GetRank("Charlie"));
-            Assert.Null(store.GetRank("not_ranked"));
+            Assert.True(tokens.TryGetRank("@ALICE", out TokenRankResult? alice));
+            Assert.True(tokens.TryGetRank("bob", out TokenRankResult? bob));
+            Assert.True(tokens.TryGetRank("Charlie", out TokenRankResult? charlie));
+            Assert.True(tokens.TryGetRank("not_ranked", out TokenRankResult? missing));
+            Assert.Equal(new TokenRankResult("alice", 50, 1), alice);
+            Assert.Equal(new TokenRankResult("bob", 50, 2), bob);
+            Assert.Equal(new TokenRankResult("charlie", 25, 3), charlie);
+            Assert.Null(missing);
         }
         finally
         {
-            store.CloseConnection();
+            tokens.Close();
         }
     }
 

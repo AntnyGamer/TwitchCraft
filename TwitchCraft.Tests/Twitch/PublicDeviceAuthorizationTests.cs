@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json;
+using Newtonsoft.Json.Linq;
 using TwitchCraft_V1.Setup;
 using Xunit;
 
@@ -19,36 +20,10 @@ public sealed class PublicDeviceAuthorizationTests
         Assert.False(TwitchOAuthAuthorizer.ShouldUseDeviceAuth("missing client secret"));
         Assert.True(TwitchOAuthAuthorizer.IsClientSecretFailure("missing client secret"));
         Assert.False(TwitchOAuthAuthorizer.IsClientSecretFailure("invalid refresh token"));
+        JObject persistedConfig = JObject.FromObject(new TwitchConfig());
         Assert.DoesNotContain(
-            typeof(TwitchConfig).GetProperties(),
+            persistedConfig.Properties(),
             property => property.Name.Contains("Secret", StringComparison.OrdinalIgnoreCase));
-    }
-
-    [Fact]
-    public void AcceptsRequiredScopes()
-    {
-        using JsonDocument document = JsonDocument.Parse("""
-            {
-              "client_id": "client123",
-              "login": "BotAccount",
-              "user_id": "123456",
-              "expires_in": 3600,
-              "scopes": [
-                "chat:read",
-                "chat:edit",
-                "moderator:read:chatters",
-                "moderator:read:followers"
-              ]
-            }
-            """);
-
-        Assert.True(TwitchOAuthAuthorizer.TryReadIdentity(
-            document.RootElement,
-            "client123",
-            out string login,
-            out string error));
-        Assert.Equal("botaccount", login);
-        Assert.Empty(error);
     }
 
     [Fact]

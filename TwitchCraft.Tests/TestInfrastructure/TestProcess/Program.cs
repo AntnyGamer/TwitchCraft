@@ -13,6 +13,15 @@ static string[] ReadNames(string jarPath, string suffix)
     => ReadState(jarPath, suffix, string.Empty)
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
+static bool ConsumeCount(string path)
+{
+    if (!int.TryParse(ReadState(path, string.Empty, "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int count) || count <= 0)
+        return false;
+
+    File.WriteAllText(path, (count - 1).ToString(CultureInfo.InvariantCulture));
+    return true;
+}
+
 static string GetTargetPlayer(string command)
 {
     const string marker = "name=\"";
@@ -22,13 +31,6 @@ static string GetTargetPlayer(string command)
     start += marker.Length;
     int end = command.IndexOf('"', start);
     return end > start ? command[start..end] : string.Empty;
-}
-
-static string GetQuotedValue(string command)
-{
-    int start = command.IndexOf('"');
-    int end = command.LastIndexOf('"');
-    return start >= 0 && end > start ? command[(start + 1)..end] : string.Empty;
 }
 
 static async Task WriteOutputAsync(string line)
@@ -80,7 +82,6 @@ await using FileStream commandLog = new(
     FileShare.ReadWrite);
 await using StreamWriter commandWriter = new(commandLog);
 
-string probeMarker = string.Empty;
 while (await Console.In.ReadLineAsync() is string line)
 {
     await commandWriter.WriteLineAsync(line);
@@ -95,16 +96,10 @@ while (await Console.In.ReadLineAsync() is string line)
     if (!responsive)
         continue;
 
-    if (line.StartsWith("data modify storage twitchcraft:probe marker set value ", StringComparison.Ordinal))
+    if (line.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal))
     {
-        probeMarker = GetQuotedValue(line);
-        continue;
-    }
-
-    if (string.Equals(line, "data get storage twitchcraft:probe marker", StringComparison.Ordinal))
-    {
-        if (probeMarker.Length > 0)
-            await WriteOutputAsync("twitchcraft:probe marker: \"" + probeMarker + "\"");
+        if (!ConsumeCount(jarPath + ".drop-responses"))
+            await WriteOutputAsync("Storage " + line["data get storage ".Length..] + " has the following contents: {}");
         continue;
     }
 
@@ -135,8 +130,11 @@ while (await Console.In.ReadLineAsync() is string line)
 
     if (line.StartsWith("attribute ", StringComparison.Ordinal) && line.EndsWith(" get", StringComparison.Ordinal))
     {
-        string health = ReadState(jarPath, ".health", "20");
-        await WriteOutputAsync("Value of attribute Max Health for entity " + targetPlayer + " is " + health);
+        if (!ConsumeCount(jarPath + ".drop-responses"))
+        {
+            string health = ReadState(jarPath, ".health", "20");
+            await WriteOutputAsync("Value of attribute Max Health for entity " + targetPlayer + " is " + health);
+        }
         continue;
     }
 
@@ -144,12 +142,22 @@ while (await Console.In.ReadLineAsync() is string line)
     {
         if (int.TryParse(ReadState(jarPath, ".probe-delay", "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int delay) && delay > 0)
             await Task.Delay(delay);
-        await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".item", "{id:'minecraft:air',count:1}"));
+        if (!ConsumeCount(jarPath + ".drop-responses"))
+        {
+            string item = ReadState(
+                jarPath,
+                ".item." + targetPlayer.ToLowerInvariant(),
+                ReadState(jarPath, ".item", "{id:'minecraft:air',count:1}"));
+            await WriteOutputAsync(targetPlayer + " has the following entity data: " + item);
+        }
         continue;
     }
 
-    if (line.EndsWith(" attributes", StringComparison.Ordinal) || line.EndsWith(" Attributes", StringComparison.Ordinal))
+    if ((line.EndsWith(" attributes", StringComparison.Ordinal) || line.EndsWith(" Attributes", StringComparison.Ordinal)) &&
+        !ConsumeCount(jarPath + ".drop-responses"))
+    {
         await WriteOutputAsync(targetPlayer + " has the following entity data: " + ReadState(jarPath, ".attributes", "[]"));
+    }
 }
 
 return 0;

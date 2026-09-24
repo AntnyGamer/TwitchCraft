@@ -11,8 +11,7 @@ public sealed partial class MainHandler
 {
     private const string EntityDataMarker = " has the following entity data: ";
     private const string DeathScoreObjective = "tc_deaths";
-    private const string ProbeMarkerStorage = "twitchcraft:probe";
-    private const string ProbeMarkerPath = "marker";
+    private const string ProbeMarkerNamespace = "twitchcraft:";
     private const string ProbeMarkerPrefix = "tc_probe_";
     private static readonly StringComparer PlayerNameComparer = StringComparer.OrdinalIgnoreCase;
     private static readonly string MinecraftQueryLoopbackHost = IPAddress.Loopback.ToString();
@@ -24,7 +23,6 @@ public sealed partial class MainHandler
 
     private readonly struct ServerLogLineFlags
     {
-        internal readonly bool HasEntityData;
         internal readonly bool HasGameMode;
         internal readonly bool HasObjective;
         internal readonly bool HasPlayerList;
@@ -34,32 +32,27 @@ public sealed partial class MainHandler
         internal readonly bool HasTcPlayerList;
         internal readonly bool HasTcHealth;
         internal readonly bool HasTcDeaths;
-        internal readonly bool HasProbeMarkerStorage;
-        internal readonly bool hasAlreadyExists;
-        internal readonly bool hasDoesNotExist;
+        internal readonly bool AlreadyExists;
+        internal readonly bool DoesNotExist;
 
         internal ServerLogLineFlags(string line)
         {
             this = default;
 
             bool hasTcMarker = line.Contains("tc_", StringComparison.Ordinal);
-            bool hasEntityData = line.Contains(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-            bool hasProbeMarkerStorage = line.Contains(ProbeMarkerStorage, StringComparison.Ordinal);
             bool hasGameMode = line.Contains("game mode", StringComparison.OrdinalIgnoreCase);
             bool hasObjective = line.Contains("objective", StringComparison.OrdinalIgnoreCase);
             bool hasPlayerList = line.Contains("Player List", StringComparison.OrdinalIgnoreCase);
             bool hasHealth = line.Contains("Health", StringComparison.OrdinalIgnoreCase);
             bool hasDisplaySlot = line.Contains("display slot", StringComparison.OrdinalIgnoreCase);
 
-            if (!hasTcMarker && !hasEntityData && !hasProbeMarkerStorage &&
-                !hasGameMode && !hasObjective && !hasPlayerList && !hasHealth && !hasDisplaySlot)
+            if (!hasTcMarker && !hasGameMode &&
+                !hasObjective && !hasPlayerList && !hasHealth && !hasDisplaySlot)
             {
                 return;
             }
 
             HasTcMarker = hasTcMarker;
-            HasEntityData = hasEntityData;
-            HasProbeMarkerStorage = hasProbeMarkerStorage;
             HasGameMode = hasGameMode;
             HasObjective = hasObjective;
             HasPlayerList = hasPlayerList;
@@ -68,8 +61,8 @@ public sealed partial class MainHandler
             HasTcPlayerList = hasTcMarker && line.Contains("tc_playerlist", StringComparison.Ordinal);
             HasTcHealth = hasTcMarker && line.Contains("tc_health", StringComparison.Ordinal);
             HasTcDeaths = hasTcMarker && line.Contains(DeathScoreObjective, StringComparison.Ordinal);
-            hasAlreadyExists = hasObjective && line.Contains("already exists", StringComparison.OrdinalIgnoreCase);
-            hasDoesNotExist = hasObjective && line.Contains("doesn't exist", StringComparison.OrdinalIgnoreCase);
+            AlreadyExists = hasObjective && line.Contains("already exists", StringComparison.OrdinalIgnoreCase);
+            DoesNotExist = hasObjective && line.Contains("doesn't exist", StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -78,7 +71,6 @@ public sealed partial class MainHandler
     private readonly Lock _serverProbeMarkerGate = new();
     private readonly SemaphoreSlim _deathScoreObjectiveGate = new(1, 1);
     private readonly Dictionary<string, Action> _pendingServerProbeMarkers = new(StringComparer.Ordinal);
-    private int _pendingServerProbeMarkerCount;
     private readonly string _serverProbeMarkerSessionPrefix = ProbeMarkerPrefix + Guid.NewGuid().ToString("N") + "_";
     private long _serverProbeMarkerCounter;
     private long _minecraftQueryUnavailableUntilTicks;
@@ -469,7 +461,7 @@ public sealed partial class MainHandler
             line.Contains("Unknown scoreboard objective 'tc_health'", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("No objective was found by the name 'tc_playerlist'", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("No objective was found by the name 'tc_health'", StringComparison.OrdinalIgnoreCase) ||
-            (flags.HasTcPlayerList && flags.hasDoesNotExist) ||
-            (flags.HasTcHealth && flags.hasDoesNotExist);
+            (flags.HasTcPlayerList && flags.DoesNotExist) ||
+            (flags.HasTcHealth && flags.DoesNotExist);
     }
 }

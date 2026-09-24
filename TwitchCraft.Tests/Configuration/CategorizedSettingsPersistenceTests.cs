@@ -21,7 +21,9 @@ public sealed class CategorizedSettingsPersistenceTests
 
         JObject root = JObject.Parse(JsonConvert.SerializeObject(profile, SerializerSettings));
 
-        Assert.Equal(StartingProfileJsonConverter.CategoryOrder.Select(item => item.Category), root.Properties().Select(property => property.Name));
+        Assert.Equal(
+            ["Commands", "Custom Commands", "Economy", "Gameplay", "Chat and Display", "Performance", "Minecraft Server"],
+            root.Properties().Select(property => property.Name));
         Assert.Null(root.Property(nameof(StartingProfile.CommandPrefix)));
         Assert.Null(root.SelectToken(nameof(StartingProfile.MultiplayerEnabled)));
         Assert.Null(root.SelectToken(nameof(StartingProfile.RemoteControlEnabled)));
@@ -51,7 +53,7 @@ public sealed class CategorizedSettingsPersistenceTests
         {
             CommandPrefix = "?",
             Difficulty = "Hard",
-            MultiplayerPVPEnabled = true,
+            MultiplayerPvPEnabled = true,
             AutomaticBackupRetentionCount = 5,
             CommandCustomizations = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -65,7 +67,7 @@ public sealed class CategorizedSettingsPersistenceTests
 
         Assert.Equal("?", restored.CommandPrefix);
         Assert.Equal("Hard", restored.Difficulty);
-        Assert.True(restored.MultiplayerPVPEnabled);
+        Assert.True(restored.MultiplayerPvPEnabled);
         Assert.Equal(5, restored.AutomaticBackupRetentionCount);
         CommandCustomization command = Assert.Single(restored.CommandCustomizations).Value;
         Assert.False(command.Enabled);
@@ -95,6 +97,7 @@ public sealed class CategorizedSettingsPersistenceTests
         const string json = """
             {
               "commands": { "commandprefix": "??", "FutureCommandSetting": true },
+              "gameplay": { "MultiplayerPVPEnabled": true },
               "Future Category": { "FutureValue": 42 }
             }
             """;
@@ -103,6 +106,7 @@ public sealed class CategorizedSettingsPersistenceTests
             JsonConvert.DeserializeObject<StartingProfile>(json, SerializerSettings));
 
         Assert.Equal("??", profile.CommandPrefix);
+        Assert.True(profile.MultiplayerPvPEnabled);
         Assert.Equal("Medium", profile.Difficulty);
     }
 
@@ -136,29 +140,29 @@ public sealed class CategorizedSettingsPersistenceTests
     }
 
     [Fact]
-    public void CategoryMap_CoversEveryPersistedSettingExactlyOnce()
+    public void Serialize_IncludesEveryPersistedSettingExactlyOnce()
     {
-        string[] categorized = StartingProfileJsonConverter.CategoryOrder
-            .SelectMany(category => category.Properties)
+        JObject root = JObject.Parse(JsonConvert.SerializeObject(new StartingProfile(), SerializerSettings));
+        string[] serialized = root.Properties()
+            .SelectMany(category => Assert.IsType<JObject>(category.Value).Properties())
+            .Select(property => property.Name)
             .ToArray();
 
-        Assert.Equal(categorized.Length, categorized.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(serialized.Length, serialized.Distinct(StringComparer.OrdinalIgnoreCase).Count());
 
-        string[] intentionallyUncategorized =
+        string[] intentionallyUnpersisted =
         [
             nameof(StartingProfile.MultiplayerEnabled),
             nameof(StartingProfile.RemoteControlEnabled),
             nameof(StartingProfile.RequireOnlineMode)
         ];
-
         string[] expected = typeof(StartingProfile).GetProperties()
             .Where(property => property.CanRead && property.CanWrite)
             .Select(property => property.Name)
-            .Except(intentionallyUncategorized, StringComparer.OrdinalIgnoreCase)
+            .Except(intentionallyUnpersisted, StringComparer.OrdinalIgnoreCase)
             .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
-
-        string[] actual = categorized
+        string[] actual = serialized
             .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 

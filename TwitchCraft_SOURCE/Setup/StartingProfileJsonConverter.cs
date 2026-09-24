@@ -50,7 +50,7 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
             nameof(StartingProfile.MinigameCooldown),
             nameof(StartingProfile.HardcoreEnabled),
             nameof(StartingProfile.Difficulty),
-            nameof(StartingProfile.MultiplayerPVPEnabled),
+            nameof(StartingProfile.MultiplayerPvPEnabled),
             nameof(StartingProfile.AllowAllPlayerTarget),
             nameof(StartingProfile.AllowRandomPlayerTarget)
         ]),

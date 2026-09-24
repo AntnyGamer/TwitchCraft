@@ -153,8 +153,7 @@ public sealed class CommandRuntimeIntegrationTests
             Assert.Equal(36, await runtime.QueryMaxHealthAsync("PlayerOne", cancellationToken));
             Assert.Equal(selectedItem, await runtime.QueryItemAsync("PlayerOne", cancellationToken));
             Dictionary<string, string?> items = await runtime.QueryItemsAsync(
-                ["PlayerTwo", "PlayerOne", "playerone"],
-                cancellationToken);
+                ["PlayerTwo", "PlayerOne", "playerone"], cancellationToken);
             Assert.Equal(2, items.Count);
             Assert.Equal(selectedItem, items["PlayerOne"]);
             Assert.Equal(selectedItem, items["PlayerTwo"]);

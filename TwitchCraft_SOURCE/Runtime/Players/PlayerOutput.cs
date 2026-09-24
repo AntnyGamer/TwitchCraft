@@ -30,10 +30,15 @@ public sealed partial class MainHandler
         if (string.IsNullOrWhiteSpace(line) || TryHandleHealthProbe(line))
             return;
 
+        int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+        if (entityDataMarkerIndex >= 0)
+        {
+            HandleEntity(line, entityDataMarkerIndex);
+            return;
+        }
+
         ServerLogLineFlags flags = new(line);
-        if (flags.HasEntityData)
-            HandleEntity(line);
-        else if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
+        if (flags.HasGameMode && TryParseGamemode(line, out string playerName, out int gameType))
             HandleGamemode(playerName, gameType);
 
         Statistics.RecordLine(line, flags.HasTcDeaths);
@@ -58,19 +63,16 @@ public sealed partial class MainHandler
                     if (TryHandleProbe(line) || TryHandleHealthProbe(line))
                         continue;
 
-                    ServerLogLineFlags flags = new(line);
-                    if (flags.HasProbeMarkerStorage)
+                    int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+                    if (entityDataMarkerIndex >= 0)
+                    {
+                        HandleEntity(line, entityDataMarkerIndex);
                         continue;
+                    }
 
-                    if (flags.HasEntityData)
-                    {
-                        HandleEntity(line);
-                    }
-                    else if (flags.HasGameMode)
-                    {
-                        if (TryHandleGamemode(line, out string playerName, out int gameType))
-                            HandleGamemode(playerName, gameType);
-                    }
+                    ServerLogLineFlags flags = new(line);
+                    if (flags.HasGameMode && TryParseGamemode(line, out string playerName, out int gameType))
+                        HandleGamemode(playerName, gameType);
 
                     bool mightContainCommandError = line.Contains("command", StringComparison.OrdinalIgnoreCase)
                         || line.Contains("execute", StringComparison.OrdinalIgnoreCase)
@@ -89,16 +91,6 @@ public sealed partial class MainHandler
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 
-                    bool showCommandErrorContext = TryConsumeError();
-                    if (isCommandParserError)
-                    {
-                        Interlocked.Exchange(ref _serverCommandErrorContextLines, 1);
-                    }
-                    else if (isUnexpectedCommandError)
-                    {
-                        Interlocked.Exchange(ref _serverCommandErrorContextLines, 8);
-                    }
-
                     bool suppressServerLogLine = ShouldHideLogLine(
                         line,
                         flags,
@@ -107,22 +99,8 @@ public sealed partial class MainHandler
                         isMinecraftCommandErrorContext,
                         isSidebarObjectiveIssue);
                     bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
-                    bool shouldShowLogLine = showCommandErrorContext ||
-                        (!suppressServerLogLine && !suppressOnlinePlayersLogLine);
-
-                    if (isUnexpectedCommandError && shouldShowLogLine)
-                    {
-                        ShowHiddenContext();
-                    }
-
-                    if (shouldShowLogLine)
-                    {
+                    if (!suppressServerLogLine && !suppressOnlinePlayersLogLine)
                         _shellWindow?.AddServerLogLine(line);
-                    }
-                    else if (suppressServerLogLine && !flags.HasEntityData)
-                    {
-                        SaveHiddenContext(line);
-                    }
 
                     CapturePlayers(line);
                 }

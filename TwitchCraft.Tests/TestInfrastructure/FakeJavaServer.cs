@@ -70,6 +70,7 @@ internal static class FakeJavaServer
         File.WriteAllText(jarPath + ".item", selectedItem ?? "{id:'minecraft:air',count:1}");
         File.WriteAllText(jarPath + ".attributes", attributes ?? "[]");
         File.WriteAllText(jarPath + ".probe-delay", "0");
+        File.WriteAllText(jarPath + ".drop-responses", "0");
     }
 
     internal static string GetExecutable()

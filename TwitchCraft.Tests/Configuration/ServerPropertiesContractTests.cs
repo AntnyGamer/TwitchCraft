@@ -68,7 +68,7 @@ public sealed class ServerPropertiesContractTests
             Settings = new StartingProfile
             {
                 MultiplayerEnabled = true,
-                MultiplayerPVPEnabled = true,
+                MultiplayerPvPEnabled = true,
                 RequireOnlineMode = false,
                 HardcoreEnabled = false,
                 Difficulty = "Hard",

@@ -191,7 +191,7 @@ public sealed class GameplayCommandIntegrationTests
         await using MinecraftRuntimeScenario scenario = await StartAsync(
             ["PlayerOne", "PlayerTwo"],
             multiplayer: true,
-            maxHealth: 20);
+            maxHealth: 20, attributes: "[{Name:'generic.max_health',Modifiers:[{Name:'twitchcraft_health',UUID:[I;-1,-1,-1,-1],Amount:2.0d,Operation:0}]}]", minecraftVersion: "1.20.5");
         scenario.Runtime.Tokens.Award("viewer", 300);
         int cursor = scenario.CaptureCommandCursor();
 
@@ -200,8 +200,8 @@ public sealed class GameplayCommandIntegrationTests
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
 
         Assert.Equal(150, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(2, commands.Count(command => command.Contains(" modifier add twitchcraft:heart_", StringComparison.Ordinal)));
-        Assert.Equal(2, commands.Count(command => command.Contains(" 4 add_value", StringComparison.Ordinal)));
+        Assert.Equal(2, commands.Count(command => command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal)));
+        Assert.Contains(commands, command => command.Contains(" modifier remove ffffffff-ffff-ffff-ffff-ffffffffffff", StringComparison.Ordinal));
         Assert.False(commands.Exists(command => command.Contains(" -2 add_value", StringComparison.Ordinal)));
     }
 
@@ -352,12 +352,12 @@ public sealed class GameplayCommandIntegrationTests
         IReadOnlyList<string>? spectators = null,
         bool multiplayer = false,
         double maxHealth = 20,
-        string? selectedItem = null)
+        string? selectedItem = null, string? attributes = null, string? minecraftVersion = null)
         => MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
             players,
             spectators,
             multiplayer,
             maxHealth,
-            selectedItem);
+            selectedItem, attributes, minecraftVersion);
 }

@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.Economy;
 using TwitchCraft.Tests.TestInfrastructure;
@@ -82,23 +80,84 @@ public sealed class CommandCatalogTests
             config.Twitch.StreamerName = "streamer";
             await runtime.ApplySettingsAsync(config);
 
-            FieldInfo knownViewersField = typeof(MainHandler).GetField(
-                "_knownViewers",
-                BindingFlags.Instance | BindingFlags.NonPublic)!;
-            Assert.NotNull(knownViewersField);
-            List<string> knownViewers = Assert.IsType<List<string>>(knownViewersField.GetValue(runtime));
-            knownViewers.AddRange(["viewer_one", "randomdudereincarnatedx3", "viewer_two"]);
+            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "viewer_two"]);
 
             await runtime.DispatchAsync(
                 "!givetokens all 25",
                 "!",
                 "streamer",
                 isModerator: false,
-                CancellationToken.None);
+                TestContext.Current.CancellationToken);
 
-            Assert.All(
-                runtime.GetViewerRosterSnapshot(),
-                viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
+            List<string> viewers = runtime.GetViewerRosterSnapshot();
+            Assert.Equal(3, viewers.Count);
+            Assert.Contains("randomdudereincarnatedx3", viewers);
+            Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
+    }
+
+    [Fact]
+    public async Task GiveTokens_RejectsUnauthorizedViewerAndAllowsStreamer()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = new(
+            new AppShellViewModel(),
+            Path.Combine(directory.Path, "viewer_tokens.db"));
+        TwitchCraftConfig config = new();
+        config.Twitch.StreamerName = "streamer";
+
+        try
+        {
+            await runtime.ApplySettingsAsync(config);
+
+            await runtime.DispatchAsync(
+                "!givetokens bob 25",
+                "!",
+                "viewer",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(0, runtime.Tokens.GetBalance("bob"));
+
+            await runtime.DispatchAsync(
+                "!givetokens bob 25",
+                "!",
+                "streamer",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(25, runtime.Tokens.GetBalance("bob"));
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
+    }
+
+    [Fact]
+    public async Task TradeTokens_ChargesSenderAndCreditsHalfToRecipient()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = new(
+            new AppShellViewModel(),
+            Path.Combine(directory.Path, "viewer_tokens.db"));
+
+        try
+        {
+            await runtime.ApplySettingsAsync(new TwitchCraftConfig());
+            runtime.Tokens.Award("alice", 50);
+
+            await runtime.DispatchAsync(
+                "!tradetokens bob 10",
+                "!",
+                "alice",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(40, runtime.Tokens.GetBalance("alice"));
+            Assert.Equal(5, runtime.Tokens.GetBalance("bob"));
         }
         finally
         {

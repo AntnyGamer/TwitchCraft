@@ -181,30 +181,10 @@ public sealed partial class MainHandler
                     }
                     while (cursor is { Length: > 0 });
 
-                    SortedListHelper.SortAndDeduplicate(viewers, StringComparer.OrdinalIgnoreCase);
-
-                    List<string>? viewerList = null;
-                    lock (_viewerGate)
-                    {
-                        if (!SortedListHelper.EqualInOrder(_knownViewers, viewers, StringComparer.OrdinalIgnoreCase))
-                        {
-                            viewerList = viewers;
-                            _knownViewers = viewerList;
-                        }
-
-                        foreach (string viewer in _viewerRewardSchedule.Keys)
-                            if (!SortedListHelper.Contains(viewers, viewer, StringComparer.OrdinalIgnoreCase))
-                                _viewerRewardSchedule.Remove(viewer);
-
-                        long activityCutoff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 120 * 60L;
-                        foreach ((string viewer, long lastActive) in _viewerLastChatActivity)
-                            if (lastActive < activityCutoff) _viewerLastChatActivity.Remove(viewer);
-                    }
+                    ApplyViewerRoster(viewers);
 
                     consecutiveFailures = 0;
                     refreshDelay = TimeSpan.FromSeconds(ViewerRosterRefreshIntervalSeconds);
-                    if (viewerList != null)
-                        _shellWindow?.UpdateViewers(viewerList);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -396,6 +376,32 @@ public sealed partial class MainHandler
         }
 
         return botID.Length == 0 || broadcasterID.Length == 0 ? [] : [botID, broadcasterID];
+    }
+
+    internal void ApplyViewerRoster(List<string> viewers)
+    {
+        SortedListHelper.SortAndDeduplicate(viewers, StringComparer.OrdinalIgnoreCase);
+
+        List<string>? viewerList = null;
+        lock (_viewerGate)
+        {
+            if (!SortedListHelper.EqualInOrder(_knownViewers, viewers, StringComparer.OrdinalIgnoreCase))
+            {
+                viewerList = viewers;
+                _knownViewers = viewerList;
+            }
+
+            foreach (string viewer in _viewerRewardSchedule.Keys)
+                if (!SortedListHelper.Contains(viewers, viewer, StringComparer.OrdinalIgnoreCase))
+                    _viewerRewardSchedule.Remove(viewer);
+
+            long activityCutoff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 120 * 60L;
+            foreach ((string viewer, long lastActive) in _viewerLastChatActivity)
+                if (lastActive < activityCutoff) _viewerLastChatActivity.Remove(viewer);
+        }
+
+        if (viewerList != null)
+            _shellWindow?.UpdateViewers(viewerList);
     }
 
     public List<string> GetViewerRosterSnapshot()

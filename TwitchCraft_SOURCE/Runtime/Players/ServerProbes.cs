@@ -32,7 +32,7 @@ public sealed partial class MainHandler
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
-        ApplyPVPGameRule();
+        TrackTask(ApplyPvPGameRuleAsync());
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();
@@ -40,18 +40,18 @@ public sealed partial class MainHandler
         QueueDeathScore();
     }
 
-    private void ApplyPVPGameRule()
+    private Task ApplyPvPGameRuleAsync()
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
-            return;
+            return Task.CompletedTask;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
         if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
-            return;
+            return Task.CompletedTask;
 
-        string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
-        TrackTask(SendServerCommandAsync(pvp, token));
+        string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPvPEnabled ? "true" : "false");
+        return SendServerCommandAsync(pvp, token);
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
@@ -118,38 +118,31 @@ public sealed partial class MainHandler
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
-        {
-            (MainHandler handler, string marker, Action onCompleted) = ((MainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelProbe(marker))
-                onCompleted();
-        }, (this, marker, onProbeCompleted));
+        using CancellationTokenRegistration registration = cancellationToken.Register(
+            static state =>
+            {
+                (MainHandler handler, string marker) = ((MainHandler Handler, string Marker))state!;
+                handler.CompleteProbe(marker);
+            },
+            (this, marker));
 
         try
         {
-            string escapedMarker = MinecraftCommandBuilder.EscapeJson(marker);
-            string[] probeCommands =
-            [
-                command,
-                "data modify storage " + ProbeMarkerStorage + " " + ProbeMarkerPath + " set value \"" + escapedMarker + "\"",
-                "data get storage " + ProbeMarkerStorage + " " + ProbeMarkerPath
-            ];
-
-            if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
+            if (await SendServerCommandsAsync(
+                    [command, "data get storage " + ProbeMarkerNamespace + marker],
+                    cancellationToken).ConfigureAwait(false))
             {
-                QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
+                QueueProbeFallback(marker, cancellationToken);
                 return true;
             }
 
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             return false;
         }
         catch
         {
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             throw;
         }
@@ -188,7 +181,7 @@ public sealed partial class MainHandler
             }
         }
 
-        List<string> probeCommands = new(commands.Length + 2);
+        List<string> probeCommands = new(commands.Length + 1);
         for (int i = 0; i < commands.Length; i++)
             if (!string.IsNullOrWhiteSpace(commands[i]))
                 probeCommands.Add(commands[i]);
@@ -200,33 +193,30 @@ public sealed partial class MainHandler
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
-        {
-            (MainHandler handler, string marker, Action onCompleted) = ((MainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelProbe(marker))
-                onCompleted();
-        }, (this, marker, onProbeCompleted));
+        using CancellationTokenRegistration registration = cancellationToken.Register(
+            static state =>
+            {
+                (MainHandler handler, string marker) = ((MainHandler Handler, string Marker))state!;
+                handler.CompleteProbe(marker);
+            },
+            (this, marker));
 
         try
         {
-            string escapedMarker = MinecraftCommandBuilder.EscapeJson(marker);
-            probeCommands.Add("data modify storage " + ProbeMarkerStorage + " " + ProbeMarkerPath + " set value \"" + escapedMarker + "\"");
-            probeCommands.Add("data get storage " + ProbeMarkerStorage + " " + ProbeMarkerPath);
+            probeCommands.Add("data get storage " + ProbeMarkerNamespace + marker);
             if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
             {
-                QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
+                QueueProbeFallback(marker, cancellationToken);
                 return true;
             }
 
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             return false;
         }
         catch
         {
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             throw;
         }
@@ -234,17 +224,18 @@ public sealed partial class MainHandler
 
     private string AddProbeMarker(Action onProbeCompleted)
     {
-        string marker = string.Create(CultureInfo.InvariantCulture, $"{_serverProbeMarkerSessionPrefix}{Interlocked.Increment(ref _serverProbeMarkerCounter)}");
+        string marker = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{_serverProbeMarkerSessionPrefix}{Interlocked.Increment(ref _serverProbeMarkerCounter)}");
         lock (_serverProbeMarkerGate)
         {
             _pendingServerProbeMarkers[marker] = onProbeCompleted;
-            Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
         }
 
         return marker;
     }
 
-    private void QueueProbeFallback(string marker, Action onProbeCompleted, CancellationToken cancellationToken)
+    private void QueueProbeFallback(string marker, CancellationToken cancellationToken)
     {
         _ = CompleteLaterAsync();
 
@@ -253,13 +244,11 @@ public sealed partial class MainHandler
             try
             {
                 await Task.Delay(ServerProbeMarkerFallbackTimeout, cancellationToken).ConfigureAwait(false);
-                if (TryCancelProbe(marker))
-                    onProbeCompleted();
+                CompleteProbe(marker);
             }
             catch (OperationCanceledException)
             {
-                if (TryCancelProbe(marker))
-                    onProbeCompleted();
+                CompleteProbe(marker);
             }
             catch (Exception ex)
             {
@@ -268,37 +257,24 @@ public sealed partial class MainHandler
         }
     }
 
-    private bool TryCancelProbe(string marker)
+    private void CompleteProbe(string marker)
     {
+        Action? onCompleted = null;
         lock (_serverProbeMarkerGate)
         {
-            bool removed = _pendingServerProbeMarkers.Remove(marker);
-            if (removed)
-                Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
-
-            return removed;
+            _pendingServerProbeMarkers.Remove(marker, out onCompleted);
         }
+
+        onCompleted?.Invoke();
     }
 
     private bool TryHandleProbe(string line)
     {
-        if (Volatile.Read(ref _pendingServerProbeMarkerCount) <= 0)
-            return false;
-
         string marker = GetProbeMarker(line);
-        if (marker.Length == 0)
+        if (!marker.StartsWith(_serverProbeMarkerSessionPrefix, StringComparison.Ordinal))
             return false;
 
-        Action? onCompleted;
-        lock (_serverProbeMarkerGate)
-        {
-            if (!_pendingServerProbeMarkers.Remove(marker, out onCompleted))
-                return false;
-
-            Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
-        }
-
-        onCompleted();
+        CompleteProbe(marker);
         return true;
     }
 
@@ -330,38 +306,6 @@ public sealed partial class MainHandler
             line.Contains("Unable to execute command", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Error trying to execute", StringComparison.OrdinalIgnoreCase));
 
-    private void SaveHiddenContext(string line)
-    {
-        if (string.IsNullOrWhiteSpace(line))
-            return;
-
-        lock (_suppressedServerLogContextGate)
-        {
-            if (_suppressedServerLogContextLines.Count >= 8)
-                _suppressedServerLogContextLines.Dequeue();
-
-            _suppressedServerLogContextLines.Enqueue(line);
-        }
-    }
-
-    private void ShowHiddenContext()
-    {
-        string[] lines;
-        lock (_suppressedServerLogContextGate)
-        {
-            if (_suppressedServerLogContextLines.Count == 0)
-                return;
-
-            lines = [.. _suppressedServerLogContextLines];
-            _suppressedServerLogContextLines.Clear();
-        }
-
-        foreach (string contextLine in lines)
-        {
-            _shellWindow?.AddServerLogLine(contextLine);
-        }
-    }
-
     private static bool ShouldHideLogLine(
         string line,
         in ServerLogLineFlags flags,
@@ -370,17 +314,15 @@ public sealed partial class MainHandler
         bool isMinecraftCommandErrorContext,
         bool isSidebarObjectiveIssue)
     {
-        if (flags.HasEntityData)
-            return true;
-
         if (string.IsNullOrEmpty(line))
             return false;
 
-        if (line.Contains("Gamerule pvp is now set to:", StringComparison.OrdinalIgnoreCase))
-            return true;
-
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
             return false;
+
+        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) || line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase) || isSidebarObjectiveIssue)
+            return true;
 
         if (!flags.HasObjective &&
             !flags.HasPlayerList &&
@@ -394,15 +336,15 @@ public sealed partial class MainHandler
         return
             line.Contains("An objective already exists by that name", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("Reset [Player List:] for ", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_playerlist]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [tc_health]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Created new objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot sidebar to show objective Player List:", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot list to show objective Health", StringComparison.OrdinalIgnoreCase) ||
-            isSidebarObjectiveIssue ||
-            (flags.HasTcPlayerList && flags.hasAlreadyExists) ||
-            (flags.HasTcHealth && flags.hasAlreadyExists) ||
+            (flags.HasTcPlayerList && flags.AlreadyExists) ||
+            (flags.HasTcHealth && flags.AlreadyExists) ||
             flags.HasTcDeaths ||
             line.Contains("Created new objective [Health]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [Health]", StringComparison.OrdinalIgnoreCase) ||
@@ -414,16 +356,4 @@ public sealed partial class MainHandler
            line.Contains("Unknown or incomplete command", StringComparison.OrdinalIgnoreCase) &&
            line.Contains("See below for error", StringComparison.OrdinalIgnoreCase);
 
-    private bool TryConsumeError()
-    {
-        while (true)
-        {
-            int pending = Volatile.Read(ref _serverCommandErrorContextLines);
-            if (pending <= 0)
-                return false;
-
-            if (Interlocked.CompareExchange(ref _serverCommandErrorContextLines, pending - 1, pending) == pending)
-                return true;
-        }
-    }
 }

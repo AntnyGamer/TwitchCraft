@@ -66,7 +66,6 @@ public sealed partial class MainHandler
         lock (_serverProbeMarkerGate)
         {
             _pendingServerProbeMarkers.Clear();
-            Volatile.Write(ref _pendingServerProbeMarkerCount, 0);
         }
 
         Interlocked.Exchange(ref _playerSidebarRefreshQueued, 0);

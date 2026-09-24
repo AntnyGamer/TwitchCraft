@@ -18,14 +18,14 @@ public sealed class MinecraftVersionSupportTests
         string requested,
         string ID,
         string displayID,
-        int requiredJdk,
+        int requiredJDK,
         int packFormatMajor,
         int packFormatMinor)
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(requested, out var version));
         Assert.Equal(ID, version.ID);
         Assert.Equal(displayID, version.DisplayID);
-        Assert.Equal(requiredJdk, version.RequiredJDK);
+        Assert.Equal(requiredJDK, version.RequiredJDK);
         Assert.Equal(packFormatMajor, version.DataPackFormatMajor);
         Assert.Equal(packFormatMinor, version.DataPackFormatMinor);
     }

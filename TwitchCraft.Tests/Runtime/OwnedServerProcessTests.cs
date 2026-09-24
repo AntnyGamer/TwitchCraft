@@ -24,9 +24,9 @@ public sealed class OwnedServerProcessTests
             await runtime.StartServerAsync(config, cancellationToken);
             await runtime.StartServerIfNeededAsync(cancellationToken);
             Assert.True(await runtime.SendServerCommandAsync("say integration-test", cancellationToken));
+            Task stopTask = runtime.StopProcessSafeAsync(waitBriefly: true);
             Assert.True(await runtime.SendServerCommandAsync("stop", cancellationToken));
-            await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
-            await runtime.StopProcessSafeAsync(waitBriefly: true);
+            await stopTask;
 
             string[] arguments = await File.ReadAllLinesAsync(config.Server.JarPath + ".args", cancellationToken);
             string[] commands = await File.ReadAllLinesAsync(config.Server.JarPath + ".stdin", cancellationToken);

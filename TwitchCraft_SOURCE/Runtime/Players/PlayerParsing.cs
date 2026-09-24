@@ -8,45 +8,6 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private static bool TryParseEntity(string line, out string playerName, out string data)
-    {
-        playerName = string.Empty;
-        data = string.Empty;
-
-        if (string.IsNullOrEmpty(line))
-            return false;
-
-        int markerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-        if (markerIndex <= 0)
-            return false;
-
-        string prefix = AfterLastColon(line, markerIndex);
-        if (!MinecraftNameHelper.IsValidPlayerName(prefix))
-            return false;
-
-        playerName = prefix;
-        int dataStart = markerIndex + EntityDataMarker.Length;
-        data = TextSegmentHelper.TrimSegment(line, dataStart, line.Length - dataStart);
-        return true;
-    }
-
-    private static bool TryHandleGamemode(string line, out string playerName, out int gameType)
-    {
-        playerName = string.Empty;
-        gameType = -1;
-
-        if (string.IsNullOrEmpty(line))
-            return false;
-
-        if (TryParseEntity(line, out playerName, out string suffix)
-            && int.TryParse(suffix, NumberStyles.Integer, CultureInfo.InvariantCulture, out gameType))
-        {
-            return true;
-        }
-
-        return TryParseGamemode(line, out playerName, out gameType);
-    }
-
     private static bool TryParsePosition(string value)
     {
         ReadOnlySpan<char> text = value.AsSpan().Trim();
@@ -205,8 +166,8 @@ public sealed partial class MainHandler
     [GeneratedRegex(@"\{[^{}]*twitchcraft_health[^{}]*\}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex LegacyHeartModifierRegex();
 
-    [GeneratedRegex(@"uuid\s*:\s*\[I;\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex LegacyHeartUuidRegex();
+    [GeneratedRegex(@"UUID\s*:\s*\[I;\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LegacyHeartUUIDRegex();
 
     internal static List<string> ParseHeartModifierIDs(string data, bool namespaced)
     {
@@ -220,12 +181,12 @@ public sealed partial class MainHandler
 
         foreach (ValueMatch modifier in LegacyHeartModifierRegex().EnumerateMatches(data))
         {
-            Match uuid = LegacyHeartUuidRegex().Match(data, modifier.Index, modifier.Length);
-            if (!uuid.Success ||
-                !int.TryParse(uuid.Groups[1].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) ||
-                !int.TryParse(uuid.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
-                !int.TryParse(uuid.Groups[3].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int c) ||
-                !int.TryParse(uuid.Groups[4].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int d))
+            Match UUID = LegacyHeartUUIDRegex().Match(data, modifier.Index, modifier.Length);
+            if (!UUID.Success ||
+                !int.TryParse(UUID.Groups[1].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) ||
+                !int.TryParse(UUID.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
+                !int.TryParse(UUID.Groups[3].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int c) ||
+                !int.TryParse(UUID.Groups[4].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int d))
                 continue;
 
             uint ua = unchecked((uint)a), ub = unchecked((uint)b), uc = unchecked((uint)c), ud = unchecked((uint)d);
@@ -234,10 +195,17 @@ public sealed partial class MainHandler
         return ids;
     }
 
-    private void HandleEntity(string line)
+    private void HandleEntity(string line, int markerIndex)
     {
-        if (!TryParseEntity(line, out string playerName, out string suffix))
+        if (markerIndex <= 0)
             return;
+
+        string playerName = AfterLastColon(line, markerIndex);
+        if (!MinecraftNameHelper.IsValidPlayerName(playerName))
+            return;
+
+        int dataStart = markerIndex + EntityDataMarker.Length;
+        string suffix = TextSegmentHelper.TrimSegment(line, dataStart, line.Length - dataStart);
 
         if (suffix.Length >= 2 && suffix[0] == '[' && suffix[^1] == ']' && (suffix.Length == 2 || suffix.Contains('{')))
         {

@@ -39,11 +39,12 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         bool multiplayer = false,
         double maxHealth = 20,
         string? selectedItem = null,
-        string? attributes = null)
+        string? attributes = null, string? minecraftVersion = null)
     {
         TemporaryDirectory directory = new();
         CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready-responsive");
+        config.Server.MinecraftVersion = minecraftVersion ?? config.Server.MinecraftVersion;
         IReadOnlyList<string> playerList = players ?? ["PlayerOne"];
         config.Identity.StreamerMinecraftName = playerList.Count > 0 ? playerList[0] : "PlayerOne";
         config.Settings.MultiplayerEnabled = multiplayer;
@@ -85,6 +86,12 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
 
     internal void SetProbeDelay(int milliseconds)
         => File.WriteAllText(JarPath + ".probe-delay", Math.Max(0, milliseconds).ToString(CultureInfo.InvariantCulture));
+
+    internal void SetSelectedItem(string playerName, string selectedItem)
+        => File.WriteAllText(JarPath + ".item." + playerName.ToLowerInvariant(), selectedItem);
+
+    internal void DropNextServerResponses(int count = 1)
+        => File.WriteAllText(JarPath + ".drop-responses", Math.Max(0, count).ToString(CultureInfo.InvariantCulture));
 
     internal async Task<List<string>> DrainCommandsAsync(int cursor)
     {

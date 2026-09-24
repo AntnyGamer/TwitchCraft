@@ -411,7 +411,7 @@ public partial class Settings : UserControl
         SetGlobalCooldown(settings.GlobalGameCommandCooldownSeconds);
         UpdateGlobalCooldown(settings.GlobalGameCommandCooldownEnabled);
         StatisticsEnabledCheckbox.IsChecked = settings.StatisticsEnabled;
-        PVPCheckbox.IsChecked = settings.MultiplayerPVPEnabled;
+        PvPCheckbox.IsChecked = settings.MultiplayerPvPEnabled;
         HardcoreCheckbox.IsChecked = settings.HardcoreEnabled;
         SetDifficulty(settings.Difficulty);
         MinRAMTextBox.Text = server.MemoryMinGB.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -724,7 +724,7 @@ public partial class Settings : UserControl
         }
     }
 
-    private async void PVP_Changed(object sender, RoutedEventArgs e)
+    private async void PvP_Changed(object sender, RoutedEventArgs e)
         => await SaveGameplayAsync();
 
     private async void Hardcore_Changed(object sender, RoutedEventArgs e)
@@ -740,14 +740,14 @@ public partial class Settings : UserControl
             return;
         }
 
-        bool PVPEnabled = PVPCheckbox.IsChecked == true;
+        bool PvPEnabled = PvPCheckbox.IsChecked == true;
         bool hardcoreEnabled = HardcoreCheckbox.IsChecked != false;
         string difficulty = ConfigurationStore.NormalizeDifficulty((DifficultyDropdown.SelectedItem as ComboBoxItem)?.Content as string);
 
         await SaveConfigAsync(
             config =>
             {
-                config.Settings.MultiplayerPVPEnabled = PVPEnabled;
+                config.Settings.MultiplayerPvPEnabled = PvPEnabled;
                 config.Settings.HardcoreEnabled = hardcoreEnabled;
                 config.Settings.Difficulty = difficulty;
             },

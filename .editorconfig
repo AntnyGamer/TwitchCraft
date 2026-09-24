@@ -57,6 +57,8 @@ csharp_preserve_single_line_statements = true
 csharp_style_namespace_declarations = file_scoped:suggestion
 
 dotnet_diagnostic.IDE0130.severity = none
+dotnet_diagnostic.CA5392.severity = error
+dotnet_diagnostic.CA5393.severity = error
 
 [*.xaml]
 indent_style = space

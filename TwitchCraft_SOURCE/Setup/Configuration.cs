@@ -58,7 +58,7 @@ public sealed class StartingProfile
     internal const int DefaultAutomaticBackupRetentionCount = 3;
 
     public bool MultiplayerEnabled { get; set; }
-    public bool MultiplayerPVPEnabled { get; set; }
+    public bool MultiplayerPvPEnabled { get; set; }
     public bool WhitelistEnabled { get; set; }
     public bool RemoteControlEnabled { get; set; }
     public bool RequireOnlineMode { get; set; } = true;

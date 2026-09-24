@@ -221,7 +221,7 @@ public sealed class ServerPropertyEditor
         }
         else
         {
-            props["pvp"] = config.Settings.MultiplayerPVPEnabled ? "true" : "false";
+            props["pvp"] = config.Settings.MultiplayerPvPEnabled ? "true" : "false";
             SetDefault(props, "allow-nether", "true");
             SetDefault(props, "spawn-monsters", "true");
             SetDefault(props, "enable-command-block", "false");

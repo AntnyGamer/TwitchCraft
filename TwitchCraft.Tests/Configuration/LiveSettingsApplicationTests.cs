@@ -165,4 +165,25 @@ public sealed class LiveSettingsApplicationTests
             runtime.Tokens.Close();
         }
     }
+
+    [Fact]
+    public async Task ApplySettings_PreservesActiveSessionModeSettings()
+    {
+        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
+            TestContext.Current.CancellationToken,
+            multiplayer: true);
+
+        TwitchCraftConfig edited = ConfigurationStore.Clone(scenario.Config);
+        edited.Settings.MultiplayerEnabled = false;
+        edited.Settings.RemoteControlEnabled = true;
+        edited.Settings.RequireOnlineMode = false;
+        edited.Settings.AllowRandomPlayerTarget = false;
+        await scenario.Runtime.ApplySettingsAsync(edited);
+
+        Assert.True(scenario.Runtime.MultiplayerEnabled);
+        Assert.False(scenario.Runtime.RemoteControlEnabled);
+        Assert.True(scenario.Runtime.RequireOnlineMode);
+        Assert.False(scenario.Runtime.Commands.AllowRandomPlayerTarget);
+        Assert.True(scenario.Runtime.MinecraftServerReady);
+    }
 }
