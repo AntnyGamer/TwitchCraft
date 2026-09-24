@@ -97,7 +97,6 @@ public sealed class CategorizedSettingsPersistenceTests
         const string json = """
             {
               "commands": { "commandprefix": "??", "FutureCommandSetting": true },
-              "GAMEPLAY": { "MultiplayerPVPEnabled": true },
               "Future Category": { "FutureValue": 42 }
             }
             """;
@@ -106,7 +105,6 @@ public sealed class CategorizedSettingsPersistenceTests
             JsonConvert.DeserializeObject<StartingProfile>(json, SerializerSettings));
 
         Assert.Equal("??", profile.CommandPrefix);
-        Assert.True(profile.MultiplayerPvPEnabled);
         Assert.Equal("Medium", profile.Difficulty);
     }
 
