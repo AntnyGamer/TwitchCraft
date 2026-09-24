@@ -90,15 +90,17 @@ public sealed class CommandCatalogTests
                 isModerator: false,
                 CancellationToken.None);
 
-            Assert.All(
-                runtime.GetViewerRosterSnapshot(),
-                viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
+            List<string> viewers = runtime.GetViewerRosterSnapshot();
+            Assert.Equal(3, viewers.Count);
+            Assert.Contains("randomdudereincarnatedx3", viewers);
+            Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
         }
         finally
         {
             runtime.Tokens.Close();
         }
     }
+
     [Fact]
     public async Task GiveTokens_RejectsUnauthorizedViewerAndAllowsStreamer()
     {
