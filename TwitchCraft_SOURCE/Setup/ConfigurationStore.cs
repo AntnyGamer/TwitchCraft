@@ -159,7 +159,7 @@ public sealed partial class ConfigurationStore
             Settings = new StartingProfile
             {
                 MultiplayerEnabled = source.Settings.MultiplayerEnabled,
-                MultiplayerPVPEnabled = source.Settings.MultiplayerPVPEnabled,
+                MultiplayerPvPEnabled = source.Settings.MultiplayerPvPEnabled,
                 WhitelistEnabled = source.Settings.WhitelistEnabled,
                 RemoteControlEnabled = source.Settings.RemoteControlEnabled,
                 HardcoreEnabled = source.Settings.HardcoreEnabled,

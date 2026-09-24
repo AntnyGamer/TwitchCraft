@@ -309,7 +309,7 @@
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Enable PvP in multiplayer" Style="{StaticResource SettingLabel}" />
-                                                <CheckBox x:Name="PVPCheckbox" AutomationProperties.Name="Enable PvP in multiplayer" Checked="PVP_Changed" Unchecked="PVP_Changed" />
+                                                <CheckBox x:Name="PvPCheckbox" AutomationProperties.Name="Enable PvP in multiplayer" Checked="PvP_Changed" Unchecked="PvP_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Allow targeting all players:" Style="{StaticResource SettingLabel}" />

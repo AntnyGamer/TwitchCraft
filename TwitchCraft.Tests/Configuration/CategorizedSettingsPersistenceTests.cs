@@ -53,7 +53,7 @@ public sealed class CategorizedSettingsPersistenceTests
         {
             CommandPrefix = "?",
             Difficulty = "Hard",
-            MultiplayerPVPEnabled = true,
+            MultiplayerPvPEnabled = true,
             AutomaticBackupRetentionCount = 5,
             CommandCustomizations = new(StringComparer.OrdinalIgnoreCase)
             {
@@ -67,7 +67,7 @@ public sealed class CategorizedSettingsPersistenceTests
 
         Assert.Equal("?", restored.CommandPrefix);
         Assert.Equal("Hard", restored.Difficulty);
-        Assert.True(restored.MultiplayerPVPEnabled);
+        Assert.True(restored.MultiplayerPvPEnabled);
         Assert.Equal(5, restored.AutomaticBackupRetentionCount);
         CommandCustomization command = Assert.Single(restored.CommandCustomizations).Value;
         Assert.False(command.Enabled);

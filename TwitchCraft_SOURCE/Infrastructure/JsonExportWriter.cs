@@ -34,12 +34,12 @@ internal static class JsonExportWriter
             "SQLite viewer/editor download:" + Environment.NewLine +
             SqliteEditorDownloadUrl + Environment.NewLine;
 
-        string READMEPath = Path.Combine(exportDirectory, "READ_ME_FIRST.txt");
-        string tempPath = FileSystemHelper.GetUniqueTempPath(READMEPath);
+        string readmePath = Path.Combine(exportDirectory, "READ_ME_FIRST.txt");
+        string tempPath = FileSystemHelper.GetUniqueTempPath(readmePath);
         try
         {
             File.WriteAllText(tempPath, warningText, Encoding.UTF8);
-            ReplaceFile(tempPath, READMEPath);
+            ReplaceFile(tempPath, readmePath);
         }
         catch { FileSystemHelper.DeleteFileSafe(tempPath); throw; }
     }
@@ -54,8 +54,8 @@ internal static class JsonExportWriter
         try
         {
             using (StreamWriter streamWriter = new(tempPath, false, Encoding.UTF8))
-            using (JsonTextWriter JsonWriter = new(streamWriter) { Formatting = Formatting.Indented })
-                writeBody(JsonWriter);
+            using (JsonTextWriter jsonWriter = new(streamWriter) { Formatting = Formatting.Indented })
+                writeBody(jsonWriter);
             ReplaceFile(tempPath, path);
         }
         catch { FileSystemHelper.DeleteFileSafe(tempPath); throw; }

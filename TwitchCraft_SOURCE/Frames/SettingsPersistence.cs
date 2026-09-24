@@ -102,7 +102,7 @@ public partial class Settings
                 settings.MinigameCooldown = defaults.MinigameCooldown;
                 settings.HardcoreEnabled = defaults.HardcoreEnabled;
                 settings.Difficulty = defaults.Difficulty;
-                settings.MultiplayerPVPEnabled = defaults.MultiplayerPVPEnabled;
+                settings.MultiplayerPvPEnabled = defaults.MultiplayerPvPEnabled;
                 settings.AllowAllPlayerTarget = defaults.AllowAllPlayerTarget;
                 settings.AllowRandomPlayerTarget = defaults.AllowRandomPlayerTarget;
                 break;
