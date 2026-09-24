@@ -276,7 +276,7 @@ public sealed partial class MainHandler
     private bool TryHandleProbe(string line)
     {
         string marker = GetProbeMarker(line);
-        if (marker.Length == 0)
+        if (!marker.StartsWith(_serverProbeMarkerSessionPrefix, StringComparison.Ordinal))
             return false;
 
         Action? onCompleted = null;
