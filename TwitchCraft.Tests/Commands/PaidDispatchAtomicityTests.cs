@@ -196,8 +196,8 @@ public sealed class PaidDispatchAtomicityTests
                     DispatchFailureReports++;
                     return Task.CompletedTask;
                 },
-                () => FailureNotifications++,
-                CancellationToken.None);
+                CancellationToken.None,
+                () => FailureNotifications++);
         }
     }
 }
