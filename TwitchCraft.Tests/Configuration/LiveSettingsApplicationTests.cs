@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
@@ -165,4 +166,92 @@ public sealed class LiveSettingsApplicationTests
             runtime.Tokens.Close();
         }
     }
+    [Fact]
+    public async Task ApplySettings_DifficultyChangesReachRunningLocalServer()
+    {
+        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
+            TestContext.Current.CancellationToken);
+        int cursor = scenario.CaptureCommandCursor();
+
+        scenario.Config.Settings.Difficulty = "Hard";
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        var hardCommands = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Contains("difficulty hard", hardCommands);
+
+        cursor = scenario.CaptureCommandCursor();
+        scenario.Config.Settings.Difficulty = "Medium";
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        var normalCommands = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Contains("difficulty normal", normalCommands);
+    }
+
+    [Fact]
+    public async Task ApplySettings_PvpChangesReachSupportedRunningMultiplayerServer()
+    {
+        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
+            TestContext.Current.CancellationToken,
+            multiplayer: true);
+        int cursor = scenario.CaptureCommandCursor();
+
+        scenario.Config.Settings.MultiplayerPVPEnabled = true;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await FakeJavaServer.WaitUntilAsync(
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
+                .Exists(command => command.Contains("pvp true", StringComparison.Ordinal)),
+            "Live PvP enable command was not sent.",
+            scenario.Token);
+
+        var enabledCommands = await scenario.DrainCommandsAsync(cursor);
+        Assert.Contains(enabledCommands, command => command.Contains("pvp true", StringComparison.Ordinal));
+
+        cursor = scenario.CaptureCommandCursor();
+        scenario.Config.Settings.MultiplayerPVPEnabled = false;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await FakeJavaServer.WaitUntilAsync(
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
+                .Skip(cursor)
+                .Any(command => command.Contains("pvp false", StringComparison.Ordinal)),
+            "Live PvP disable command was not sent.",
+            scenario.Token);
+
+        var disabledCommands = await scenario.DrainCommandsAsync(cursor);
+        Assert.Contains(disabledCommands, command => command.Contains("pvp false", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ApplySettings_PreservesActiveSessionModeSettings()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = new(
+            new AppShellViewModel(),
+            Path.Combine(directory.Path, "viewer_tokens.db"));
+        TwitchCraftConfig active = new();
+        active.Settings.MultiplayerEnabled = true;
+        active.Settings.RemoteControlEnabled = false;
+        active.Settings.RequireOnlineMode = false;
+
+        try
+        {
+            await runtime.ApplySettingsAsync(active);
+
+            TwitchCraftConfig edited = ConfigurationStore.Clone(active);
+            edited.Settings.MultiplayerEnabled = false;
+            edited.Settings.RemoteControlEnabled = true;
+            edited.Settings.RequireOnlineMode = true;
+            edited.Settings.AllowRandomPlayerTarget = false;
+            await runtime.ApplySettingsAsync(edited);
+
+            Assert.True(runtime.MultiplayerEnabled);
+            Assert.False(runtime.RemoteControlEnabled);
+            Assert.False(runtime.RequireOnlineMode);
+            Assert.False(runtime.Commands.AllowRandomPlayerTarget);
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
+    }
+
 }
