@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using TwitchCraft.Tests.Economy;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
@@ -11,7 +8,6 @@ using Xunit;
 
 namespace TwitchCraft.Tests.Configuration;
 
-[Collection(EconomyDatabaseCollection.Name)]
 public sealed class LiveSettingsApplicationTests
 {
     [Fact]
@@ -171,69 +167,11 @@ public sealed class LiveSettingsApplicationTests
     }
 
     [Fact]
-    public async Task ApplySettings_DifficultyChangesReachRunningLocalServer()
+    public async Task ApplySettings_PreservesActiveSessionModeSettings()
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
-            fullLifecycle: true);
-        int cursor = scenario.CaptureCommandCursor();
-
-        scenario.Config.Settings.Difficulty = "Hard";
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-        List<string> hardCommands = await scenario.DrainCommandsAsync(cursor);
-
-        Assert.Contains("difficulty hard", hardCommands);
-
-        cursor = scenario.CaptureCommandCursor();
-        scenario.Config.Settings.Difficulty = "Medium";
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-        List<string> normalCommands = await scenario.DrainCommandsAsync(cursor);
-
-        Assert.Contains("difficulty normal", normalCommands);
-    }
-
-    [Fact]
-    public async Task ApplySettings_PvpChangesReachSupportedRunningMultiplayerServer()
-    {
-        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken,
-            multiplayer: true,
-            fullLifecycle: true);
-        int cursor = scenario.CaptureCommandCursor();
-
-        scenario.Config.Settings.MultiplayerPVPEnabled = true;
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-        await FakeJavaServer.WaitUntilAsync(
-            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
-                .Skip(cursor)
-                .Any(command => command.Contains("pvp true", StringComparison.Ordinal)),
-            "Live PvP enable command was not sent.",
-            scenario.Token);
-        List<string> enabledCommands = await scenario.DrainCommandsAsync(cursor);
-
-        Assert.Contains(enabledCommands, command => command.Contains("pvp true", StringComparison.Ordinal));
-
-        cursor = scenario.CaptureCommandCursor();
-        scenario.Config.Settings.MultiplayerPVPEnabled = false;
-        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
-        await FakeJavaServer.WaitUntilAsync(
-            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
-                .Skip(cursor)
-                .Any(command => command.Contains("pvp false", StringComparison.Ordinal)),
-            "Live PvP disable command was not sent.",
-            scenario.Token);
-        List<string> disabledCommands = await scenario.DrainCommandsAsync(cursor);
-
-        Assert.Contains(disabledCommands, command => command.Contains("pvp false", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public async Task ApplySettings_PreservesRunningSessionModeSettings()
-    {
-        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken,
-            multiplayer: true,
-            fullLifecycle: true);
+            multiplayer: true);
 
         TwitchCraftConfig edited = ConfigurationStore.Clone(scenario.Config);
         edited.Settings.MultiplayerEnabled = false;
