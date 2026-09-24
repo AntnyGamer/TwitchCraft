@@ -16,8 +16,8 @@ internal static class PaidCommandTransaction
         Action<int> recordStatistics,
         Func<int, CancellationToken, Task> reportInsufficientTokensAsync,
         Func<bool, CancellationToken, Task> reportDispatchFailureAsync,
-        Action? notifyFailure,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action? notifyFailure = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(cost);
 
