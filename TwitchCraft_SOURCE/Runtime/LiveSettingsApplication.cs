@@ -24,7 +24,7 @@ public sealed partial class MainHandler
                 {
                     minigamesEnabledChanged = _activeConfig.Settings.MinigamesEnabled != activeConfig.Settings.MinigamesEnabled;
                     difficultyChanged = _activeConfig.Settings.Difficulty != activeConfig.Settings.Difficulty;
-                    pvpChanged = _activeConfig.Settings.MultiplayerPVPEnabled != activeConfig.Settings.MultiplayerPVPEnabled;
+                    pvpChanged = _activeConfig.Settings.MultiplayerPvPEnabled != activeConfig.Settings.MultiplayerPvPEnabled;
                     followRewardsChanged = _activeConfig.Settings.AutomaticFollowRewardsEnabled != activeConfig.Settings.AutomaticFollowRewardsEnabled;
                     twitchAuthChanged = !preserveTwitchAuth && !string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), NormalizeToken(activeConfig.Twitch.BotToken), StringComparison.Ordinal);
                     maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 && (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
@@ -71,7 +71,7 @@ public sealed partial class MainHandler
             if (difficultyChanged && !activeConfig.Settings.RemoteControlEnabled && TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
                 await SendServerCommandAsync("difficulty " + (activeConfig.Settings.Difficulty == "Medium" ? "normal" : activeConfig.Settings.Difficulty.ToLowerInvariant()), token).ConfigureAwait(false);
             if (pvpChanged)
-                await ApplyPVPGameRuleAsync().ConfigureAwait(false);
+                await ApplyPvPGameRuleAsync().ConfigureAwait(false);
         }
         finally
         {
