@@ -230,7 +230,6 @@ public sealed partial class MainHandler
         lock (_serverProbeMarkerGate)
         {
             _pendingServerProbeMarkers[marker] = onProbeCompleted;
-            Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
         }
 
         return marker;
@@ -263,8 +262,7 @@ public sealed partial class MainHandler
         Action? onCompleted = null;
         lock (_serverProbeMarkerGate)
         {
-            if (_pendingServerProbeMarkers.Remove(marker, out onCompleted))
-                Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
+            _pendingServerProbeMarkers.Remove(marker, out onCompleted);
         }
 
         onCompleted?.Invoke();

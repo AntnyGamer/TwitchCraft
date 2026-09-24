@@ -71,7 +71,6 @@ public sealed partial class MainHandler
     private readonly Lock _serverProbeMarkerGate = new();
     private readonly SemaphoreSlim _deathScoreObjectiveGate = new(1, 1);
     private readonly Dictionary<string, Action> _pendingServerProbeMarkers = new(StringComparer.Ordinal);
-    private int _pendingServerProbeMarkerCount;
     private readonly string _serverProbeMarkerSessionPrefix = ProbeMarkerPrefix + Guid.NewGuid().ToString("N") + "_";
     private long _serverProbeMarkerCounter;
     private long _minecraftQueryUnavailableUntilTicks;
