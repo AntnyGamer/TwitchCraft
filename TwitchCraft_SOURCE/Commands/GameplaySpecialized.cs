@@ -605,8 +605,11 @@ public static partial class CommandList
                 return SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct);
             string switchMilkTag = runtime.Commands.NextSwitchMilkTag();
             string taggedMilkSelector = "@a[tag=" + switchMilkTag + "]";
-            List<string> switchMilkCommands = new(7) { "tag @a remove " + switchMilkTag };
-            switchMilkCommands.Add("execute as " + target.Selector + " if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + switchMilkTag);
+            List<string> switchMilkCommands = new(7)
+            {
+                "tag @a remove " + switchMilkTag,
+                "execute as " + target.Selector + " if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + switchMilkTag
+            };
             if (runtime.MultiTargetingEnabled && target.PlayerCount == 1 && !IsEveryone(target) && runtime.HasOtherPlayer(playerName))
             {
                 switchMilkCommands.Add(
