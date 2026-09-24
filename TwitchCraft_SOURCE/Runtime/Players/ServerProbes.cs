@@ -32,7 +32,7 @@ public sealed partial class MainHandler
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
-        ApplyPVPGameRule();
+        TrackTask(ApplyPVPGameRuleAsync());
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();
@@ -40,18 +40,18 @@ public sealed partial class MainHandler
         QueueDeathScore();
     }
 
-    private void ApplyPVPGameRule()
+    private Task ApplyPVPGameRuleAsync()
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
-            return;
+            return Task.CompletedTask;
 
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
         if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
-            return;
+            return Task.CompletedTask;
 
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPVPEnabled ? "true" : "false");
-        TrackTask(SendServerCommandAsync(pvp, token));
+        return SendServerCommandAsync(pvp, token);
     }
 
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
