@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
@@ -200,6 +201,12 @@ public sealed class LiveSettingsApplicationTests
 
         scenario.Config.Settings.MultiplayerPVPEnabled = true;
         await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await FakeJavaServer.WaitUntilAsync(
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
+                .Skip(cursor)
+                .Any(command => command.Contains("pvp true", StringComparison.Ordinal)),
+            "Live PvP enable command was not sent.",
+            scenario.Token);
         List<string> enabledCommands = await scenario.DrainCommandsAsync(cursor);
 
         Assert.Contains(enabledCommands, command => command.Contains("pvp true", StringComparison.Ordinal));
@@ -207,6 +214,12 @@ public sealed class LiveSettingsApplicationTests
         cursor = scenario.CaptureCommandCursor();
         scenario.Config.Settings.MultiplayerPVPEnabled = false;
         await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await FakeJavaServer.WaitUntilAsync(
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
+                .Skip(cursor)
+                .Any(command => command.Contains("pvp false", StringComparison.Ordinal)),
+            "Live PvP disable command was not sent.",
+            scenario.Token);
         List<string> disabledCommands = await scenario.DrainCommandsAsync(cursor);
 
         Assert.Contains(disabledCommands, command => command.Contains("pvp false", StringComparison.Ordinal));
