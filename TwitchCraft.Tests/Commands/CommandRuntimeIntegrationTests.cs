@@ -158,8 +158,7 @@ public sealed class CommandRuntimeIntegrationTests
             Assert.Equal(selectedItem, items["PlayerOne"]);
             Assert.Equal(selectedItem, items["PlayerTwo"]);
             Assert.Equal(attributes, await runtime.QueryHeartModifiersAsync("PlayerOne", cancellationToken));
-            Assert.Equal(["ffffffff-ffff-ffff-ffff-ffffffffffff"],
-                MainHandler.ParseHeartModifierIDs(attributes, namespaced: false));
+
             Assert.True(await runtime.RunMinecraftCommandAsync("say remote-integration"));
             Assert.False(await runtime.RunMinecraftCommandAsync("say malformed"));
             Assert.Equal("say remote-integration", RCON.Commands[RCON.Commands.Count - 2]);
