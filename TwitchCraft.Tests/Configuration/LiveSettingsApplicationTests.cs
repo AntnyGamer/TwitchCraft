@@ -171,7 +171,8 @@ public sealed class LiveSettingsApplicationTests
     public async Task ApplySettings_DifficultyChangesReachRunningLocalServer()
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken,
+            fullLifecycle: true);
         int cursor = scenario.CaptureCommandCursor();
 
         scenario.Config.Settings.Difficulty = "Hard";
@@ -193,7 +194,8 @@ public sealed class LiveSettingsApplicationTests
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
-            multiplayer: true);
+            multiplayer: true,
+            fullLifecycle: true);
         int cursor = scenario.CaptureCommandCursor();
 
         scenario.Config.Settings.MultiplayerPVPEnabled = true;
@@ -215,7 +217,8 @@ public sealed class LiveSettingsApplicationTests
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
-            multiplayer: true);
+            multiplayer: true,
+            fullLifecycle: true);
 
         TwitchCraftConfig edited = ConfigurationStore.Clone(scenario.Config);
         edited.Settings.MultiplayerEnabled = false;
