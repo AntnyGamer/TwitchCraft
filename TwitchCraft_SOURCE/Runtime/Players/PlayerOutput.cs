@@ -32,8 +32,12 @@ public sealed partial class MainHandler
 
         ServerLogLineFlags flags = new(line);
         if (flags.HasEntityData)
+        {
             HandleEntity(line);
-        else if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
+            return;
+        }
+
+        if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
             HandleGamemode(playerName, gameType);
 
         Statistics.RecordLine(line, flags.HasTcDeaths);
@@ -62,12 +66,11 @@ public sealed partial class MainHandler
                     if (flags.HasEntityData)
                     {
                         HandleEntity(line);
+                        continue;
                     }
-                    else if (flags.HasGameMode)
-                    {
-                        if (TryHandleGamemode(line, out string playerName, out int gameType))
-                            HandleGamemode(playerName, gameType);
-                    }
+
+                    if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
+                        HandleGamemode(playerName, gameType);
 
                     bool mightContainCommandError = line.Contains("command", StringComparison.OrdinalIgnoreCase)
                         || line.Contains("execute", StringComparison.OrdinalIgnoreCase)

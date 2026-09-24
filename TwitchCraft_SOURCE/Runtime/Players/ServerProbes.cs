@@ -118,12 +118,13 @@ public sealed partial class MainHandler
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
-        {
-            (MainHandler handler, string marker, Action onCompleted) = ((MainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelProbe(marker))
-                onCompleted();
-        }, (this, marker, onProbeCompleted));
+        using CancellationTokenRegistration registration = cancellationToken.Register(
+            static state =>
+            {
+                (MainHandler handler, string marker) = ((MainHandler Handler, string Marker))state!;
+                handler.CompleteProbe(marker);
+            },
+            (this, marker));
 
         try
         {
@@ -131,19 +132,17 @@ public sealed partial class MainHandler
                     [command, "data get storage " + ProbeMarkerNamespace + marker],
                     cancellationToken).ConfigureAwait(false))
             {
-                QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
+                QueueProbeFallback(marker, cancellationToken);
                 return true;
             }
 
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             return false;
         }
         catch
         {
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             throw;
         }
@@ -194,31 +193,30 @@ public sealed partial class MainHandler
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(static state =>
-        {
-            (MainHandler handler, string marker, Action onCompleted) = ((MainHandler Handler, string Marker, Action OnCompleted))state!;
-            if (handler.TryCancelProbe(marker))
-                onCompleted();
-        }, (this, marker, onProbeCompleted));
+        using CancellationTokenRegistration registration = cancellationToken.Register(
+            static state =>
+            {
+                (MainHandler handler, string marker) = ((MainHandler Handler, string Marker))state!;
+                handler.CompleteProbe(marker);
+            },
+            (this, marker));
 
         try
         {
             probeCommands.Add("data get storage " + ProbeMarkerNamespace + marker);
             if (await SendServerCommandsAsync(probeCommands, cancellationToken).ConfigureAwait(false))
             {
-                QueueProbeFallback(marker, onProbeCompleted, cancellationToken);
+                QueueProbeFallback(marker, cancellationToken);
                 return true;
             }
 
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             return false;
         }
         catch
         {
-            if (TryCancelProbe(marker))
-                onProbeCompleted();
+            CompleteProbe(marker);
 
             throw;
         }
@@ -238,7 +236,7 @@ public sealed partial class MainHandler
         return marker;
     }
 
-    private void QueueProbeFallback(string marker, Action onProbeCompleted, CancellationToken cancellationToken)
+    private void QueueProbeFallback(string marker, CancellationToken cancellationToken)
     {
         _ = CompleteLaterAsync();
 
@@ -247,13 +245,11 @@ public sealed partial class MainHandler
             try
             {
                 await Task.Delay(ServerProbeMarkerFallbackTimeout, cancellationToken).ConfigureAwait(false);
-                if (TryCancelProbe(marker))
-                    onProbeCompleted();
+                CompleteProbe(marker);
             }
             catch (OperationCanceledException)
             {
-                if (TryCancelProbe(marker))
-                    onProbeCompleted();
+                CompleteProbe(marker);
             }
             catch (Exception ex)
             {
@@ -262,24 +258,8 @@ public sealed partial class MainHandler
         }
     }
 
-    private bool TryCancelProbe(string marker)
+    private bool CompleteProbe(string marker)
     {
-        lock (_serverProbeMarkerGate)
-        {
-            bool removed = _pendingServerProbeMarkers.Remove(marker);
-            if (removed)
-                Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
-
-            return removed;
-        }
-    }
-
-    private bool TryHandleProbe(string line)
-    {
-        string marker = GetProbeMarker(line);
-        if (!marker.StartsWith(_serverProbeMarkerSessionPrefix, StringComparison.Ordinal))
-            return false;
-
         Action? onCompleted = null;
         if (Volatile.Read(ref _pendingServerProbeMarkerCount) > 0)
         {
@@ -291,6 +271,16 @@ public sealed partial class MainHandler
         }
 
         onCompleted?.Invoke();
+        return onCompleted != null;
+    }
+
+    private bool TryHandleProbe(string line)
+    {
+        string marker = GetProbeMarker(line);
+        if (!marker.StartsWith(_serverProbeMarkerSessionPrefix, StringComparison.Ordinal))
+            return false;
+
+        CompleteProbe(marker);
         return true;
     }
 
@@ -330,9 +320,6 @@ public sealed partial class MainHandler
         bool isMinecraftCommandErrorContext,
         bool isSidebarObjectiveIssue)
     {
-        if (flags.HasEntityData)
-            return true;
-
         if (string.IsNullOrEmpty(line))
             return false;
 
