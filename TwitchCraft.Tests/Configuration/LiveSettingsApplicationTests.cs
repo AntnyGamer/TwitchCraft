@@ -221,37 +221,24 @@ public sealed class LiveSettingsApplicationTests
     }
 
     [Fact]
-    public async Task ApplySettings_PreservesActiveSessionModeSettings()
+    public async Task ApplySettings_PreservesRunningSessionModeSettings()
     {
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = new(
-            new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"));
-        TwitchCraftConfig active = new();
-        active.Settings.MultiplayerEnabled = true;
-        active.Settings.RemoteControlEnabled = false;
-        active.Settings.RequireOnlineMode = false;
+        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
+            TestContext.Current.CancellationToken,
+            multiplayer: true);
 
-        try
-        {
-            await runtime.ApplySettingsAsync(active);
+        TwitchCraftConfig edited = ConfigurationStore.Clone(scenario.Config);
+        edited.Settings.MultiplayerEnabled = false;
+        edited.Settings.RemoteControlEnabled = true;
+        edited.Settings.RequireOnlineMode = false;
+        edited.Settings.AllowRandomPlayerTarget = false;
+        await scenario.Runtime.ApplySettingsAsync(edited);
 
-            TwitchCraftConfig edited = ConfigurationStore.Clone(active);
-            edited.Settings.MultiplayerEnabled = false;
-            edited.Settings.RemoteControlEnabled = true;
-            edited.Settings.RequireOnlineMode = true;
-            edited.Settings.AllowRandomPlayerTarget = false;
-            await runtime.ApplySettingsAsync(edited);
-
-            Assert.True(runtime.MultiplayerEnabled);
-            Assert.False(runtime.RemoteControlEnabled);
-            Assert.False(runtime.RequireOnlineMode);
-            Assert.False(runtime.Commands.AllowRandomPlayerTarget);
-        }
-        finally
-        {
-            runtime.Tokens.Close();
-        }
+        Assert.True(scenario.Runtime.MultiplayerEnabled);
+        Assert.False(scenario.Runtime.RemoteControlEnabled);
+        Assert.True(scenario.Runtime.RequireOnlineMode);
+        Assert.False(scenario.Runtime.Commands.AllowRandomPlayerTarget);
+        Assert.True(scenario.Runtime.MinecraftServerReady);
     }
 
 }
