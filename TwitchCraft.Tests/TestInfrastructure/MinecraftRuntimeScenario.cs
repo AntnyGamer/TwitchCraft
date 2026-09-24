@@ -40,10 +40,10 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         IReadOnlyList<string>? players = null,
         IReadOnlyList<string>? spectators = null,
         bool multiplayer = false,
-        bool fullLifecycle = false,
         double maxHealth = 20,
         string? selectedItem = null,
-        string? attributes = null)
+        string? attributes = null,
+        bool fullLifecycle = false)
     {
         TemporaryDirectory directory = new();
         CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
