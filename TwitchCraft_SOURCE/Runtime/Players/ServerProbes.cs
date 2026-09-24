@@ -343,8 +343,8 @@ public sealed partial class MainHandler
             line.Contains("Created new objective [Player List:]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot sidebar to show objective Player List:", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set display slot list to show objective Health", StringComparison.OrdinalIgnoreCase) ||
-            (flags.HasTcPlayerList && flags.hasAlreadyExists) ||
-            (flags.HasTcHealth && flags.hasAlreadyExists) ||
+            (flags.HasTcPlayerList && flags.AlreadyExists) ||
+            (flags.HasTcHealth && flags.AlreadyExists) ||
             flags.HasTcDeaths ||
             line.Contains("Created new objective [Health]", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Removed objective [Health]", StringComparison.OrdinalIgnoreCase) ||

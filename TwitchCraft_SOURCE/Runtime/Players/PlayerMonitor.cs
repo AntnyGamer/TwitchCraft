@@ -32,8 +32,8 @@ public sealed partial class MainHandler
         internal readonly bool HasTcPlayerList;
         internal readonly bool HasTcHealth;
         internal readonly bool HasTcDeaths;
-        internal readonly bool hasAlreadyExists;
-        internal readonly bool hasDoesNotExist;
+        internal readonly bool AlreadyExists;
+        internal readonly bool DoesNotExist;
 
         internal ServerLogLineFlags(string line)
         {
@@ -61,8 +61,8 @@ public sealed partial class MainHandler
             HasTcPlayerList = hasTcMarker && line.Contains("tc_playerlist", StringComparison.Ordinal);
             HasTcHealth = hasTcMarker && line.Contains("tc_health", StringComparison.Ordinal);
             HasTcDeaths = hasTcMarker && line.Contains(DeathScoreObjective, StringComparison.Ordinal);
-            hasAlreadyExists = hasObjective && line.Contains("already exists", StringComparison.OrdinalIgnoreCase);
-            hasDoesNotExist = hasObjective && line.Contains("doesn't exist", StringComparison.OrdinalIgnoreCase);
+            AlreadyExists = hasObjective && line.Contains("already exists", StringComparison.OrdinalIgnoreCase);
+            DoesNotExist = hasObjective && line.Contains("doesn't exist", StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -461,7 +461,7 @@ public sealed partial class MainHandler
             line.Contains("Unknown scoreboard objective 'tc_health'", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("No objective was found by the name 'tc_playerlist'", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("No objective was found by the name 'tc_health'", StringComparison.OrdinalIgnoreCase) ||
-            (flags.HasTcPlayerList && flags.hasDoesNotExist) ||
-            (flags.HasTcHealth && flags.hasDoesNotExist);
+            (flags.HasTcPlayerList && flags.DoesNotExist) ||
+            (flags.HasTcHealth && flags.DoesNotExist);
     }
 }
