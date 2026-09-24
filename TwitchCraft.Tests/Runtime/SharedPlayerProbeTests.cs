@@ -76,7 +76,7 @@ public sealed class SharedPlayerProbeTests
     }
 
     [Fact]
-    public async Task QueryItem_MissingResponseReturnsNullWithoutHanging()
+    public async Task QueryHeartModifiers_MissingResponseReturnsNullWithoutHanging()
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken);
@@ -84,7 +84,7 @@ public sealed class SharedPlayerProbeTests
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(scenario.Token);
         timeout.CancelAfter(TimeSpan.FromSeconds(1));
 
-        Assert.Null(await scenario.Runtime.QueryItemAsync("PlayerOne", timeout.Token));
+        Assert.Null(await scenario.Runtime.QueryHeartModifiersAsync("PlayerOne", timeout.Token));
     }
 
     [Fact]

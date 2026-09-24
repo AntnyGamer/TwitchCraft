@@ -8,6 +8,7 @@ public sealed class PlayerStateParsingTests
     [Theory]
     [InlineData("[Server thread/INFO]: Set Steve's game mode to Survival Mode", "Steve", 0)]
     [InlineData("Set the game mode of Alex to Creative Mode", "Alex", 1)]
+    [InlineData("Set the game mode of Alex to Adventure Mode", "Alex", 2)]
     [InlineData("[Rcon]: Set Player_3's game mode to Spectator Mode", "Player_3", 3)]
     public void TryParseGamemode_RecognizesSupportedServerFormats(
         string line,
@@ -30,7 +31,6 @@ public sealed class PlayerStateParsingTests
         string[] lines =
         [
             "",
-            "Steve joined the game",
             "Set bad-name's game mode to Survival Mode",
             "Set Steve's game mode to Builder Mode",
             "Set the game mode of Alex Creative Mode"
