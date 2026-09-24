@@ -51,6 +51,8 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         IReadOnlyList<string> playerList = players ?? ["PlayerOne"];
         config.Identity.StreamerMinecraftName = playerList.Count > 0 ? playerList[0] : "PlayerOne";
         config.Settings.MultiplayerEnabled = multiplayer;
+        if (fullLifecycle && TwitchOAuthAuthorizer.IsOAuthConfigured)
+            config.Twitch.ClientID = TwitchOAuthAuthorizer.ApplicationClientID;
         FakeJavaServer.ConfigureResponsiveServer(
             config.Server.JarPath,
             playerList,
