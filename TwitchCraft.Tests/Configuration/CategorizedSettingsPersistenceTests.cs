@@ -97,7 +97,7 @@ public sealed class CategorizedSettingsPersistenceTests
         const string json = """
             {
               "commands": { "commandprefix": "??", "FutureCommandSetting": true },
-              "gameplay": { "MultiplayerPVPEnabled": true },
+              "GAMEPLAY": { "MultiplayerPVPEnabled": true },
               "Future Category": { "FutureValue": 42 }
             }
             """;

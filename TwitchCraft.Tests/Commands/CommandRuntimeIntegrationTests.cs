@@ -120,7 +120,7 @@ public sealed class CommandRuntimeIntegrationTests
         using TemporaryDirectory directory = new();
         const string password = "integration-password";
         const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
-        const string attributes = "[{id:'minecraft:max_health',modifiers:[]}]";
+        const string attributes = "[{Name:'generic.max_health',Modifiers:[{Name:'twitchcraft_health',UUID:[I;-1,-1,-1,-1],Amount:2.0d,Operation:0}]}]";
         await using FakeRCONServer RCON = new(
             password,
             "say malformed",
@@ -153,13 +153,13 @@ public sealed class CommandRuntimeIntegrationTests
             Assert.Equal(36, await runtime.QueryMaxHealthAsync("PlayerOne", cancellationToken));
             Assert.Equal(selectedItem, await runtime.QueryItemAsync("PlayerOne", cancellationToken));
             Dictionary<string, string?> items = await runtime.QueryItemsAsync(
-                ["PlayerTwo", "PlayerOne", "playerone"],
-                cancellationToken);
+                ["PlayerTwo", "PlayerOne", "playerone"], cancellationToken);
             Assert.Equal(2, items.Count);
             Assert.Equal(selectedItem, items["PlayerOne"]);
             Assert.Equal(selectedItem, items["PlayerTwo"]);
             Assert.Equal(attributes, await runtime.QueryHeartModifiersAsync("PlayerOne", cancellationToken));
-
+            Assert.Equal(["ffffffff-ffff-ffff-ffff-ffffffffffff"],
+                MainHandler.ParseHeartModifierIDs(attributes, namespaced: false));
             Assert.True(await runtime.RunMinecraftCommandAsync("say remote-integration"));
             Assert.False(await runtime.RunMinecraftCommandAsync("say malformed"));
             Assert.Equal("say remote-integration", RCON.Commands[RCON.Commands.Count - 2]);
