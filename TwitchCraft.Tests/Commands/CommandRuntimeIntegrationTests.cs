@@ -120,7 +120,7 @@ public sealed class CommandRuntimeIntegrationTests
         using TemporaryDirectory directory = new();
         const string password = "integration-password";
         const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
-        const string attributes = "[{Name:'generic.max_health',Modifiers:[{Name:'twitchcraft_health',UUID:[I;-1,-1,-1,-1],Amount:2.0d,Operation:0}]}]";
+        const string attributes = "[{id:'minecraft:max_health',modifiers:[]}]";
         await using FakeRCONServer RCON = new(
             password,
             "say malformed",
