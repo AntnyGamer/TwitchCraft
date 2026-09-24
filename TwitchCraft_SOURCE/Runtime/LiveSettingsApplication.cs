@@ -71,7 +71,7 @@ public sealed partial class MainHandler
             if (difficultyChanged && !activeConfig.Settings.RemoteControlEnabled && TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
                 await SendServerCommandAsync("difficulty " + (activeConfig.Settings.Difficulty == "Medium" ? "normal" : activeConfig.Settings.Difficulty.ToLowerInvariant()), token).ConfigureAwait(false);
             if (pvpChanged)
-                ApplyPVPGameRule();
+                await ApplyPVPGameRuleAsync().ConfigureAwait(false);
         }
         finally
         {
