@@ -258,7 +258,7 @@ public sealed partial class MainHandler
         }
     }
 
-    private bool CompleteProbe(string marker)
+    private void CompleteProbe(string marker)
     {
         Action? onCompleted = null;
         if (Volatile.Read(ref _pendingServerProbeMarkerCount) > 0)
@@ -271,7 +271,6 @@ public sealed partial class MainHandler
         }
 
         onCompleted?.Invoke();
-        return onCompleted != null;
     }
 
     private bool TryHandleProbe(string line)
