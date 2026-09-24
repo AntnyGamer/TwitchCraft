@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace TwitchCraft_V1;
 
-internal sealed class MinecraftStderrFilter
+internal sealed class MinecraftSTDERRFilter
 {
     private const string DeprecationHeader = "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called";
     private const string JomlCallerPrefix = "WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.joml.MemUtil$MemUtilUnsafe";
     private const string ReportJomlCaller = "WARNING: Please consider reporting this to the maintainers of class org.joml.MemUtil$MemUtilUnsafe";
     private const string RemovalNotice = "WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release";
-    private const string StderrPrefix = "[STDERR] ";
+    private const string STDERRPrefix = "[STDERR] ";
 
     private readonly List<string> _candidateLines = new(4);
 
@@ -55,8 +55,8 @@ internal sealed class MinecraftStderrFilter
     }
 
     private static string RemoveDisplayPrefix(string line)
-        => line.StartsWith(StderrPrefix, StringComparison.Ordinal)
-            ? line[StderrPrefix.Length..]
+        => line.StartsWith(STDERRPrefix, StringComparison.Ordinal)
+            ? line[STDERRPrefix.Length..]
             : line;
 
     private static bool IsJomlCallerLine(string line)

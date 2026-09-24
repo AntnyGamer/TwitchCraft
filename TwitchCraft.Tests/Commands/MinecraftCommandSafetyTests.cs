@@ -85,10 +85,10 @@ public sealed class MinecraftCommandSafetyTests
     public void AttributeCommands_UseVersionAppropriateSyntax()
     {
         const string Selector = "@a[name=\"Player\",limit=1]";
-        const string Uuid = "11111111-1111-1111-1111-111111111111";
+        const string UUID = "11111111-1111-1111-1111-111111111111";
         Assert.Equal(
             "execute as @a[name=\"Player\",limit=1] run attribute @s minecraft:generic.max_health modifier add 11111111-1111-1111-1111-111111111111 twitchcraft_health -4 add_value",
-            MinecraftCommandBuilder.AddMaxHealthModifier(Selector, Uuid, -4, modernAttribute: false, namespacedID: false));
+            MinecraftCommandBuilder.AddMaxHealthModifier(Selector, UUID, -4, modernAttribute: false, namespacedID: false));
         Assert.Equal(
             "execute as @a[name=\"Player\",limit=1] run attribute @s minecraft:generic.max_health modifier add twitchcraft:heart_1 6 add_value",
             MinecraftCommandBuilder.AddMaxHealthModifier(Selector, "twitchcraft:heart_1", 6, modernAttribute: false, namespacedID: true));

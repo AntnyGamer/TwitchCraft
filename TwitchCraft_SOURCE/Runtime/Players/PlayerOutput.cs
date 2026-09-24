@@ -125,10 +125,10 @@ public sealed partial class MainHandler
         if (process == null)
             return;
 
-        MinecraftStderrFilter filter = new();
+        MinecraftSTDERRFilter filter = new();
         Exception? readerFailure = null;
 
-        void ShowStderrLine(string line) => _shellWindow?.AddServerLogLine("[STDERR] " + line);
+        void ShowSTDERRLine(string line) => _shellWindow?.AddServerLogLine("[STDERR] " + line);
 
         try
         {
@@ -138,7 +138,7 @@ public sealed partial class MainHandler
                 if (line == null)
                     break;
 
-                filter.ProcessLine(line, ShowStderrLine);
+                filter.ProcessLine(line, ShowSTDERRLine);
             }
         }
         catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
@@ -149,7 +149,7 @@ public sealed partial class MainHandler
             readerFailure = ex;
         }
 
-        filter.Flush(ShowStderrLine);
+        filter.Flush(ShowSTDERRLine);
         if (readerFailure != null)
             _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Server error reader failed", readerFailure));
     }

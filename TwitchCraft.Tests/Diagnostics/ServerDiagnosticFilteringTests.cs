@@ -58,9 +58,9 @@ public sealed class ServerDiagnosticFilteringTests
     }
 
     [Fact]
-    public void OrdinaryStderrIsShownImmediately()
+    public void OrdinarySTDERRIsShownImmediately()
     {
-        MinecraftStderrFilter filter = new();
+        MinecraftSTDERRFilter filter = new();
         List<string> shownLines = [];
 
         filter.ProcessLine("ERROR: Failed to bind server port", shownLines.Add);
@@ -70,7 +70,7 @@ public sealed class ServerDiagnosticFilteringTests
 
     private static List<string> Filter(IEnumerable<string> lines)
     {
-        MinecraftStderrFilter filter = new();
+        MinecraftSTDERRFilter filter = new();
         List<string> shownLines = [];
         foreach (string line in lines)
             filter.ProcessLine(line, shownLines.Add);
