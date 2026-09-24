@@ -10,12 +10,6 @@ namespace TwitchCraft_V1;
 
 internal sealed partial class TokenStore
 {
-    public IReadOnlyList<KeyValuePair<string, int>> GetTopBalances(int limit)
-    {
-        _ = TryGetTopBalances(limit, out IReadOnlyList<KeyValuePair<string, int>> result);
-        return result;
-    }
-
     internal bool TryGetTopBalances(int limit, out IReadOnlyList<KeyValuePair<string, int>> result)
     {
         result = [];
@@ -51,12 +45,6 @@ internal sealed partial class TokenStore
                 return false;
             }
         }
-    }
-
-    public TokenRankResult? GetRank(string user)
-    {
-        _ = TryGetRank(user, out TokenRankResult? result);
-        return result;
     }
 
     internal bool TryGetRank(string user, out TokenRankResult? result)
