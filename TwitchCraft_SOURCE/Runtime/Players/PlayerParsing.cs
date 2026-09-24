@@ -166,8 +166,8 @@ public sealed partial class MainHandler
     [GeneratedRegex(@"\{[^{}]*twitchcraft_health[^{}]*\}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex LegacyHeartModifierRegex();
 
-    [GeneratedRegex(@"uuid\s*:\s*\[I;\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex LegacyHeartUuidRegex();
+    [GeneratedRegex(@"UUID\s*:\s*\[I;\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LegacyHeartUUIDRegex();
 
     internal static List<string> ParseHeartModifierIDs(string data, bool namespaced)
     {
@@ -181,12 +181,12 @@ public sealed partial class MainHandler
 
         foreach (ValueMatch modifier in LegacyHeartModifierRegex().EnumerateMatches(data))
         {
-            Match uuid = LegacyHeartUuidRegex().Match(data, modifier.Index, modifier.Length);
-            if (!uuid.Success ||
-                !int.TryParse(uuid.Groups[1].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) ||
-                !int.TryParse(uuid.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
-                !int.TryParse(uuid.Groups[3].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int c) ||
-                !int.TryParse(uuid.Groups[4].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int d))
+            Match UUID = LegacyHeartUUIDRegex().Match(data, modifier.Index, modifier.Length);
+            if (!UUID.Success ||
+                !int.TryParse(UUID.Groups[1].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) ||
+                !int.TryParse(UUID.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
+                !int.TryParse(UUID.Groups[3].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int c) ||
+                !int.TryParse(UUID.Groups[4].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int d))
                 continue;
 
             uint ua = unchecked((uint)a), ub = unchecked((uint)b), uc = unchecked((uint)c), ud = unchecked((uint)d);
