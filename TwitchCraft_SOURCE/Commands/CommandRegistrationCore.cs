@@ -104,8 +104,8 @@ public static partial class CommandList
                     sender + (refunded
                         ? ", the Minecraft command could not be completed, so your tokens were refunded."
                         : ", the Minecraft command could not be completed and the full token refund could not be saved; check your balance."), token),
-                onSendFailure,
-                ct);
+                ct,
+                onSendFailure);
         }
 
         Task<bool> TrySendPaidNoCooldownAsync(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure = null)
