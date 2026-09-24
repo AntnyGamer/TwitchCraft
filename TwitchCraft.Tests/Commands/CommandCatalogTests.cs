@@ -99,4 +99,69 @@ public sealed class CommandCatalogTests
             runtime.Tokens.Close();
         }
     }
+    [Fact]
+    public async Task GiveTokens_RejectsUnauthorizedViewerAndAllowsStreamer()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = new(
+            new AppShellViewModel(),
+            Path.Combine(directory.Path, "viewer_tokens.db"));
+        TwitchCraftConfig config = new();
+        config.Twitch.StreamerName = "streamer";
+
+        try
+        {
+            await runtime.ApplySettingsAsync(config);
+
+            await runtime.DispatchAsync(
+                "!givetokens bob 25",
+                "!",
+                "viewer",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(0, runtime.Tokens.GetBalance("bob"));
+
+            await runtime.DispatchAsync(
+                "!givetokens bob 25",
+                "!",
+                "streamer",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(25, runtime.Tokens.GetBalance("bob"));
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
+    }
+
+    [Fact]
+    public async Task TradeTokens_ChargesSenderAndCreditsHalfToRecipient()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = new(
+            new AppShellViewModel(),
+            Path.Combine(directory.Path, "viewer_tokens.db"));
+
+        try
+        {
+            await runtime.ApplySettingsAsync(new TwitchCraftConfig());
+            runtime.Tokens.Award("alice", 50);
+
+            await runtime.DispatchAsync(
+                "!tradetokens bob 10",
+                "!",
+                "alice",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(40, runtime.Tokens.GetBalance("alice"));
+            Assert.Equal(5, runtime.Tokens.GetBalance("bob"));
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
+    }
+
 }
