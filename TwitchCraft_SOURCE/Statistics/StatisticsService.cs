@@ -185,23 +185,9 @@ public sealed partial class StatisticsService
     {
         Load();
         DateTime now = DateTime.UtcNow;
-        bool trackedPlayerIsOnline = false;
-        bool trackedPlayerIsSpectator = false;
         string trackedPlayer = _streamerMinecraftName;
-
-        if (trackedPlayer.Length > 0)
-        {
-            foreach (string knownPlayer in _dependencies.GetKnownPlayers())
-            {
-                if (string.Equals(knownPlayer, trackedPlayer, StringComparison.OrdinalIgnoreCase))
-                {
-                    trackedPlayerIsOnline = true;
-                    break;
-                }
-            }
-
-            trackedPlayerIsSpectator = _dependencies.IsSpectator(trackedPlayer);
-        }
+        bool trackedPlayerIsOnline = trackedPlayer.Length > 0 && _dependencies.IsKnownPlayer(trackedPlayer);
+        bool trackedPlayerIsSpectator = trackedPlayerIsOnline && _dependencies.IsSpectator(trackedPlayer);
 
         lock (_deathStatisticsGate)
         {
@@ -269,7 +255,7 @@ public sealed partial class StatisticsService
 
 internal sealed record StatisticsDependencies(
     Func<string, ChatCommandStatisticFlags> GetCommandFlags,
-    Func<List<string>> GetKnownPlayers,
+    Func<string, bool> IsKnownPlayer,
     Func<string, bool> IsSpectator,
     Action QueueSnapshot,
     Action QueueGamemode,

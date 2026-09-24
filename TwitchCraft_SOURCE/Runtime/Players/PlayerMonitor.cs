@@ -23,7 +23,6 @@ public sealed partial class MainHandler
 
     private readonly struct ServerLogLineFlags
     {
-        internal readonly bool HasEntityData;
         internal readonly bool HasGameMode;
         internal readonly bool HasObjective;
         internal readonly bool HasPlayerList;
@@ -41,21 +40,19 @@ public sealed partial class MainHandler
             this = default;
 
             bool hasTcMarker = line.Contains("tc_", StringComparison.Ordinal);
-            bool hasEntityData = line.Contains(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
             bool hasGameMode = line.Contains("game mode", StringComparison.OrdinalIgnoreCase);
             bool hasObjective = line.Contains("objective", StringComparison.OrdinalIgnoreCase);
             bool hasPlayerList = line.Contains("Player List", StringComparison.OrdinalIgnoreCase);
             bool hasHealth = line.Contains("Health", StringComparison.OrdinalIgnoreCase);
             bool hasDisplaySlot = line.Contains("display slot", StringComparison.OrdinalIgnoreCase);
 
-            if (!hasTcMarker && !hasEntityData &&
-                !hasGameMode && !hasObjective && !hasPlayerList && !hasHealth && !hasDisplaySlot)
+            if (!hasTcMarker && !hasGameMode &&
+                !hasObjective && !hasPlayerList && !hasHealth && !hasDisplaySlot)
             {
                 return;
             }
 
             HasTcMarker = hasTcMarker;
-            HasEntityData = hasEntityData;
             HasGameMode = hasGameMode;
             HasObjective = hasObjective;
             HasPlayerList = hasPlayerList;

@@ -8,45 +8,6 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private static bool TryParseEntity(string line, out string playerName, out string data)
-    {
-        playerName = string.Empty;
-        data = string.Empty;
-
-        if (string.IsNullOrEmpty(line))
-            return false;
-
-        int markerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-        if (markerIndex <= 0)
-            return false;
-
-        string prefix = AfterLastColon(line, markerIndex);
-        if (!MinecraftNameHelper.IsValidPlayerName(prefix))
-            return false;
-
-        playerName = prefix;
-        int dataStart = markerIndex + EntityDataMarker.Length;
-        data = TextSegmentHelper.TrimSegment(line, dataStart, line.Length - dataStart);
-        return true;
-    }
-
-    private static bool TryHandleGamemode(string line, out string playerName, out int gameType)
-    {
-        playerName = string.Empty;
-        gameType = -1;
-
-        if (string.IsNullOrEmpty(line))
-            return false;
-
-        if (TryParseEntity(line, out playerName, out string suffix)
-            && int.TryParse(suffix, NumberStyles.Integer, CultureInfo.InvariantCulture, out gameType))
-        {
-            return true;
-        }
-
-        return TryParseGamemode(line, out playerName, out gameType);
-    }
-
     private static bool TryParsePosition(string value)
     {
         ReadOnlySpan<char> text = value.AsSpan().Trim();
@@ -234,10 +195,17 @@ public sealed partial class MainHandler
         return ids;
     }
 
-    private void HandleEntity(string line)
+    private void HandleEntity(string line, int markerIndex)
     {
-        if (!TryParseEntity(line, out string playerName, out string suffix))
+        if (markerIndex <= 0)
             return;
+
+        string playerName = AfterLastColon(line, markerIndex);
+        if (!MinecraftNameHelper.IsValidPlayerName(playerName))
+            return;
+
+        int dataStart = markerIndex + EntityDataMarker.Length;
+        string suffix = TextSegmentHelper.TrimSegment(line, dataStart, line.Length - dataStart);
 
         if (suffix.Length >= 2 && suffix[0] == '[' && suffix[^1] == ']' && (suffix.Length == 2 || suffix.Contains('{')))
         {

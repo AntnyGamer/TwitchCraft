@@ -35,14 +35,10 @@ public sealed partial class MainHandler
 
         lock (_playerGate)
         {
-            foreach (string player in _knownPlayers)
-            {
-                if (!string.Equals(player, excludedName, StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
+            int count = _knownPlayers.Count;
+            return count > 1 ||
+                count == 1 && !string.Equals(_knownPlayers[0], excludedName, StringComparison.OrdinalIgnoreCase);
         }
-
-        return false;
     }
 
     public Task TellrawOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)

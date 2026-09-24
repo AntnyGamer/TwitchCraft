@@ -261,13 +261,10 @@ public sealed partial class MainHandler
     private void CompleteProbe(string marker)
     {
         Action? onCompleted = null;
-        if (Volatile.Read(ref _pendingServerProbeMarkerCount) > 0)
+        lock (_serverProbeMarkerGate)
         {
-            lock (_serverProbeMarkerGate)
-            {
-                if (_pendingServerProbeMarkers.Remove(marker, out onCompleted))
-                    Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
-            }
+            if (_pendingServerProbeMarkers.Remove(marker, out onCompleted))
+                Volatile.Write(ref _pendingServerProbeMarkerCount, _pendingServerProbeMarkers.Count);
         }
 
         onCompleted?.Invoke();

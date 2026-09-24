@@ -69,7 +69,7 @@ public sealed partial class MainHandler
         _commandRegistry = ChatCommandRegistry.CreateDefault(this);
         Statistics = new StatisticsService(new StatisticsDependencies(
             _commandRegistry.GetStatisticFlags,
-            GetKnownPlayers,
+            IsKnownPlayer,
             IsSpectatorPlayer,
             QueueSnapshot,
             QueueGamemode,

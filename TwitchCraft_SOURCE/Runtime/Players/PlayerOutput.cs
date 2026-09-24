@@ -30,14 +30,15 @@ public sealed partial class MainHandler
         if (string.IsNullOrWhiteSpace(line) || TryHandleHealthProbe(line))
             return;
 
-        ServerLogLineFlags flags = new(line);
-        if (flags.HasEntityData)
+        int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+        if (entityDataMarkerIndex >= 0)
         {
-            HandleEntity(line);
+            HandleEntity(line, entityDataMarkerIndex);
             return;
         }
 
-        if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
+        ServerLogLineFlags flags = new(line);
+        if (flags.HasGameMode && TryParseGamemode(line, out string playerName, out int gameType))
             HandleGamemode(playerName, gameType);
 
         Statistics.RecordLine(line, flags.HasTcDeaths);
@@ -62,14 +63,15 @@ public sealed partial class MainHandler
                     if (TryHandleProbe(line) || TryHandleHealthProbe(line))
                         continue;
 
-                    ServerLogLineFlags flags = new(line);
-                    if (flags.HasEntityData)
+                    int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+                    if (entityDataMarkerIndex >= 0)
                     {
-                        HandleEntity(line);
+                        HandleEntity(line, entityDataMarkerIndex);
                         continue;
                     }
 
-                    if (flags.HasGameMode && TryHandleGamemode(line, out string playerName, out int gameType))
+                    ServerLogLineFlags flags = new(line);
+                    if (flags.HasGameMode && TryParseGamemode(line, out string playerName, out int gameType))
                         HandleGamemode(playerName, gameType);
 
                     bool mightContainCommandError = line.Contains("command", StringComparison.OrdinalIgnoreCase)
