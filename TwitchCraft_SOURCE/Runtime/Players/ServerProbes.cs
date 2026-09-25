@@ -33,13 +33,20 @@ public sealed partial class MainHandler
         }
 
         TrackTask(ApplyPvPGameRuleAsync());
-        if (!MultiplayerEnabled)
-            TrackTask(ClearSidebarAsync(cancellationToken));
+        TrackTask(InitializePlayerSidebarAsync(cancellationToken));
         QueueDeathSetup();
-        QueueFirstSnapshot();
-        QueueSidebarRefresh();
         QueueGamemode();
         QueueDeathScore();
+    }
+
+    private async Task InitializePlayerSidebarAsync(CancellationToken cancellationToken)
+    {
+        await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
+        if (!MultiplayerEnabled)
+            return;
+
+        QueueFirstSnapshot();
+        QueueSidebarRefresh();
     }
 
     private Task ApplyPvPGameRuleAsync()
