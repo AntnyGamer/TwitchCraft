@@ -24,6 +24,28 @@ public sealed class PlayerStateParsingTests
         Assert.Equal(expectedGameType, gameType);
     }
 
+    [Theory]
+    [InlineData("[Server thread/INFO]: Steve fell from a high place")]
+    [InlineData("[Server thread/INFO]: System chat: Steve fell from a high place")]
+    public void RecordLine_RecognizesLegacyAndSystemChatDeathMessages(string line)
+    {
+        int deathScoreRefreshes = 0;
+        StatisticsService statistics = new(new StatisticsDependencies(
+            _ => ChatCommandStatisticFlags.None,
+            _ => true,
+            _ => false,
+            () => { },
+            () => { },
+            () => { },
+            _ => deathScoreRefreshes++,
+            _ => { }));
+        statistics.SetContext(true, "streamer", "Steve", "!");
+
+        statistics.RecordLine(line, hasDeathScoreObjective: false);
+
+        Assert.Equal(1, deathScoreRefreshes);
+    }
+
     [Fact]
     public void TryParseGamemode_RejectsMalformedOrUnrelatedLines()
     {
