@@ -50,7 +50,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="Assets\README.txt" TargetPath="README.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-		<None Include="..\LICENSE*;..\THIRD-PARTY-NOTICES*" LinkBase="licenses" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+		<None Update="Assets\README.txt" TargetPath="README.txt" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="..\LICENSE*;..\THIRD-PARTY-NOTICES*" LinkBase="licenses" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 </Project>
