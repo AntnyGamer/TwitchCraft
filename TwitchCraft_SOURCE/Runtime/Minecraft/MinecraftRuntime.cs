@@ -144,6 +144,9 @@ public sealed partial class MainHandler
             {
             }
 
+            if (Commands.ResetHeartEffectsAsync != null)
+                await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false);
+
             try
             {
                 sessionCts?.Dispose();
