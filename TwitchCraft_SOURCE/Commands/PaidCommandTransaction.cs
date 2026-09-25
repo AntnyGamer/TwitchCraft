@@ -8,7 +8,6 @@ internal static class PaidCommandTransaction
 {
     internal static async Task<bool> ExecuteAsync(
         int cost,
-        CancellationToken cancellationToken,
         Func<CancellationToken, Task<long?>> reserveCooldownAsync,
         Action<long> releaseCooldown,
         Func<int, bool> trySpendTokens,
@@ -17,6 +16,7 @@ internal static class PaidCommandTransaction
         Action<int> recordStatistics,
         Func<int, CancellationToken, Task> reportInsufficientTokensAsync,
         Func<bool, CancellationToken, Task> reportDispatchFailureAsync,
+        CancellationToken cancellationToken,
         Action? notifyFailure = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(cost);

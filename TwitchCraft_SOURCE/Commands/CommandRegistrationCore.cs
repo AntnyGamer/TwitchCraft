@@ -89,7 +89,6 @@ public static partial class CommandList
         {
             return PaidCommandTransaction.ExecuteAsync(
                 cost,
-                ct,
                 reserveCooldownAsync,
                 releaseCooldown,
                 amount => runtime.Tokens.TrySpend(sender, amount),
@@ -105,6 +104,7 @@ public static partial class CommandList
                     sender + (refunded
                         ? ", the Minecraft command could not be completed, so your tokens were refunded."
                         : ", the Minecraft command could not be completed and the full token refund could not be saved; check your balance."), token),
+                ct,
                 onSendFailure);
         }
 

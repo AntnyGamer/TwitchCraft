@@ -152,7 +152,6 @@ public sealed class PaidDispatchAtomicityTests
         {
             return PaidCommandTransaction.ExecuteAsync(
                 cost,
-                CancellationToken.None,
                 _ =>
                 {
                     if (NextReservation.HasValue)
@@ -197,6 +196,7 @@ public sealed class PaidDispatchAtomicityTests
                     DispatchFailureReports++;
                     return Task.CompletedTask;
                 },
+                CancellationToken.None,
                 () => FailureNotifications++);
         }
     }
