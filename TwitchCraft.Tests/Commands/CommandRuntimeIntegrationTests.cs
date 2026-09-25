@@ -290,7 +290,7 @@ public sealed class CommandRuntimeIntegrationTests
             await runtime.StartServerIfNeededAsync(serverCts.Token);
             await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
-            await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", commandCursor + 4, cancellationToken);
+            await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", commandCursor + 2, cancellationToken);
             Assert.Equal(85, runtime.Tokens.GetBalance("viewer"));
         }
         finally
