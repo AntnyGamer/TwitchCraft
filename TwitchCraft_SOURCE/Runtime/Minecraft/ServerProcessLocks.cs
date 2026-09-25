@@ -57,8 +57,7 @@ public sealed partial class MainHandler
             try
             {
                 using Process process = Process.GetProcessById(processID);
-                if (process.ProcessName.Equals("java", StringComparison.OrdinalIgnoreCase) ||
-                    process.ProcessName.Equals("javaw", StringComparison.OrdinalIgnoreCase))
+                if (process.ProcessName.Equals("javaw", StringComparison.OrdinalIgnoreCase))
                     process.Kill(entireProcessTree: true);
             }
             catch
