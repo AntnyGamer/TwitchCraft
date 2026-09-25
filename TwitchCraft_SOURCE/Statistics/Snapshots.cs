@@ -320,28 +320,30 @@ public sealed partial class StatisticsService
 
     private static string ExtractMessage(string line)
     {
-        string trimmed = (line ?? string.Empty).Trim();
-        if (trimmed.Length == 0)
-        {
+        string message = (line ?? string.Empty).Trim();
+        if (message.Length == 0)
             return string.Empty;
-        }
 
-        int bracketMessageStart = trimmed.IndexOf("]: ", StringComparison.Ordinal);
-        if (bracketMessageStart >= 0 && bracketMessageStart + 3 < trimmed.Length)
+        int bracketMessageStart = message.IndexOf("]: ", StringComparison.Ordinal);
+        if (bracketMessageStart >= 0 && bracketMessageStart + 3 < message.Length)
         {
-            return trimmed[(bracketMessageStart + 3)..].Trim();
+            message = message[(bracketMessageStart + 3)..].Trim();
         }
-
-        int colon = trimmed.IndexOf(':');
-        if (colon >= 0 && colon + 1 < trimmed.Length)
+        else
         {
-            string afterColon = trimmed[(colon + 1)..].Trim();
-            if (afterColon.Length > 0)
+            int colon = message.IndexOf(':');
+            if (colon >= 0 && colon + 1 < message.Length)
             {
-                return afterColon;
+                string afterColon = message[(colon + 1)..].Trim();
+                if (afterColon.Length > 0)
+                    message = afterColon;
             }
         }
 
-        return trimmed;
+        const string systemChatPrefix = "System chat: ";
+        if (message.StartsWith(systemChatPrefix, StringComparison.OrdinalIgnoreCase))
+            message = message[systemChatPrefix.Length..].TrimStart();
+
+        return message;
     }
 }
