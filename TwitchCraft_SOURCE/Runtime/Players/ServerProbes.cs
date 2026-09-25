@@ -9,7 +9,7 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private void HandleReadyState(string line)
+    private void HandleReadyState(string line, CancellationToken cancellationToken)
     {
         if (_minecraftSession.ServerReady || string.IsNullOrEmpty(line))
             return;
@@ -33,8 +33,8 @@ public sealed partial class MainHandler
         }
 
         TrackTask(ApplyPvPGameRuleAsync());
-        if (!MultiplayerEnabled && TryGetSessionToken(requireMultiplayer: false, out CancellationToken sidebarToken))
-            TrackTask(ClearSidebarAsync(sidebarToken));
+        if (!MultiplayerEnabled)
+            TrackTask(ClearSidebarAsync(cancellationToken));
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();
