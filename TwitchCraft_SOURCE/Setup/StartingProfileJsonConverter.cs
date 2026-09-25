@@ -130,7 +130,10 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
 
         foreach ((string categoryName, string[] propertyNames) in CategoryOrder)
         {
-            if (root.GetValue(categoryName, StringComparison.OrdinalIgnoreCase) is not JObject category)
+            JToken? categoryToken = root.GetValue(categoryName, StringComparison.OrdinalIgnoreCase);
+            if (categoryToken == null && string.Equals(categoryName, "Chat and Display", StringComparison.Ordinal))
+                categoryToken = root.GetValue("Chat & Display", StringComparison.OrdinalIgnoreCase);
+            if (categoryToken is not JObject category)
                 continue;
 
             foreach (string propertyName in propertyNames)
