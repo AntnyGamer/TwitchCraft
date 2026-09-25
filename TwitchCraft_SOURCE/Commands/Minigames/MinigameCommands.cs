@@ -166,9 +166,21 @@ public static partial class MinigameManager
             }
 
             int awarded = runtime.Tokens.Award(sender, 10); //Guess Number Win
-            string reward = awarded > 0
-                ? " and won " + FormatTokens(awarded) + "!"
-                : " correctly, but your token balance was already at the maximum.";
+            string reward;
+            if (awarded > 0)
+            {
+                reward = " and won " + FormatTokens(awarded) + "!";
+            }
+            else if (runtime.Tokens.MaximumBalance > 0 &&
+                     runtime.Tokens.TryGetBalance(sender, out int balance) &&
+                     balance >= runtime.Tokens.MaximumBalance)
+            {
+                reward = " correctly, but your token balance was already at the maximum.";
+            }
+            else
+            {
+                reward = " correctly, but the token reward could not be saved.";
+            }
             await saySuccessfulToChannel(sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + reward, ct).ConfigureAwait(false);
         };
 
