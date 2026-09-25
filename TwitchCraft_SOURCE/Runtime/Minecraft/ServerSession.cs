@@ -34,7 +34,6 @@ public sealed partial class MainHandler
             _knownPlayers = [];
             _lastSidebarPlayers = [];
             _playerSidebarInitialized = false;
-            _playerSidebarCleared = false;
             Volatile.Write(ref _lastOnlinePlayersSnapshotTicks, 0);
         }
 
