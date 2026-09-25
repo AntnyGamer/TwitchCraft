@@ -51,6 +51,6 @@
 
 	<ItemGroup>
 		<None Update="Assets\README.txt" TargetPath="README.txt" CopyToOutputDirectory="PreserveNewest" />
-		<None Include="..\LICEN?E;..\THIRD-PARTY-NOTICE?.txt" LinkBase="licenses" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="..\LICENSE;..\THIRD-PARTY-NOTICES.txt" Condition="Exists('..\LICENSE') And Exists('..\THIRD-PARTY-NOTICES.txt')" LinkBase="licenses" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 </Project>
