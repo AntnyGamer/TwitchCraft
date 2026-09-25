@@ -171,7 +171,15 @@ public sealed class LiveSettingsApplicationTests
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
+            players: [],
             multiplayer: true);
+
+        Assert.Contains(
+            "scoreboard objectives remove tc_playerlist",
+            FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin"));
+        Assert.Contains(
+            "scoreboard objectives remove tc_health",
+            FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin"));
 
         TwitchCraftConfig edited = ConfigurationStore.Clone(scenario.Config);
         edited.Settings.MultiplayerEnabled = false;
