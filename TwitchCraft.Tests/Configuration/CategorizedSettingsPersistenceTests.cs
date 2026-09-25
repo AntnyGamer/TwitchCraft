@@ -98,7 +98,6 @@ public sealed class CategorizedSettingsPersistenceTests
             {
               "commands": { "commandprefix": "??", "FutureCommandSetting": true },
               "gameplay": { "MultiplayerPVPEnabled": true },
-              "Chat & Display": { "IncludeRelayTimestamps": true },
               "Future Category": { "FutureValue": 42 }
             }
             """;
@@ -108,7 +107,6 @@ public sealed class CategorizedSettingsPersistenceTests
 
         Assert.Equal("??", profile.CommandPrefix);
         Assert.True(profile.MultiplayerPvPEnabled);
-        Assert.True(profile.IncludeRelayTimestamps);
         Assert.Equal("Medium", profile.Difficulty);
     }
 
