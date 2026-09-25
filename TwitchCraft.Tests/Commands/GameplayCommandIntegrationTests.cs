@@ -317,7 +317,7 @@ public sealed class GameplayCommandIntegrationTests
             command.EndsWith("run kill @s", StringComparison.Ordinal));
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.True(kill >= 2 && kill + 3 < commands.Count);
-        string gameRule = commands[kill - 1][.." false".Length];
+        string gameRule = commands[kill - 1][..^" false".Length];
         Assert.Equal("execute store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run " + gameRule, commands[kill - 2]);
         Assert.Equal("execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run " + gameRule + " true", commands[kill + 1]);
         Assert.Equal("execute unless data storage twitchcraft:runtime {slaughter_mob_loot:1b} run " + gameRule + " false", commands[kill + 2]);
