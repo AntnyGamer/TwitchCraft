@@ -320,28 +320,21 @@ public sealed partial class StatisticsService
 
     private static string ExtractMessage(string line)
     {
-        string trimmed = (line ?? string.Empty).Trim();
-        if (trimmed.Length == 0)
-        {
-            return string.Empty;
-        }
+        string source = line ?? string.Empty;
+        ReadOnlySpan<char> message = source.AsSpan().Trim();
+        int separator = message.IndexOf("]: ".AsSpan(), StringComparison.Ordinal);
+        if (separator >= 0)
+            message = message[(separator + 3)..].Trim();
+        else if ((separator = message.IndexOf(':')) >= 0 && separator + 1 < message.Length)
+            message = message[(separator + 1)..].Trim();
 
-        int bracketMessageStart = trimmed.IndexOf("]: ", StringComparison.Ordinal);
-        if (bracketMessageStart >= 0 && bracketMessageStart + 3 < trimmed.Length)
-        {
-            return trimmed[(bracketMessageStart + 3)..].Trim();
-        }
+        if (message.Length > 0 && (message[0] is 'S' or 's') &&
+            message.StartsWith("System chat: ".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            message = message["System chat: ".Length..].TrimStart();
+        else if (message.Length > 0 && message[0] == '[' &&
+            message.StartsWith("[System] [CHAT] ".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            message = message["[System] [CHAT] ".Length..].TrimStart();
 
-        int colon = trimmed.IndexOf(':');
-        if (colon >= 0 && colon + 1 < trimmed.Length)
-        {
-            string afterColon = trimmed[(colon + 1)..].Trim();
-            if (afterColon.Length > 0)
-            {
-                return afterColon;
-            }
-        }
-
-        return trimmed;
+        return message.Length == source.Length ? source : message.ToString();
     }
 }

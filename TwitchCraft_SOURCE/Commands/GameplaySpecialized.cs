@@ -358,6 +358,7 @@ public static partial class CommandList
 
         async Task ResetHeartEffectsCoreAsync(string? player, bool force, CancellationToken ct)
         {
+            if (force && !runtime.MinecraftServerReady) { activeHeartEffects.Clear(); return; }
             if (player != null && await runtime.QueryHeartModifiersAsync(player, ct).ConfigureAwait(false) is { } data)
                 SyncHeartEffects(player, MainHandler.ParseHeartModifierIDs(data, runtime.UsesNamespacedAttributeModifierIDs), true);
 
@@ -676,19 +677,29 @@ public static partial class CommandList
                 true,
                 null,
                 ct);
-        Task SlaughterAsync(ResolvedTarget target, string sender, CancellationToken ct)
-            => SendPricedReplyAsync(
-                target,
-                sender,
-                30,
-                _ => GameplayCommands.BuildSlaughter(target.Selector, runtime.MobLootGameRuleName),
-                sender + " slaughtered any nearby mobs.",
-                "GOT THEIR AREA SLAUGHTERED!",
-                sender + ", you slaughtered any nearby mobs around " + TargetName(target) + ".",
-                "yellow",
-                true,
-                null,
-                ct);
+        async Task SlaughterAsync(ResolvedTarget target, string sender, CancellationToken ct)
+        {
+            string gameRule = runtime.MobLootGameRuleName;
+            bool attempted = false, sent;
+            try
+            {
+                sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(30, target.PlayerCount), () =>
+                {
+                    attempted = true;
+                    return GameplayCommands.BuildSlaughter(target.Selector, gameRule);
+                }, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (attempted && runtime.MinecraftServerReady &&
+                    !await runtime.SendServerCommandAsync(GameplayCommands.SlaughterRestoreCommand(gameRule), CancellationToken.None).ConfigureAwait(false))
+                    runtime.AddServerLogLine("Mob loot gamerule restoration could not be confirmed; it will be retried on startup.");
+            }
+            if (!sent) return;
+            await runtime.SendTellrawAsync(target.Selector, sender + " slaughtered any nearby mobs.", "yellow", true, ct).ConfigureAwait(false);
+            await NotifyOthersAsync(target, "GOT THEIR AREA SLAUGHTERED!", "yellow", true, ct).ConfigureAwait(false);
+            await ConfirmAsync(sender + ", you slaughtered any nearby mobs around " + TargetName(target) + ".", ct).ConfigureAwait(false);
+        }
 
         static string FormatLevel(int level)
             => level switch

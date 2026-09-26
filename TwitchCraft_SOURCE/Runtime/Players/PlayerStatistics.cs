@@ -329,6 +329,8 @@ public sealed partial class MainHandler
         ReadOnlySpan<char> name = line.AsSpan(start, markerIndex - start);
         if (name.StartsWith("System chat: ", StringComparison.Ordinal))
             name = name["System chat: ".Length..];
+        else if (name.StartsWith("[System] [CHAT] ", StringComparison.OrdinalIgnoreCase))
+            name = name["[System] [CHAT] ".Length..];
 
         return MinecraftNameHelper.TryNormalizePlayerName(name, out string normalizedPlayer)
             ? normalizedPlayer
@@ -341,6 +343,9 @@ public sealed partial class MainHandler
         int colon = segment.LastIndexOf(':');
         if (colon >= 0 && colon < segment.Length - 1)
             segment = segment[(colon + 1)..].Trim();
+
+        if (segment.StartsWith("[System] [CHAT] ", StringComparison.OrdinalIgnoreCase))
+            segment = segment["[System] [CHAT] ".Length..];
 
         return segment.Length == value.Length ? value : segment.ToString();
     }

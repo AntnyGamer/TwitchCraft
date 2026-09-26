@@ -29,6 +29,7 @@ public sealed partial class MainHandler
                     twitchAuthChanged = !preserveTwitchAuth && !string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), NormalizeToken(activeConfig.Twitch.BotToken), StringComparison.Ordinal);
                     maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 && (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
                     passiveScheduleChanged =
+                        _activeConfig.Settings.PassiveTokenEarningEnabled != activeConfig.Settings.PassiveTokenEarningEnabled ||
                         _activeConfig.Settings.PassiveTokenPayoutMinimumSeconds != activeConfig.Settings.PassiveTokenPayoutMinimumSeconds ||
                         _activeConfig.Settings.PassiveTokenPayoutMaximumSeconds != activeConfig.Settings.PassiveTokenPayoutMaximumSeconds ||
                         _activeConfig.Settings.PassiveRewardsRequireActivity != activeConfig.Settings.PassiveRewardsRequireActivity ||
@@ -48,22 +49,21 @@ public sealed partial class MainHandler
 
                 if (maximumBalanceNeedsClamp && _runtimeState == RuntimeState.Running) Tokens.ApplyMaximumBalance(activeConfig.Settings.MaximumTokenBalance);
                 SetConfig(activeConfig);
+                if (passiveScheduleChanged)
+                {
+                    lock (_viewerGate)
+                    {
+                        _viewerRewardSchedule.Clear();
+                        if (!activeConfig.Settings.PassiveRewardsRequireActivity)
+                            _viewerLastChatActivity.Clear();
+                    }
+                }
             }
 
             if (!activeConfig.Settings.GlobalGameCommandCooldownEnabled)
                 Commands.ClearGlobalCooldown();
             if (twitchAuthChanged) _twitchSession.CloseSocket();
             if (twitchAuthChanged || followRewardsChanged) await RestartFollowRewardsAsync().ConfigureAwait(false);
-
-            if (passiveScheduleChanged)
-            {
-                lock (_viewerGate)
-                {
-                    _viewerRewardSchedule.Clear();
-                    if (!activeConfig.Settings.PassiveRewardsRequireActivity)
-                        _viewerLastChatActivity.Clear();
-                }
-            }
 
             if (refreshMinigameLoops || minigamesEnabledChanged)
                 RefreshMinigames(activeConfig.Settings.MinigamesEnabled);

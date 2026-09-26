@@ -9,7 +9,7 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private void HandleReadyState(string line)
+    private void HandleReadyState(string line, CancellationToken cancellationToken)
     {
         if (_minecraftSession.ServerReady || string.IsNullOrEmpty(line))
             return;
@@ -32,7 +32,9 @@ public sealed partial class MainHandler
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
+        TrackTask(RecoverSlaughterGameRuleAsync(cancellationToken));
         TrackTask(ApplyPvPGameRuleAsync());
+        if (!MultiplayerEnabled) TrackTask(ClearSidebarAsync(cancellationToken));
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();

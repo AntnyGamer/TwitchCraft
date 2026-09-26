@@ -78,9 +78,10 @@ public sealed class CommandCatalogTests
         {
             TwitchCraftConfig config = new();
             config.Twitch.StreamerName = "streamer";
+            config.Twitch.BotName = "twitchcraft";
             await runtime.ApplySettingsAsync(config);
 
-            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "viewer_two"]);
+            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "twitchcraft", "viewer_two", "TwitchCraft"]);
 
             await runtime.DispatchAsync(
                 "!givetokens all 25",
@@ -90,8 +91,9 @@ public sealed class CommandCatalogTests
                 TestContext.Current.CancellationToken);
 
             List<string> viewers = runtime.GetViewerRosterSnapshot();
-            Assert.Equal(3, viewers.Count);
+            Assert.Equal(4, viewers.Count);
             Assert.Contains("randomdudereincarnatedx3", viewers);
+            Assert.Contains("twitchcraft", viewers);
             Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
         }
         finally

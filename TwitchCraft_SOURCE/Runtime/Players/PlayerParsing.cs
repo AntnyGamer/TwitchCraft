@@ -234,7 +234,7 @@ public sealed partial class MainHandler
         if (suffix.Length >= 2 &&
             suffix[0] == '{' &&
             suffix[^1] == '}' &&
-            suffix.Contains("minecraft:", StringComparison.OrdinalIgnoreCase))
+            (suffix.Length == 2 || suffix.Contains("minecraft:", StringComparison.OrdinalIgnoreCase)))
         {
             HandleItem(playerName, suffix);
         }

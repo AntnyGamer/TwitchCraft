@@ -64,8 +64,10 @@ public sealed class EconomyPersistenceTests
         TokenStore reader = new(databasePath);
         try
         {
-            Assert.Equal(2, reader.GetBalance("viewer"));
-            Assert.Equal(2, reader.GetBalance("bob"));
+            Assert.Null(reader.TryTransfer("bob", "viewer", 1, 0));
+            Assert.Equal(1, reader.TryTransfer("@ViEwEr", "@BoB", 2, 0));
+            Assert.Equal(0, reader.GetBalance("viewer"));
+            Assert.Equal(3, reader.GetBalance("bob"));
         }
         finally
         {

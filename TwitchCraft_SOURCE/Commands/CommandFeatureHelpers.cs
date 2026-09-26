@@ -397,11 +397,18 @@ internal static class GameplayCommands
         return commands;
     }
 
+    public const string ClearSlaughterState = "data remove storage twitchcraft:runtime slaughter_mob_loot";
+    public static string SlaughterRestoreCommand(string gameRule) =>
+        "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + gameRule + " true";
+    public static string[] BuildSlaughterRecovery(string gameRule) => [SlaughterRestoreCommand(gameRule), ClearSlaughterState];
+
     public static string[] BuildSlaughter(string selector, string mobLootGameRuleName) =>
     [
+        "execute store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run gamerule " + mobLootGameRuleName,
         "gamerule " + mobLootGameRuleName + " false",
         "execute at " + selector + " as @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:armor_stand,distance=..30] if data entity @s Health run kill @s",
-        "gamerule " + mobLootGameRuleName + " true"
+        SlaughterRestoreCommand(mobLootGameRuleName),
+        ClearSlaughterState
     ];
 
     public static string[] BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)

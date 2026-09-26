@@ -35,7 +35,7 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task EnsureRCONAsync(TwitchCraftConfig config, CancellationToken cancellationToken)
+    internal async Task EnsureRCONAsync(TwitchCraftConfig config, CancellationToken cancellationToken)
     {
         using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(RCONTimeout);
@@ -49,11 +49,20 @@ public sealed partial class MainHandler
             ?? throw new InvalidOperationException("Remote controller could not authenticate with RCON. Check the host, RCON port, and RCON password.");
         _minecraftSession.ServerReady = true;
         _minecraftSession.RCONHealthy = true;
+        await RecoverSlaughterGameRuleAsync(cancellationToken).ConfigureAwait(false);
+        if (!MultiplayerEnabled)
+            await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
         _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" + config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
         QueueFirstSnapshot();
         QueueSnapshot();
         QueueGamemode();
         QueueDeathScore();
+    }
+
+    private async Task RecoverSlaughterGameRuleAsync(CancellationToken cancellationToken)
+    {
+        if (!await SendServerCommandsAsync(GameplayCommands.BuildSlaughterRecovery(MobLootGameRuleName), cancellationToken).ConfigureAwait(false))
+            AddServerLogLine("Mob loot gamerule recovery could not be confirmed.");
     }
 
     internal async Task StartServerAsync(TwitchCraftConfig config, CancellationToken cancellationToken)
@@ -143,6 +152,8 @@ public sealed partial class MainHandler
             catch
             {
             }
+            try { if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false); }
+            catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to clear heart effects after server exit", ex); }
 
             try
             {
