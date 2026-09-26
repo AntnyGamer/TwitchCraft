@@ -170,11 +170,15 @@ internal sealed partial class TokenStore(string path)
 
     internal int? TryTransfer(string from, string to, int amount, int maximumBalance)
     {
+        from = Normalize(from);
+        to = Normalize(to);
+        if (amount < 2 || from.Length == 0 || to.Length == 0 || from == to) return null;
         lock (_gate)
         {
-            if (!EnsureLoadedNoLock(from) || (amount > 1 && !EnsureLoadedNoLock(to))) return null;
+            if (!EnsureLoadedNoLock(from)) return null;
             _balances.TryGetValue(from, out int fromBalance);
             if (fromBalance < amount) return -1;
+            if (!EnsureLoadedNoLock(to)) return null;
             _balances.TryGetValue(to, out int toBalance);
             int newToBalance = ClampAdjusted(toBalance, amount / 2, maximumBalance);
             Dictionary<string, int> changes = new(2) { [from] = fromBalance - amount };

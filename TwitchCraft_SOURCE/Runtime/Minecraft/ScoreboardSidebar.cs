@@ -15,24 +15,9 @@ public sealed partial class MainHandler
 
         lock (_playerGate)
         {
-            _lastSidebarPlayers = [];
+            _lastSidebarPlayers.Clear();
             _playerSidebarInitialized = false;
         }
-    }
-
-    private static bool PlayersMatch(List<string> players, List<string> previousPlayers)
-    {
-        int count = players.Count;
-        if (count != previousPlayers.Count)
-            return false;
-
-        for (int i = 0; i < count; i++)
-        {
-            if (!string.Equals(players[i], previousPlayers[i], StringComparison.OrdinalIgnoreCase))
-                return false;
-        }
-
-        return true;
     }
 
     private async Task RefreshSidebarAsync(CancellationToken cancellationToken)
@@ -50,7 +35,7 @@ public sealed partial class MainHandler
             if (_knownPlayers.Count == 0 && _lastSidebarPlayers.Count == 0)
                 return;
 
-            if (!needsInitialization && PlayersMatch(_knownPlayers, _lastSidebarPlayers))
+            if (!needsInitialization && SortedListHelper.EqualInOrder(_knownPlayers, _lastSidebarPlayers, PlayerNameComparer))
                 return;
 
             players = _knownPlayers.Count == 0 ? [] : [.. _knownPlayers];

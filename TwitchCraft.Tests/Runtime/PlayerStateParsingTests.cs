@@ -52,6 +52,7 @@ public sealed class PlayerStateParsingTests
             () => { }, () => { }, () => { }, _ => deathScoreRefreshes++, _ => { }));
         statistics.SetContext(true, "streamer", "Steve", "!");
         statistics.RecordLine("[Server thread/INFO]: System chat: Steve fell from a high place", false);
-        Assert.Equal(1, deathScoreRefreshes);
+        statistics.RecordLine("[Server thread/INFO]: [System] [CHAT] Steve was slain by Zombie", false);
+        Assert.Equal(2, deathScoreRefreshes);
     }
 }

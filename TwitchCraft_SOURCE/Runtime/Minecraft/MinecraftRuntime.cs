@@ -143,7 +143,8 @@ public sealed partial class MainHandler
             catch
             {
             }
-            if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false);
+            try { if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false); }
+            catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to clear heart effects after server exit", ex); }
 
             try
             {

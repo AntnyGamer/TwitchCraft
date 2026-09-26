@@ -358,6 +358,7 @@ public static partial class CommandList
 
         async Task ResetHeartEffectsCoreAsync(string? player, bool force, CancellationToken ct)
         {
+            if (force && !runtime.MinecraftServerReady) { activeHeartEffects.Clear(); return; }
             if (player != null && await runtime.QueryHeartModifiersAsync(player, ct).ConfigureAwait(false) is { } data)
                 SyncHeartEffects(player, MainHandler.ParseHeartModifierIDs(data, runtime.UsesNamespacedAttributeModifierIDs), true);
 

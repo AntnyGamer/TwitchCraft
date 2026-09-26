@@ -329,6 +329,8 @@ public sealed partial class StatisticsService
 
         if (message.StartsWith("System chat: ".AsSpan(), StringComparison.OrdinalIgnoreCase))
             message = message["System chat: ".Length..].TrimStart();
+        else if (message.StartsWith("[System] [CHAT] ".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            message = message["[System] [CHAT] ".Length..].TrimStart();
 
         return message.ToString();
     }
