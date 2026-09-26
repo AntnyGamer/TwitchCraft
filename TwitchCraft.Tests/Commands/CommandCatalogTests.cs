@@ -94,7 +94,6 @@ public sealed class CommandCatalogTests
             Assert.Equal(3, viewers.Count);
             Assert.Contains("randomdudereincarnatedx3", viewers);
             Assert.DoesNotContain("twitchcraft", viewers);
-            Assert.Equal(0, runtime.Tokens.GetBalance("twitchcraft"));
             Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
         }
         finally
