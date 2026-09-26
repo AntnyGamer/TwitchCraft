@@ -32,6 +32,7 @@ public sealed partial class MainHandler
             ErrorHandling.LogNonFatal("Failed to reformat server.properties after Minecraft startup", ex);
         }
 
+        TrackTask(RecoverSlaughterGameRuleAsync(cancellationToken));
         TrackTask(ApplyPvPGameRuleAsync());
         if (!MultiplayerEnabled) TrackTask(ClearSidebarAsync(cancellationToken));
         QueueDeathSetup();

@@ -49,22 +49,21 @@ public sealed partial class MainHandler
 
                 if (maximumBalanceNeedsClamp && _runtimeState == RuntimeState.Running) Tokens.ApplyMaximumBalance(activeConfig.Settings.MaximumTokenBalance);
                 SetConfig(activeConfig);
+                if (passiveScheduleChanged)
+                {
+                    lock (_viewerGate)
+                    {
+                        _viewerRewardSchedule.Clear();
+                        if (!activeConfig.Settings.PassiveRewardsRequireActivity)
+                            _viewerLastChatActivity.Clear();
+                    }
+                }
             }
 
             if (!activeConfig.Settings.GlobalGameCommandCooldownEnabled)
                 Commands.ClearGlobalCooldown();
             if (twitchAuthChanged) _twitchSession.CloseSocket();
             if (twitchAuthChanged || followRewardsChanged) await RestartFollowRewardsAsync().ConfigureAwait(false);
-
-            if (passiveScheduleChanged)
-            {
-                lock (_viewerGate)
-                {
-                    _viewerRewardSchedule.Clear();
-                    if (!activeConfig.Settings.PassiveRewardsRequireActivity)
-                        _viewerLastChatActivity.Clear();
-                }
-            }
 
             if (refreshMinigameLoops || minigamesEnabledChanged)
                 RefreshMinigames(activeConfig.Settings.MinigamesEnabled);

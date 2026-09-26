@@ -29,39 +29,42 @@ public sealed partial class MainHandler
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (CurrentSettings.PassiveTokenEarningEnabled)
+            lock (_configPersistenceGate)
             {
-                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                List<string>? rewarded = null;
-
-                lock (_viewerGate)
+                if (CurrentSettings.PassiveTokenEarningEnabled)
                 {
-                    for (int i = 0; i < _knownViewers.Count; i++)
+                    long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    List<string>? rewarded = null;
+
+                    lock (_viewerGate)
                     {
-                        string viewer = _knownViewers[i];
-                        if (string.IsNullOrWhiteSpace(viewer))
-                            continue;
+                        for (int i = 0; i < _knownViewers.Count; i++)
+                        {
+                            string viewer = _knownViewers[i];
+                            if (string.IsNullOrWhiteSpace(viewer))
+                                continue;
 
-                        if (!IsRewardEligibleNoLock(viewer, now))
-                        {
-                            _viewerRewardSchedule.Remove(viewer);
-                            continue;
-                        }
+                            if (!IsRewardEligibleNoLock(viewer, now))
+                            {
+                                _viewerRewardSchedule.Remove(viewer);
+                                continue;
+                            }
 
-                        if (!_viewerRewardSchedule.TryGetValue(viewer, out long nextAt))
-                        {
-                            _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
-                        }
-                        else if (nextAt <= now)
-                        {
-                            _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
-                            (rewarded ??= []).Add(viewer);
+                            if (!_viewerRewardSchedule.TryGetValue(viewer, out long nextAt))
+                            {
+                                _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
+                            }
+                            else if (nextAt <= now)
+                            {
+                                _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
+                                (rewarded ??= []).Add(viewer);
+                            }
                         }
                     }
-                }
 
-                if (rewarded is { Count: > 0 })
-                    Tokens.Award(rewarded, PassiveTokensPerPayout);
+                    if (rewarded is { Count: > 0 })
+                        Tokens.Award(rewarded, PassiveTokensPerPayout);
+                }
             }
 
             try
@@ -381,9 +384,6 @@ public sealed partial class MainHandler
     internal void ApplyViewerRoster(List<string> viewers)
     {
         SortedListHelper.SortAndDeduplicate(viewers, StringComparer.OrdinalIgnoreCase);
-        int botIndex = SortedListHelper.FindIndex(viewers, NormalizeUser(_activeConfig?.Twitch.BotName), StringComparer.OrdinalIgnoreCase);
-        if (botIndex >= 0) viewers.RemoveAt(botIndex);
-
         List<string>? viewerList = null;
         lock (_viewerGate)
         {

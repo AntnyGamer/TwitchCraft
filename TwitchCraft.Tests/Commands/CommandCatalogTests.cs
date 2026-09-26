@@ -91,9 +91,9 @@ public sealed class CommandCatalogTests
                 TestContext.Current.CancellationToken);
 
             List<string> viewers = runtime.GetViewerRosterSnapshot();
-            Assert.Equal(3, viewers.Count);
+            Assert.Equal(4, viewers.Count);
             Assert.Contains("randomdudereincarnatedx3", viewers);
-            Assert.DoesNotContain("twitchcraft", viewers);
+            Assert.Contains("twitchcraft", viewers);
             Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
         }
         finally

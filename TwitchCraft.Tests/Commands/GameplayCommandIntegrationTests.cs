@@ -321,6 +321,7 @@ public sealed class GameplayCommandIntegrationTests
         Assert.Equal("execute store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run " + gameRule, commands[kill - 2]);
         Assert.Equal("execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run " + gameRule + " true", commands[kill + 1]);
         Assert.Equal("data remove storage twitchcraft:runtime slaughter_mob_loot", commands[kill + 2]);
+        Assert.Equal(2, commands.Count(command => command == commands[kill + 1]));
     }
 
     [Fact]
