@@ -46,8 +46,7 @@ public sealed partial class MainHandler
 
         lock (_playerGate)
         {
-            needsInitialization = !_playerSidebarInitialized ||
-                _knownPlayers.Count > 0 && _lastSidebarPlayers.Count == 0;
+            needsInitialization = !_playerSidebarInitialized || _knownPlayers.Count > 0 && _lastSidebarPlayers.Count == 0;
             if (_knownPlayers.Count == 0 && _lastSidebarPlayers.Count == 0 && !needsInitialization)
                 return;
 
