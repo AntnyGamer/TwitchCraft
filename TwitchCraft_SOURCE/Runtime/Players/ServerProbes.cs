@@ -33,8 +33,7 @@ public sealed partial class MainHandler
         }
 
         TrackTask(ApplyPvPGameRuleAsync());
-        if (!MultiplayerEnabled)
-            TrackTask(ClearSidebarAsync(cancellationToken));
+        if (!MultiplayerEnabled) TrackTask(ClearSidebarAsync(cancellationToken));
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();
