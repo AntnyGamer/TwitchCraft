@@ -327,9 +327,8 @@ public sealed partial class StatisticsService
         else if ((separator = message.IndexOf(':')) >= 0 && separator + 1 < message.Length)
             message = message[(separator + 1)..].Trim();
 
-        const string systemChatPrefix = "System chat: ";
-        if (message.StartsWith(systemChatPrefix.AsSpan(), StringComparison.OrdinalIgnoreCase))
-            message = message[systemChatPrefix.Length..].TrimStart();
+        if (message.StartsWith("System chat: ".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            message = message["System chat: ".Length..].TrimStart();
 
         return message.ToString();
     }
