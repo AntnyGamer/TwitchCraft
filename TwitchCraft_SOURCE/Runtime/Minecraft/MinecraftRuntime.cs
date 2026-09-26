@@ -143,7 +143,6 @@ public sealed partial class MainHandler
             catch
             {
             }
-
             if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false);
 
             try
