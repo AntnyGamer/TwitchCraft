@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
@@ -176,12 +175,8 @@ public sealed class LiveSettingsApplicationTests
             multiplayer: true);
 
         await FakeJavaServer.WaitUntilAsync(
-            () =>
-            {
-                List<string> commands = FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin");
-                return commands.Contains("scoreboard objectives remove tc_playerlist") &&
-                    commands.Contains("scoreboard objectives remove tc_health");
-            },
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin").Contains("scoreboard objectives remove tc_playerlist") &&
+                FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin").Contains("scoreboard objectives remove tc_health"),
             "Stale multiplayer sidebar objectives were not cleared for an empty reused roster.",
             scenario.Token);
 
