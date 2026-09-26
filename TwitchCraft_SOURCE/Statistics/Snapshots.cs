@@ -320,15 +320,13 @@ public sealed partial class StatisticsService
 
     private static string ExtractMessage(string line)
     {
-        string trimmed = (line ?? string.Empty).Trim();
-        int start = trimmed.IndexOf("]: ", StringComparison.Ordinal);
-        if (start >= 0) start += 3;
-        else
-        {
-            start = trimmed.IndexOf(':');
-            start = start >= 0 && start + 1 < trimmed.Length ? start + 1 : 0;
-        }
-        ReadOnlySpan<char> message = trimmed.AsSpan(start).Trim();
+        string source = line ?? string.Empty;
+        ReadOnlySpan<char> message = source.AsSpan().Trim();
+        int separator = message.IndexOf("]: ".AsSpan(), StringComparison.Ordinal);
+        if (separator >= 0)
+            message = message[(separator + 3)..].Trim();
+        else if ((separator = message.IndexOf(':')) >= 0 && separator + 1 < message.Length)
+            message = message[(separator + 1)..].Trim();
 
         if (message.Length > 0 && (message[0] is 'S' or 's') &&
             message.StartsWith("System chat: ".AsSpan(), StringComparison.OrdinalIgnoreCase))
@@ -337,6 +335,6 @@ public sealed partial class StatisticsService
             message.StartsWith("[System] [CHAT] ".AsSpan(), StringComparison.OrdinalIgnoreCase))
             message = message["[System] [CHAT] ".Length..].TrimStart();
 
-        return message.Length == trimmed.Length ? trimmed : message.ToString();
+        return message.Length == source.Length ? source : message.ToString();
     }
 }
