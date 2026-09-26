@@ -380,9 +380,9 @@ public sealed partial class MainHandler
 
     internal void ApplyViewerRoster(List<string> viewers)
     {
-        viewers.Remove(NormalizeUser(_activeConfig?.Twitch.BotName));
-
         SortedListHelper.SortAndDeduplicate(viewers, StringComparer.OrdinalIgnoreCase);
+        int botIndex = SortedListHelper.FindIndex(viewers, NormalizeUser(_activeConfig?.Twitch.BotName), StringComparer.OrdinalIgnoreCase);
+        if (botIndex >= 0) viewers.RemoveAt(botIndex);
 
         List<string>? viewerList = null;
         lock (_viewerGate)

@@ -81,7 +81,7 @@ public sealed class CommandCatalogTests
             config.Twitch.BotName = "twitchcraft";
             await runtime.ApplySettingsAsync(config);
 
-            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "twitchcraft", "viewer_two"]);
+            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "twitchcraft", "viewer_two", "TwitchCraft"]);
 
             await runtime.DispatchAsync(
                 "!givetokens all 25",
