@@ -114,42 +114,6 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RemoteControllerStart_ClearsStaleSidebarAndRecoversMobLoot()
-    {
-        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
-        using TemporaryDirectory directory = new();
-        const string password = "startup-integration-password";
-        await using FakeRCONServer RCON = new(password);
-        TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path);
-        config.Settings.RemoteControlEnabled = true;
-        config.Server.RemoteHost = "127.0.0.1";
-        config.Server.RCON.Port = RCON.Port;
-        config.Server.RCON.Password = password;
-        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
-
-        try
-        {
-            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-            await runtime.ApplySettingsAsync(config);
-            await runtime.EnsureRCONAsync(config, cancellationToken);
-
-            Assert.Equal(
-                [
-                    "list",
-                    "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true",
-                    "data remove storage twitchcraft:runtime slaughter_mob_loot",
-                    "scoreboard objectives remove tc_playerlist",
-                    "scoreboard objectives remove tc_health"
-                ], RCON.Commands);
-        }
-        finally
-        {
-            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-            runtime.Tokens.Close();
-        }
-    }
-
-    [Fact]
     public async Task RemoteController_QueriesPlayerStateAndRejectsMalformedRCONResponse()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
@@ -185,6 +149,15 @@ public sealed class CommandRuntimeIntegrationTests
         {
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
             await runtime.ApplySettingsAsync(config);
+            await runtime.EnsureRCONAsync(config, cancellationToken);
+            Assert.Equal(
+                [
+                    "list",
+                    "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true",
+                    "data remove storage twitchcraft:runtime slaughter_mob_loot",
+                    "scoreboard objectives remove tc_playerlist",
+                    "scoreboard objectives remove tc_health"
+                ], RCON.Commands);
 
             Assert.Equal(36, await runtime.QueryMaxHealthAsync("PlayerOne", cancellationToken));
             Assert.Equal(selectedItem, await runtime.QueryItemAsync("PlayerOne", cancellationToken));
