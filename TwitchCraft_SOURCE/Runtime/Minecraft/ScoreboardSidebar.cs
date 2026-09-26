@@ -10,13 +10,13 @@ public sealed partial class MainHandler
 {
     private async Task ClearSidebarAsync(CancellationToken cancellationToken)
     {
-        if (_minecraftSession.ServerReady)
+        bool cleared = !_minecraftSession.ServerReady ||
             await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
 
         lock (_playerGate)
         {
             _lastSidebarPlayers = [];
-            _playerSidebarInitialized = false;
+            _playerSidebarInitialized = cleared;
         }
     }
 
@@ -46,8 +46,9 @@ public sealed partial class MainHandler
 
         lock (_playerGate)
         {
-            needsInitialization = !_playerSidebarInitialized;
-            if (_knownPlayers.Count == 0 && _lastSidebarPlayers.Count == 0)
+            needsInitialization = !_playerSidebarInitialized ||
+                _knownPlayers.Count > 0 && _lastSidebarPlayers.Count == 0;
+            if (_knownPlayers.Count == 0 && _lastSidebarPlayers.Count == 0 && !needsInitialization)
                 return;
 
             if (!needsInitialization && PlayersMatch(_knownPlayers, _lastSidebarPlayers))
