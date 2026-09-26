@@ -403,7 +403,6 @@ internal static class GameplayCommands
         "gamerule " + mobLootGameRuleName + " false",
         "execute at " + selector + " as @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:armor_stand,distance=..30] if data entity @s Health run kill @s",
         "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + mobLootGameRuleName + " true",
-        "execute unless data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + mobLootGameRuleName + " false",
         "data remove storage twitchcraft:runtime slaughter_mob_loot"
     ];
 
