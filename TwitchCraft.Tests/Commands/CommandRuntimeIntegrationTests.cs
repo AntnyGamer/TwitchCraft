@@ -311,12 +311,10 @@ public sealed class CommandRuntimeIntegrationTests
         await runtime.StartServerIfNeededAsync(cancellationToken);
         await FakeJavaServer.WaitForReadyAsync(runtime, cancellationToken);
         await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 2, cancellationToken);
-
-        List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
         Assert.Equal(
             ["scoreboard objectives remove tc_playerlist", "scoreboard objectives remove tc_health"],
-            commands);
-        return commands.Count;
+            FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin"));
+        return 2;
     }
 
     private static async Task QueueCommandAndWaitAsync(
