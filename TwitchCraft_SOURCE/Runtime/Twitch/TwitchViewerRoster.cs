@@ -257,11 +257,9 @@ public sealed partial class MainHandler
 
     private static async Task<string[]> ResolveUsersAsync(string botName, string streamerName, string clientID, string token, CancellationToken cancellationToken)
     {
-        string normalizedToken = NormalizeToken(token);
-
         string url = "https://api.twitch.tv/helix/users?login=" + Uri.EscapeDataString(botName) + "&login=" + Uri.EscapeDataString(streamerName);
         using HttpRequestMessage request = new(HttpMethod.Get, url);
-        request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildBearerHeader(normalizedToken));
+        request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildBearerHeader(token));
         request.Headers.TryAddWithoutValidation("Client-Id", clientID);
 
         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
