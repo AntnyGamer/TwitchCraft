@@ -114,6 +114,32 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
+    public async Task SingleplayerStartup_RemovesSidebarObjectivesLeftByMultiplayer()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using TemporaryDirectory directory = new();
+        TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready");
+        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
+        using CancellationTokenSource serverCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        try
+        {
+            int commandCursor = await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
+            List<string> startupCommands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin")
+                .Take(commandCursor)
+                .ToList();
+
+            Assert.Contains("scoreboard objectives remove tc_playerlist", startupCommands);
+            Assert.Contains("scoreboard objectives remove tc_health", startupCommands);
+        }
+        finally
+        {
+            serverCts.Cancel();
+            await FakeJavaServer.StopRuntimeAndProcessAsync(runtime, config.Server.JarPath);
+        }
+    }
+
+    [Fact]
     public async Task RemoteController_QueriesPlayerStateAndRejectsMalformedRCONResponse()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
@@ -150,14 +176,13 @@ public sealed class CommandRuntimeIntegrationTests
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
             await runtime.ApplySettingsAsync(config);
             await runtime.EnsureRCONAsync(config, cancellationToken);
-            Assert.Equal(
-                [
-                    "list",
-                    "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true",
-                    "data remove storage twitchcraft:runtime slaughter_mob_loot",
-                    "scoreboard objectives remove tc_playerlist",
-                    "scoreboard objectives remove tc_health"
-                ], RCON.Commands);
+            Assert.Contains("list", RCON.Commands);
+            Assert.Contains(
+                "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true",
+                RCON.Commands);
+            Assert.Contains("data remove storage twitchcraft:runtime slaughter_mob_loot", RCON.Commands);
+            Assert.Contains("scoreboard objectives remove tc_playerlist", RCON.Commands);
+            Assert.Contains("scoreboard objectives remove tc_health", RCON.Commands);
 
             Assert.Equal(36, await runtime.QueryMaxHealthAsync("PlayerOne", cancellationToken));
             Assert.Equal(selectedItem, await runtime.QueryItemAsync("PlayerOne", cancellationToken));
@@ -319,16 +344,19 @@ public sealed class CommandRuntimeIntegrationTests
         _ = runtime.ReadOutputAsync(cancellationToken);
         await runtime.StartServerIfNeededAsync(cancellationToken);
         await FakeJavaServer.WaitForReadyAsync(runtime, cancellationToken);
-        await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 4, cancellationToken);
-        Assert.Equal(
-            [
-                "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true",
-                "data remove storage twitchcraft:runtime slaughter_mob_loot",
-                "scoreboard objectives remove tc_playerlist",
-                "scoreboard objectives remove tc_health"
-            ],
-            FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin"));
-        return 4;
+        string restore = "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true";
+        await FakeJavaServer.WaitUntilAsync(
+            () =>
+            {
+                List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
+                return commands.Contains(restore) &&
+                    commands.Contains("data remove storage twitchcraft:runtime slaughter_mob_loot") &&
+                    commands.Contains("scoreboard objectives remove tc_playerlist") &&
+                    commands.Contains("scoreboard objectives remove tc_health");
+            },
+            "Startup maintenance commands did not complete within 10 seconds.",
+            cancellationToken);
+        return FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin").Count;
     }
 
     private static async Task QueueCommandAndWaitAsync(
