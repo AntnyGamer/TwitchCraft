@@ -494,8 +494,7 @@ public static partial class CommandList
         {
             if (IsEveryone(target) || target.PlayerCount > 1)
             {
-                return NormalizeTargets(
-                    target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
+                return target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false);
             }
 
             string playerName = GetPlayerName(target);

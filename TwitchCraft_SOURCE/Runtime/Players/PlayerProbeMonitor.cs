@@ -228,7 +228,6 @@ public sealed partial class MainHandler
     private async Task RefreshSpectatorsAsync(List<string> players, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        players = SortedListHelper.NormalizePlayerNames(players, PlayerNameComparer);
 
         await _spectatorRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
