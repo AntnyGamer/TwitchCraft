@@ -206,7 +206,7 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
-    public async Task HeartCleanup_ForceRemovesTrackedModifier()
+    public async Task HeartCleanup_ForceRemovesTrackedModifierOnlyOnce()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
         scenario.Runtime.Tokens.Award("viewer", 100);
@@ -218,16 +218,17 @@ public sealed class GameplayCommandIntegrationTests
             command.Contains(" modifier add ", StringComparison.Ordinal) &&
             command.EndsWith(" add_value", StringComparison.Ordinal));
         int IDStart = add.IndexOf(" modifier add ", StringComparison.Ordinal) + " modifier add ".Length;
-        int IDEnd = add.IndexOf(' ', IDStart);
-        Assert.True(IDEnd > IDStart);
-        string ID = add[IDStart..IDEnd];
+        string ID = add[IDStart..add.IndexOf(' ', IDStart)];
 
         cursor = scenario.CaptureCommandCursor();
         await scenario.Runtime.Commands.ResetHeartEffectsAsync!(null, true, scenario.Token);
         List<string> cleanup = await scenario.DrainCommandsAsync(cursor);
-
         Assert.Contains(cleanup, command =>
             command.EndsWith(" modifier remove " + ID, StringComparison.Ordinal));
+
+        cursor = scenario.CaptureCommandCursor();
+        await scenario.Runtime.Commands.ResetHeartEffectsAsync!(null, true, scenario.Token);
+        Assert.Empty(await scenario.DrainCommandsAsync(cursor));
     }
 
     [Fact]
