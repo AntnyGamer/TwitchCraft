@@ -22,7 +22,7 @@ public sealed partial class MainHandler
         lock (_viewerGate)
         {
             _knownViewers = [];
-            _viewerRewardSchedule = new(PlayerNameComparer);
+            _viewerRewardSchedule.Clear();
             _viewerLastChatActivity.Clear();
         }
 
