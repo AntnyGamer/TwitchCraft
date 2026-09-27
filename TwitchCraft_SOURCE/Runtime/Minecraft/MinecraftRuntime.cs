@@ -61,7 +61,7 @@ public sealed partial class MainHandler
 
     private async Task RecoverSlaughterGameRuleAsync(CancellationToken cancellationToken)
     {
-        if (!await SendServerCommandsAsync(GameplayCommands.BuildSlaughterRecovery(MobLootGameRuleName), cancellationToken).ConfigureAwait(false))
+        if (!await SendServerCommandAsync(GameplayCommands.SlaughterRestoreCommand(MobLootGameRuleName), cancellationToken).ConfigureAwait(false))
             AddServerLogLine("Mob loot gamerule recovery could not be confirmed.");
     }
 
