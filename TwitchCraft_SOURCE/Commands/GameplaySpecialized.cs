@@ -367,7 +367,7 @@ public static partial class CommandList
                 {
                     (int delta, string ID, bool expired) = entry.Value[i];
                     if (force && !expired) entry.Value[i] = (delta, ID, expired = true);
-                    if (expired && (runtime.IsPlayerOnline(entry.Key) || force && runtime.RemoteControlEnabled)) (pending ??= []).Add((entry.Key, ID));
+                    if (expired && (force && runtime.RemoteControlEnabled || runtime.IsPlayerOnline(entry.Key))) (pending ??= []).Add((entry.Key, ID));
                 }
             if (pending == null) return;
 
