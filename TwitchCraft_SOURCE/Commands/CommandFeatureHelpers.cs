@@ -401,7 +401,7 @@ internal static class GameplayCommands
         "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + gameRule + " true";
     public static string[] BuildSlaughter(string selector, string mobLootGameRuleName) =>
     [
-        "execute store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run gamerule " + mobLootGameRuleName,
+        "execute unless data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run gamerule " + mobLootGameRuleName,
         "gamerule " + mobLootGameRuleName + " false",
         "execute at " + selector + " as @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:armor_stand,distance=..30] if data entity @s Health run kill @s",
         SlaughterRestoreCommand(mobLootGameRuleName)
