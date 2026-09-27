@@ -90,22 +90,22 @@ public sealed class LiveSettingsApplicationTests
     }
 
     [Fact]
-    public async Task GetPassivePayoutDelay_UsesConfiguredRange()
+    public async Task ApplySettings_PassiveActivityToggleClearsOldActivity()
     {
         using TemporaryDirectory directory = new();
-        MainHandler runtime = new(
-            new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"));
-        TwitchCraftConfig config = new();
-        config.Settings.PassiveTokenPayoutMinimumSeconds = 37;
-        config.Settings.PassiveTokenPayoutMaximumSeconds = 41;
+        MainHandler runtime = new(new AppShellViewModel(), Path.Combine(directory.Path, "viewer_tokens.db"));
+        TwitchCraftConfig config = new() { Settings = { PassiveRewardsRequireActivity = true } };
 
         try
         {
             await runtime.ApplySettingsAsync(config);
+            runtime.RecordChatActivity("viewer", 1000);
+            config.Settings.PassiveRewardsRequireActivity = false;
+            await runtime.ApplySettingsAsync(config);
+            config.Settings.PassiveRewardsRequireActivity = true;
+            await runtime.ApplySettingsAsync(config);
 
-            for (int i = 0; i < 100; i++)
-                Assert.InRange(runtime.GetPassivePayoutDelay(), 37, 41);
+            Assert.False(runtime.IsRewardEligibleNoLock("viewer", 1000));
         }
         finally
         {
