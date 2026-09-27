@@ -379,7 +379,10 @@ public static partial class CommandList
                     selectorPlayer = pendingPlayer;
                     selector = MinecraftCommandBuilder.SinglePlayerSelector(pendingPlayer);
                 }
-                _ = await runtime.SendServerCommandAsync(MinecraftCommandBuilder.RemoveMaxHealthModifier(selector!, ID, runtime.UsesModernAttributeIDs), ct).ConfigureAwait(false);
+                if (!await runtime.SendServerCommandAsync(
+                    MinecraftCommandBuilder.RemoveMaxHealthModifier(selector!, ID, runtime.UsesModernAttributeIDs),
+                    ct).ConfigureAwait(false))
+                    return;
             }
 
             string? verifiedPlayer = null;
