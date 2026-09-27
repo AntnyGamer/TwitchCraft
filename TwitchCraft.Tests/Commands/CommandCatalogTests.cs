@@ -139,6 +139,35 @@ public sealed class CommandCatalogTests
     }
 
     [Fact]
+    public async Task TradeTokens_RejectsOneTokenWithoutChangingBalances()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = new(
+            new AppShellViewModel(),
+            Path.Combine(directory.Path, "viewer_tokens.db"));
+
+        try
+        {
+            await runtime.ApplySettingsAsync(new TwitchCraftConfig());
+            runtime.Tokens.Award("alice", 10);
+
+            await runtime.DispatchAsync(
+                "!tradetokens bob 1",
+                "!",
+                "alice",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(10, runtime.Tokens.GetBalance("alice"));
+            Assert.Equal(0, runtime.Tokens.GetBalance("bob"));
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
+    }
+
+    [Fact]
     public async Task TradeTokens_ChargesSenderAndCreditsHalfToRecipient()
     {
         using TemporaryDirectory directory = new();
