@@ -94,7 +94,7 @@ public sealed partial class MainHandler
 
     public string MobLootGameRuleName => UsesNamespacedGameRules ? "minecraft:mob_drops" : "doMobLoot";
 
-    internal bool IsPlayerOnline(string playerName) => (RemoteControlEnabled ? RCONConnected : MinecraftProcessRunning) && IsKnownPlayer(playerName);
+    internal bool IsPlayerOnline(string playerName) => (MinecraftProcessRunning || RCONConnected) && IsKnownPlayer(playerName);
 
     internal bool MinecraftProcessRunning => _minecraftSession.ProcessRunning;
 
