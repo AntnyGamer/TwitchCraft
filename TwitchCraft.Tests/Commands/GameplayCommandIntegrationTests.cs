@@ -206,6 +206,31 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
+    public async Task HeartCleanup_ForceRemovesTrackedModifier()
+    {
+        await using MinecraftRuntimeScenario scenario = await StartAsync();
+        scenario.Runtime.Tokens.Award("viewer", 100);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.DispatchAsync("!addheart 1");
+        List<string> applied = await scenario.DrainCommandsAsync(cursor);
+        string add = Assert.Single(applied, command =>
+            command.Contains(" modifier add ", StringComparison.Ordinal) &&
+            command.EndsWith(" add_value", StringComparison.Ordinal));
+        int IDStart = add.IndexOf(" modifier add ", StringComparison.Ordinal) + " modifier add ".Length;
+        int IDEnd = add.IndexOf(' ', IDStart);
+        Assert.True(IDEnd > IDStart);
+        string ID = add[IDStart..IDEnd];
+
+        cursor = scenario.CaptureCommandCursor();
+        await scenario.Runtime.Commands.ResetHeartEffectsAsync!(null, true, scenario.Token);
+        List<string> cleanup = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Contains(cleanup, command =>
+            command.EndsWith(" modifier remove " + ID, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task HeartCommands_RejectBothHealthLimitsWithoutCharging()
     {
         await using (MinecraftRuntimeScenario upper = await StartAsync(maxHealth: 40))
