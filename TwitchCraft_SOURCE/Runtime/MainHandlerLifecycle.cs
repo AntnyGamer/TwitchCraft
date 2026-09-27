@@ -281,7 +281,7 @@ public sealed partial class MainHandler
                 await StartServerAsync(config, token).ConfigureAwait(false);
                 TrackTask(Task.Run(() => ReadOutputAsync(token), token));
                 TrackTask(Task.Run(() => ReadErrorAsync(token), token));
-                await StartServerIfNeededAsync(token).ConfigureAwait(false);
+                await VerifyServerProcessAsync(token).ConfigureAwait(false);
             }
 
             _runtimeState = RuntimeState.Running;
@@ -415,7 +415,7 @@ public sealed partial class MainHandler
         StatisticsStore.CloseConnection();
     }
 
-    internal async Task StartServerIfNeededAsync(CancellationToken cancellationToken)
+    internal async Task VerifyServerProcessAsync(CancellationToken cancellationToken)
     {
         Process process = _minecraftSession.Process
             ?? throw new InvalidOperationException("Minecraft server process could not be started.");

@@ -220,10 +220,8 @@ public sealed partial class MainHandler
 
     private static async Task<string> ValidateBotAsync(string token, string clientID, CancellationToken cancellationToken)
     {
-        string normalizedToken = NormalizeToken(token);
-
         using HttpRequestMessage request = new(HttpMethod.Get, "https://id.twitch.tv/oauth2/validate");
-        request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildValidateHeader(normalizedToken));
+        request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildValidateHeader(token));
 
         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();

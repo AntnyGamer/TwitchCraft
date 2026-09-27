@@ -63,7 +63,7 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
             await runtime.ApplySettingsAsync(config);
             await runtime.StartServerAsync(config, cts.Token);
             _ = runtime.ReadOutputAsync(cts.Token);
-            await runtime.StartServerIfNeededAsync(cts.Token);
+            await runtime.VerifyServerProcessAsync(cts.Token);
             await FakeJavaServer.WaitForReadyAsync(runtime, cts.Token);
             await FakeJavaServer.WaitUntilAsync(
                 () => runtime.HasOnlinePlayerSnapshot,

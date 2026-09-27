@@ -13,15 +13,14 @@ public sealed class SharedPlayerProbeTests
     [Fact]
     public async Task QueryItem_CancelingOneCallerDoesNotCancelAnotherCallerForSamePlayer()
     {
-        const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
+        const string selectedItem = "{}";
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
             selectedItem: selectedItem);
-        scenario.SetProbeDelay(250);
+        scenario.SetProbeDelay(750);
         using CancellationTokenSource firstCaller = new();
 
         Task<string?> canceledTask = scenario.Runtime.QueryItemAsync("PlayerOne", firstCaller.Token);
-        Task<string?> survivingTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
 
         await FakeJavaServer.WaitUntilAsync(
             () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
@@ -32,7 +31,10 @@ public sealed class SharedPlayerProbeTests
         firstCaller.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
+        Task<string?> survivingTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
         Assert.Equal(selectedItem, await survivingTask.WaitAsync(TimeSpan.FromSeconds(5), scenario.Token));
+        Assert.Single(FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin"),
+            command => command.EndsWith(" SelectedItem", StringComparison.Ordinal));
     }
 
     [Fact]

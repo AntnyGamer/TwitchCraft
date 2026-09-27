@@ -29,39 +29,42 @@ public sealed partial class MainHandler
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (CurrentSettings.PassiveTokenEarningEnabled)
+            lock (_configPersistenceGate)
             {
-                long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                List<string>? rewarded = null;
-
-                lock (_viewerGate)
+                if (CurrentSettings.PassiveTokenEarningEnabled)
                 {
-                    for (int i = 0; i < _knownViewers.Count; i++)
+                    long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    List<string>? rewarded = null;
+
+                    lock (_viewerGate)
                     {
-                        string viewer = _knownViewers[i];
-                        if (string.IsNullOrWhiteSpace(viewer))
-                            continue;
+                        for (int i = 0; i < _knownViewers.Count; i++)
+                        {
+                            string viewer = _knownViewers[i];
+                            if (string.IsNullOrWhiteSpace(viewer))
+                                continue;
 
-                        if (!IsRewardEligibleNoLock(viewer, now))
-                        {
-                            _viewerRewardSchedule.Remove(viewer);
-                            continue;
-                        }
+                            if (!IsRewardEligibleNoLock(viewer, now))
+                            {
+                                _viewerRewardSchedule.Remove(viewer);
+                                continue;
+                            }
 
-                        if (!_viewerRewardSchedule.TryGetValue(viewer, out long nextAt))
-                        {
-                            _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
-                        }
-                        else if (nextAt <= now)
-                        {
-                            _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
-                            (rewarded ??= []).Add(viewer);
+                            if (!_viewerRewardSchedule.TryGetValue(viewer, out long nextAt))
+                            {
+                                _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
+                            }
+                            else if (nextAt <= now)
+                            {
+                                _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
+                                (rewarded ??= []).Add(viewer);
+                            }
                         }
                     }
-                }
 
-                if (rewarded is { Count: > 0 })
-                    Tokens.Award(rewarded, PassiveTokensPerPayout);
+                    if (rewarded is { Count: > 0 })
+                        Tokens.Award(rewarded, PassiveTokensPerPayout);
+                }
             }
 
             try
@@ -254,11 +257,9 @@ public sealed partial class MainHandler
 
     private static async Task<string[]> ResolveUsersAsync(string botName, string streamerName, string clientID, string token, CancellationToken cancellationToken)
     {
-        string normalizedToken = NormalizeToken(token);
-
         string url = "https://api.twitch.tv/helix/users?login=" + Uri.EscapeDataString(botName) + "&login=" + Uri.EscapeDataString(streamerName);
         using HttpRequestMessage request = new(HttpMethod.Get, url);
-        request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildBearerHeader(normalizedToken));
+        request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildBearerHeader(token));
         request.Headers.TryAddWithoutValidation("Client-Id", clientID);
 
         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
@@ -381,7 +382,6 @@ public sealed partial class MainHandler
     internal void ApplyViewerRoster(List<string> viewers)
     {
         SortedListHelper.SortAndDeduplicate(viewers, StringComparer.OrdinalIgnoreCase);
-
         List<string>? viewerList = null;
         lock (_viewerGate)
         {

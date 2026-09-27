@@ -120,11 +120,4 @@ public sealed partial class MainHandler
 
     private static string NormalizeUser(string? user) => CommandUserHelper.NormalizeUser(user);
 
-    private List<string> GetKnownPlayers()
-    {
-        lock (_playerGate)
-        {
-            return [.. _knownPlayers];
-        }
-    }
 }

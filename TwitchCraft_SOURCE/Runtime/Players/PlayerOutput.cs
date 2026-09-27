@@ -87,7 +87,7 @@ public sealed partial class MainHandler
                         isUnexpectedCommandError,
                         isMinecraftCommandErrorContext);
 
-                    HandleReadyState(line);
+                    HandleReadyState(line, cancellationToken);
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 

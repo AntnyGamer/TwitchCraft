@@ -78,9 +78,10 @@ public sealed class CommandCatalogTests
         {
             TwitchCraftConfig config = new();
             config.Twitch.StreamerName = "streamer";
+            config.Twitch.BotName = "twitchcraft";
             await runtime.ApplySettingsAsync(config);
 
-            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "viewer_two"]);
+            runtime.ApplyViewerRoster(["viewer_one", "randomdudereincarnatedx3", "twitchcraft", "viewer_two", "TwitchCraft"]);
 
             await runtime.DispatchAsync(
                 "!givetokens all 25",
@@ -90,8 +91,9 @@ public sealed class CommandCatalogTests
                 TestContext.Current.CancellationToken);
 
             List<string> viewers = runtime.GetViewerRosterSnapshot();
-            Assert.Equal(3, viewers.Count);
+            Assert.Equal(4, viewers.Count);
             Assert.Contains("randomdudereincarnatedx3", viewers);
+            Assert.Contains("twitchcraft", viewers);
             Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
         }
         finally
@@ -129,6 +131,35 @@ public sealed class CommandCatalogTests
                 isModerator: false,
                 TestContext.Current.CancellationToken);
             Assert.Equal(25, runtime.Tokens.GetBalance("bob"));
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
+    }
+
+    [Fact]
+    public async Task TradeTokens_RejectsOneTokenWithoutChangingBalances()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = new(
+            new AppShellViewModel(),
+            Path.Combine(directory.Path, "viewer_tokens.db"));
+
+        try
+        {
+            await runtime.ApplySettingsAsync(new TwitchCraftConfig());
+            runtime.Tokens.Award("alice", 10);
+
+            await runtime.DispatchAsync(
+                "!tradetokens bob 1",
+                "!",
+                "alice",
+                isModerator: false,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(10, runtime.Tokens.GetBalance("alice"));
+            Assert.Equal(0, runtime.Tokens.GetBalance("bob"));
         }
         finally
         {

@@ -87,7 +87,7 @@ public sealed class TimedScaleLifecycleTests
     }
 
     [Fact]
-    public async Task ApplyAsync_DoesNotArmAResetWhenInitialDispatchFails()
+    public async Task ApplyAsync_DoesNotScheduleResetAfterDispatchFailure()
     {
         List<string> sentCommands = [];
         List<Task> trackedTasks = [];

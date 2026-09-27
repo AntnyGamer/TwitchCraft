@@ -228,7 +228,6 @@ public sealed partial class MainHandler
     private async Task RefreshSpectatorsAsync(List<string> players, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        players = SortedListHelper.NormalizePlayerNames(players, PlayerNameComparer);
 
         await _spectatorRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -352,7 +351,7 @@ public sealed partial class MainHandler
         lock (_spectatorProbeGate)
         {
             if (_spectatorPlayers.Count == 0)
-                return online;
+                return [.. online];
 
             List<string> targetable = new(online.Count);
             foreach (string player in online)

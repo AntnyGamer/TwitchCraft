@@ -201,7 +201,7 @@ public sealed partial class MainHandler
             DateTime.UtcNow.Ticks - snapshotTicks >= OnlinePlayersRefreshInterval.Ticks * 2)
             return [];
 
-        return GetKnownPlayers();
+        lock (_playerGate) return _knownPlayers;
     }
 
     private void QueueSnapshot()

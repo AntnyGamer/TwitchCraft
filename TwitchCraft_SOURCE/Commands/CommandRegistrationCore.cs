@@ -24,8 +24,6 @@ public static partial class CommandList
             if (commandStatisticFlags != ChatCommandStatisticFlags.None)
                 statisticFlags?[commandName] = commandStatisticFlags;
         }
-        static List<string> NormalizeTargets(List<string>? players)
-            => SortedListHelper.NormalizePlayerNames(players, StringComparer.OrdinalIgnoreCase);
         Task SayAsync(string? msg, CancellationToken ct)
             => ReplyAsync(msg, BotResponseKind.Essential, ct);
         Task ConfirmAsync(string? msg, CancellationToken ct)
@@ -160,7 +158,7 @@ public static partial class CommandList
             if (target == null)
                 return null;
             List<string> activePlayers = cachedTargetablePlayers ??
-                NormalizeTargets(await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
+                await runtime.GetPlayersAsync(ct).ConfigureAwait(false);
             string defaultMinecraftPlayer = runtime.Commands.DefaultMinecraftPlayerName;
             bool defaultPlayerIsValid = defaultMinecraftPlayer.Length > 0;
             if (IsSingleplayer() && activePlayers.Count == 0 && defaultPlayerIsValid && !runtime.HasOnlinePlayerSnapshot)
@@ -242,7 +240,7 @@ public static partial class CommandList
             {
                 return false;
             }
-            List<string> targetablePlayers = NormalizeTargets(target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
+            List<string> targetablePlayers = target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false);
             return HasPlayer(targetablePlayers, streamerMinecraftName);
         }
         async Task<ResolvedTarget?> ResolveTargetAsync(IReadOnlyList<string>? args, int startIndex, string sender, CancellationToken ct)
@@ -258,7 +256,7 @@ public static partial class CommandList
                         return null;
                     }
 
-                    List<string> players = NormalizeTargets(await runtime.GetPlayersAsync(ct).ConfigureAwait(false));
+                    List<string> players = await runtime.GetPlayersAsync(ct).ConfigureAwait(false);
                     string defaultPlayer = runtime.Commands.DefaultMinecraftPlayerName;
                     if (players.Count == 0 && IsSingleplayer() &&
                         defaultPlayer.Length > 0 && !runtime.HasOnlinePlayerSnapshot)

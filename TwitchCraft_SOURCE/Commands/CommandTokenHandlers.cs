@@ -254,7 +254,7 @@ public static partial class CommandList
                 return;
             }
             string rawToUser = (args[0] ?? string.Empty).Trim().Trim('@');
-            if (!int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount) || amount <= 0)
+            if (!int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount) || amount < 2)
             {
                 await sayToChannel("Invalid amount. Usage: !tradetokens username amount", ct).ConfigureAwait(false);
                 return;

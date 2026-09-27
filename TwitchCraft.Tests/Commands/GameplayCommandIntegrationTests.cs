@@ -206,6 +206,31 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
+    public async Task HeartCleanup_ForceRemovesTrackedModifier()
+    {
+        await using MinecraftRuntimeScenario scenario = await StartAsync();
+        scenario.Runtime.Tokens.Award("viewer", 100);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.DispatchAsync("!addheart 1");
+        List<string> applied = await scenario.DrainCommandsAsync(cursor);
+        string add = Assert.Single(applied, command =>
+            command.Contains(" modifier add ", StringComparison.Ordinal) &&
+            command.EndsWith(" add_value", StringComparison.Ordinal));
+        int IDStart = add.IndexOf(" modifier add ", StringComparison.Ordinal) + " modifier add ".Length;
+        int IDEnd = add.IndexOf(' ', IDStart);
+        Assert.True(IDEnd > IDStart);
+        string ID = add[IDStart..IDEnd];
+
+        cursor = scenario.CaptureCommandCursor();
+        await scenario.Runtime.Commands.ResetHeartEffectsAsync!(null, true, scenario.Token);
+        List<string> cleanup = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Contains(cleanup, command =>
+            command.EndsWith(" modifier remove " + ID, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task HeartCommands_RejectBothHealthLimitsWithoutCharging()
     {
         await using (MinecraftRuntimeScenario upper = await StartAsync(maxHealth: 40))
@@ -316,10 +341,15 @@ public sealed class GameplayCommandIntegrationTests
             command.Contains("type=!minecraft:player", StringComparison.Ordinal) &&
             command.EndsWith("run kill @s", StringComparison.Ordinal));
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.True(kill > 0 && kill + 1 < commands.Count);
-        Assert.StartsWith("gamerule ", commands[kill - 1], StringComparison.Ordinal);
-        Assert.EndsWith(" false", commands[kill - 1], StringComparison.Ordinal);
-        Assert.Equal(commands[kill - 1][..^6] + " true", commands[kill + 1]);
+        Assert.True(kill >= 2 && kill + 1 < commands.Count);
+        string gameRule = commands[kill - 1][..^" false".Length];
+        Assert.Equal(
+            "execute unless data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run " + gameRule,
+            commands[kill - 2]);
+        Assert.Equal(
+            "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run " + gameRule + " true",
+            commands[kill + 1]);
+        Assert.Single(commands, command => command == commands[kill + 1]);
     }
 
     [Fact]
