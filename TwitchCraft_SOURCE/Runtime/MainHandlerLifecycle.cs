@@ -279,8 +279,8 @@ public sealed partial class MainHandler
             else
             {
                 await StartServerAsync(config, token).ConfigureAwait(false);
-                TrackTask(ReadOutputAsync(token));
-                TrackTask(ReadErrorAsync(token));
+                TrackTask(Task.Run(() => ReadOutputAsync(token), token));
+                TrackTask(Task.Run(() => ReadErrorAsync(token), token));
                 await StartServerIfNeededAsync(token).ConfigureAwait(false);
             }
 
