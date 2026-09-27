@@ -229,7 +229,6 @@ public sealed partial class StatisticsService
             return string.Empty;
         }
 
-        string excluded = CommandUserHelper.NormalizeUser(excludedViewer);
         string bestViewer = string.Empty;
         long bestScore = 0;
 
@@ -241,7 +240,7 @@ public sealed partial class StatisticsService
             }
 
             string viewer = pair.Key;
-            if (excluded.Length > 0 && string.Equals(viewer, excluded, StringComparison.OrdinalIgnoreCase))
+            if (excludedViewer.Length > 0 && string.Equals(viewer, excludedViewer, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
