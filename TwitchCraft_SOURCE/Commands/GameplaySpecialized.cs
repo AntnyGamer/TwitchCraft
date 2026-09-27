@@ -358,7 +358,6 @@ public static partial class CommandList
 
         async Task ResetHeartEffectsCoreAsync(string? player, bool force, CancellationToken ct)
         {
-            if (force && !runtime.MinecraftServerReady) { activeHeartEffects.Clear(); return; }
             if (player != null && await runtime.QueryHeartModifiersAsync(player, ct).ConfigureAwait(false) is { } data)
                 SyncHeartEffects(player, MainHandler.ParseHeartModifierIDs(data, runtime.UsesNamespacedAttributeModifierIDs), true);
 
@@ -368,7 +367,7 @@ public static partial class CommandList
                 {
                     (int delta, string ID, bool expired) = entry.Value[i];
                     if (force && !expired) entry.Value[i] = (delta, ID, expired = true);
-                    if (expired && runtime.IsPlayerOnline(entry.Key)) (pending ??= []).Add((entry.Key, ID));
+                    if (expired && (runtime.IsPlayerOnline(entry.Key) || force && runtime.RemoteControlEnabled)) (pending ??= []).Add((entry.Key, ID));
                 }
             if (pending == null) return;
 
@@ -691,7 +690,7 @@ public static partial class CommandList
             }
             finally
             {
-                if (attempted && runtime.MinecraftServerReady &&
+                if (attempted && (runtime.RemoteControlEnabled || runtime.MinecraftProcessRunning) &&
                     !await runtime.SendServerCommandAsync(GameplayCommands.SlaughterRestoreCommand(gameRule), CancellationToken.None).ConfigureAwait(false))
                     runtime.AddServerLogLine("Mob loot gamerule restoration could not be confirmed; it will be retried on startup.");
             }
