@@ -352,7 +352,7 @@ public sealed partial class MainHandler
         lock (_spectatorProbeGate)
         {
             if (_spectatorPlayers.Count == 0)
-                return online;
+                return [.. online];
 
             List<string> targetable = new(online.Count);
             foreach (string player in online)
