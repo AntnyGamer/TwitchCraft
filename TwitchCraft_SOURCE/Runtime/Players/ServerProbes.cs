@@ -48,7 +48,7 @@ public sealed partial class MainHandler
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
             return Task.CompletedTask;
 
-        MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
+        MinecraftVersionSupport.MinecraftVersionInfo version = GetMinecraftVersion();
         if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
             return Task.CompletedTask;
 
