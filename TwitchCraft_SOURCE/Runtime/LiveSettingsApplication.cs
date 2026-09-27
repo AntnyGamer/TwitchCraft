@@ -30,8 +30,6 @@ public sealed partial class MainHandler
                     maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 && (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
                     passiveScheduleChanged =
                         _activeConfig.Settings.PassiveTokenEarningEnabled != activeConfig.Settings.PassiveTokenEarningEnabled ||
-                        _activeConfig.Settings.PassiveTokenPayoutMinimumSeconds != activeConfig.Settings.PassiveTokenPayoutMinimumSeconds ||
-                        _activeConfig.Settings.PassiveTokenPayoutMaximumSeconds != activeConfig.Settings.PassiveTokenPayoutMaximumSeconds ||
                         _activeConfig.Settings.PassiveRewardsRequireActivity != activeConfig.Settings.PassiveRewardsRequireActivity ||
                         _activeConfig.Settings.PassiveActivityWindowMinutes != activeConfig.Settings.PassiveActivityWindowMinutes;
                     activeConfig.Settings.MultiplayerEnabled = _activeConfig.Settings.MultiplayerEnabled;
