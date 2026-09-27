@@ -46,7 +46,11 @@ public sealed class PlayerStateParsingTests
             Assert.Equal(string.Empty, player);
             Assert.Equal(-1, gameType);
         }
+    }
 
+    [Fact]
+    public void Statistics_RecognizesSystemChatDeathFormats()
+    {
         int deathScoreRefreshes = 0;
         StatisticsService statistics = new(new(
             _ => ChatCommandStatisticFlags.None, _ => true, _ => false,
@@ -54,6 +58,7 @@ public sealed class PlayerStateParsingTests
         statistics.SetContext(true, "streamer", "Steve", "!");
         statistics.RecordLine("[Server thread/INFO]: System chat: Steve fell from a high place", false);
         statistics.RecordLine("[Server thread/INFO]: [System] [CHAT] Steve was slain by Zombie", false);
+
         Assert.Equal(2, deathScoreRefreshes);
     }
 }
