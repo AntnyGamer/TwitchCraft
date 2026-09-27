@@ -399,8 +399,6 @@ internal static class GameplayCommands
 
     public static string SlaughterRestoreCommand(string gameRule) =>
         "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + gameRule + " true";
-    public static string[] BuildSlaughterRecovery(string gameRule) => [SlaughterRestoreCommand(gameRule)];
-
     public static string[] BuildSlaughter(string selector, string mobLootGameRuleName) =>
     [
         "execute store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run gamerule " + mobLootGameRuleName,
