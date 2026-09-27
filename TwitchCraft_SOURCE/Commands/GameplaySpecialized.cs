@@ -362,17 +362,13 @@ public static partial class CommandList
                 SyncHeartEffects(player, MainHandler.ParseHeartModifierIDs(data, runtime.UsesNamespacedAttributeModifierIDs), true);
 
             List<(string Player, string ID)>? pending = null;
-            bool forceRemote = force && runtime.RemoteControlEnabled;
             foreach (var entry in activeHeartEffects)
-            {
-                bool? online = forceRemote ? true : null;
                 for (int i = 0; i < entry.Value.Count; i++)
                 {
                     (int delta, string ID, bool expired) = entry.Value[i];
                     if (force && !expired) entry.Value[i] = (delta, ID, expired = true);
-                    if (expired && (online ??= runtime.IsPlayerOnline(entry.Key)) == true) (pending ??= []).Add((entry.Key, ID));
+                    if (expired && (force && runtime.RemoteControlEnabled || runtime.IsPlayerOnline(entry.Key))) (pending ??= []).Add((entry.Key, ID));
                 }
-            }
             if (pending == null) return;
 
             string? selectorPlayer = null, selector = null;
