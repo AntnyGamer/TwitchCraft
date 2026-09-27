@@ -88,7 +88,7 @@ public sealed partial class StatisticsService
 
     internal void SetContext(bool enabled, string streamerName, string streamerMinecraftName, string commandPrefix)
     {
-        _streamerName = streamerName;
+        _streamerName = CommandUserHelper.NormalizeUser(streamerName);
         _streamerMinecraftName = streamerMinecraftName;
         if (_enabled != enabled)
         {
