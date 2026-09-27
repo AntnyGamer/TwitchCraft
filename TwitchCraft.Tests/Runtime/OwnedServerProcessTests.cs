@@ -22,7 +22,7 @@ public sealed class OwnedServerProcessTests
         try
         {
             await runtime.StartServerAsync(config, cancellationToken);
-            await runtime.StartServerIfNeededAsync(cancellationToken);
+            await runtime.VerifyServerProcessAsync(cancellationToken);
             Assert.True(await runtime.SendServerCommandAsync("say integration-test", cancellationToken));
             Task stopTask = runtime.StopProcessSafeAsync(waitBriefly: true);
             Assert.True(await runtime.SendServerCommandAsync("stop", cancellationToken));
@@ -49,7 +49,7 @@ public sealed class OwnedServerProcessTests
     }
 
     [Fact]
-    public async Task StartServerIfNeededAsync_DetectsImmediateJavaExit()
+    public async Task VerifyServerProcessAsync_DetectsImmediateJavaExit()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -78,7 +78,7 @@ public sealed class OwnedServerProcessTests
             await FakeJavaServer.WaitForProcessExitAsync(processID, cancellationToken);
 
             InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                runtime.StartServerIfNeededAsync(cancellationToken));
+                runtime.VerifyServerProcessAsync(cancellationToken));
             Assert.Contains("exited during startup", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -98,7 +98,7 @@ public sealed class OwnedServerProcessTests
         try
         {
             await runtime.StartServerAsync(config, cancellationToken);
-            await runtime.StartServerIfNeededAsync(cancellationToken);
+            await runtime.VerifyServerProcessAsync(cancellationToken);
             Assert.True(await runtime.SendServerCommandAsync("stop", cancellationToken));
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", 1, cancellationToken);
             int processID = int.Parse(
