@@ -258,8 +258,9 @@ internal static partial class StatisticsStore
         }
     }
 
-    public static (string DangerousViewer, string NiceViewer) GetTopViewers(string normalizedExcludedViewer)
+    public static (string DangerousViewer, string NiceViewer) GetTopViewers(string excludedViewer)
     {
+        string normalizedExcludedViewer = CommandUserHelper.NormalizeUser(excludedViewer);
         string excludedClause = normalizedExcludedViewer.Length == 0 ? string.Empty : "AND Username <> $excludedViewer";
 
         lock (IOGate)
