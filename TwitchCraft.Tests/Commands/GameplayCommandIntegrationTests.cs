@@ -341,11 +341,12 @@ public sealed class GameplayCommandIntegrationTests
             command.Contains("type=!minecraft:player", StringComparison.Ordinal) &&
             command.EndsWith("run kill @s", StringComparison.Ordinal));
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.True(kill >= 2 && kill + 2 < commands.Count);
+        Assert.True(kill >= 2 && kill + 1 < commands.Count);
         string gameRule = commands[kill - 1][..^" false".Length];
         Assert.Equal("execute store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run " + gameRule, commands[kill - 2]);
-        Assert.Equal("execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run " + gameRule + " true", commands[kill + 1]);
-        Assert.Equal("data remove storage twitchcraft:runtime slaughter_mob_loot", commands[kill + 2]);
+        Assert.Equal(
+            "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run " + gameRule + " true",
+            commands[kill + 1]);
         Assert.Single(commands, command => command == commands[kill + 1]);
     }
 
