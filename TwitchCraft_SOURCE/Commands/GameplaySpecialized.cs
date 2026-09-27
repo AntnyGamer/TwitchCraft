@@ -694,7 +694,7 @@ public static partial class CommandList
             finally
             {
                 if (attempted && !sent && (runtime.RemoteControlEnabled || runtime.MinecraftProcessRunning) &&
-                    !await runtime.SendServerCommandsAsync(GameplayCommands.BuildSlaughterRecovery(gameRule), CancellationToken.None).ConfigureAwait(false))
+                    !await runtime.SendServerCommandAsync(GameplayCommands.SlaughterRestoreCommand(gameRule), CancellationToken.None).ConfigureAwait(false))
                     runtime.AddServerLogLine("Mob loot gamerule restoration could not be confirmed; it will be retried on startup.");
             }
             if (!sent) return;
