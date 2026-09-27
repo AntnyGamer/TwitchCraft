@@ -320,7 +320,7 @@ public sealed class CommandRuntimeIntegrationTests
 
             await runtime.StartServerAsync(config, serverCts.Token);
             _ = runtime.ReadOutputAsync(serverCts.Token);
-            await runtime.StartServerIfNeededAsync(serverCts.Token);
+            await runtime.VerifyServerProcessAsync(serverCts.Token);
             await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
             await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", commandCursor + 2, cancellationToken);
@@ -341,7 +341,7 @@ public sealed class CommandRuntimeIntegrationTests
         await runtime.ApplySettingsAsync(config);
         await runtime.StartServerAsync(config, cancellationToken);
         _ = runtime.ReadOutputAsync(cancellationToken);
-        await runtime.StartServerIfNeededAsync(cancellationToken);
+        await runtime.VerifyServerProcessAsync(cancellationToken);
         await FakeJavaServer.WaitForReadyAsync(runtime, cancellationToken);
         string restore = "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + runtime.MobLootGameRuleName + " true";
         await FakeJavaServer.WaitUntilAsync(
