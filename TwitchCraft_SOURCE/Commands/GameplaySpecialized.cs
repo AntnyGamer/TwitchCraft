@@ -682,7 +682,7 @@ public static partial class CommandList
         async Task SlaughterAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
             string gameRule = runtime.MobLootGameRuleName;
-            bool attempted = false, sent;
+            bool attempted = false, sent = false;
             try
             {
                 sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(30, target.PlayerCount), () =>
@@ -693,8 +693,8 @@ public static partial class CommandList
             }
             finally
             {
-                if (attempted && (runtime.RemoteControlEnabled || runtime.MinecraftProcessRunning) &&
-                    !await runtime.SendServerCommandAsync(GameplayCommands.SlaughterRestoreCommand(gameRule), CancellationToken.None).ConfigureAwait(false))
+                if (attempted && !sent && (runtime.RemoteControlEnabled || runtime.MinecraftProcessRunning) &&
+                    !await runtime.SendServerCommandsAsync(GameplayCommands.BuildSlaughterRecovery(gameRule), CancellationToken.None).ConfigureAwait(false))
                     runtime.AddServerLogLine("Mob loot gamerule restoration could not be confirmed; it will be retried on startup.");
             }
             if (!sent) return;
