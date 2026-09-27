@@ -178,9 +178,8 @@ public sealed class CommandRuntimeIntegrationTests
             await runtime.EnsureRCONAsync(config, cancellationToken);
             Assert.Contains("list", RCON.Commands);
             Assert.Contains(
-                "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true",
+                "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + runtime.MobLootGameRuleName + " true",
                 RCON.Commands);
-            Assert.Contains("data remove storage twitchcraft:runtime slaughter_mob_loot", RCON.Commands);
             Assert.Contains("scoreboard objectives remove tc_playerlist", RCON.Commands);
             Assert.Contains("scoreboard objectives remove tc_health", RCON.Commands);
 
@@ -344,13 +343,12 @@ public sealed class CommandRuntimeIntegrationTests
         _ = runtime.ReadOutputAsync(cancellationToken);
         await runtime.StartServerIfNeededAsync(cancellationToken);
         await FakeJavaServer.WaitForReadyAsync(runtime, cancellationToken);
-        string restore = "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} run gamerule " + runtime.MobLootGameRuleName + " true";
+        string restore = "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + runtime.MobLootGameRuleName + " true";
         await FakeJavaServer.WaitUntilAsync(
             () =>
             {
                 List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
                 return commands.Contains(restore) &&
-                    commands.Contains("data remove storage twitchcraft:runtime slaughter_mob_loot") &&
                     commands.Contains("scoreboard objectives remove tc_playerlist") &&
                     commands.Contains("scoreboard objectives remove tc_health");
             },
