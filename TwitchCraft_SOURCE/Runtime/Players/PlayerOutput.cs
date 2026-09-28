@@ -196,7 +196,7 @@ public sealed partial class MainHandler
 
         lock (_playerGate)
         {
-            int index = FindPlayerIndex(_knownPlayers, normalizedPlayer);
+            int index = _knownPlayers.BinarySearch(normalizedPlayer, PlayerNameComparer);
             if (index >= 0)
                 return false;
 
@@ -219,7 +219,7 @@ public sealed partial class MainHandler
 
         lock (_playerGate)
         {
-            int index = FindPlayerIndex(_knownPlayers, normalizedPlayer);
+            int index = _knownPlayers.BinarySearch(normalizedPlayer, PlayerNameComparer);
             if (index < 0)
                 return false;
 
