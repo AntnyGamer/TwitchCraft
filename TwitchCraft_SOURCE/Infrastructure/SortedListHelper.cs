@@ -5,9 +5,6 @@ namespace TwitchCraft_V1;
 
 internal static class SortedListHelper
 {
-    public static int FindIndex(List<string> values, string value, StringComparer comparer)
-        => values.BinarySearch(value, comparer);
-
     public static bool Contains(List<string> values, string value, StringComparer comparer)
         => values.BinarySearch(value, comparer) >= 0;
 

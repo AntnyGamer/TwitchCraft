@@ -16,7 +16,7 @@ public sealed class IRCQueueConcurrencyTests
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
-        MainHandler runtime = CreateRuntime(directory.Path);
+        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
         TaskCompletionSource<bool> firstStarted = CreateSignal();
         TaskCompletionSource<bool> releaseFirst = CreateSignal();
         TaskCompletionSource<bool> allCompleted = CreateSignal();
@@ -88,7 +88,7 @@ public sealed class IRCQueueConcurrencyTests
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
-        MainHandler runtime = CreateRuntime(directory.Path);
+        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
         TaskCompletionSource<bool> firstStarted = CreateSignal();
         TaskCompletionSource<bool> releaseFirst = CreateSignal();
         TaskCompletionSource<bool> secondCompleted = CreateSignal();
@@ -131,7 +131,7 @@ public sealed class IRCQueueConcurrencyTests
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
-        MainHandler runtime = CreateRuntime(directory.Path);
+        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
         TaskCompletionSource<bool> oldWorkStarted = CreateSignal();
         TaskCompletionSource<bool> releaseOldWork = CreateSignal();
         TaskCompletionSource<bool> oldWorkCompleted = CreateSignal();
@@ -206,11 +206,6 @@ public sealed class IRCQueueConcurrencyTests
             runtime.Tokens.Close();
         }
     }
-
-    private static MainHandler CreateRuntime(string directory)
-        => new(
-            new AppShellViewModel(),
-            System.IO.Path.Combine(directory, "viewer_tokens.db"));
 
     private static TaskCompletionSource<bool> CreateSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 }

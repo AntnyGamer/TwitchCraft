@@ -177,9 +177,6 @@ public sealed partial class MainHandler
         }, CancellationToken.None));
     }
 
-    private static int FindPlayerIndex(List<string> players, string playerName)
-        => SortedListHelper.FindIndex(players, playerName, PlayerNameComparer);
-
     private static bool HasPlayer(List<string> players, string playerName)
         => SortedListHelper.Contains(players, playerName, PlayerNameComparer);
 
