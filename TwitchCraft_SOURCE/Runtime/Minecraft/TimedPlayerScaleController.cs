@@ -56,7 +56,7 @@ internal sealed class TimedPlayerScaleController
         if (!double.IsFinite(scale) || scale <= 0 || duration <= TimeSpan.Zero)
             return false;
 
-        List<string> players = NormalizePlayers(playerNames);
+        List<string> players = SortedListHelper.NormalizePlayerNames(playerNames, StringComparer.OrdinalIgnoreCase);
         if (players.Count == 0)
             return false;
 
@@ -354,9 +354,6 @@ internal sealed class TimedPlayerScaleController
             }
         }
     }
-
-    private static List<string> NormalizePlayers(IReadOnlyList<string> playerNames)
-        => SortedListHelper.NormalizePlayerNames(playerNames, StringComparer.OrdinalIgnoreCase);
 
     private static void UnlockPlayers(SemaphoreSlim[] acquiredGates)
     {
