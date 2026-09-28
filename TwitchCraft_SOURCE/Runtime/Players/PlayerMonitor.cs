@@ -178,7 +178,7 @@ public sealed partial class MainHandler
     }
 
     private static int FindPlayerIndex(List<string> players, string playerName)
-        => SortedListHelper.FindIndex(players, playerName, PlayerNameComparer);
+        => players.BinarySearch(playerName, PlayerNameComparer);
 
     private static bool HasPlayer(List<string> players, string playerName)
         => SortedListHelper.Contains(players, playerName, PlayerNameComparer);
