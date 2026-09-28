@@ -54,8 +54,8 @@ internal static class JsonExportWriter
         try
         {
             using (StreamWriter streamWriter = new(tempPath, false, Encoding.UTF8))
-            using (JsonTextWriter JsonWriter = new(streamWriter) { Formatting = Formatting.Indented })
-                writeBody(JsonWriter);
+            using (JsonTextWriter jsonWriter = new(streamWriter) { Formatting = Formatting.Indented })
+                writeBody(jsonWriter);
             ReplaceFile(tempPath, path);
         }
         catch { FileSystemHelper.DeleteFileSafe(tempPath); throw; }
