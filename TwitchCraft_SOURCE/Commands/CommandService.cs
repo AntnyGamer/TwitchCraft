@@ -483,7 +483,7 @@ public sealed class CommandService
 
     private static string? FindOnlinePlayer(List<string> online, string playerName)
     {
-        int index = SortedListHelper.FindIndex(online, playerName, StringComparer.OrdinalIgnoreCase);
+        int index = online.BinarySearch(playerName, StringComparer.OrdinalIgnoreCase);
         return index >= 0 ? online[index] : null;
     }
 
