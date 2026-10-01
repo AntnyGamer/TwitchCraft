@@ -39,6 +39,7 @@ public sealed partial class MainHandler
 
         lock (_spectatorProbeGate)
         {
+            foreach (TaskCompletionSource<int?> waiter in _pendingGamemodeRequests.Values) waiter.TrySetResult(null);
             _pendingGamemodeRequests.Clear();
             _spectatorPlayers.Clear();
             _lastSpectatorRefreshUtc = DateTime.MinValue;
@@ -47,6 +48,7 @@ public sealed partial class MainHandler
 
         lock (_selectedItemProbeGate)
         {
+            foreach (TaskCompletionSource<string?> waiter in _pendingSelectedItemRequests.Values) waiter.TrySetResult(null);
             _pendingSelectedItemRequests.Clear();
         }
 
@@ -59,6 +61,7 @@ public sealed partial class MainHandler
         }
         lock (_respawnProbeGate)
         {
+            foreach (TaskCompletionSource<bool> waiter in _pendingRespawnRequests.Values) waiter.TrySetResult(false);
             _pendingRespawnRequests.Clear();
         }
 

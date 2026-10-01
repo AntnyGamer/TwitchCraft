@@ -10,6 +10,7 @@ public sealed class ServerPropertyEditor
 {
     private const string DefaultLevelName = "world";
     private static readonly UTF8Encoding UTF8NoBOM = new(false);
+    private static readonly System.Threading.Lock ProfileGate = new();
 
     private static readonly string[] ManagedServerPropertyOrder =
     [
@@ -143,6 +144,11 @@ public sealed class ServerPropertyEditor
     }
 
     public static string ApplyProfile(TwitchCraftConfig config)
+    {
+        lock (ProfileGate) return ApplyProfileCore(config);
+    }
+
+    private static string ApplyProfileCore(TwitchCraftConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
 
