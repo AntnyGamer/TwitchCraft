@@ -330,7 +330,7 @@ public sealed class ServerPropertyEditor
         if (string.Equals(existingContent, content, StringComparison.Ordinal))
             return content;
 
-        string tempPath = TwitchCraft_V1.FileSystemHelper.GetUniqueTempPath(propsPath);
+        string tempPath = propsPath + ".tmp";
         string backupPath = propsPath + ".bak";
         File.WriteAllText(tempPath, content, UTF8NoBOM);
         TwitchCraft_V1.FileSystemHelper.ReplaceFile(tempPath, propsPath, backupPath, "Atomic server.properties save failed; falling back to copy");
