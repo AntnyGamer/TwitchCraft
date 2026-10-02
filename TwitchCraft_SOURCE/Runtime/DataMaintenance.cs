@@ -113,12 +113,10 @@ internal sealed class DataMaintenance(
             {
                 string root = ConfigurationStore.BackupsDirectory;
                 Directory.CreateDirectory(root);
-                foreach (string pending in Directory.EnumerateDirectories(root, "*.pending"))
-                    FileSystemHelper.DeleteDirectorySafe(pending);
                 string completedDirectory = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
                 if (Directory.Exists(completedDirectory))
                     completedDirectory += "-" + Guid.NewGuid().ToString("N")[..6];
-                string backupDirectory = completedDirectory + ".pending";
+                string backupDirectory = Path.Combine(root, ".pending-" + Path.GetFileName(completedDirectory));
                 Directory.CreateDirectory(backupDirectory);
 
                 if (!ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json")) ||
@@ -166,6 +164,11 @@ internal sealed class DataMaintenance(
         List<(DirectoryInfo Directory, DateTime Timestamp)> backups = [];
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
+            if (directory.Name.StartsWith(".pending-", StringComparison.Ordinal))
+            {
+                FileSystemHelper.DeleteDirectorySafe(directory.FullName);
+                continue;
+            }
             if (!TryGetBackupTime(directory, requireCompleteBackup: false, out DateTime timestamp))
                 continue;
 
