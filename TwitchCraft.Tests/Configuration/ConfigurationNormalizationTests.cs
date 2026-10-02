@@ -8,6 +8,58 @@ namespace TwitchCraft.Tests.Configuration;
 public sealed class ConfigurationNormalizationTests
 {
     [Fact]
+    public void NormalizeRuntime_RepairsNullConfigurationGroups()
+    {
+        TwitchCraftConfig config = new()
+        {
+            Server = null!,
+            Twitch = null!,
+            Identity = null!,
+            Settings = null!
+        };
+
+        ConfigurationStore.NormalizeRuntime(config);
+
+        Assert.Equal("127.0.0.1", config.Server.BindIP);
+        Assert.Equal(25565, config.Server.Port);
+        Assert.NotNull(config.Server.Java);
+        Assert.Equal(25575, config.Server.RCON.Port);
+        Assert.Empty(config.Twitch.BotToken);
+        Assert.Empty(config.Identity.StreamerMinecraftName);
+        Assert.Equal("!", config.Settings.CommandPrefix);
+        Assert.Empty(config.Settings.CommandCustomizations);
+        Assert.True(config.Settings.RequireOnlineMode);
+    }
+
+    [Fact]
+    public void NormalizeRuntime_RepairsNullNestedGroupsWithoutResettingSessionMode()
+    {
+        TwitchCraftConfig config = new()
+        {
+            Server = { Java = null!, RCON = null!, Port = 25570 },
+            Settings =
+            {
+                CommandCustomizations = null!,
+                MultiplayerEnabled = true,
+                RemoteControlEnabled = true,
+                RequireOnlineMode = false
+            }
+        };
+
+        ConfigurationStore.NormalizeRuntime(config);
+
+        Assert.Empty(config.Server.Java.ExecutablePath);
+        Assert.Equal(25575, config.Server.RCON.Port);
+        Assert.Equal(25570, config.Server.Port);
+        Assert.Empty(config.Settings.CommandCustomizations);
+        config.Settings.CommandCustomizations["Heal"] = new() { Enabled = false };
+        Assert.False(config.Settings.CommandCustomizations["HEAL"].Enabled);
+        Assert.True(config.Settings.MultiplayerEnabled);
+        Assert.True(config.Settings.RemoteControlEnabled);
+        Assert.False(config.Settings.RequireOnlineMode);
+    }
+
+    [Fact]
     public void NormalizeRuntime_RepairsInvalidValuesWithoutChangingValidIdentityData()
     {
         TwitchCraftConfig config = new()

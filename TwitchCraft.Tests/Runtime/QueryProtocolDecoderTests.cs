@@ -8,12 +8,18 @@ namespace TwitchCraft.Tests.Runtime;
 
 public sealed class QueryProtocolDecoderTests
 {
-    [Fact]
-    public void ParseChallenge_ReturnsValidatedNumericToken()
+    [Theory]
+    [InlineData("5678", 5678)]
+    [InlineData("-5678", -5678)]
+    [InlineData("+5678", 5678)]
+    [InlineData("0", 0)]
+    [InlineData("2147483647", int.MaxValue)]
+    [InlineData("-2147483648", int.MinValue)]
+    public void ParseChallenge_ReturnsValidatedNumericToken(string text, int expected)
     {
-        byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes("5678\0"));
+        byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(text + "\0"));
 
-        Assert.Equal(5678, MinecraftQueryClient.ParseChallenge(packet, 1234));
+        Assert.Equal(expected, MinecraftQueryClient.ParseChallenge(packet, 1234));
     }
 
     [Fact]
@@ -25,10 +31,16 @@ public sealed class QueryProtocolDecoderTests
             MinecraftQueryClient.ParseChallenge(packet, 4321));
     }
 
-    [Fact]
-    public void ParseChallenge_RejectsNonNumericToken()
+    [Theory]
+    [InlineData("")]
+    [InlineData("invalid")]
+    [InlineData("2147483648")]
+    [InlineData("-2147483649")]
+    [InlineData("1.5")]
+    [InlineData("１２")]
+    public void ParseChallenge_RejectsInvalidOrOverflowingToken(string text)
     {
-        byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes("invalid\0"));
+        byte[] packet = BuildPacket(0x09, 1234, Encoding.UTF8.GetBytes(text + "\0"));
 
         Assert.Throws<InvalidOperationException>(() =>
             MinecraftQueryClient.ParseChallenge(packet, 1234));
@@ -41,11 +53,19 @@ public sealed class QueryProtocolDecoderTests
             MinecraftQueryClient.ParseChallenge(BuildPacket(0x00, 1234, [0]), 1234));
     }
 
-    [Fact]
-    public void ParseChallenge_RejectsPacketWithoutPayload()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void ParseChallenge_RejectsTruncatedHeaderOrMissingPayload(int packetLength)
     {
+        byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes("5678\0"));
+
         Assert.Throws<InvalidOperationException>(() =>
-            MinecraftQueryClient.ParseChallenge([0x09, 0, 0, 0, 1], 1));
+            MinecraftQueryClient.ParseChallenge(packet[..packetLength], 1234));
     }
 
     [Fact]
@@ -85,6 +105,15 @@ public sealed class QueryProtocolDecoderTests
     {
         byte[] payload = Encoding.ASCII.GetBytes("hostname\0server\0\0player_\0\0Steve\0");
         byte[] packet = BuildPacket(0x00, 1234, payload);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            MinecraftQueryClient.ParsePlayers(packet, 1234));
+    }
+
+    [Fact]
+    public void ParsePlayers_RejectsMissingPlayerSection()
+    {
+        byte[] packet = BuildPacket(0x00, 1234, Encoding.ASCII.GetBytes("hostname\0server\0\0"));
 
         Assert.Throws<InvalidOperationException>(() =>
             MinecraftQueryClient.ParsePlayers(packet, 1234));

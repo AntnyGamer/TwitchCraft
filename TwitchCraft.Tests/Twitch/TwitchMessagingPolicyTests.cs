@@ -8,6 +8,8 @@ public sealed class TwitchMessagingPolicyTests
 {
     [Theory]
     [InlineData(" hello ", "hello")]
+    [InlineData("", "")]
+    [InlineData(" \t\r\n ", "")]
     [InlineData(" line one\r\nline two ", "line one  line two")]
     public void CleanChannelMessage_TrimsAndRemovesProtocolLineBreaks(
         string message,
@@ -19,6 +21,13 @@ public sealed class TwitchMessagingPolicyTests
     [Theory]
     [InlineData("", 4, "")]
     [InlineData("abc", 0, "")]
+    [InlineData("abc", -1, "")]
+    [InlineData("abc", 3, "abc")]
+    [InlineData("€", 2, "")]
+    [InlineData("€", 3, "€")]
+    [InlineData("A€B", 4, "A€")]
+    [InlineData("e\u0301", 2, "e")]
+    [InlineData("e\u0301", 3, "e\u0301")]
     [InlineData("é", 1, "")]
     [InlineData("é", 2, "é")]
     [InlineData("😀", 3, "")]

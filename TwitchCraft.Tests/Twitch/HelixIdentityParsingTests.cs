@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
+using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
 using Xunit;
@@ -65,6 +66,40 @@ public sealed class HelixIdentityParsingTests
         string[] IDs = MainHandler.ParseUserIDs(json, "botaccount", "streamer");
 
         Assert.Equal(["bot-id", "streamer-id"], IDs);
+    }
+
+    [Fact]
+    public void ParseUserIDs_UsesTheSameAccountForBotAndBroadcaster()
+    {
+        const string json = """{"data":[{"id":"42","login":"Streamer"}]}""";
+
+        Assert.Equal(["42", "42"], MainHandler.ParseUserIDs(json, " streamer ", "STREAMER"));
+    }
+
+    [Fact]
+    public void ApplyViewerRoster_DeduplicatesUpdatesAndReturnsIndependentSnapshots()
+    {
+        using TemporaryDirectory directory = new();
+        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
+        try
+        {
+            runtime.ApplyViewerRoster(["charlie", "alice", "alice"]);
+            List<string> snapshot = runtime.GetViewerRosterSnapshot();
+            Assert.Equal(["alice", "charlie"], snapshot);
+
+            snapshot.Clear();
+            Assert.Equal(["alice", "charlie"], runtime.GetViewerRosterSnapshot());
+
+            runtime.ApplyViewerRoster(["bob"]);
+            Assert.Equal(["bob"], runtime.GetViewerRosterSnapshot());
+
+            runtime.ApplyViewerRoster([]);
+            Assert.Empty(runtime.GetViewerRosterSnapshot());
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
     }
 
     [Theory]

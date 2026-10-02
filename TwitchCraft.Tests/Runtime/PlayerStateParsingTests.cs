@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TwitchCraft_V1;
 using Xunit;
 
@@ -48,17 +49,26 @@ public sealed class PlayerStateParsingTests
         }
     }
 
-    [Fact]
-    public void Statistics_RecognizesSystemChatDeathFormats()
+    [Theory]
+    [InlineData("[Server thread/INFO]: System chat: Steve fell from a high place", true, true)]
+    [InlineData("[Server thread/INFO]: [System] [CHAT] Steve was slain by Zombie", true, true)]
+    [InlineData("Steve drowned", true, true)]
+    [InlineData("[Rcon]: Steve was shot by Alex", true, true)]
+    [InlineData("Alex was slain by Steve", true, false)]
+    [InlineData("SteveX died", true, false)]
+    [InlineData("<Steve> Steve died", true, false)]
+    [InlineData("Steve joined the game", true, false)]
+    [InlineData("Steve drowned", false, false)]
+    public void Statistics_QueuesDeathScoreOnlyForTheTrackedVictim(string line, bool enabled, bool expectedRefresh)
     {
-        int deathScoreRefreshes = 0;
+        List<string> refreshedPlayers = [];
         StatisticsService statistics = new(new(
             _ => ChatCommandStatisticFlags.None, _ => true, _ => false,
-            () => { }, () => { }, () => { }, _ => deathScoreRefreshes++, _ => { }));
-        statistics.SetContext(true, "streamer", "Steve", "!");
-        statistics.RecordLine("[Server thread/INFO]: System chat: Steve fell from a high place", false);
-        statistics.RecordLine("[Server thread/INFO]: [System] [CHAT] Steve was slain by Zombie", false);
+            () => { }, () => { }, () => { }, refreshedPlayers.Add, _ => { }));
+        statistics.SetContext(enabled, "streamer", "Steve", "!");
 
-        Assert.Equal(2, deathScoreRefreshes);
+        statistics.RecordLine(line, hasDeathScoreObjective: false);
+
+        Assert.Equal(expectedRefresh ? new[] { "Steve" } : [], refreshedPlayers);
     }
 }

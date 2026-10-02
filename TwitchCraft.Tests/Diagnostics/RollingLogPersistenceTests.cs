@@ -49,9 +49,33 @@ public sealed class RollingLogPersistenceTests
         }
 
         string[] files = Directory.GetFiles(directory.Path, "TwitchCraft.log*");
-        Assert.InRange(files.Length, 1, 4);
-        Assert.DoesNotContain(logPath + ".old4", files);
-        Assert.Contains("{\"event\":29,\"value\":\"abcdefghij\"}", ReadAllLogLines(logPath));
+        Assert.Equal(4, files.Length);
+        for (int index = 0; index <= 3; index++)
+        {
+            string path = index == 0 ? logPath : logPath + ".old" + index;
+            Assert.Equal("{\"event\":" + (29 - index) + ",\"value\":\"abcdefghij\"}",
+                Assert.Single(File.ReadAllLines(path)));
+        }
+    }
+
+    [Theory]
+    [InlineData("{\"event\":2}", true)]
+    [InlineData("{\"event\":2}\r", true)]
+    [InlineData("{\"event\":", false)]
+    [InlineData("{\"event\":\"é", false)]
+    public void TryWriteLine_RepairsUnterminatedFinalRecordBeforeAppending(string tail, bool completeRecord)
+    {
+        using TemporaryDirectory directory = new();
+        string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
+        const string first = "{\"event\":1}";
+        const string next = "{\"event\":3}";
+        File.WriteAllText(logPath, first + System.Environment.NewLine + tail, UTF8NoBOM);
+
+        using (RollingJsonLogWriter writer = new(logPath, 1024, 3, UTF8NoBOM))
+            Assert.True(writer.TryWriteLine(next));
+
+        Assert.Equal(completeRecord ? new[] { first, "{\"event\":2}", next } : new[] { first, next },
+            File.ReadAllLines(logPath));
     }
 
     [Fact]

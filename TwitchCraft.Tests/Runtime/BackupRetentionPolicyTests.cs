@@ -72,6 +72,47 @@ public sealed class BackupRetentionPolicyTests
         Assert.True(Directory.Exists(Path.Combine(root.Path, "notes")));
     }
 
+    [Theory]
+    [InlineData("config.json")]
+    [InlineData("viewer_tokens.db")]
+    public void PruneBackups_PartialNewestBackupDoesNotDisplaceCompleteBackup(string onlySavedFile)
+    {
+        using TemporaryDirectory root = new();
+        CreateCompleteBackup(root.Path, "20260828-120000");
+        CreateCompleteBackup(root.Path, "20260829-120000");
+        string partial = Path.Combine(root.Path, "20260830-120000");
+        Directory.CreateDirectory(partial);
+        File.WriteAllText(Path.Combine(partial, onlySavedFile), "partial backup");
+
+        DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
+
+        Assert.False(Directory.Exists(partial));
+        Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000")));
+        Assert.True(Directory.Exists(Path.Combine(root.Path, "20260829-120000")));
+        Assert.Equal("{}", File.ReadAllText(Path.Combine(root.Path, "20260829-120000", "config.json")));
+        Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(root.Path, "20260829-120000", "viewer_tokens.db")));
+    }
+
+    [Theory]
+    [InlineData("20260230-120000")]
+    [InlineData("20260830-120000-zzzzzz")]
+    [InlineData("20260830-120000-a1b2c")]
+    [InlineData("20260830-120000-a1b2c3-extra")]
+    public void PruneBackups_PreservesFoldersWithInvalidBackupNames(string unrelatedName)
+    {
+        using TemporaryDirectory root = new();
+        CreateCompleteBackup(root.Path, "20260829-120000");
+        string unrelated = Path.Combine(root.Path, unrelatedName);
+        Directory.CreateDirectory(unrelated);
+        string marker = Path.Combine(unrelated, "keep.txt");
+        File.WriteAllText(marker, "user data");
+
+        DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
+
+        Assert.Equal("user data", File.ReadAllText(marker));
+        Assert.True(Directory.Exists(Path.Combine(root.Path, "20260829-120000")));
+    }
+
     private static void CreateCompleteBackup(string root, string name)
     {
         string path = Path.Combine(root, name);

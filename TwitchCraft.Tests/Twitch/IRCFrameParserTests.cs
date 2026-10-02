@@ -33,31 +33,53 @@ public sealed class IRCFrameParserTests
         Assert.Equal("tmi.twitch.tv", message.Trailing);
     }
 
-    [Fact]
-    public void TryParse_ClearsPreviousMessageStateAfterMalformedInput()
+    [Theory]
+    [InlineData(":missing-command-prefix", false, "", "")]
+    [InlineData("PING :tmi.twitch.tv", true, "PING", "tmi.twitch.tv")]
+    public void TryParse_ClearsPreviousMessageMetadata(string nextLine, bool expectedAccepted, string command, string trailing)
     {
         IRCMessage message = new();
         Assert.True(message.TryParse("@mod=1;bits=25;id=message-id :User!user@host PRIVMSG #channel :hello"));
 
-        Assert.False(message.TryParse(":missing-command-prefix"));
+        Assert.Equal(expectedAccepted, message.TryParse(nextLine));
 
         Assert.Equal(0, message.Bits);
         Assert.Empty(message.ID);
         Assert.False(message.IsModerator);
-        Assert.Empty(message.Command);
+        Assert.Equal(command, message.Command);
         Assert.Empty(message.SenderLogin);
-        Assert.Empty(message.Trailing);
+        Assert.Equal(trailing, message.Trailing);
     }
 
-    [Fact]
-    public void TryParse_IgnoresOverflowingBitsWithoutRejectingChat()
+    [Theory]
+    [InlineData("2147483648", 0)]
+    [InlineData("-25", 0)]
+    [InlineData("+25", 0)]
+    [InlineData("25x", 0)]
+    [InlineData("2.5", 0)]
+    [InlineData("٢٥", 0)]
+    [InlineData("2147483647", int.MaxValue)]
+    public void TryParse_OnlyAcceptsNonOverflowingAsciiBitsWithoutRejectingChat(string bits, int expectedBits)
     {
         IRCMessage message = new();
 
-        Assert.True(message.TryParse("@bits=2147483648;id=message-id :User!user@host PRIVMSG #channel :hello"));
-        Assert.Equal(0, message.Bits);
+        Assert.True(message.TryParse($"@bits={bits};id=message-id :User!user@host PRIVMSG #channel :hello"));
+        Assert.Equal(expectedBits, message.Bits);
         Assert.Equal("message-id", message.ID);
         Assert.Equal("hello", message.Trailing);
+    }
+
+    [Theory]
+    [InlineData("badges=moderator/1", true)]
+    [InlineData("mod=1", true)]
+    [InlineData("mod=0;badges=moderator/1", true)]
+    [InlineData("mod=0;badges=vip/1", false)]
+    public void TryParse_RecognizesModeratorStatusFromEitherSupportedTag(string tags, bool expectedModerator)
+    {
+        IRCMessage message = new();
+
+        Assert.True(message.TryParse($"@{tags} :User!user@host PRIVMSG #channel :hello"));
+        Assert.Equal(expectedModerator, message.IsModerator);
     }
 
     [Theory]

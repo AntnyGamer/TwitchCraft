@@ -33,6 +33,65 @@ public sealed class ServerPropertiesContractTests
     }
 
     [Fact]
+    public void ApplyProfile_UnchangedContentSkipsWritesAndChangesKeepPreviousBackup()
+    {
+        using TemporaryDirectory directory = new();
+        TwitchCraftConfig config = new()
+        {
+            Server = { ServerDirectory = directory.Path, MinecraftVersion = "1.21.11" }
+        };
+        string path = Path.Combine(directory.Path, "server.properties");
+        string original = ServerPropertyEditor.ApplyProfile(config);
+        File.SetLastWriteTimeUtc(path, new DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        DateTime originalWriteTime = File.GetLastWriteTimeUtc(path);
+
+        Assert.Equal(original, ServerPropertyEditor.ApplyProfile(config));
+        Assert.Equal(originalWriteTime, File.GetLastWriteTimeUtc(path));
+        Assert.False(File.Exists(path + ".bak"));
+        Assert.False(File.Exists(path + ".tmp"));
+
+        config.Settings.Difficulty = "Hard";
+        string updated = ServerPropertyEditor.ApplyProfile(config);
+
+        Assert.Contains("difficulty=hard", updated, StringComparison.Ordinal);
+        Assert.Equal(updated, File.ReadAllText(path));
+        Assert.Equal(original, File.ReadAllText(path + ".bak"));
+        Assert.False(File.Exists(path + ".tmp"));
+        Assert.Equal(updated, ServerPropertyEditor.ApplyProfile(config));
+        Assert.Equal(original, File.ReadAllText(path + ".bak"));
+    }
+
+    [Fact]
+    public void ApplyProfile_ChangingMinecraftVersionRemovesObsoletePropertiesAndPreservesUserValues()
+    {
+        using TemporaryDirectory directory = new();
+        string path = Path.Combine(directory.Path, "server.properties");
+        File.WriteAllText(path, "custom-setting=keep\nallow-nether=false\nspawn-monsters=false\n");
+        TwitchCraftConfig config = new()
+        {
+            Server = { ServerDirectory = directory.Path, MinecraftVersion = "1.20.5" },
+            Settings = { MultiplayerPvPEnabled = true }
+        };
+
+        string legacy = ServerPropertyEditor.ApplyProfile(config);
+
+        Assert.Contains("\npvp=true\n", legacy.Replace("\r\n", "\n"), StringComparison.Ordinal);
+        Assert.Contains("allow-nether=false", legacy, StringComparison.Ordinal);
+        Assert.Contains("spawn-monsters=false", legacy, StringComparison.Ordinal);
+        Assert.Contains("spawn-npcs=true", legacy, StringComparison.Ordinal);
+        Assert.DoesNotContain("pause-when-empty-seconds=", legacy, StringComparison.Ordinal);
+
+        config.Server.MinecraftVersion = "1.21.11";
+        string modern = ServerPropertyEditor.ApplyProfile(config);
+
+        foreach (string key in new[] { "pvp", "allow-nether", "spawn-monsters", "enable-command-block", "spawn-npcs", "spawn-animals" })
+            Assert.DoesNotContain("\n" + key + "=", "\n" + modern, StringComparison.Ordinal);
+        Assert.Contains("pause-when-empty-seconds=1", modern, StringComparison.Ordinal);
+        Assert.Contains("custom-setting=keep", modern, StringComparison.Ordinal);
+        Assert.Equal(modern, File.ReadAllText(path));
+    }
+
+    [Fact]
     public void WriteInitialFiles_PreservesUnmanagedPropertiesAndUpdatesManagedValues()
     {
         using TemporaryDirectory directory = new();

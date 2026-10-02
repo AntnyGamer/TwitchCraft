@@ -93,30 +93,119 @@ public sealed class EconomyBalanceTests
         }
     }
 
-    [Fact]
-    public void FollowReward_ReportsActualAwardWhenMaximumBalanceIsReached()
+    [Theory]
+    [InlineData(90, 10)]
+    [InlineData(100, 0)]
+    public void FollowReward_ReportsActualAwardAndConsumesRewardAtMaximumBalance(int initialBalance, int expectedAward)
     {
+        DateTimeOffset followedAt = new(2026, 8, 27, 1, 2, 3, TimeSpan.Zero);
         using TemporaryDirectory directory = new();
         TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
 
         try
         {
-            store.AdjustBalance("viewer", 90);
+            store.AdjustBalance("viewer", initialBalance);
             FollowRewardResult result = store.TryRewardFollower(
                 "123456",
                 "viewer",
-                new DateTimeOffset(2026, 8, 27, 1, 2, 3, TimeSpan.Zero),
+                followedAt,
                 100,
                 out int awarded,
                 maximumBalance: 100);
 
             Assert.Equal(FollowRewardResult.Rewarded, result);
-            Assert.Equal(10, awarded);
+            Assert.Equal(expectedAward, awarded);
             Assert.Equal(100, store.GetBalance("viewer"));
+
+            Assert.True(store.TrySpend("viewer", 20));
+            Assert.Equal(FollowRewardResult.AlreadyRewarded, store.TryRewardFollower(
+                "123456", "viewer", followedAt.AddHours(1), 100, out int repeatedAward, maximumBalance: 100));
+            Assert.Equal(0, repeatedAward);
+            Assert.Equal(80, store.GetBalance("viewer"));
         }
         finally
         {
             store.CloseConnection();
+        }
+    }
+
+    [Theory]
+    [InlineData(90, 50, 25, 0, nameof(TokenAdjustmentStatus.Adjusted), 115, 25)]
+    [InlineData(90, 50, -50, 0, nameof(TokenAdjustmentStatus.Adjusted), 40, -50)]
+    [InlineData(90, 100, 25, 0, nameof(TokenAdjustmentStatus.Insufficient), 90, 0)]
+    [InlineData(90, 50, 25, 100, nameof(TokenAdjustmentStatus.Adjusted), 100, 10)]
+    [InlineData(100, 50, 25, 100, nameof(TokenAdjustmentStatus.Adjusted), 100, 0)]
+    public void Gamble_ChecksStakeAndPersistsActualBalanceChange(
+        int initialBalance, int stake, int delta, int maximumBalance,
+        string expectedStatus, int expectedBalance, int expectedDelta)
+    {
+        using TemporaryDirectory directory = new();
+        string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
+        TokenService tokens = new(databasePath, () => maximumBalance);
+        try
+        {
+            Assert.Equal(initialBalance, tokens.Award("viewer", initialBalance));
+
+            TokenAdjustmentStatus result = tokens.TryGamble(
+                " @ViEwEr ", stake, delta, out int balance, out int appliedDelta);
+            Assert.Equal(Enum.Parse<TokenAdjustmentStatus>(expectedStatus), result);
+            Assert.Equal(expectedBalance, balance);
+            Assert.Equal(expectedDelta, appliedDelta);
+            Assert.Equal(expectedBalance, tokens.GetBalance("viewer"));
+        }
+        finally
+        {
+            tokens.Close();
+        }
+
+        TokenStore reopened = new(databasePath);
+        try
+        {
+            Assert.Equal(expectedBalance, reopened.GetBalance("viewer"));
+        }
+        finally
+        {
+            reopened.CloseConnection();
+        }
+    }
+
+    [Fact]
+    public void LowerMaximumBalance_ClampsCachedAndUncachedBalancesDurably()
+    {
+        using TemporaryDirectory directory = new();
+        string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
+        TokenStore store = new(databasePath);
+        try
+        {
+            store.AdjustBalance("cached", 250);
+            store.AdjustBalance("uncached", 300);
+            store.AdjustBalance("below_limit", 20);
+            store.CloseConnection();
+            Assert.Equal(250, store.GetBalance("cached"));
+            Assert.Equal(20, store.GetBalance("below_limit"));
+
+            store.ApplyMaximumBalance(100);
+
+            Assert.Equal(100, store.GetBalance("cached"));
+            Assert.Equal(100, store.GetBalance("uncached"));
+            Assert.Equal(20, store.GetBalance("below_limit"));
+            Assert.False(store.TrySpend("cached", 101));
+        }
+        finally
+        {
+            store.CloseConnection();
+        }
+
+        TokenStore reopened = new(databasePath);
+        try
+        {
+            Assert.Equal(100, reopened.GetBalance("cached"));
+            Assert.Equal(100, reopened.GetBalance("uncached"));
+            Assert.Equal(20, reopened.GetBalance("below_limit"));
+        }
+        finally
+        {
+            reopened.CloseConnection();
         }
     }
 
