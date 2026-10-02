@@ -31,7 +31,6 @@ internal static class FileSystemHelper
         EnsureParentDir(destinationPath);
         SqliteConnectionStringBuilder builder = new() { DataSource = destinationPath, Pooling = false };
         using SqliteConnection destination = new(builder.ToString());
-        destination.Open();
         source.BackupDatabase(destination);
     }
 
