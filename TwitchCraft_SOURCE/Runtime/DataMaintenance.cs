@@ -122,9 +122,9 @@ internal sealed class DataMaintenance(
                     FileSystemHelper.DeleteDirectorySafe(backupDirectory);
                     return;
                 }
-                string completedDirectory = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-", CultureInfo.InvariantCulture) + suffix[..6]);
-                Directory.Move(backupDirectory, completedDirectory);
                 _lastAutomaticBackupUtc = DateTime.UtcNow;
+                string completedDirectory = Path.Combine(root, _lastAutomaticBackupUtc.ToString("yyyyMMdd-HHmmss-", CultureInfo.InvariantCulture) + suffix[..6]);
+                Directory.Move(backupDirectory, completedDirectory);
                 _automaticBackupTimestampLoaded = true;
                 PruneBackups(root, retentionCount);
             }
