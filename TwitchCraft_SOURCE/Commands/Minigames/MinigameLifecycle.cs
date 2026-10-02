@@ -88,15 +88,7 @@ public static partial class MinigameManager
                 ClearScheduleNoLock();
             }
 
-            if (ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chickenState))
-                chickenState.BettingOpen = false;
-            if (WitherBattleStates.TryGetValue(runtime, out WitherBattleState? witherState))
-            {
-                witherState.BettingOpen = false;
-                witherState.CurrentHealth = 0;
-                witherState.DefeatedSignal?.TrySetResult();
-                witherState.DefeatedSignal = null;
-            }
+            ResetStatesNoLock(runtime);
         }
 
         if (loop != null)
@@ -146,19 +138,17 @@ public static partial class MinigameManager
         {
             try
             {
-                DateTime nowUtc = DateTime.UtcNow;
-                DateTime nextAtUtc;
+                TimeSpan remaining;
                 lock (MinigameGate)
                 {
                     if (!MinigameLoops.TryGetValue(runtime, out LoopState? current) || !ReferenceEquals(current, loop))
                         break;
-                    nextAtUtc = loop.NextAtUtc;
+                    remaining = loop.NextAtUtc - DateTime.UtcNow;
                 }
 
-                TimeSpan remaining = nextAtUtc - nowUtc;
                 if (remaining > TimeSpan.Zero)
                 {
-                    await WaitForDelayAsync(runtime, loop, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(remaining, cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
@@ -236,18 +226,4 @@ public static partial class MinigameManager
         }
     }
 
-    private static async Task WaitForDelayAsync(MainHandler runtime, LoopState expectedLoop, CancellationToken cancellationToken)
-    {
-        TimeSpan delay;
-        lock (MinigameGate)
-        {
-            if (!MinigameLoops.TryGetValue(runtime, out LoopState? loop) || !ReferenceEquals(loop, expectedLoop))
-                return;
-
-            delay = loop.NextAtUtc - DateTime.UtcNow;
-        }
-
-        if (delay > TimeSpan.Zero)
-            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
-    }
 }
