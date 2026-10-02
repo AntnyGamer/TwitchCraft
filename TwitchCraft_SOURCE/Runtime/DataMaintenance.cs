@@ -120,7 +120,8 @@ internal sealed class DataMaintenance(
 
                 bool configSaved = ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json"));
                 bool tokensSaved = _tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db"));
-                if (!configSaved || !tokensSaved)
+                bool statisticsSaved = StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db"));
+                if (!configSaved || !tokensSaved || !statisticsSaved)
                 {
                     try { Directory.Delete(backupDirectory, recursive: true); } catch { }
                     return;

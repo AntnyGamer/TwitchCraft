@@ -31,7 +31,7 @@ dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build --results-d
 Pop-Location
 ```
 
-CI enforces a 10% minimum line-coverage floor to prevent major coverage regressions.
+CI enforces a 40% minimum line-coverage floor to prevent major coverage regressions.
 
 ## Source layout
 

@@ -73,7 +73,7 @@ Local mode owns Java process startup, output/error readers, server preparation, 
 ## Persistence
 
 * `config.json` uses normalized models, temporary-file writes, and replacement fallback.
-* Automatic timestamped backups pair `config.json` with a consistent SQLite copy of `viewer_tokens.db` and prune complete sets according to configured retention.
+* Automatic timestamped backups pair `config.json` with consistent SQLite copies of `viewer_tokens.db` and `statistics.db` and prune retained sets according to configured retention.
 * Viewer balances use SQLite with a readable JSON export.
 * Statistics use SQLite with aggregate/viewer JSON exports.
 * Database operations use synchronization and parameterized statements.

@@ -321,7 +321,7 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 ## 16. Other Info
 
 * Never share Twitch authorization credentials or files publicly. Anyone with access to them may be able to control your bot account
-* TwitchCraft creates backup config and token database files. These are for reference and are not normally used by TwitchCraft
+* TwitchCraft creates backup config, token database, and statistics database files. These are for reference and are not normally used by TwitchCraft
 * Special thanks to Lil_KleinStein, whose Minecraft streams inspired TwitchCraft's theme and creation!
 
 

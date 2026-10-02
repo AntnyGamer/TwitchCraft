@@ -58,7 +58,7 @@ On the Start screen, make sure:
 
    * `AppData --> Roaming --> TwitchCraft --> config.json`
 3. Check for missing commas, missing quotes, or extra brackets
-4. If you are not sure what changed, restore `config.json` and `viewer_tokens.db` from the same timestamped folder under `TwitchCraft\backups`
+4. If you are not sure what changed, restore `config.json`, `viewer_tokens.db`, and `statistics.db` (when present) from the same timestamped folder under `TwitchCraft\backups`
 5. If there is no complete automatic backup, run Setup again to recreate the config file
 
 ## TWITCHCRAFT CRASHING OR NO ERROR REASON

@@ -71,6 +71,30 @@ internal static partial class StatisticsStore
         }
     }
 
+    internal static bool TryBackup(string destinationPath)
+    {
+        try
+        {
+            lock (IOGate)
+            {
+                FileSystemHelper.EnsureParentDir(destinationPath);
+                using SqliteConnection destination = new(new SqliteConnectionStringBuilder
+                {
+                    DataSource = destinationPath,
+                    Mode = SqliteOpenMode.ReadWriteCreate
+                }.ToString());
+                destination.Open();
+                GetConnectionNoLock().BackupDatabase(destination);
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorHandling.LogNonFatal("Failed to back up statistics database", ex);
+            return false;
+        }
+    }
+
     public static bool TryExportJson()
     {
         try
