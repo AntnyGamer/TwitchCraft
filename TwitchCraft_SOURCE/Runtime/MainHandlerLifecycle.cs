@@ -116,7 +116,6 @@ public sealed partial class MainHandler
             await StopSessionAsync(backupBeforeClose: true).ConfigureAwait(false);
             await MinigameManager.StopLoopsAsync(this).ConfigureAwait(false);
 
-            CloseStores();
             return true;
         }
         catch (Exception ex)
@@ -346,7 +345,10 @@ public sealed partial class MainHandler
             if (_runtimeState == RuntimeState.Stopped || _runtimeState == RuntimeState.Stopping)
             {
                 if (backupBeforeClose)
+                {
                     _dataMaintenance.BackupOnShutdown();
+                    CloseStores();
+                }
                 return;
             }
 
