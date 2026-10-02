@@ -138,7 +138,7 @@ public sealed partial class MainHandler
 
         try
         {
-            Task<string?>[] tasks = new Task<string?>[waiters.Length];
+            Task[] tasks = new Task[waiters.Length];
             for (int i = 0; i < waiters.Length; i++)
                 tasks[i] = waiters[i].Waiter.Task;
 
@@ -219,7 +219,7 @@ public sealed partial class MainHandler
         if (waiters.Length == 1)
             return waiters[0].Task.WaitAsync(cancellationToken);
 
-        Task<int?>[] tasks = new Task<int?>[waiters.Length];
+        Task[] tasks = new Task[waiters.Length];
         for (int i = 0; i < waiters.Length; i++)
             tasks[i] = waiters[i].Task;
         return Task.WhenAll(tasks).WaitAsync(cancellationToken);

@@ -10,7 +10,7 @@ internal static class TwitchTokenHelper
 
         if (value.StartsWith("oauth:", StringComparison.OrdinalIgnoreCase))
         {
-            value = value[6..].Trim();
+            value = value.AsSpan(6).Trim().ToString();
         }
 
         return value;

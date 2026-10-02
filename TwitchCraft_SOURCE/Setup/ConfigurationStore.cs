@@ -121,14 +121,14 @@ public sealed partial class ConfigurationStore
 
         return new TwitchCraftConfig
         {
-            Server = new ServerConfig
+            Server =
             {
-                Java = new JavaConfig
+                Java =
                 {
                     ExecutablePath = source.Server.Java.ExecutablePath,
                     HomeDirectory = source.Server.Java.HomeDirectory
                 },
-                RCON = new RCONConfig
+                RCON =
                 {
                     Port = source.Server.RCON.Port,
                     Password = source.Server.RCON.Password
@@ -144,7 +144,7 @@ public sealed partial class ConfigurationStore
                 MemoryMinGB = source.Server.MemoryMinGB,
                 MemoryMaxGB = source.Server.MemoryMaxGB
             },
-            Twitch = new TwitchConfig
+            Twitch =
             {
                 ClientID = source.Twitch.ClientID,
                 BotToken = source.Twitch.BotToken,
@@ -152,11 +152,11 @@ public sealed partial class ConfigurationStore
                 StreamerName = source.Twitch.StreamerName,
                 BotName = source.Twitch.BotName
             },
-            Identity = new IdentityConfig
+            Identity =
             {
                 StreamerMinecraftName = source.Identity.StreamerMinecraftName
             },
-            Settings = new StartingProfile
+            Settings =
             {
                 MultiplayerEnabled = source.Settings.MultiplayerEnabled,
                 MultiplayerPvPEnabled = source.Settings.MultiplayerPvPEnabled,

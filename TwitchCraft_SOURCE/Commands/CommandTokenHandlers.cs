@@ -201,13 +201,13 @@ public static partial class CommandList
                 return;
             }
 
-            List<string> places = new(leaders.Count);
+            string[] places = new string[leaders.Count];
             for (int i = 0; i < leaders.Count; i++)
             {
                 KeyValuePair<string, int> leader = leaders[i];
-                places.Add(string.Create(
+                places[i] = string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{i + 1}. {leader.Key} ({leader.Value} {TokenLabel(leader.Value)})"));
+                    $"{i + 1}. {leader.Key} ({leader.Value} {TokenLabel(leader.Value)})");
             }
             await saySuccessfulToChannel(whoAsked + ", top token holders: " + string.Join("; ", places) + ".", ct).ConfigureAwait(false);
         };

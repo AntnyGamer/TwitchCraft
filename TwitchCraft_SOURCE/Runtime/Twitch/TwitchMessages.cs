@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,21 +43,8 @@ public sealed partial class MainHandler
         if (maxBytes <= 0 || message.Length == 0)
             return string.Empty;
 
-        if (message.Length <= maxBytes)
-        {
-            bool asciiOnly = true;
-            for (int i = 0; i < message.Length; i++)
-            {
-                if (message[i] > 0x7F)
-                {
-                    asciiOnly = false;
-                    break;
-                }
-            }
-
-            if (asciiOnly)
-                return message;
-        }
+        if (message.Length <= maxBytes && Ascii.IsValid(message))
+            return message;
 
         if (TwitchSession.UTF8NoBOM.GetByteCount(message) <= maxBytes)
             return message;

@@ -193,7 +193,6 @@ public sealed partial class StatisticsService
                 return;
             }
 
-            _sessionStatistics.CurrentLifeHasStarted = true;
             _sessionStatistics.CurrentLifeWaitingForRespawn = false;
             _sessionStatistics.CurrentLifeStartedUtc ??= now;
         }
