@@ -113,9 +113,12 @@ internal sealed class DataMaintenance(
             {
                 string root = ConfigurationStore.BackupsDirectory;
                 Directory.CreateDirectory(root);
-                string backupDirectory = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
-                if (Directory.Exists(backupDirectory))
-                    backupDirectory += "-" + Guid.NewGuid().ToString("N")[..6];
+                foreach (string pending in Directory.EnumerateDirectories(root, "*.pending"))
+                    FileSystemHelper.DeleteDirectorySafe(pending);
+                string completedDirectory = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
+                if (Directory.Exists(completedDirectory))
+                    completedDirectory += "-" + Guid.NewGuid().ToString("N")[..6];
+                string backupDirectory = completedDirectory + ".pending";
                 Directory.CreateDirectory(backupDirectory);
 
                 if (!ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json")) ||
@@ -125,6 +128,7 @@ internal sealed class DataMaintenance(
                     try { Directory.Delete(backupDirectory, recursive: true); } catch { }
                     return;
                 }
+                Directory.Move(backupDirectory, completedDirectory);
                 _lastAutomaticBackupUtc = DateTime.UtcNow;
                 _automaticBackupTimestampLoaded = true;
                 PruneBackups(root, retentionCount);
