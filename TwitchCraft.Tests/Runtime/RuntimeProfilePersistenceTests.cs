@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
@@ -16,6 +17,7 @@ public sealed class RuntimeProfilePersistenceTests
     {
         Assert.Equal(TestApplicationData.Path, ConfigurationStore.WorkingDirectory);
         using TemporaryDirectory directory = new();
+        await using FakeRCONServer RCON = new("remote-credential");
         TwitchCraftConfig config = new()
         {
             Server =
@@ -52,26 +54,28 @@ public sealed class RuntimeProfilePersistenceTests
             Assert.Equal("PlayerOne", multiplayer.Identity.StreamerMinecraftName);
             AssertPersistedSettings(multiplayer);
             string multiplayerProperties = File.ReadAllText(propertiesPath);
-            Assert.Contains("server-ip=\\:\\:", multiplayerProperties, StringComparison.Ordinal);
-            Assert.Contains("max-players=5", multiplayerProperties, StringComparison.Ordinal);
-            Assert.Contains("online-mode=false", multiplayerProperties, StringComparison.Ordinal);
+            AssertProperty(multiplayerProperties, "server-ip", "\\:\\:");
+            AssertProperty(multiplayerProperties, "max-players", "5");
+            AssertProperty(multiplayerProperties, "online-mode", "false");
             File.SetLastWriteTimeUtc(propertiesPath, new DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc));
             DateTime localPropertiesWriteTime = File.GetLastWriteTimeUtc(propertiesPath);
 
             runtime.ApplyProfile(multiplayerEnabled: true, requireOnlineMode: false, streamerMinecraftName: "PlayerOne",
-                remoteControlEnabled: true, remoteHost: " remote.example ", RCONPort: 25600, RCONPassword: " remote-credential ");
+                remoteControlEnabled: true, remoteHost: " 127.0.0.1 ", RCONPort: RCON.Port, RCONPassword: " remote-credential ");
 
             Assert.True(runtime.MultiplayerEnabled);
             Assert.True(runtime.RemoteControlEnabled);
             Assert.False(runtime.RequireOnlineMode);
             Assert.False(runtime.MinecraftProcessRunning);
             TwitchCraftConfig remote = ConfigurationStore.Load();
-            Assert.Equal("remote.example", remote.Server.RemoteHost);
+            Assert.Equal("127.0.0.1", remote.Server.RemoteHost);
             Assert.Equal("::", remote.Server.BindIP);
             Assert.Equal("::1", remote.Server.PreviousBindIP);
             AssertPersistedSettings(remote);
             Assert.Equal(multiplayerProperties, File.ReadAllText(propertiesPath));
             Assert.Equal(localPropertiesWriteTime, File.GetLastWriteTimeUtc(propertiesPath));
+            Assert.True(await runtime.RunMinecraftCommandAsync("say remote-profile"));
+            Assert.Equal(["say remote-profile"], RCON.Commands);
 
             runtime.ApplyProfile(multiplayerEnabled: false, requireOnlineMode: false, streamerMinecraftName: "PlayerOne");
 
@@ -83,11 +87,11 @@ public sealed class RuntimeProfilePersistenceTests
             Assert.Equal(1, singlePlayer.Server.MaxPlayers);
             AssertPersistedSettings(singlePlayer);
             string singlePlayerProperties = File.ReadAllText(propertiesPath);
-            Assert.Contains("server-ip=\\:\\:1", singlePlayerProperties, StringComparison.Ordinal);
-            Assert.Contains("max-players=1", singlePlayerProperties, StringComparison.Ordinal);
-            Assert.Contains("online-mode=true", singlePlayerProperties, StringComparison.Ordinal);
-            Assert.Contains("rcon.port=25580", singlePlayerProperties, StringComparison.Ordinal);
-            Assert.Contains("rcon.password=local-credential", singlePlayerProperties, StringComparison.Ordinal);
+            AssertProperty(singlePlayerProperties, "server-ip", "\\:\\:1");
+            AssertProperty(singlePlayerProperties, "max-players", "1");
+            AssertProperty(singlePlayerProperties, "online-mode", "true");
+            AssertProperty(singlePlayerProperties, "rcon.port", "25580");
+            AssertProperty(singlePlayerProperties, "rcon.password", "local-credential");
             Assert.DoesNotContain("remote-credential", singlePlayerProperties, StringComparison.Ordinal);
 
             Assert.True(await runtime.ShutdownAsync());
@@ -98,9 +102,21 @@ public sealed class RuntimeProfilePersistenceTests
         }
         finally
         {
+            // Cleanup must still run when the test's cancellation token is canceled.
+            using CancellationTokenSource cleanup = new(TimeSpan.FromSeconds(10));
+            await MinecraftRCONClient.DisconnectAsync(cleanup.Token);
             runtime.Tokens.Close();
             StatisticsStore.CloseConnection();
+            File.Delete(ConfigurationStore.ConfigPath);
+            File.Delete(ConfigurationStore.ConfigPath + ".tmp");
         }
+    }
+
+    private static void AssertProperty(string content, string key, string value)
+    {
+        string line = Assert.Single(content.Split(Environment.NewLine),
+            line => line.StartsWith(key + "=", StringComparison.Ordinal));
+        Assert.Equal(key + "=" + value, line);
     }
 
     private static void AssertPersistedSettings(TwitchCraftConfig config)

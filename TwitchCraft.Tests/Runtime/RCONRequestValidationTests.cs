@@ -21,6 +21,9 @@ public sealed class RCONRequestValidationTests
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
             await Assert.ThrowsAsync<InvalidDataException>(() => MinecraftRCONClient.ExecuteQueryAsync(
                 "127.0.0.1", RCON.Port, password, "list", cancellationToken));
+            Assert.True(await MinecraftRCONClient.ExecuteCommandAsync(
+                "127.0.0.1", RCON.Port, password, "say recovered", cancellationToken));
+            Assert.Equal(["list", "say recovered"], RCON.Commands);
         }
         finally
         {

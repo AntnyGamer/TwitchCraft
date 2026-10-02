@@ -47,6 +47,15 @@ public sealed class ServerDiagnosticFilteringTests
         ];
 
         Assert.Equal(lines, Filter(lines));
+
+        string[] lookalikeCaller =
+        [
+            JomlWarning[0],
+            "WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.joml.MemUtil$MemUtilUnsafeOtherLibrary",
+            JomlWarning[2],
+            JomlWarning[3]
+        ];
+        Assert.Equal(lookalikeCaller, Filter(lookalikeCaller));
     }
 
     [Fact]

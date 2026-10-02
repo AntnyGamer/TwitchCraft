@@ -91,6 +91,61 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
+    public void CommandStatistics_FailedViewerWriteRollsBackTotalsAndCanRetry()
+    {
+        StatisticsService service = CreateStatistics([], []);
+        service.RecordCommand("heal", "viewer", 10);
+        using (SqliteConnection connection = new(new SqliteConnectionStringBuilder
+        {
+            DataSource = Path.Combine(TestApplicationData.Path, "statistics.db")
+        }.ToString()))
+        {
+            connection.Open();
+            using SqliteCommand command = connection.CreateCommand();
+            // Fail the last write, after the total and command-use rows have been updated.
+            command.CommandText = "CREATE TRIGGER fail_viewer_score BEFORE INSERT ON ViewerScores WHEN NEW.Username = 'other' BEGIN SELECT RAISE(ABORT, 'blocked viewer score'); END;";
+            command.ExecuteNonQuery();
+
+            service.RecordCommand("fire", "other", 20);
+
+            StatisticsSnapshot failed = service.GetSnapshot(TestContext.Current.CancellationToken);
+            Assert.Equal(1, failed.SessionGameCommandsRun);
+            Assert.Equal(1, failed.TotalGameCommandsRun);
+            Assert.Equal(10, failed.SessionTokensSpent);
+            Assert.Equal(10, failed.TotalTokensSpent);
+            Assert.Equal(0, failed.SessionDangerousCommandsRun);
+            Assert.Empty(failed.TotalMostDangerousViewer);
+            Assert.Equal("!heal", failed.TotalMostUsedCommand);
+            LifetimeStatistics persisted = Assert.IsType<LifetimeStatistics>(StatisticsStore.LoadGlobal());
+            Assert.Equal(1, persisted.GameCommandsRun);
+            Assert.Equal(10, persisted.TokensSpent);
+            Assert.Equal(1, persisted.CommandUseCounts["heal"]);
+            Assert.False(persisted.CommandUseCounts.ContainsKey("fire"));
+            Assert.Equal((string.Empty, "viewer"), StatisticsStore.GetTopViewers("streamer"));
+
+            command.CommandText = "DROP TRIGGER fail_viewer_score;";
+            command.ExecuteNonQuery();
+        }
+
+        service.RecordCommand("fire", "other", 20);
+        StatisticsSnapshot retried = service.GetSnapshot(TestContext.Current.CancellationToken);
+        Assert.Equal(2, retried.SessionGameCommandsRun);
+        Assert.Equal(2, retried.TotalGameCommandsRun);
+        Assert.Equal(30, retried.TotalTokensSpent);
+        Assert.Equal(1, retried.SessionDangerousCommandsRun);
+        Assert.Equal("other", retried.SessionMostDangerousViewer);
+        Assert.Equal("other", retried.TotalMostDangerousViewer);
+
+        StatisticsStore.CloseConnection();
+        StatisticsSnapshot restarted = CreateStatistics([], []).GetSnapshot(TestContext.Current.CancellationToken);
+        Assert.Equal(2, restarted.TotalGameCommandsRun);
+        Assert.Equal(30, restarted.TotalTokensSpent);
+        Assert.Equal("!fire", restarted.TotalMostUsedCommand);
+        Assert.Equal("other", restarted.TotalMostDangerousViewer);
+        Assert.Equal("viewer", restarted.TotalNicestViewer);
+    }
+
+    [Fact]
     public async Task StatisticsReset_RollsBackFailureThenClearsTotalsWithoutRecountingPreviousDeaths()
     {
         Assert.True(StatisticsStore.ApplyDeathScore(3, 90, out long deaths));
@@ -230,6 +285,51 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
+    public void ConfigurationRecovery_UsesAValidPendingWriteWhenPrimaryIsMalformed()
+    {
+        TwitchCraftConfig config = new()
+        {
+            Twitch = { BotName = "savedbot", BotToken = "test-token" },
+            Settings = { FollowRewardAmount = 250 }
+        };
+        ConfigurationStore.Save(config);
+        File.Copy(ConfigurationStore.ConfigPath, ConfigurationStore.ConfigPath + ".tmp");
+        File.WriteAllText(ConfigurationStore.ConfigPath, "{interrupted configuration");
+
+        TwitchCraftConfig recovered = ConfigurationStore.Load();
+
+        Assert.Equal("savedbot", recovered.Twitch.BotName);
+        Assert.Equal("test-token", recovered.Twitch.BotToken);
+        Assert.Equal(250, recovered.Settings.FollowRewardAmount);
+        Assert.False(File.Exists(ConfigurationStore.ConfigPath + ".tmp"));
+        ConfigurationStore.Update(saved => saved.Settings.FollowRewardAmount = 300);
+        TwitchCraftConfig updated = ConfigurationStore.Load();
+        Assert.Equal(300, updated.Settings.FollowRewardAmount);
+        Assert.Equal("test-token", updated.Twitch.BotToken);
+    }
+
+    [Fact]
+    public void ConfigurationUpdate_UnreadablePrimaryAndPendingWritePreservesBothFiles()
+    {
+        const string primary = "{interrupted configuration";
+        const string pending = "null";
+        File.WriteAllText(ConfigurationStore.ConfigPath, primary);
+        File.WriteAllText(ConfigurationStore.ConfigPath + ".tmp", pending);
+        bool updateCalled = false;
+
+        Assert.Throws<InvalidDataException>(() => ConfigurationStore.Load());
+        Assert.Throws<InvalidDataException>(() => ConfigurationStore.Update(saved =>
+        {
+            updateCalled = true;
+            saved.Twitch.BotName = "replacement";
+        }));
+
+        Assert.False(updateCalled);
+        Assert.Equal(primary, File.ReadAllText(ConfigurationStore.ConfigPath));
+        Assert.Equal(pending, File.ReadAllText(ConfigurationStore.ConfigPath + ".tmp"));
+    }
+
+    [Fact]
     public void ConfigurationRecovery_PromotesACompletePendingWriteAndPreservesTheNextUpdate()
     {
         TwitchCraftConfig config = new()
@@ -284,6 +384,8 @@ public sealed class PersistenceIntegrationTests : IDisposable
     {
         StatisticsStore.CloseConnection();
         SqliteConnection.ClearAllPools();
+        File.Delete(ConfigurationStore.ConfigPath);
+        File.Delete(ConfigurationStore.ConfigPath + ".tmp");
     }
 }
 

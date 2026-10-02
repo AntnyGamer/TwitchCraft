@@ -97,8 +97,8 @@ public sealed class PublicDeviceAuthorizationTests
     }
 
     [Theory]
-    [InlineData("http://localhost:3000")]
-    [InlineData("https://example.com/activate")]
+    [InlineData("http://www.twitch.tv/activate")]
+    [InlineData("https://twitch.tv.attacker.invalid/activate")]
     public void RejectsUntrustedDeviceAuthorizationPages(string verificationUri)
     {
         using JsonDocument document = JsonDocument.Parse($$"""

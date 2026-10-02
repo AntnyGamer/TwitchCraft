@@ -43,7 +43,7 @@ public sealed class ServerCommandTransportTests
     public void SnapshotCommands_NormalizesValidCommandsAndRejectsUnsafeEntries()
     {
         List<string> result = MainHandler.SnapshotCommands(
-            [" say hi ", "", "stop\nnow", "\uFEFFsave-all"]);
+            [" say hi ", "", " \t ", "\uFEFF", "stop\nnow", "stop\rnow", "\uFEFFsave-all"]);
 
         Assert.Equal(["say hi", "save-all"], result);
     }

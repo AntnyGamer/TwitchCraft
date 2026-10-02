@@ -17,7 +17,8 @@ public sealed class SharedPlayerProbeTests
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
             selectedItem: selectedItem);
-        scenario.SetProbeDelay(750);
+        scenario.SetItemResponsesHeld(true);
+        int cursor = scenario.CaptureCommandCursor();
         using CancellationTokenSource firstCaller = new();
 
         Task<string?> canceledTask = scenario.Runtime.QueryItemAsync("PlayerOne", firstCaller.Token);
@@ -28,12 +29,16 @@ public sealed class SharedPlayerProbeTests
             "Shared item query was not sent.",
             scenario.Token);
 
+        Task<string?> survivingTask = scenario.Runtime.QueryItemAsync("playerone", scenario.Token);
+        Assert.False(canceledTask.IsCompleted);
+        Assert.False(survivingTask.IsCompleted);
         firstCaller.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
-        Task<string?> survivingTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
+        Assert.False(survivingTask.IsCompleted);
+        scenario.SetItemResponsesHeld(false);
         Assert.Equal(selectedItem, await survivingTask.WaitAsync(TimeSpan.FromSeconds(5), scenario.Token));
-        Assert.Single(FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin"),
+        Assert.Single(await scenario.DrainCommandsAsync(cursor),
             command => command.EndsWith(" SelectedItem", StringComparison.Ordinal));
     }
 
@@ -67,6 +72,7 @@ public sealed class SharedPlayerProbeTests
             players: ["PlayerOne", "PlayerTwo"]);
         scenario.SetSelectedItem("PlayerOne", playerOneItem);
         scenario.SetSelectedItem("PlayerTwo", playerTwoItem);
+        int cursor = scenario.CaptureCommandCursor();
 
         Dictionary<string, string?> items = await scenario.Runtime.QueryItemsAsync(
             ["PlayerTwo", "playerone", "PlayerOne"],
@@ -75,6 +81,10 @@ public sealed class SharedPlayerProbeTests
         Assert.Equal(2, items.Count);
         Assert.Equal(playerOneItem, items["PlayerOne"]);
         Assert.Equal(playerTwoItem, items["PlayerTwo"]);
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+            Assert.Single(commands, command => string.Equals(command,
+                "data get entity @a[name=\"" + player + "\",limit=1] SelectedItem", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -118,16 +128,29 @@ public sealed class SharedPlayerProbeTests
             players: ["PlayerOne", "PlayerTwo"]);
         scenario.SetSelectedItem("PlayerOne", playerOneItem);
         scenario.SetSelectedItem("PlayerTwo", playerTwoItem);
-        scenario.SetProbeDelay(100);
+        scenario.SetItemResponsesHeld(true);
+        int cursor = scenario.CaptureCommandCursor();
 
         Task<Dictionary<string, string?>> batchTask = scenario.Runtime.QueryItemsAsync(
             ["PlayerOne", "PlayerTwo"],
             scenario.Token);
+        await FakeJavaServer.WaitUntilAsync(
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
+                .Any(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)),
+            "Batch item query was not sent.",
+            scenario.Token);
         Task<string?> singleTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
+        Assert.False(batchTask.IsCompleted);
+        Assert.False(singleTask.IsCompleted);
+        scenario.SetItemResponsesHeld(false);
 
         Dictionary<string, string?> batch = await batchTask;
         Assert.Equal(playerOneItem, await singleTask);
         Assert.Equal(playerOneItem, batch["PlayerOne"]);
         Assert.Equal(playerTwoItem, batch["PlayerTwo"]);
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+            Assert.Single(commands, command => string.Equals(command,
+                "data get entity @a[name=\"" + player + "\",limit=1] SelectedItem", StringComparison.Ordinal));
     }
 }

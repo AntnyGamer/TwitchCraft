@@ -19,10 +19,12 @@ public sealed class EconomyPersistenceTests
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
         TokenStore store = new(databasePath);
+        TokenService tokens = new(databasePath, () => 0);
 
         try
         {
             store.AdjustBalance("viewer", 10);
+            Assert.Equal(6, tokens.Award("gambler", 6));
 
             Assert.True(store.TrySpend("viewer", 4));
             Assert.False(store.TrySpend("viewer", 7));
@@ -32,8 +34,16 @@ public sealed class EconomyPersistenceTests
             using SqliteConnection connection = new($"Data Source={databasePath}");
             connection.Open();
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = "CREATE TRIGGER fail_writes BEFORE INSERT ON TokenBalances WHEN NEW.Username IN ('bob', 'solo') BEGIN SELECT RAISE(ABORT, 'test'); END;";
+            command.CommandText = "CREATE TRIGGER fail_writes BEFORE INSERT ON TokenBalances WHEN NEW.Username IN ('bob', 'solo', 'gambler') BEGIN SELECT RAISE(ABORT, 'test'); END;";
             command.ExecuteNonQuery();
+            Assert.Equal(TokenAdjustmentStatus.Failed,
+                tokens.TryGamble("gambler", 4, -4, out int gambleBalance, out int appliedDelta));
+            Assert.Equal(6, gambleBalance);
+            Assert.Equal(0, appliedDelta);
+            Assert.Equal(6, tokens.GetBalance("gambler"));
+            Assert.Equal(6, store.GetBalance("gambler"));
+            command.CommandText = "SELECT Balance FROM TokenBalances WHERE Username = 'gambler';";
+            Assert.Equal(6L, command.ExecuteScalar());
             Assert.False(store.AdjustBalances([new KeyValuePair<string, int>("solo", 4)]));
             Assert.Equal(0, store.GetBalance("solo"));
             // Fail after an earlier balance was deleted inside the batch transaction.
@@ -58,12 +68,14 @@ public sealed class EconomyPersistenceTests
         }
         finally
         {
+            tokens.Close();
             store.CloseConnection();
         }
 
         TokenStore reader = new(databasePath);
         try
         {
+            Assert.Equal(6, reader.GetBalance("gambler"));
             Assert.Null(reader.TryTransfer("bob", "viewer", 1, 0));
             Assert.Equal(1, reader.TryTransfer("@ViEwEr", "@BoB", 2, 0));
             Assert.Equal(0, reader.GetBalance("viewer"));

@@ -19,8 +19,8 @@ public sealed class RollingLogPersistenceTests
     {
         using TemporaryDirectory directory = new();
         string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
-        string first = "{\"event\":\"first-boundary-event\"}";
-        string second = "{\"event\":\"second-boundary-event\"}";
+        string first = "{\"event\":\"éééééééééé\"}";
+        string second = "{\"event\":\"øøøøøøøøøø\"}";
 
         using (RollingJsonLogWriter writer = new(logPath, 48, 3, UTF8NoBOM))
         {
@@ -34,6 +34,31 @@ public sealed class RollingLogPersistenceTests
         Assert.Equal(1, lines.Count(line => line == second));
         Assert.True(File.Exists(logPath + ".old1"));
         Assert.Equal(second, Assert.Single(File.ReadAllLines(logPath)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TryWriteLine_ReopeningAfterAnInterruptedAppendPreservesCompleteJson(bool completeTail)
+    {
+        using TemporaryDirectory directory = new();
+        string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
+        const string retained = "{\"event\":\"retained\"}";
+        const string pending = "{\"event\":\"pending\"}";
+        string tail = completeTail ? "{\"event\":\"complete-tail\"}" : "{\"event\":";
+        File.WriteAllText(logPath, retained + System.Environment.NewLine + tail, UTF8NoBOM);
+
+        using (RollingJsonLogWriter writer = new(logPath, 1024, 3, UTF8NoBOM))
+            Assert.True(writer.TryWriteLine(pending));
+
+        string[] expected = completeTail ? [retained, tail, pending] : [retained, pending];
+        string[] lines = File.ReadAllLines(logPath);
+        Assert.Equal(expected, lines);
+        foreach (string line in lines)
+        {
+            using JsonDocument json = JsonDocument.Parse(line);
+            Assert.NotNull(json.RootElement.GetProperty("event").GetString());
+        }
     }
 
     [Fact]

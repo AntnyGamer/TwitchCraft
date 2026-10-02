@@ -19,7 +19,7 @@ public sealed class PaidDispatchAtomicityTests
             return Task.FromResult(true);
         };
 
-        bool succeeded = await harness.ExecuteAsync(25);
+        bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
         Assert.True(succeeded);
         Assert.Equal(75, harness.Balance);
@@ -43,7 +43,7 @@ public sealed class PaidDispatchAtomicityTests
             return Task.FromResult(false);
         };
 
-        bool succeeded = await harness.ExecuteAsync(25);
+        bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
         Assert.False(succeeded);
         Assert.Equal(100, harness.Balance);
@@ -65,7 +65,7 @@ public sealed class PaidDispatchAtomicityTests
             DispatchOverride = _ => throw new InvalidOperationException("Command batch could not be built.")
         };
 
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => harness.ExecuteAsync(25));
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => harness.ExecuteAsync(25, TestContext.Current.CancellationToken));
 
         Assert.Contains("could not be built", exception.Message, StringComparison.Ordinal);
         Assert.Equal(100, harness.Balance);
@@ -88,7 +88,7 @@ public sealed class PaidDispatchAtomicityTests
             return Task.FromResult(false);
         };
 
-        bool succeeded = await harness.ExecuteAsync(10);
+        bool succeeded = await harness.ExecuteAsync(10, TestContext.Current.CancellationToken);
 
         Assert.False(succeeded);
         Assert.Equal(100, harness.Balance);
@@ -104,7 +104,7 @@ public sealed class PaidDispatchAtomicityTests
     {
         TransactionHarness harness = new();
 
-        bool succeeded = await harness.ExecuteAsync(125);
+        bool succeeded = await harness.ExecuteAsync(125, TestContext.Current.CancellationToken);
 
         Assert.False(succeeded);
         Assert.Equal(100, harness.Balance);
@@ -123,7 +123,7 @@ public sealed class PaidDispatchAtomicityTests
     {
         TransactionHarness harness = new() { NextReservation = null };
 
-        bool succeeded = await harness.ExecuteAsync(25);
+        bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
         Assert.False(succeeded);
         Assert.Equal(100, harness.Balance);
@@ -133,6 +133,50 @@ public sealed class PaidDispatchAtomicityTests
         Assert.Equal(0, harness.StatisticsCalls);
         Assert.Equal(0, harness.FailureNotifications);
         Assert.Empty(harness.ReleasedReservations);
+    }
+
+    [Fact]
+    public async Task CancellationDuringDispatch_RefundsAndReleasesCooldown()
+    {
+        using CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        TaskCompletionSource dispatchStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> dispatch = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TransactionHarness harness = new()
+        {
+            DispatchOverride = token =>
+            {
+                dispatchStarted.SetResult();
+                return dispatch.Task.WaitAsync(token);
+            }
+        };
+
+        Task<bool> execution = harness.ExecuteAsync(25, cancellation.Token);
+        try
+        {
+            await dispatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+            Assert.Equal(75, harness.Balance);
+            Assert.Equal(1, harness.DispatchCalls);
+
+            cancellation.Cancel();
+            OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => execution.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+
+            Assert.Equal(cancellation.Token, exception.CancellationToken);
+            Assert.Equal(100, harness.Balance);
+            Assert.Equal(1, harness.SpendCalls);
+            Assert.Equal(1, harness.RefundCalls);
+            Assert.Equal(0, harness.StatisticsCalls);
+            Assert.Empty(harness.RecordedCosts);
+            Assert.Equal(0, harness.DispatchFailureReports);
+            Assert.Equal(0, harness.InsufficientTokenReports);
+            Assert.Equal(1, harness.FailureNotifications);
+            Assert.Equal([101L], harness.ReleasedReservations);
+            Assert.Equal(0, harness.CurrentReservation);
+        }
+        finally
+        {
+            cancellation.Cancel();
+        }
     }
 
     private sealed class TransactionHarness
@@ -150,7 +194,7 @@ public sealed class PaidDispatchAtomicityTests
         internal long? NextReservation { get; set; } = 101;
         internal Func<CancellationToken, Task<bool>>? DispatchOverride { get; set; }
         internal List<long> ReleasedReservations { get; } = [];
-        internal Task<bool> ExecuteAsync(int cost)
+        internal Task<bool> ExecuteAsync(int cost, CancellationToken cancellationToken)
         {
             return PaidCommandTransaction.ExecuteAsync(
                 cost,
@@ -202,7 +246,7 @@ public sealed class PaidDispatchAtomicityTests
                     DispatchFailureReports++;
                     return Task.CompletedTask;
                 },
-                CancellationToken.None,
+                cancellationToken,
                 () => FailureNotifications++);
         }
     }
