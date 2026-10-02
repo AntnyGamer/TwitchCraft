@@ -112,6 +112,8 @@ internal static partial class StatisticsStore
         string safeViewer = (safeDangerousScore > 0 || safeNiceScore > 0) && !string.IsNullOrEmpty(normalizedViewer)
             ? normalizedViewer
             : string.Empty;
+        string command = commandName ?? string.Empty;
+        long safeTokensSpent = Math.Max(0L, tokensSpent);
 
         try
         {
@@ -120,9 +122,7 @@ internal static partial class StatisticsStore
                 SqliteConnection connection = GetConnectionNoLock();
                 using SqliteTransaction transaction = connection.BeginTransaction();
 
-                AddCommandTotalsNoLock(transaction, Math.Max(0L, tokensSpent));
-
-                string command = commandName ?? string.Empty;
+                AddCommandTotalsNoLock(transaction, safeTokensSpent);
                 if (command.Length > 0)
                     AddCommandUseNoLock(transaction, command);
 
