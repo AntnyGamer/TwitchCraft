@@ -211,6 +211,47 @@ public sealed class WorldReplacementSafetyTests
         Assert.False(Directory.Exists(plan.BackupWorldPath));
     }
 
+    [Fact]
+    public void ReplaceWorld_WhenAutomaticRestoreFails_PreservesBackupForManualRecovery()
+    {
+        using TemporaryDirectory directory = new();
+        string source = System.IO.Path.Combine(directory.Path, "source");
+        string destination = System.IO.Path.Combine(directory.Path, "world");
+        Directory.CreateDirectory(source);
+        Directory.CreateDirectory(destination);
+        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
+        File.WriteAllText(System.IO.Path.Combine(source, "new.txt"), "imported data");
+        File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
+        File.WriteAllText(System.IO.Path.Combine(destination, "player-data.dat"), "saved progress");
+        MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
+        IOException finishFailure = new("Finish import failed after installation");
+
+        IOException exception = Assert.Throws<IOException>(() => MinecraftWorldImporter.ReplaceWorld(plan, () =>
+        {
+            Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
+            Assert.True(Directory.Exists(plan.BackupWorldPath));
+            Assert.StartsWith(
+                System.IO.Path.GetFullPath(directory.Path) + System.IO.Path.DirectorySeparatorChar,
+                System.IO.Path.GetFullPath(destination),
+                StringComparison.OrdinalIgnoreCase);
+            Directory.Delete(destination, recursive: true);
+            File.WriteAllText(destination, "blocks automatic restoration");
+            throw finishFailure;
+        }));
+
+        Assert.Contains("previous world could not be restored automatically", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Backup folder: " + plan.BackupWorldPath, exception.Message, StringComparison.Ordinal);
+        Assert.IsType<IOException>(exception.InnerException);
+        Assert.NotSame(finishFailure, exception.InnerException);
+        Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "level.dat")));
+        Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "player-data.dat")));
+        Assert.False(File.Exists(System.IO.Path.Combine(plan.BackupWorldPath, "new.txt")));
+        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat")));
+        Assert.Equal("imported data", File.ReadAllText(System.IO.Path.Combine(source, "new.txt")));
+        Assert.False(Directory.Exists(plan.StagingWorldPath));
+        Assert.Equal("blocks automatic restoration", File.ReadAllText(destination));
+    }
+
     private static MinecraftWorldImportPlan CreatePlan(
         string serverDirectory,
         string source,

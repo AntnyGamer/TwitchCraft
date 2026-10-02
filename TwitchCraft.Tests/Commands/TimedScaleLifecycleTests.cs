@@ -59,7 +59,7 @@ public sealed class TimedScaleLifecycleTests
     }
 
     [Fact]
-    public async Task ApplyAsync_NewerSizeChangeSupersedesOlderResetTimer()
+    public async Task ApplyAsync_OnlySuccessfulSizeChangesReplaceResetTimer()
     {
         List<string> sentCommands = [];
         List<Task> trackedTasks = [];
@@ -68,6 +68,17 @@ public sealed class TimedScaleLifecycleTests
 
         Assert.True(await ApplySuccessfulAsync(controller, 0.5));
         Assert.True(await ApplySuccessfulAsync(controller, 2.0));
+        Assert.Equal(2, trackedTasks.Count);
+        Assert.Equal(2, delays.Reader.Count);
+
+        Assert.False(await controller.ApplyAsync(
+            ["PlayerOne"],
+            0.25,
+            usesModernAttributeIDs: true,
+            usesInlineTextComponents: true,
+            TimeSpan.FromSeconds(30),
+            (_, _) => Task.FromResult(false),
+            TestContext.Current.CancellationToken));
         Assert.Equal(2, trackedTasks.Count);
         Assert.Equal(2, delays.Reader.Count);
 

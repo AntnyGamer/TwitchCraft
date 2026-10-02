@@ -19,8 +19,10 @@ public sealed class ScaleCooldownIsolationTests
         int cursor = scenario.CaptureCommandCursor();
 
         await scenario.DispatchAsync("!tiny");
+        await scenario.DispatchAsync("!tiny");
         await scenario.DispatchAsync("!tiny", "another_viewer");
         await scenario.DispatchAsync("!giant");
+        await scenario.DispatchAsync("!lightning");
         await scenario.DispatchAsync("!lightning");
         await scenario.DispatchAsync("!lightning", "another_viewer");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);

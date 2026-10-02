@@ -182,6 +182,7 @@ public sealed class GameplayCommandIntegrationTests
         int cursor = scenario.CaptureCommandCursor();
 
         await scenario.DispatchAsync("!johnny");
+        Assert.Equal(160, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!chargedcreeper");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
 
@@ -375,8 +376,11 @@ public sealed class GameplayCommandIntegrationTests
         int cursor = scenario.CaptureCommandCursor();
 
         await scenario.DispatchAsync("!loot");
+        Assert.Equal(95, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!mob");
+        Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!weather");
+        Assert.Equal(75, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!insult");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
         int lootCommands = commands.Count(command =>

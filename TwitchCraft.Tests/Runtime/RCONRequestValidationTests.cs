@@ -41,7 +41,9 @@ public sealed class RCONRequestValidationTests
     [Fact]
     public async Task Query_RejectsWrongResponseType()
     {
-        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(10));
+        CancellationToken cancellationToken = timeout.Token;
         const string password = "query-validation-password";
         await using FakeRCONServer RCON = new(password, wrongTypeResponseCommand: "list");
 
@@ -56,7 +58,8 @@ public sealed class RCONRequestValidationTests
         }
         finally
         {
-            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
+            using CancellationTokenSource cleanup = new(TimeSpan.FromSeconds(10));
+            await MinecraftRCONClient.DisconnectAsync(cleanup.Token);
         }
     }
 
