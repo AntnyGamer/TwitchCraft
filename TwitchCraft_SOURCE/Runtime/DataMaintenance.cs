@@ -126,6 +126,7 @@ internal sealed class DataMaintenance(
                     return;
                 }
 
+                StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db"));
                 _lastAutomaticBackupUtc = DateTime.UtcNow;
                 _automaticBackupTimestampLoaded = true;
                 PruneBackups(root, retentionCount);

@@ -50,7 +50,7 @@ This directory can include:
 - `viewer_tokens.db` — viewer usernames and token balances, plus rewarded-follow records containing Twitch user IDs, usernames, and follow times
 - `statistics.db` — TwitchCraft statistics, including viewer usernames and viewer scores
 - `exports\` — readable JSON exports of token balances and statistics
-- `backups\` — automatic copies of `config.json` and `viewer_tokens.db`
+- `backups\` — automatic copies of `config.json`, `viewer_tokens.db`, and `statistics.db`
 - `logs\` — local diagnostic logs
 - The managed Minecraft server directory and world data, when applicable
 

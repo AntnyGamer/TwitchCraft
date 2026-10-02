@@ -154,7 +154,7 @@ public sealed partial class MainHandler
                     {
                         string url = "https://api.twitch.tv/helix/chat/chatters?broadcaster_id=" + broadcasterID
                             + "&moderator_id=" + moderatorID
-                            + "&first=100";
+                            + "&first=1000";
 
                         if (cursor is { Length: > 0 })
                             url += "&after=" + Uri.EscapeDataString(cursor);
