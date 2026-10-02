@@ -116,7 +116,6 @@ public sealed partial class MainHandler
             await StopSessionAsync().ConfigureAwait(false);
             await MinigameManager.StopLoopsAsync(this).ConfigureAwait(false);
 
-            _dataMaintenance.BackupOnShutdown();
             CloseStores();
             return true;
         }
@@ -377,6 +376,8 @@ public sealed partial class MainHandler
 
             Tokens.TryExportJson();
             StatisticsService.FlushForShutdown();
+            if (Volatile.Read(ref _shutdownRequested) != 0)
+                _dataMaintenance.BackupOnShutdown();
             CloseStores();
         }
         catch
