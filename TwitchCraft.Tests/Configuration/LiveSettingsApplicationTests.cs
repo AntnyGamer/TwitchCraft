@@ -37,10 +37,11 @@ public sealed class LiveSettingsApplicationTests
             config.Settings.CommandCustomizations["lightning"] = new CommandCustomization { Enabled = false };
 
             Assert.Equal(100, runtime.Tokens.MaximumBalance);
-            Assert.True(runtime.Commands.HasPerUserCooldownOverride("heal"));
-            Assert.True(runtime.Commands.HasGlobalCooldownOverride("heal"));
-            Assert.False(runtime.Commands.HasPerUserCooldownOverride("lightning"));
-            Assert.False(runtime.Commands.HasGlobalCooldownOverride("lightning"));
+            Assert.True(runtime.Commands.TryGetCommandSettings("heal", out CommandCustomization applied));
+            Assert.False(applied.Enabled);
+            Assert.Equal(5, applied.CooldownSeconds);
+            Assert.Equal(2.5, applied.GlobalCooldownSeconds);
+            Assert.False(runtime.Commands.TryGetCommandSettings("lightning", out _));
         }
         finally
         {

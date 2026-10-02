@@ -11,20 +11,14 @@ namespace TwitchCraft.Tests.Runtime;
 
 public sealed class StartupAndEligibilityTests
 {
-    [Fact]
-    public async Task Eligibility_AcceptsViewerWhenActivityNotRequired()
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task Eligibility_UnrecordedViewerUsesActivityRequirement(bool requireActivity, bool expectedEligible)
     {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireActivity = false);
+        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireActivity = requireActivity);
 
-        Assert.True(scope.Runtime.IsRewardEligibleNoLock("quietviewer", 1_000_000));
-    }
-
-    [Fact]
-    public async Task Eligibility_RejectsInactiveViewerWhenActivityRequired()
-    {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireActivity = true);
-
-        Assert.False(scope.Runtime.IsRewardEligibleNoLock("quietviewer", 1_000));
+        Assert.Equal(expectedEligible, scope.Runtime.IsRewardEligibleNoLock("quietviewer", 1_000));
     }
 
     [Fact]

@@ -63,31 +63,6 @@ public sealed class SharedPlayerProbeTests
     }
 
     [Fact]
-    public async Task QueryItems_ReturnsEachPlayersItemAndDeduplicatesNames()
-    {
-        const string playerOneItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
-        const string playerTwoItem = "{id:'minecraft:bow',count:1,components:{}}";
-        await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
-            TestContext.Current.CancellationToken,
-            players: ["PlayerOne", "PlayerTwo"]);
-        scenario.SetSelectedItem("PlayerOne", playerOneItem);
-        scenario.SetSelectedItem("PlayerTwo", playerTwoItem);
-        int cursor = scenario.CaptureCommandCursor();
-
-        Dictionary<string, string?> items = await scenario.Runtime.QueryItemsAsync(
-            ["PlayerTwo", "playerone", "PlayerOne"],
-            scenario.Token);
-
-        Assert.Equal(2, items.Count);
-        Assert.Equal(playerOneItem, items["PlayerOne"]);
-        Assert.Equal(playerTwoItem, items["PlayerTwo"]);
-        List<string> commands = await scenario.DrainCommandsAsync(cursor);
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
-            Assert.Single(commands, command => string.Equals(command,
-                "data get entity @a[name=\"" + player + "\",limit=1] SelectedItem", StringComparison.OrdinalIgnoreCase));
-    }
-
-    [Fact]
     public async Task QueryHeartModifiers_MissingResponseReturnsNullWithoutHanging()
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
@@ -119,7 +94,7 @@ public sealed class SharedPlayerProbeTests
     }
 
     [Fact]
-    public async Task QueryItems_ConcurrentSingleAndBatchRequestsReturnConsistentResults()
+    public async Task QueryItems_DeduplicatesNamesAndSharesConcurrentSingleRequests()
     {
         const string playerOneItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
         const string playerTwoItem = "{id:'minecraft:bow',count:1,components:{}}";
@@ -132,25 +107,26 @@ public sealed class SharedPlayerProbeTests
         int cursor = scenario.CaptureCommandCursor();
 
         Task<Dictionary<string, string?>> batchTask = scenario.Runtime.QueryItemsAsync(
-            ["PlayerOne", "PlayerTwo"],
+            ["PlayerTwo", "playerone", "PlayerOne"],
             scenario.Token);
         await FakeJavaServer.WaitUntilAsync(
             () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
                 .Any(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)),
             "Batch item query was not sent.",
             scenario.Token);
-        Task<string?> singleTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
+        Task<string?> singleTask = scenario.Runtime.QueryItemAsync("PLAYERONE", scenario.Token);
         Assert.False(batchTask.IsCompleted);
         Assert.False(singleTask.IsCompleted);
         scenario.SetItemResponsesHeld(false);
 
         Dictionary<string, string?> batch = await batchTask;
         Assert.Equal(playerOneItem, await singleTask);
-        Assert.Equal(playerOneItem, batch["PlayerOne"]);
+        Assert.Equal(2, batch.Count);
+        Assert.Equal(playerOneItem, batch["PLAYERONE"]);
         Assert.Equal(playerTwoItem, batch["PlayerTwo"]);
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
         foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
             Assert.Single(commands, command => string.Equals(command,
-                "data get entity @a[name=\"" + player + "\",limit=1] SelectedItem", StringComparison.Ordinal));
+                "data get entity @a[name=\"" + player + "\",limit=1] SelectedItem", StringComparison.OrdinalIgnoreCase));
     }
 }

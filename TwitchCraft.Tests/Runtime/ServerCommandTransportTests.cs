@@ -21,6 +21,7 @@ public sealed class ServerCommandTransportTests
     [Theory]
     [InlineData(1, 5, 5)]
     [InlineData(100, 5, 15)]
+    [InlineData(11, 15, 17)]
     public void GetRCONTimeout_UsesTheBaseAndMaximumLimits(
         int commandCount,
         int baseSeconds,
@@ -29,14 +30,6 @@ public sealed class ServerCommandTransportTests
         Assert.Equal(
             TimeSpan.FromSeconds(expectedSeconds),
             MainHandler.GetRCONTimeout(commandCount, TimeSpan.FromSeconds(baseSeconds)));
-    }
-
-    [Fact]
-    public void GetRCONTimeout_UsesConfiguredBaseTimeout()
-    {
-        Assert.Equal(
-            TimeSpan.FromSeconds(17),
-            MainHandler.GetRCONTimeout(11, TimeSpan.FromSeconds(15)));
     }
 
     [Fact]

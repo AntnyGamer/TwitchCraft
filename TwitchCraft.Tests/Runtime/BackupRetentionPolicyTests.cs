@@ -8,19 +8,6 @@ namespace TwitchCraft.Tests.Runtime;
 public sealed class BackupRetentionPolicyTests
 {
     [Fact]
-    public void PruneBackups_CollisionSuffixParticipatesInTimestampOrdering()
-    {
-        using TemporaryDirectory root = new();
-        CreateCompleteBackup(root.Path, "20260830-231500-a1b2c3");
-        CreateCompleteBackup(root.Path, "20260829-231500");
-
-        DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
-
-        Assert.True(Directory.Exists(Path.Combine(root.Path, "20260830-231500-a1b2c3")));
-        Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-231500")));
-    }
-
-    [Fact]
     public void PruneBackups_PreservesUnrelatedTimestampLikeDirectories()
     {
         using TemporaryDirectory root = new();
@@ -49,7 +36,7 @@ public sealed class BackupRetentionPolicyTests
             "20260827-120000",
             "20260828-120000",
             "20260829-120000",
-            "20260830-120000"
+            "20260830-120000-a1b2c3"
         ];
         foreach (string name in names)
             CreateCompleteBackup(root.Path, name);

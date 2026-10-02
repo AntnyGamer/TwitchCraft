@@ -52,9 +52,34 @@ public sealed class PaidDispatchAtomicityTests
         Assert.Equal(1, harness.DispatchCalls);
         Assert.Equal(0, harness.StatisticsCalls);
         Assert.Equal(1, harness.DispatchFailureReports);
+        Assert.Equal(true, harness.LastReportedRefund);
         Assert.Equal(1, harness.FailureNotifications);
         Assert.Equal(0, harness.CurrentReservation);
         Assert.Equal([101L], harness.ReleasedReservations);
+    }
+
+    [Fact]
+    public async Task FailedRefund_ReportsUnrecoveredChargeAndReleasesCooldown()
+    {
+        TransactionHarness harness = new()
+        {
+            RefundSucceeds = false,
+            DispatchOverride = _ => Task.FromResult(false)
+        };
+
+        bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
+
+        Assert.False(succeeded);
+        Assert.Equal(75, harness.Balance);
+        Assert.Equal(1, harness.SpendCalls);
+        Assert.Equal(1, harness.RefundCalls);
+        Assert.Equal(1, harness.DispatchCalls);
+        Assert.Equal(0, harness.StatisticsCalls);
+        Assert.Equal(1, harness.DispatchFailureReports);
+        Assert.Equal(false, harness.LastReportedRefund);
+        Assert.Equal(1, harness.FailureNotifications);
+        Assert.Equal([101L], harness.ReleasedReservations);
+        Assert.Equal(0, harness.CurrentReservation);
     }
 
     [Fact]
@@ -184,10 +209,12 @@ public sealed class PaidDispatchAtomicityTests
         internal int Balance { get; private set; } = 100;
         internal int SpendCalls { get; private set; }
         internal int RefundCalls { get; private set; }
+        internal bool RefundSucceeds { get; set; } = true;
         internal int DispatchCalls { get; private set; }
         internal int StatisticsCalls { get; private set; }
         internal List<int> RecordedCosts { get; } = [];
         internal int DispatchFailureReports { get; private set; }
+        internal bool? LastReportedRefund { get; private set; }
         internal int InsufficientTokenReports { get; private set; }
         internal int FailureNotifications { get; private set; }
         internal long CurrentReservation { get; set; }
@@ -223,8 +250,9 @@ public sealed class PaidDispatchAtomicityTests
                 amount =>
                 {
                     RefundCalls++;
-                    Balance += amount;
-                    return true;
+                    if (RefundSucceeds)
+                        Balance += amount;
+                    return RefundSucceeds;
                 },
                 token =>
                 {
@@ -241,9 +269,10 @@ public sealed class PaidDispatchAtomicityTests
                     InsufficientTokenReports++;
                     return Task.CompletedTask;
                 },
-                (_, _) =>
+                (refunded, _) =>
                 {
                     DispatchFailureReports++;
+                    LastReportedRefund = refunded;
                     return Task.CompletedTask;
                 },
                 cancellationToken,

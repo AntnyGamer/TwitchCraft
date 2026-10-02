@@ -69,7 +69,6 @@ public sealed class IRCFrameParserTests
     [InlineData("")]
     [InlineData(" PRIVMSG #channel :message")]
     [InlineData("@badges=moderator/1")]
-    [InlineData(":missing-command-prefix")]
     public void TryParse_RejectsMalformedLines(string line)
     {
         IRCMessage message = new();

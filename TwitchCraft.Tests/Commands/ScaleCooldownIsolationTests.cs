@@ -10,21 +10,23 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class ScaleCooldownIsolationTests
 {
     [Fact]
-    public async Task TimedCommands_HaveIndependentFiveMinuteGlobalCooldowns()
+    public async Task TimedCommands_HaveIndependentGlobalCooldowns()
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken);
         scenario.Runtime.Tokens.Award("viewer", 200);
+        scenario.Runtime.Tokens.Award("another_viewer", 200);
         int cursor = scenario.CaptureCommandCursor();
 
         await scenario.DispatchAsync("!tiny");
-        await scenario.DispatchAsync("!tiny");
+        await scenario.DispatchAsync("!tiny", "another_viewer");
         await scenario.DispatchAsync("!giant");
         await scenario.DispatchAsync("!lightning");
-        await scenario.DispatchAsync("!lightning");
+        await scenario.DispatchAsync("!lightning", "another_viewer");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
 
         Assert.Equal(110, scenario.Runtime.Tokens.GetBalance("viewer"));
+        Assert.Equal(200, scenario.Runtime.Tokens.GetBalance("another_viewer"));
         Assert.Equal(1, commands.Count(command =>
             command.Contains("minecraft:scale base set 0.5", StringComparison.Ordinal)));
         Assert.Equal(1, commands.Count(command =>

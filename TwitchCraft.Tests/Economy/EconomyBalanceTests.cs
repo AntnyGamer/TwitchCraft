@@ -84,6 +84,7 @@ public sealed class EconomyBalanceTests
             Assert.Equal(100, store.GetBalance("viewer"));
 
             Assert.True(store.TrySpend("viewer", 30));
+            Assert.Equal(70, store.GetBalance("viewer"));
             store.AdjustBalance("viewer", 50, maximumBalance: 100);
             Assert.Equal(100, store.GetBalance("viewer"));
         }

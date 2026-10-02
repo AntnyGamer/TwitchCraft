@@ -32,6 +32,7 @@ public sealed class WorldReplacementSafetyTests
         };
 
         MinecraftWorldImportPlan plan = MinecraftWorldImporter.CreateImportPlan(config, source);
+        MinecraftWorldImportPlan nextPlan = MinecraftWorldImporter.CreateImportPlan(config, source);
 
         Assert.Equal(source, plan.SourceWorldPath);
         Assert.Equal("world", plan.LevelName);
@@ -45,6 +46,9 @@ public sealed class WorldReplacementSafetyTests
             plan.BackupWorldPath,
             StringComparison.OrdinalIgnoreCase);
         Assert.NotEqual(plan.StagingWorldPath, plan.BackupWorldPath);
+        Assert.Equal(plan.DestinationWorldPath, nextPlan.DestinationWorldPath);
+        Assert.NotEqual(plan.StagingWorldPath, nextPlan.StagingWorldPath);
+        Assert.NotEqual(plan.BackupWorldPath, nextPlan.BackupWorldPath);
     }
 
     [Fact]
@@ -116,6 +120,33 @@ public sealed class WorldReplacementSafetyTests
         Assert.True(CreatePlan(directory.Path, equivalentSource, destination).SourceIsCurrentWorld);
         string source = System.IO.Path.Combine(directory.Path, "source");
         Assert.False(CreatePlan(directory.Path, source, destination).SourceIsCurrentWorld);
+    }
+
+    [Fact]
+    public void ReplaceWorld_WhenStagedWorldIsIncomplete_PreservesExistingProgress()
+    {
+        using TemporaryDirectory directory = new();
+        string source = System.IO.Path.Combine(directory.Path, "source");
+        string destination = System.IO.Path.Combine(directory.Path, "world");
+        Directory.CreateDirectory(source);
+        Directory.CreateDirectory(destination);
+        File.WriteAllText(System.IO.Path.Combine(source, "region.dat"), "incomplete imported data");
+        File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
+        File.WriteAllText(System.IO.Path.Combine(destination, "player-data.dat"), "saved progress");
+        MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
+        bool finishCalled = false;
+
+        IOException exception = Assert.Throws<IOException>(() =>
+            MinecraftWorldImporter.ReplaceWorld(plan, () => finishCalled = true));
+
+        Assert.IsType<InvalidDataException>(exception.InnerException);
+        Assert.False(finishCalled);
+        Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
+        Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(destination, "player-data.dat")));
+        Assert.False(File.Exists(System.IO.Path.Combine(destination, "region.dat")));
+        Assert.Equal("incomplete imported data", File.ReadAllText(System.IO.Path.Combine(source, "region.dat")));
+        Assert.False(Directory.Exists(plan.StagingWorldPath));
+        Assert.False(Directory.Exists(plan.BackupWorldPath));
     }
 
     [Fact]

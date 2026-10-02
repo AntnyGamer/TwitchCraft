@@ -285,30 +285,6 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ConfigurationRecovery_UsesAValidPendingWriteWhenPrimaryIsMalformed()
-    {
-        TwitchCraftConfig config = new()
-        {
-            Twitch = { BotName = "savedbot", BotToken = "test-token" },
-            Settings = { FollowRewardAmount = 250 }
-        };
-        ConfigurationStore.Save(config);
-        File.Copy(ConfigurationStore.ConfigPath, ConfigurationStore.ConfigPath + ".tmp");
-        File.WriteAllText(ConfigurationStore.ConfigPath, "{interrupted configuration");
-
-        TwitchCraftConfig recovered = ConfigurationStore.Load();
-
-        Assert.Equal("savedbot", recovered.Twitch.BotName);
-        Assert.Equal("test-token", recovered.Twitch.BotToken);
-        Assert.Equal(250, recovered.Settings.FollowRewardAmount);
-        Assert.False(File.Exists(ConfigurationStore.ConfigPath + ".tmp"));
-        ConfigurationStore.Update(saved => saved.Settings.FollowRewardAmount = 300);
-        TwitchCraftConfig updated = ConfigurationStore.Load();
-        Assert.Equal(300, updated.Settings.FollowRewardAmount);
-        Assert.Equal("test-token", updated.Twitch.BotToken);
-    }
-
-    [Fact]
     public void ConfigurationUpdate_UnreadablePrimaryAndPendingWritePreservesBothFiles()
     {
         const string primary = "{interrupted configuration";
@@ -329,20 +305,30 @@ public sealed class PersistenceIntegrationTests : IDisposable
         Assert.Equal(pending, File.ReadAllText(ConfigurationStore.ConfigPath + ".tmp"));
     }
 
-    [Fact]
-    public void ConfigurationRecovery_PromotesACompletePendingWriteAndPreservesTheNextUpdate()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ConfigurationRecovery_PromotesACompletePendingWriteAndPreservesTheNextUpdate(bool malformedPrimary)
     {
         TwitchCraftConfig config = new()
         {
             Twitch = { BotName = "savedbot", BotToken = "test-token" },
-            Settings = { MultiplayerEnabled = true, RemoteControlEnabled = true, RequireOnlineMode = false }
+            Settings = { MultiplayerEnabled = true, RemoteControlEnabled = true, RequireOnlineMode = false, FollowRewardAmount = 125 }
         };
         config.Settings.CommandCustomizations["heal"] = new() { Enabled = false, CooldownSeconds = 17 };
         ConfigurationStore.Save(config);
         Assert.True(config.Settings.MultiplayerEnabled);
         Assert.True(config.Settings.RemoteControlEnabled);
         Assert.False(config.Settings.RequireOnlineMode);
-        File.Move(ConfigurationStore.ConfigPath, ConfigurationStore.ConfigPath + ".tmp");
+        if (malformedPrimary)
+        {
+            File.Copy(ConfigurationStore.ConfigPath, ConfigurationStore.ConfigPath + ".tmp");
+            File.WriteAllText(ConfigurationStore.ConfigPath, "{interrupted configuration");
+        }
+        else
+        {
+            File.Move(ConfigurationStore.ConfigPath, ConfigurationStore.ConfigPath + ".tmp");
+        }
 
         Assert.True(ConfigurationStore.HasConfig());
         TwitchCraftConfig recovered = ConfigurationStore.Load();
@@ -351,6 +337,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
         Assert.False(File.Exists(ConfigurationStore.ConfigPath + ".tmp"));
         Assert.Equal("savedbot", recovered.Twitch.BotName);
         Assert.Equal("test-token", recovered.Twitch.BotToken);
+        Assert.Equal(125, recovered.Settings.FollowRewardAmount);
         Assert.False(recovered.Settings.MultiplayerEnabled);
         Assert.False(recovered.Settings.RemoteControlEnabled);
         Assert.True(recovered.Settings.RequireOnlineMode);

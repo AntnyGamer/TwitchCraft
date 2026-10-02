@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using TwitchCraft_V1.Setup;
 using Xunit;
 
@@ -7,6 +8,44 @@ namespace TwitchCraft.Tests.Configuration;
 
 public sealed class ConfigurationNormalizationTests
 {
+    [Fact]
+    public void NormalizeRuntime_RepairsExplicitNullGroupsFromJsonAndPreservesValidValues()
+    {
+        const string json = """
+            {
+              "Server": { "Java": null, "RCON": null, "Port": 25570 },
+              "Twitch": null,
+              "Identity": null,
+              "Settings": {
+                "Commands": { "CommandPrefix": "?" },
+                "Custom Commands": { "CommandCustomizations": null }
+              }
+            }
+            """;
+        JsonSerializerSettings serializerSettings = new()
+        {
+            Converters = { new StartingProfileJsonConverter() }
+        };
+        TwitchCraftConfig config = Assert.IsType<TwitchCraftConfig>(
+            JsonConvert.DeserializeObject<TwitchCraftConfig>(json, serializerSettings));
+
+        ConfigurationStore.NormalizeRuntime(config);
+
+        Assert.Equal(25570, config.Server.Port);
+        Assert.Equal(string.Empty, config.Server.Java.ExecutablePath);
+        Assert.Equal(string.Empty, config.Server.Java.HomeDirectory);
+        Assert.Equal(25575, config.Server.RCON.Port);
+        Assert.Equal(string.Empty, config.Server.RCON.Password);
+        Assert.Equal(string.Empty, config.Twitch.BotToken);
+        Assert.Equal(string.Empty, config.Twitch.StreamerName);
+        Assert.Equal(string.Empty, config.Identity.StreamerMinecraftName);
+        Assert.Equal("?", config.Settings.CommandPrefix);
+        Assert.Empty(config.Settings.CommandCustomizations);
+        CommandCustomization heal = new() { Enabled = false };
+        config.Settings.CommandCustomizations.Add("heal", heal);
+        Assert.Same(heal, config.Settings.CommandCustomizations["HEAL"]);
+    }
+
     [Fact]
     public void NormalizeRuntime_RepairsInvalidValuesWithoutChangingValidIdentityData()
     {
