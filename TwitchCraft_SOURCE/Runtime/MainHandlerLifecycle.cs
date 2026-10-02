@@ -110,7 +110,7 @@ public sealed partial class MainHandler
 
     public async Task<bool> ShutdownAsync()
     {
-        Interlocked.Exchange(ref _shutdownRequested, 1);
+        if (Interlocked.CompareExchange(ref _shutdownRequested, 1, 0) == 2) return true;
         try
         {
             await StopSessionAsync(backupBeforeClose: true).ConfigureAwait(false);
