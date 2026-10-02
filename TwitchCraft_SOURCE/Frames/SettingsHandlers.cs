@@ -9,11 +9,15 @@ namespace TwitchCraft_V1.Frames;
 
 public partial class Settings
 {
-    private static bool TryGetIntOption(ComboBox dropdown, (int Value, string Label)[] options, out int value)
+    private static bool TryGetIntOption(
+        ComboBox dropdown,
+        (int Value, string Label)[] options,
+        out int value,
+        StringComparison comparison = StringComparison.Ordinal)
     {
         if (dropdown.SelectedItem is string selected)
             foreach ((int option, string label) in options)
-                if (string.Equals(selected, label, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(selected, label, comparison))
                 {
                     value = option;
                     return true;
@@ -33,7 +37,7 @@ public partial class Settings
         // SelectionChanged fires before WPF has reliably copied a newly selected item's label
         // into the editable Text property. Prefer SelectedItem so preset clicks always use the
         // value the user actually chose instead of the previous/blank editor text.
-        if (TryGetIntOption(dropdown, options, out value))
+        if (TryGetIntOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
             return value >= minimum && value <= maximum;
 
         string text = (dropdown.Text ?? string.Empty).Trim();
