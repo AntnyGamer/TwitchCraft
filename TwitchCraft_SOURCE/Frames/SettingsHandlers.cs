@@ -9,21 +9,21 @@ namespace TwitchCraft_V1.Frames;
 
 public partial class Settings
 {
-    private static bool TryGetIntOption(
+    private static bool TryGetOption<T>(
         ComboBox dropdown,
-        (int Value, string Label)[] options,
-        out int value,
+        (T Value, string Label)[] options,
+        out T value,
         StringComparison comparison = StringComparison.Ordinal)
     {
         if (dropdown.SelectedItem is string selected)
-            foreach ((int option, string label) in options)
+            foreach ((T option, string label) in options)
                 if (string.Equals(selected, label, comparison))
                 {
                     value = option;
                     return true;
                 }
 
-        value = 0;
+        value = default!;
         return false;
     }
 
@@ -37,7 +37,7 @@ public partial class Settings
         // SelectionChanged fires before WPF has reliably copied a newly selected item's label
         // into the editable Text property. Prefer SelectedItem so preset clicks always use the
         // value the user actually chose instead of the previous/blank editor text.
-        if (TryGetIntOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
+        if (TryGetOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
             return value >= minimum && value <= maximum;
 
         string text = (dropdown.Text ?? string.Empty).Trim();
@@ -69,13 +69,8 @@ public partial class Settings
         double maximum,
         out double value)
     {
-        if (dropdown.SelectedItem is string selected)
-            foreach ((double option, string label) in options)
-                if (string.Equals(selected, label, StringComparison.OrdinalIgnoreCase))
-                {
-                    value = option;
-                    return value >= minimum && value <= maximum;
-                }
+        if (TryGetOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
+            return value >= minimum && value <= maximum;
 
         string text = (dropdown.Text ?? string.Empty).Trim();
         foreach ((double option, string label) in options)
@@ -351,15 +346,8 @@ public partial class Settings
 
     private async void RelayColor_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (_initializing || RelayTextColorDropdown.SelectedItem is not string selected)
-            return;
-
-        foreach ((string value, string label) in RelayTextColorOptions)
-            if (string.Equals(selected, label, StringComparison.Ordinal))
-            {
-                await SaveConfigAsync(config => config.Settings.MinecraftRelayTextColor = value);
-                return;
-            }
+        if (!_initializing && TryGetOption(RelayTextColorDropdown, RelayTextColorOptions, out string value))
+            await SaveConfigAsync(config => config.Settings.MinecraftRelayTextColor = value);
     }
 
     private async void SaveCommandRow(CommandSettingsRow row)
@@ -577,7 +565,7 @@ public partial class Settings
     }
 
     private Task SaveOptionAsync(ComboBox dropdown, (int Value, string Label)[] options, Action<StartingProfile, int> update)
-        => _initializing || !TryGetIntOption(dropdown, options, out int value)
+        => _initializing || !TryGetOption(dropdown, options, out int value)
             ? Task.CompletedTask
             : SaveConfigAsync(config => update(config.Settings, value));
 
