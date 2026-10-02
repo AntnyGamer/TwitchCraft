@@ -57,9 +57,7 @@ public partial class Settings
         AddOptions(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions);
         AddOptions(ChannelCommandLimitDropdown, ChannelCommandLimitOptions);
 
-        if (RelayTextColorDropdown.Items.Count == 0)
-            foreach ((string _, string label) in RelayTextColorOptions)
-                RelayTextColorDropdown.Items.Add(label);
+        AddOptions(RelayTextColorDropdown, RelayTextColorOptions);
     }
 
     private static void AddPrefixOptions(ComboBox dropdown)
@@ -86,10 +84,10 @@ public partial class Settings
             editor.MaxLength = 2;
     }
 
-    private static void AddOptions(ComboBox dropdown, (int Value, string Label)[] options)
+    private static void AddOptions<T>(ComboBox dropdown, (T Value, string Label)[] options)
     {
         if (dropdown.Items.Count == 0)
-            foreach ((int _, string label) in options)
+            foreach ((T _, string label) in options)
                 dropdown.Items.Add(label);
     }
 
