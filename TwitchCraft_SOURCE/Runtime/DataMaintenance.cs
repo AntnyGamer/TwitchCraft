@@ -118,10 +118,9 @@ internal sealed class DataMaintenance(
                     backupDirectory += "-" + Guid.NewGuid().ToString("N")[..6];
                 Directory.CreateDirectory(backupDirectory);
 
-                bool configSaved = ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json"));
-                bool tokensSaved = _tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db"));
-                bool statisticsSaved = StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db"));
-                if (!configSaved || !tokensSaved || !statisticsSaved)
+                if (!ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json")) ||
+                    !_tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db")) ||
+                    !StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db")))
                 {
                     try { Directory.Delete(backupDirectory, recursive: true); } catch { }
                     return;
