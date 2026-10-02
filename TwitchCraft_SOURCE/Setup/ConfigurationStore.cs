@@ -357,7 +357,7 @@ public sealed partial class ConfigurationStore
                 if (!File.Exists(ConfigPath))
                     return false;
                 TwitchCraft_V1.FileSystemHelper.EnsureParentDir(destinationPath);
-                File.Copy(ConfigPath, destinationPath, overwrite: true);
+                File.Copy(ConfigPath, destinationPath);
                 return true;
             }
         }
