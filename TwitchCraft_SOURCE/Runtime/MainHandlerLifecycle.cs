@@ -110,19 +110,14 @@ public sealed partial class MainHandler
 
     public async Task<bool> ShutdownAsync()
     {
-        int shutdownState = Interlocked.CompareExchange(ref _shutdownRequested, 1, 0);
-        if (shutdownState != 0)
-        {
-            while ((shutdownState = Volatile.Read(ref _shutdownRequested)) == 1)
-                await Task.Delay(10).ConfigureAwait(false);
-            return shutdownState == 2;
-        }
+        Interlocked.Exchange(ref _shutdownRequested, 1);
         try
         {
-            await StopSessionAsync(backupBeforeClose: true).ConfigureAwait(false);
+            await StopSessionAsync().ConfigureAwait(false);
             await MinigameManager.StopLoopsAsync(this).ConfigureAwait(false);
 
-            Interlocked.Exchange(ref _shutdownRequested, 2);
+            _dataMaintenance.BackupOnShutdown();
+            CloseStores();
             return true;
         }
         catch (Exception ex)
@@ -340,9 +335,7 @@ public sealed partial class MainHandler
         }
     }
 
-    public Task StopSessionAsync() => StopSessionAsync(false);
-
-    private async Task StopSessionAsync(bool backupBeforeClose)
+    public async Task StopSessionAsync()
     {
         Interlocked.Increment(ref _lifecycleStopGeneration);
         if (_runtimeState == RuntimeState.Starting)
@@ -353,11 +346,6 @@ public sealed partial class MainHandler
         {
             if (_runtimeState == RuntimeState.Stopped || _runtimeState == RuntimeState.Stopping)
             {
-                if (backupBeforeClose)
-                {
-                    _dataMaintenance.BackupOnShutdown();
-                    CloseStores();
-                }
                 return;
             }
 
@@ -389,8 +377,6 @@ public sealed partial class MainHandler
 
             Tokens.TryExportJson();
             StatisticsService.FlushForShutdown();
-            if (backupBeforeClose)
-                _dataMaintenance.BackupOnShutdown();
             CloseStores();
         }
         catch
