@@ -112,12 +112,10 @@ internal sealed class DataMaintenance(
             try
             {
                 string root = ConfigurationStore.BackupsDirectory;
-                Directory.CreateDirectory(root);
                 string completedDirectory = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
                 if (Directory.Exists(completedDirectory))
                     completedDirectory += "-" + Guid.NewGuid().ToString("N")[..6];
                 string backupDirectory = Path.Combine(root, ".pending-" + Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(backupDirectory);
 
                 if (!ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json")) ||
                     !_tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db")) ||
