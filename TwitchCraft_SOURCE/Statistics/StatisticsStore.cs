@@ -94,20 +94,12 @@ internal static partial class StatisticsStore
         try
         {
             lock (IOGate)
-            {
-                FileSystemHelper.EnsureParentDir(destinationPath);
-                using SqliteConnection destination = new(new SqliteConnectionStringBuilder
-                {
-                    DataSource = destinationPath,
-                    Mode = SqliteOpenMode.ReadWriteCreate
-                }.ToString());
-                destination.Open();
-                GetConnectionNoLock().BackupDatabase(destination);
-                return true;
-            }
+                FileSystemHelper.BackupSqliteDatabase(GetConnectionNoLock(), destinationPath);
+            return true;
         }
         catch (Exception ex)
         {
+            FileSystemHelper.DeleteFileSafe(destinationPath);
             ErrorHandling.LogNonFatal("Failed to back up statistics database", ex);
             return false;
         }

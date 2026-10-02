@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Microsoft.Data.Sqlite;
 
 namespace TwitchCraft_V1;
 
@@ -23,6 +24,15 @@ internal static class FileSystemHelper
         string? directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory))
             Directory.CreateDirectory(directory);
+    }
+
+    public static void BackupSqliteDatabase(SqliteConnection source, string destinationPath)
+    {
+        EnsureParentDir(destinationPath);
+        SqliteConnectionStringBuilder builder = new() { DataSource = destinationPath, Mode = SqliteOpenMode.ReadWriteCreate };
+        using SqliteConnection destination = new(builder.ToString());
+        destination.Open();
+        source.BackupDatabase(destination);
     }
 
     public static FileReplaceMode ReplaceFile(string tempPath, string targetPath, string? backupPath, string logMessage)

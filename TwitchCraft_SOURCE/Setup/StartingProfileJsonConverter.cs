@@ -156,8 +156,8 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
             propertyValue is Dictionary<string, CommandCustomization> customizations)
         {
             JObject ordered = [];
-            List<string> names = [.. customizations.Keys];
-            names.Sort(StringComparer.OrdinalIgnoreCase);
+            string[] names = [.. customizations.Keys];
+            Array.Sort(names, StringComparer.OrdinalIgnoreCase);
             foreach (string name in names)
                 ordered.Add(name, JToken.FromObject(customizations[name], serializer));
             return ordered;
