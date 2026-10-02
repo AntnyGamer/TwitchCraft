@@ -95,6 +95,8 @@ public sealed partial class MainHandler
 
     private void SafeCleanup()
     {
+        if (Volatile.Read(ref _shutdownRequested) == 2)
+            return;
         Statistics.PauseSurvival();
 
         try
