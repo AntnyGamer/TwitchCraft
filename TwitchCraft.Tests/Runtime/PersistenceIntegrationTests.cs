@@ -252,6 +252,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
             string[] priorBackups = Directory.Exists(ConfigurationStore.BackupsDirectory)
                 ? Directory.GetDirectories(ConfigurationStore.BackupsDirectory) : [];
             maintenance.BackupOnShutdown();
+            Assert.Empty(Directory.GetDirectories(ConfigurationStore.BackupsDirectory, "*.pending"));
             string backup = Assert.Single(Array.FindAll(Directory.GetDirectories(ConfigurationStore.BackupsDirectory), path => !Array.Exists(priorBackups, previous => previous == path)));
 
             ConfigurationStore.Update(saved => saved.Twitch.BotName = "changedbot");
