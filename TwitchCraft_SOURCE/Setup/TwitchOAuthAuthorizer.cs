@@ -117,9 +117,16 @@ internal static class TwitchOAuthAuthorizer
         return Fail("Timed out waiting for Twitch authorization. Click Authorize Twitch to try again.");
     }
 
-    public static async Task<TwitchOAuthResult> RefreshAsync(
+    public static Task<TwitchOAuthResult> RefreshAsync(
         string clientID,
         string refreshToken,
+        CancellationToken cancellationToken)
+        => RefreshAsync(clientID, refreshToken, HttpClient, cancellationToken);
+
+    internal static async Task<TwitchOAuthResult> RefreshAsync(
+        string clientID,
+        string refreshToken,
+        HttpClient httpClient,
         CancellationToken cancellationToken)
     {
         string normalizedClientID = (clientID ?? string.Empty).Trim();
@@ -135,7 +142,7 @@ internal static class TwitchOAuthAuthorizer
                 new KeyValuePair<string, string>("refresh_token", normalizedRefreshToken),
                 new KeyValuePair<string, string>("grant_type", "refresh_token")
             ]);
-            using HttpResponseMessage response = await HttpClient.PostAsync(TokenUri, content, cancellationToken).ConfigureAwait(false);
+            using HttpResponseMessage response = await httpClient.PostAsync(TokenUri, content, cancellationToken).ConfigureAwait(false);
             string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
                 return Fail("Twitch could not renew the saved authorization. " + ReadError(json));
@@ -144,7 +151,7 @@ internal static class TwitchOAuthAuthorizer
             if (!TryReadTokens(document.RootElement, out string token, out string newRefreshToken, out string error))
                 return Fail(error);
 
-            TwitchOAuthResult validated = await ValidateTokenAsync(token, newRefreshToken, normalizedClientID, cancellationToken).ConfigureAwait(false);
+            TwitchOAuthResult validated = await ValidateTokenAsync(token, newRefreshToken, normalizedClientID, httpClient, cancellationToken).ConfigureAwait(false);
             return validated.IsSuccess ? validated : validated with { RefreshToken = newRefreshToken };
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -333,6 +340,7 @@ internal static class TwitchOAuthAuthorizer
                 token,
                 refreshToken,
                 clientID,
+                HttpClient,
                 cancellationToken).ConfigureAwait(false);
             return new(DeviceTokenPollStatus.Complete, validated);
         }
@@ -372,13 +380,14 @@ internal static class TwitchOAuthAuthorizer
         string token,
         string refreshToken,
         string clientID,
+        HttpClient httpClient,
         CancellationToken cancellationToken)
     {
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, ValidateUri);
             request.Headers.Authorization = new AuthenticationHeaderValue("OAuth", token);
-            using HttpResponseMessage response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
                 return Fail("Twitch rejected the access token.");
 

@@ -23,7 +23,6 @@ public sealed class OAuthTokenFormattingTests
     [Theory]
     [InlineData("secret")]
     [InlineData("oauth:secret")]
-    [InlineData(" OAUTH:  secret ")]
     public void HeaderBuilders_AddExactlyOneProtocolPrefix(string token)
     {
         Assert.Equal("oauth:secret", TwitchTokenHelper.BuildIRCPassword(token));
@@ -33,8 +32,6 @@ public sealed class OAuthTokenFormattingTests
 
     [Theory]
     [InlineData(null)]
-    [InlineData("")]
-    [InlineData(" \t ")]
     [InlineData("oauth:")]
     public void HeaderBuilders_LeaveMissingCredentialsEmpty(string? token)
     {

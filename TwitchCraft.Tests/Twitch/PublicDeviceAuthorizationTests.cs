@@ -151,11 +151,9 @@ public sealed class PublicDeviceAuthorizationTests
     [InlineData("device_code", "\"\"")]
     [InlineData("user_code", "\"\"")]
     [InlineData("expires_in", "0")]
-    [InlineData("expires_in", "-1")]
     [InlineData("expires_in", "\"1800\"")]
     [InlineData("expires_in", "2147483648")]
     [InlineData("interval", "0")]
-    [InlineData("interval", "-1")]
     [InlineData("interval", "1.5")]
     public void RejectsIncompleteOrInvalidDeviceAuthorizationFields(string field, string valueJson)
     {

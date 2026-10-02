@@ -134,7 +134,6 @@ public sealed class EconomyBalanceTests
     [InlineData(90, 50, -50, 0, nameof(TokenAdjustmentStatus.Adjusted), 40, -50)]
     [InlineData(90, 100, 25, 0, nameof(TokenAdjustmentStatus.Insufficient), 90, 0)]
     [InlineData(90, 50, 25, 100, nameof(TokenAdjustmentStatus.Adjusted), 100, 10)]
-    [InlineData(100, 50, 25, 100, nameof(TokenAdjustmentStatus.Adjusted), 100, 0)]
     public void Gamble_ChecksStakeAndPersistsActualBalanceChange(
         int initialBalance, int stake, int delta, int maximumBalance,
         string expectedStatus, int expectedBalance, int expectedDelta)

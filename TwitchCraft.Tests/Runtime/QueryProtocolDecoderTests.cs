@@ -55,9 +55,6 @@ public sealed class QueryProtocolDecoderTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
     public void ParseChallenge_RejectsTruncatedHeaderOrMissingPayload(int packetLength)

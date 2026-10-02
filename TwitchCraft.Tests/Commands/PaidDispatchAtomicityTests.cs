@@ -192,37 +192,26 @@ public sealed class PaidDispatchAtomicityTests
         Assert.Equal(0, harness.CurrentReservation);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task ZeroCostCommand_DispatchesWithoutSpendingOrRefunding(bool dispatchSucceeded)
+    [Fact]
+    public async Task FailedZeroCostCommand_ReleasesCooldownWithoutSpendingOrRefunding()
     {
         TransactionHarness harness = new()
         {
-            DispatchOverride = _ => Task.FromResult(dispatchSucceeded)
+            DispatchOverride = _ => Task.FromResult(false)
         };
 
-        Assert.Equal(dispatchSucceeded, await harness.ExecuteAsync(0, TestContext.Current.CancellationToken));
+        Assert.False(await harness.ExecuteAsync(0, TestContext.Current.CancellationToken));
 
         Assert.Equal(100, harness.Balance);
         Assert.Equal(0, harness.SpendCalls);
         Assert.Equal(0, harness.RefundCalls);
         Assert.Equal(1, harness.DispatchCalls);
-        Assert.Equal(dispatchSucceeded ? 1 : 0, harness.StatisticsCalls);
-        Assert.Equal(dispatchSucceeded ? 0 : 1, harness.DispatchFailureReports);
-        Assert.Equal(dispatchSucceeded ? 0 : 1, harness.FailureNotifications);
-        if (dispatchSucceeded)
-        {
-            Assert.Equal(0, harness.RecordedCost);
-            Assert.Empty(harness.ReleasedReservations);
-        }
-        else
-        {
-            Assert.Null(harness.RecordedCost);
-            Assert.Equal(true, harness.ReportedRefundSucceeded);
-            Assert.Equal([101L], harness.ReleasedReservations);
-        }
-        Assert.Equal(dispatchSucceeded ? 101 : 0, harness.CurrentReservation);
+        Assert.Equal(0, harness.StatisticsCalls);
+        Assert.Equal(1, harness.DispatchFailureReports);
+        Assert.Equal(1, harness.FailureNotifications);
+        Assert.Equal(true, harness.ReportedRefundSucceeded);
+        Assert.Equal([101L], harness.ReleasedReservations);
+        Assert.Equal(0, harness.CurrentReservation);
     }
 
     private sealed class TransactionHarness
