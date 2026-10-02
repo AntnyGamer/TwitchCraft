@@ -242,5 +242,4 @@ public static partial class MinigameManager
         if (delay > TimeSpan.Zero)
             await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
     }
-
 }
