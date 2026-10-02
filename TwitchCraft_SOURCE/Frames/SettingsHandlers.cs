@@ -13,7 +13,7 @@ public partial class Settings
     {
         if (dropdown.SelectedItem is string selected)
             foreach ((int option, string label) in options)
-                if (string.Equals(selected, label, StringComparison.Ordinal))
+                if (string.Equals(selected, label, StringComparison.OrdinalIgnoreCase))
                 {
                     value = option;
                     return true;
@@ -33,13 +33,8 @@ public partial class Settings
         // SelectionChanged fires before WPF has reliably copied a newly selected item's label
         // into the editable Text property. Prefer SelectedItem so preset clicks always use the
         // value the user actually chose instead of the previous/blank editor text.
-        if (dropdown.SelectedItem is string selected)
-            foreach ((int option, string label) in options)
-                if (string.Equals(selected, label, StringComparison.OrdinalIgnoreCase))
-                {
-                    value = option;
-                    return value >= minimum && value <= maximum;
-                }
+        if (TryGetIntOption(dropdown, options, out value))
+            return value >= minimum && value <= maximum;
 
         string text = (dropdown.Text ?? string.Empty).Trim();
         foreach ((int option, string label) in options)
@@ -221,18 +216,11 @@ public partial class Settings
     private async void ChannelLimit_LostFocus(object sender, RoutedEventArgs e)
         => await SaveChannelLimitAsync();
 
-    private async Task SavePayoutAmountAsync()
-    {
-        if (_initializing || _updatingCustomValueControls)
-            return;
-        if (!TryReadEditableInt(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, 1, 1_000_000, out int value))
-        {
-            RestoreIntValue(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, static settings => settings.PassiveTokensPerPayout);
-            return;
-        }
-        SetIntValue(PassivePayoutAmountDropdown, PassivePayoutAmountOptions, value);
-        await SaveConfigAsync(config => config.Settings.PassiveTokensPerPayout = value);
-    }
+    private Task SavePayoutAmountAsync()
+        => SaveEditableIntAsync(
+            PassivePayoutAmountDropdown, PassivePayoutAmountOptions, 1, 1_000_000,
+            static settings => settings.PassiveTokensPerPayout,
+            static (settings, value) => settings.PassiveTokensPerPayout = value);
 
     private async Task SavePayoutRangeAsync(object changedControl)
     {
@@ -262,31 +250,17 @@ public partial class Settings
         });
     }
 
-    private async Task SaveTokenLimitAsync()
-    {
-        if (_initializing || _updatingCustomValueControls)
-            return;
-        if (!TryReadEditableInt(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, 0, int.MaxValue, out int value))
-        {
-            RestoreIntValue(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, static settings => settings.MaximumTokenBalance);
-            return;
-        }
-        SetIntValue(MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, value);
-        await SaveConfigAsync(config => config.Settings.MaximumTokenBalance = value);
-    }
+    private Task SaveTokenLimitAsync()
+        => SaveEditableIntAsync(
+            MaximumTokenBalanceDropdown, MaximumTokenBalanceOptions, 0, int.MaxValue,
+            static settings => settings.MaximumTokenBalance,
+            static (settings, value) => settings.MaximumTokenBalance = value);
 
-    private async Task SaveChannelLimitAsync()
-    {
-        if (_initializing || _updatingCustomValueControls)
-            return;
-        if (!TryReadEditableInt(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, 0, 1000, out int value))
-        {
-            RestoreIntValue(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, static settings => settings.ChannelCommandLimitPerMinute);
-            return;
-        }
-        SetIntValue(ChannelCommandLimitDropdown, ChannelCommandLimitOptions, value);
-        await SaveConfigAsync(config => config.Settings.ChannelCommandLimitPerMinute = value);
-    }
+    private Task SaveChannelLimitAsync()
+        => SaveEditableIntAsync(
+            ChannelCommandLimitDropdown, ChannelCommandLimitOptions, 0, 1000,
+            static settings => settings.ChannelCommandLimitPerMinute,
+            static (settings, value) => settings.ChannelCommandLimitPerMinute = value);
 
     private void SetTextValue(ComboBox dropdown, string text)
     {
@@ -416,18 +390,11 @@ public partial class Settings
     private async void ViewerLimit_LostFocus(object sender, RoutedEventArgs e)
         => await SaveViewerLimitAsync();
 
-    private async Task SaveViewerLimitAsync()
-    {
-        if (_initializing || _updatingCustomValueControls)
-            return;
-        if (!TryReadEditableInt(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, 0, 1000, out int value))
-        {
-            RestoreIntValue(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, static settings => settings.ViewerCommandLimitPerMinute);
-            return;
-        }
-        SetIntValue(ViewerCommandLimitDropdown, ViewerCommandLimitOptions, value);
-        await SaveConfigAsync(config => config.Settings.ViewerCommandLimitPerMinute = value);
-    }
+    private Task SaveViewerLimitAsync()
+        => SaveEditableIntAsync(
+            ViewerCommandLimitDropdown, ViewerCommandLimitOptions, 0, 1000,
+            static settings => settings.ViewerCommandLimitPerMinute,
+            static (settings, value) => settings.ViewerCommandLimitPerMinute = value);
 
     private async void ActivityWindow_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(ActivityWindowDropdown, ActivityWindowOptions, static (settings, value) => settings.PassiveActivityWindowMinutes = value);
@@ -441,14 +408,14 @@ public partial class Settings
     private async void TwitchLogLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaxTwitchLogLinesDropdown.SelectedItem is string)
-            await SaveExtraValueAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+            await SaveEditableIntAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleTwitchLogLines,
                 static (settings, value) => settings.MaxVisibleTwitchLogLines = value,
                 refreshLowResourceSummary: true);
     }
 
     private async void TwitchLogLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveExtraValueAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+        => await SaveEditableIntAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
             static settings => settings.MaxVisibleTwitchLogLines,
             static (settings, value) => settings.MaxVisibleTwitchLogLines = value,
             refreshLowResourceSummary: true);
@@ -456,14 +423,14 @@ public partial class Settings
     private async void MinecraftLogLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaxMinecraftLogLinesDropdown.SelectedItem is string)
-            await SaveExtraValueAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+            await SaveEditableIntAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleMinecraftLogLines,
                 static (settings, value) => settings.MaxVisibleMinecraftLogLines = value,
                 refreshLowResourceSummary: true);
     }
 
     private async void MinecraftLogLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveExtraValueAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
+        => await SaveEditableIntAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
             static settings => settings.MaxVisibleMinecraftLogLines,
             static (settings, value) => settings.MaxVisibleMinecraftLogLines = value,
             refreshLowResourceSummary: true);
@@ -478,14 +445,14 @@ public partial class Settings
     private async void RelayRate_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && RelayRateDropdown.SelectedItem is string)
-            await SaveExtraValueAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
+            await SaveEditableIntAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
                 static settings => settings.MinecraftRelayMessagesPerSecond,
                 static (settings, value) => settings.MinecraftRelayMessagesPerSecond = value,
                 refreshLowResourceSummary: true);
     }
 
     private async void RelayRate_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveExtraValueAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
+        => await SaveEditableIntAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
             static settings => settings.MinecraftRelayMessagesPerSecond,
             static (settings, value) => settings.MinecraftRelayMessagesPerSecond = value,
             refreshLowResourceSummary: true);
@@ -493,14 +460,14 @@ public partial class Settings
     private async void QueueLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && GameplayQueueDropdown.SelectedItem is string)
-            await SaveExtraValueAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
+            await SaveEditableIntAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
                 static settings => settings.MaxGameplayCommandQueue,
                 static (settings, value) => settings.MaxGameplayCommandQueue = value,
                 refreshLowResourceSummary: true);
     }
 
     private async void QueueLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveExtraValueAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
+        => await SaveEditableIntAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
             static settings => settings.MaxGameplayCommandQueue,
             static (settings, value) => settings.MaxGameplayCommandQueue = value,
             refreshLowResourceSummary: true);
@@ -508,13 +475,13 @@ public partial class Settings
     private async void RCONTimeout_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && RCONTimeoutDropdown.SelectedItem is string)
-            await SaveExtraValueAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
+            await SaveEditableIntAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
                 static settings => settings.RCONTimeoutSeconds,
                 static (settings, value) => settings.RCONTimeoutSeconds = value);
     }
 
     private async void RCONTimeout_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveExtraValueAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
+        => await SaveEditableIntAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
             static settings => settings.RCONTimeoutSeconds,
             static (settings, value) => settings.RCONTimeoutSeconds = value);
 
@@ -610,14 +577,15 @@ public partial class Settings
             ? Task.CompletedTask
             : SaveConfigAsync(config => update(config.Settings, value));
 
-    private async Task SaveExtraValueAsync(
+    private async Task SaveEditableIntAsync(
         ComboBox dropdown,
         (int Value, string Label)[] options,
         int minimum,
         int maximum,
         Func<StartingProfile, int> getValue,
         Action<StartingProfile, int> update,
-        bool refreshLowResourceSummary = false)
+        bool refreshLowResourceSummary = false,
+        Action<TwitchCraftConfig>? beforeSave = null)
     {
         if (_initializing || _updatingCustomValueControls)
             return;
@@ -631,31 +599,21 @@ public partial class Settings
         }
 
         SetIntValue(dropdown, options, value);
-        await SaveConfigAsync(config => update(config.Settings, value));
+        await SaveConfigAsync(config => update(config.Settings, value), beforeSave: beforeSave);
         if (refreshLowResourceSummary)
             UpdateLowResource();
     }
 
-    private async Task SaveServerValueAsync(
+    private Task SaveServerValueAsync(
         ComboBox dropdown,
         (int Value, string Label)[] options,
         int minimum,
         int maximum,
         Func<StartingProfile, int> getValue,
         Action<StartingProfile, int> update)
-    {
-        if (_initializing || _updatingCustomValueControls)
-            return;
-
-        if (!TryReadEditableInt(dropdown, options, minimum, maximum, out int value))
-        {
-            RestoreIntValue(dropdown, options, getValue);
-            return;
-        }
-
-        SetIntValue(dropdown, options, value);
-        await SaveConfigAsync(config => update(config.Settings, value), beforeSave: ApplyLocalProfile);
-    }
+        => SaveEditableIntAsync(
+            dropdown, options, minimum, maximum, getValue, update,
+            beforeSave: ApplyLocalProfile);
 
     private void UpdateLowResource(StartingProfile? settings = null)
     {
