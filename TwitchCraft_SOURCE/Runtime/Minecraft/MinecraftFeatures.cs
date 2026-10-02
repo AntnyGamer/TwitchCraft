@@ -56,23 +56,13 @@ public sealed partial class MainHandler
         return SendTellrawAsync(selector, message, color, bold, cancellationToken);
     }
 
-    public EffectDefinition GetRandomEffect()
-    {
-        List<EffectDefinition> effects = _effectList;
-        return effects[Random.Shared.Next(effects.Count)];
-    }
+    private static T GetRandom<T>(List<T> values) => values[Random.Shared.Next(values.Count)];
 
-    public string GetRandomLootTable()
-    {
-        List<string> loot = _lootList;
-        return loot[Random.Shared.Next(loot.Count)];
-    }
+    public EffectDefinition GetRandomEffect() => GetRandom(_effectList);
 
-    public string GetRandomMob()
-    {
-        List<string> mobs = _mobList;
-        return mobs[Random.Shared.Next(mobs.Count)];
-    }
+    public string GetRandomLootTable() => GetRandom(_lootList);
+
+    public string GetRandomMob() => GetRandom(_mobList);
 
     public string CurrentMinecraftVersion => _activeConfig?.Server.MinecraftVersion ?? string.Empty;
 

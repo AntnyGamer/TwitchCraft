@@ -88,15 +88,7 @@ public static partial class MinigameManager
                 ClearScheduleNoLock();
             }
 
-            if (ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chickenState))
-                chickenState.BettingOpen = false;
-            if (WitherBattleStates.TryGetValue(runtime, out WitherBattleState? witherState))
-            {
-                witherState.BettingOpen = false;
-                witherState.CurrentHealth = 0;
-                witherState.DefeatedSignal?.TrySetResult();
-                witherState.DefeatedSignal = null;
-            }
+            ResetStatesNoLock(runtime);
         }
 
         if (loop != null)

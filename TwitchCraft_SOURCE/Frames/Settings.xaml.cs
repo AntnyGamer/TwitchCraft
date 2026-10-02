@@ -92,7 +92,7 @@ public partial class Settings : UserControl
     {
         InitializeComponent();
         AddMinigameOptions();
-        AddCooldownOptions();
+        AddOptions(GlobalCooldownSecondsDropdown, GlobalCooldownOptions);
         AddEconomyOptions();
         AddMainOptions();
         AddExtraOptions();
@@ -910,26 +910,13 @@ public partial class Settings : UserControl
         }
     }
 
-    private void AddCooldownOptions()
-    {
-        if (GlobalCooldownSecondsDropdown.Items.Count > 0)
-        {
-            return;
-        }
-
-        foreach ((double _, string label) in GlobalCooldownOptions)
-            GlobalCooldownSecondsDropdown.Items.Add(label);
-    }
-
     private void AddEconomyOptions()
     {
         if (ResponseVerbosityDropdown.Items.Count == 0)
             foreach (string option in ResponseVerbosityOptions)
                 ResponseVerbosityDropdown.Items.Add(option);
 
-        if (CommandCostMultiplierDropdown.Items.Count == 0)
-            foreach ((double _, string label) in CommandCostMultiplierOptions)
-                CommandCostMultiplierDropdown.Items.Add(label);
+        AddOptions(CommandCostMultiplierDropdown, CommandCostMultiplierOptions);
 
         if (FollowRewardAmountDropdown.Items.Count == 0)
             foreach (int amount in FollowRewardAmountOptions)
