@@ -29,7 +29,7 @@ internal static class FileSystemHelper
     public static void BackupSqliteDatabase(SqliteConnection source, string destinationPath)
     {
         EnsureParentDir(destinationPath);
-        SqliteConnectionStringBuilder builder = new() { DataSource = destinationPath, Mode = SqliteOpenMode.ReadWriteCreate, Pooling = false };
+        SqliteConnectionStringBuilder builder = new() { DataSource = destinationPath, Pooling = false };
         using SqliteConnection destination = new(builder.ToString());
         destination.Open();
         source.BackupDatabase(destination);
