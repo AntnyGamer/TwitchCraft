@@ -26,6 +26,8 @@ public partial class Main : UserControl
     private readonly Queue<string> _pendingTwitchLogLines = [];
     private readonly Lock _logGate = new();
     private readonly DispatcherTimer _connectionHealthTimer;
+    private readonly Action _flushMinecraftLogs;
+    private readonly Action _flushTwitchLogs;
     private bool _minecraftFlushQueued;
     private bool _twitchFlushQueued;
     private int _serverActionRunning;
@@ -38,6 +40,8 @@ public partial class Main : UserControl
     public Main()
     {
         InitializeComponent();
+        _flushMinecraftLogs = () => FlushLogs(MinecraftLogs, _minecraftLogLines, _pendingMinecraftLogLines, isMinecraftLog: true);
+        _flushTwitchLogs = () => FlushLogs(TwitchLogs, _twitchLogLines, _pendingTwitchLogLines, isMinecraftLog: false);
         _connectionHealthTimer = new() { Interval = TimeSpan.FromSeconds(1) };
         _connectionHealthTimer.Tick += HealthTimer_Tick;
         IsVisibleChanged += Visibility_Changed;
@@ -128,7 +132,7 @@ public partial class Main : UserControl
 
     public void AddServerLogLine(string line)
     {
-        QueueLog(MinecraftLogs, _minecraftLogLines, _pendingMinecraftLogLines, isMinecraftLog: true, line);
+        QueueLog(_pendingMinecraftLogLines, isMinecraftLog: true, line);
     }
 
     public void ClearServerLog()
@@ -138,7 +142,7 @@ public partial class Main : UserControl
 
     public void AddChatLogLine(string line)
     {
-        QueueLog(TwitchLogs, _twitchLogLines, _pendingTwitchLogLines, isMinecraftLog: false, line);
+        QueueLog(_pendingTwitchLogLines, isMinecraftLog: false, line);
     }
 
     public void ClearChatLog()
@@ -169,7 +173,7 @@ public partial class Main : UserControl
         });
     }
 
-    private void QueueLog(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog, string? line)
+    private void QueueLog(Queue<string> pendingLines, bool isMinecraftLog, string? line)
     {
         bool shouldSchedule = false;
 
@@ -186,9 +190,7 @@ public partial class Main : UserControl
         }
 
         if (shouldSchedule)
-        {
-            SafeInvoke(() => FlushLogs(box, lines, pendingLines, isMinecraftLog));
-        }
+            SafeInvoke(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
     }
 
     private void FlushLogs(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
@@ -202,7 +204,7 @@ public partial class Main : UserControl
 
         int batchCount;
         string? singleLine = null;
-        List<string>? batch = null;
+        string[]? batch = null;
 
         lock (_logGate)
         {
@@ -213,9 +215,8 @@ public partial class Main : UserControl
             }
             else if (batchCount > 1)
             {
-                batch = new(batchCount);
-                while (pendingLines.Count > 0)
-                    batch.Add(pendingLines.Dequeue());
+                batch = pendingLines.ToArray();
+                pendingLines.Clear();
             }
 
             CancelQueuedFlush(isMinecraftLog);
@@ -276,7 +277,7 @@ public partial class Main : UserControl
         }
 
         if (shouldSchedule)
-            SafeInvoke(() => FlushLogs(box, lines, pendingLines, isMinecraftLog));
+            SafeInvoke(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
     }
 
     private void ClearLog(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
@@ -341,9 +342,9 @@ public partial class Main : UserControl
         if (viewers != null)
             UpdateViewers(viewers);
         if (flushMinecraft)
-            SafeInvoke(() => FlushLogs(MinecraftLogs, _minecraftLogLines, _pendingMinecraftLogLines, isMinecraftLog: true));
+            SafeInvoke(_flushMinecraftLogs);
         if (flushTwitch)
-            SafeInvoke(() => FlushLogs(TwitchLogs, _twitchLogLines, _pendingTwitchLogLines, isMinecraftLog: false));
+            SafeInvoke(_flushTwitchLogs);
         UpdateHealth();
     }
 
