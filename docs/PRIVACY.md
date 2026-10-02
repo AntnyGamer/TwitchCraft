@@ -96,7 +96,7 @@ With TwitchCraft closed, the operator should remove that viewer's records from:
 - `TokenBalances` and `RewardedFollows` in `viewer_tokens.db`
 - `ViewerScores` in `statistics.db`
 - `exports\viewer_tokens.json` and `exports\statistics_viewers.json` by deleting the exports and allowing TwitchCraft to regenerate them
-- Any retained backup containing an older copy of `viewer_tokens.db` if complete removal from backups is also required
+- Any retained backup containing older copies of `viewer_tokens.db` or `statistics.db` if complete removal from backups is also required
 
 The TwitchCraft developer cannot remotely access or erase data stored on another user's computer.
 

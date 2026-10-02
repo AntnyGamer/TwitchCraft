@@ -120,13 +120,12 @@ internal sealed class DataMaintenance(
 
                 bool configSaved = ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json"));
                 bool tokensSaved = _tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db"));
-                if (!configSaved || !tokensSaved)
+                bool statisticsSaved = StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db"));
+                if (!configSaved || !tokensSaved || !statisticsSaved)
                 {
                     try { Directory.Delete(backupDirectory, recursive: true); } catch { }
                     return;
                 }
-
-                StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db"));
                 _lastAutomaticBackupUtc = DateTime.UtcNow;
                 _automaticBackupTimestampLoaded = true;
                 PruneBackups(root, retentionCount);
@@ -214,5 +213,6 @@ internal sealed class DataMaintenance(
 
     private static bool IsBackupComplete(string directory)
         => File.Exists(Path.Combine(directory, "config.json")) &&
-           File.Exists(Path.Combine(directory, "viewer_tokens.db"));
+           File.Exists(Path.Combine(directory, "viewer_tokens.db")) &&
+           File.Exists(Path.Combine(directory, "statistics.db"));
 }

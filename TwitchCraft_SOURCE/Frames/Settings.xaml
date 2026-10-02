@@ -392,8 +392,8 @@
                                                 <ComboBox x:Name="SqliteOptimizeDropdown" AutomationProperties.Name="SQLite optimization interval" SelectionChanged="SqliteOptimize_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
-                                                <TextBlock Text="Enable automatic config and token backups:" Style="{StaticResource SettingLabel}" />
-                                                <CheckBox x:Name="AutomaticBackupsCheckbox" AutomationProperties.Name="Enable automatic config and token backups" Checked="Backups_Changed" Unchecked="Backups_Changed" />
+                                                <TextBlock Text="Enable automatic data backups:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="AutomaticBackupsCheckbox" AutomationProperties.Name="Enable automatic data backups" Checked="Backups_Changed" Unchecked="Backups_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Automatic backup interval:" Style="{StaticResource SettingLabel}" />
