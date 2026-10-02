@@ -116,6 +116,7 @@ public sealed partial class MainHandler
             await StopSessionAsync(backupBeforeClose: true).ConfigureAwait(false);
             await MinigameManager.StopLoopsAsync(this).ConfigureAwait(false);
 
+            Interlocked.Exchange(ref _shutdownRequested, 2);
             return true;
         }
         catch (Exception ex)
@@ -333,7 +334,9 @@ public sealed partial class MainHandler
         }
     }
 
-    public async Task StopSessionAsync(bool backupBeforeClose = false)
+    public Task StopSessionAsync() => StopSessionAsync(false);
+
+    private async Task StopSessionAsync(bool backupBeforeClose)
     {
         Interlocked.Increment(ref _lifecycleStopGeneration);
         if (_runtimeState == RuntimeState.Starting)
