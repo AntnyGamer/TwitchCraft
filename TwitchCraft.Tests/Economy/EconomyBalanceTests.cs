@@ -113,6 +113,12 @@ public sealed class EconomyBalanceTests
             Assert.Equal(FollowRewardResult.Rewarded, result);
             Assert.Equal(10, awarded);
             Assert.Equal(100, store.GetBalance("viewer"));
+            Assert.True(store.TrySpend("viewer", 20));
+            Assert.Equal(FollowRewardResult.AlreadyRewarded, store.TryRewardFollower(
+                "123456", "viewer", new DateTimeOffset(2026, 8, 27, 2, 2, 3, TimeSpan.Zero),
+                100, out int repeatedAward, maximumBalance: 100));
+            Assert.Equal(0, repeatedAward);
+            Assert.Equal(80, store.GetBalance("viewer"));
         }
         finally
         {

@@ -91,6 +91,95 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task StatisticsReset_RollsBackFailureThenClearsTotalsWithoutRecountingPreviousDeaths()
+    {
+        Assert.True(StatisticsStore.ApplyDeathScore(3, 90, out long deaths));
+        Assert.Equal(3, deaths);
+        List<string> refreshes = [];
+        StatisticsService service = CreateStatistics([], [], refreshes);
+        service.RecordSession();
+        service.ResetForSession();
+        service.RecordPlayerJoin("Steve");
+        service.RecordCommand("heal", "viewer", 25);
+        service.RecordEffects(2, streamerReceivedEffect: true);
+        StatisticsSnapshot before = service.GetSnapshot(TestContext.Current.CancellationToken);
+        Assert.Equal("viewer", before.TotalNicestViewer);
+        Assert.Equal(TimeSpan.FromSeconds(90), before.LongestTimeSurvived);
+        Assert.Equal(3, before.TotalDeaths);
+
+        using (SqliteConnection connection = new(new SqliteConnectionStringBuilder
+        {
+            DataSource = Path.Combine(TestApplicationData.Path, "statistics.db")
+        }.ToString()))
+        {
+            connection.Open();
+            using SqliteCommand command = connection.CreateCommand();
+            // Abort after command counts and viewer scores have been deleted in the transaction.
+            command.CommandText = "CREATE TRIGGER fail_reset BEFORE UPDATE ON GlobalStats BEGIN SELECT RAISE(ABORT, 'blocked reset'); END;";
+            command.ExecuteNonQuery();
+            await Assert.ThrowsAsync<IOException>(() => service.ResetAllAsync());
+
+            StatisticsSnapshot failed = service.GetSnapshot(TestContext.Current.CancellationToken);
+            Assert.Equal(1, failed.SessionGameCommandsRun);
+            Assert.Equal(1, failed.TotalGameCommandsRun);
+            Assert.Equal(25, failed.TotalTokensSpent);
+            Assert.Equal(2, failed.TotalEffectsGiven);
+            Assert.Equal(3, failed.TotalDeaths);
+            Assert.Equal("!heal", failed.TotalMostUsedCommand);
+            Assert.Equal("viewer", failed.TotalNicestViewer);
+            Assert.Equal(1, StatisticsStore.LoadGlobal()!.CommandUseCounts["heal"]);
+            Assert.Equal((string.Empty, "viewer"), StatisticsStore.GetTopViewers("streamer"));
+            Assert.Empty(refreshes);
+
+            command.CommandText = "DROP TRIGGER fail_reset;";
+            command.ExecuteNonQuery();
+        }
+
+        await service.ResetAllAsync();
+
+        StatisticsSnapshot cleared = service.GetSnapshot(TestContext.Current.CancellationToken);
+        Assert.Equal(0, cleared.SessionGameCommandsRun);
+        Assert.Equal(0, cleared.SessionTokensSpent);
+        Assert.Equal(0, cleared.SessionEffectsGiven);
+        Assert.Equal(0, cleared.TotalGameCommandsRun);
+        Assert.Equal(0, cleared.TotalTokensSpent);
+        Assert.Equal(0, cleared.TotalEffectsGiven);
+        Assert.Equal(0, cleared.TotalDeaths);
+        Assert.Equal(0, cleared.SessionsStarted);
+        Assert.Empty(cleared.SessionMostUsedCommand);
+        Assert.Empty(cleared.SessionNicestViewer);
+        Assert.Empty(cleared.TotalMostUsedCommand);
+        Assert.Empty(cleared.TotalNicestViewer);
+        Assert.Null(cleared.LongestTimeSurvived);
+        Assert.Null(cleared.ShortestTimeSurvived);
+        Assert.NotNull(cleared.SessionTimeSurvived);
+        Assert.False(service.NeedsRespawnRefresh("Steve"));
+        Assert.Equal(["snapshot", "gamemode", "death-scores"], refreshes);
+
+        StatisticsStore.CloseConnection();
+        LifetimeStatistics persisted = Assert.IsType<LifetimeStatistics>(StatisticsStore.LoadGlobal());
+        Assert.Equal(0, persisted.GameCommandsRun);
+        Assert.Equal(0, persisted.TokensSpent);
+        Assert.Equal(0, persisted.EffectsGiven);
+        Assert.Equal(0, persisted.Deaths);
+        Assert.Equal(0, persisted.SessionsStarted);
+        Assert.Equal(3, persisted.LastDeathScore);
+        Assert.Empty(persisted.CommandUseCounts);
+        Assert.Equal((string.Empty, string.Empty), StatisticsStore.GetTopViewers("streamer"));
+
+        StatisticsService restarted = CreateStatistics([], []);
+        restarted.Load();
+        restarted.ResetForSession();
+        restarted.RecordDeathScore("Steve", 3);
+        Assert.Equal(0, restarted.GetSnapshot(TestContext.Current.CancellationToken).TotalDeaths);
+        restarted.RecordDeathScore("Steve", 4);
+        StatisticsSnapshot nextDeath = restarted.GetSnapshot(TestContext.Current.CancellationToken);
+        Assert.Equal(1, nextDeath.SessionDeaths);
+        Assert.Equal(1, nextDeath.TotalDeaths);
+        Assert.Equal(1, StatisticsStore.LoadGlobal()!.Deaths);
+    }
+
+    [Fact]
     public void ShutdownBackup_PreservesAConsistentRestorableSnapshotAfterLiveDataChanges()
     {
         TwitchCraftConfig config = new() { Twitch = { BotName = "savedbot" } };
@@ -176,7 +265,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
         Assert.False(File.Exists(ConfigurationStore.ConfigPath + ".tmp"));
     }
 
-    private static StatisticsService CreateStatistics(List<string> deathRefreshes, List<string> respawnRefreshes)
+    private static StatisticsService CreateStatistics(List<string> deathRefreshes, List<string> respawnRefreshes, List<string>? refreshes = null)
     {
         StatisticsService service = new(new(
             command => command switch
@@ -184,7 +273,9 @@ public sealed class PersistenceIntegrationTests : IDisposable
                 "heal" => ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Nice,
                 "fire" => ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Dangerous,
                 _ => ChatCommandStatisticFlags.None
-            }, _ => true, _ => false, () => { }, () => { }, () => { }, deathRefreshes.Add, respawnRefreshes.Add));
+            }, _ => true, _ => false,
+            () => refreshes?.Add("snapshot"), () => refreshes?.Add("gamemode"), () => refreshes?.Add("death-scores"),
+            deathRefreshes.Add, respawnRefreshes.Add));
         service.SetContext(true, "streamer", "Steve", "!");
         return service;
     }

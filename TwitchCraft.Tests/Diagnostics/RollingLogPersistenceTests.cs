@@ -49,9 +49,14 @@ public sealed class RollingLogPersistenceTests
         }
 
         string[] files = Directory.GetFiles(directory.Path, "TwitchCraft.log*");
-        Assert.InRange(files.Length, 1, 4);
+        Assert.Equal(4, files.Length);
         Assert.DoesNotContain(logPath + ".old4", files);
-        Assert.Contains("{\"event\":29,\"value\":\"abcdefghij\"}", ReadAllLogLines(logPath));
+        for (int retained = 0; retained <= 3; retained++)
+        {
+            string retainedPath = retained == 0 ? logPath : logPath + ".old" + retained;
+            string expected = "{\"event\":" + (29 - retained) + ",\"value\":\"abcdefghij\"}";
+            Assert.Equal(expected, Assert.Single(File.ReadAllLines(retainedPath)));
+        }
     }
 
     [Fact]

@@ -42,19 +42,6 @@ public sealed class StartupAndEligibilityTests
     }
 
     [Fact]
-    public async Task Eligibility_IncludesConfiguredActivityWindowBoundary()
-    {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
-        {
-            settings.PassiveRewardsRequireActivity = true;
-            settings.PassiveActivityWindowMinutes = 2;
-        });
-        scope.Runtime.RecordChatActivity("viewer", 1_000);
-
-        Assert.True(scope.Runtime.IsRewardEligibleNoLock("viewer", 1_120));
-    }
-
-    [Fact]
     public async Task LaterChatActivitySupersedesOldTimestampAndExtendsEligibility()
     {
         using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>

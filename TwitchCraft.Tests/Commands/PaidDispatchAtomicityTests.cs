@@ -27,6 +27,7 @@ public sealed class PaidDispatchAtomicityTests
         Assert.Equal(0, harness.RefundCalls);
         Assert.Equal(1, harness.DispatchCalls);
         Assert.Equal(1, harness.StatisticsCalls);
+        Assert.Equal([25], harness.RecordedCosts);
         Assert.Equal(0, harness.FailureNotifications);
         Assert.Empty(harness.ReleasedReservations);
         Assert.Equal(101, harness.CurrentReservation);
@@ -141,6 +142,7 @@ public sealed class PaidDispatchAtomicityTests
         internal int RefundCalls { get; private set; }
         internal int DispatchCalls { get; private set; }
         internal int StatisticsCalls { get; private set; }
+        internal List<int> RecordedCosts { get; } = [];
         internal int DispatchFailureReports { get; private set; }
         internal int InsufficientTokenReports { get; private set; }
         internal int FailureNotifications { get; private set; }
@@ -185,7 +187,11 @@ public sealed class PaidDispatchAtomicityTests
                     DispatchCalls++;
                     return DispatchOverride?.Invoke(token) ?? Task.FromResult(true);
                 },
-                _ => StatisticsCalls++,
+                amount =>
+                {
+                    StatisticsCalls++;
+                    RecordedCosts.Add(amount);
+                },
                 (_, _) =>
                 {
                     InsufficientTokenReports++;
