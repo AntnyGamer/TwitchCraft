@@ -162,11 +162,6 @@ internal sealed class DataMaintenance(
         List<(DirectoryInfo Directory, DateTime Timestamp)> backups = [];
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
-            if (directory.Name.StartsWith(".pending-", StringComparison.Ordinal))
-            {
-                FileSystemHelper.DeleteDirectorySafe(directory.FullName);
-                continue;
-            }
             if (!TryGetBackupTime(directory, requireCompleteBackup: false, out DateTime timestamp))
                 continue;
 
