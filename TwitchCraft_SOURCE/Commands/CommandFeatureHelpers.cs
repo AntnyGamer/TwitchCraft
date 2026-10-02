@@ -289,9 +289,7 @@ internal static class ItemComponents
     {
         for (int i = 0; i < entries.Count; i++)
         {
-            string entry = entries[i];
-            int colonIndex = FindTopLevelColon(entry);
-            if (colonIndex > 0 && entry.AsSpan(0, colonIndex).Trim().Trim("\"'").Equals(fieldName, StringComparison.OrdinalIgnoreCase))
+            if (NameMatches(entries[i], fieldName))
                 return i;
         }
 
@@ -303,6 +301,16 @@ internal static class ItemComponents
         int index = FindFieldIndex(entries, fieldName);
         if (index >= 0)
             entries.RemoveAt(index);
+    }
+
+    private static bool NameMatches(string entry, string fieldName)
+    {
+        int colonIndex = FindTopLevelColon(entry);
+        if (colonIndex <= 0)
+            return false;
+
+        ReadOnlySpan<char> actual = entry.AsSpan(0, colonIndex).Trim().Trim("\"'");
+        return actual.Equals(fieldName, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string GetFieldValue(string entry)
