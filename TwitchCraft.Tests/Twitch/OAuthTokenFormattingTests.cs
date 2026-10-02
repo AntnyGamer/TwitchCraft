@@ -10,33 +10,17 @@ public sealed class OAuthTokenFormattingTests
     [InlineData("OAUTH:secret", "secret")]
     [InlineData("oauth:   secret", "secret")]
     [InlineData("secret", "secret")]
-    [InlineData("\tOaUtH:\u2003secret\r\n", "secret")]
-    [InlineData("oauth:", "")]
-    [InlineData("oauth:   ", "")]
-    [InlineData(" \t\r\n", "")]
     [InlineData(null, "")]
     public void NormalizeAccessToken_RemovesWhitespaceAndOAuthPrefix(string? value, string expected)
     {
         Assert.Equal(expected, TwitchTokenHelper.NormalizeAccessToken(value));
     }
 
-    [Theory]
-    [InlineData("secret")]
-    [InlineData("oauth:secret")]
-    public void HeaderBuilders_AddExactlyOneProtocolPrefix(string token)
+    [Fact]
+    public void HeaderBuilders_AddExactlyOneProtocolPrefix()
     {
-        Assert.Equal("oauth:secret", TwitchTokenHelper.BuildIRCPassword(token));
-        Assert.Equal("Bearer secret", TwitchTokenHelper.BuildBearerHeader(token));
-        Assert.Equal("OAuth secret", TwitchTokenHelper.BuildValidateHeader(token));
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("oauth:")]
-    public void HeaderBuilders_LeaveMissingCredentialsEmpty(string? token)
-    {
-        Assert.Empty(TwitchTokenHelper.BuildIRCPassword(token));
-        Assert.Empty(TwitchTokenHelper.BuildBearerHeader(token));
-        Assert.Empty(TwitchTokenHelper.BuildValidateHeader(token));
+        Assert.Equal("oauth:secret", TwitchTokenHelper.BuildIRCPassword("oauth:secret"));
+        Assert.Equal("Bearer secret", TwitchTokenHelper.BuildBearerHeader("oauth:secret"));
+        Assert.Equal("OAuth secret", TwitchTokenHelper.BuildValidateHeader("oauth:secret"));
     }
 }

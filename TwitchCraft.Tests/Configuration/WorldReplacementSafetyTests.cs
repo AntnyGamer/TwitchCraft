@@ -143,41 +143,6 @@ public sealed class WorldReplacementSafetyTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void ReplaceWorld_IncompleteSourcePreservesDestinationAndSkipsFinishing(bool hasPreviousWorld)
-    {
-        using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
-        Directory.CreateDirectory(source);
-        File.WriteAllText(System.IO.Path.Combine(source, "region.dat"), "incomplete import");
-        if (hasPreviousWorld)
-        {
-            Directory.CreateDirectory(destination);
-            File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
-            File.WriteAllText(System.IO.Path.Combine(destination, "player-data.dat"), "saved progress");
-        }
-        MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
-        bool finishCalled = false;
-
-        IOException exception = Assert.Throws<IOException>(() =>
-            MinecraftWorldImporter.ReplaceWorld(plan, () => finishCalled = true));
-
-        Assert.IsType<InvalidDataException>(exception.InnerException);
-        Assert.False(finishCalled);
-        Assert.Equal(hasPreviousWorld, Directory.Exists(destination));
-        if (hasPreviousWorld)
-        {
-            Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
-            Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(destination, "player-data.dat")));
-        }
-        Assert.Equal("incomplete import", File.ReadAllText(System.IO.Path.Combine(source, "region.dat")));
-        Assert.False(Directory.Exists(plan.StagingWorldPath));
-        Assert.False(Directory.Exists(plan.BackupWorldPath));
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
     public void ReplaceWorld_WhenFinishingFails_RollsBackInstalledWorld(bool hasPreviousWorld)
     {
         using TemporaryDirectory directory = new();

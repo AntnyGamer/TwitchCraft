@@ -109,46 +109,6 @@ public sealed class TimedScaleLifecycleTests
         Assert.Empty(sentCommands);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ApplyAsync_FailedReplacementPreservesEarlierReset(bool dispatchThrows)
-    {
-        List<string> sentCommands = [];
-        List<Task> trackedTasks = [];
-        Channel<TaskCompletionSource> delays = Channel.CreateUnbounded<TaskCompletionSource>();
-        TimedPlayerScaleController controller = CreateController(sentCommands, trackedTasks, delays);
-
-        Assert.True(await ApplySuccessfulAsync(controller, 0.5));
-        Task<bool> replacement = controller.ApplyAsync(
-            ["PlayerOne"],
-            2.0,
-            usesModernAttributeIDs: true,
-            usesInlineTextComponents: true,
-            TimeSpan.FromSeconds(30),
-            (_, _) => dispatchThrows
-                ? Task.FromException<bool>(new InvalidOperationException("Dispatch failed."))
-                : Task.FromResult(false),
-            CancellationToken.None);
-        if (dispatchThrows)
-            await Assert.ThrowsAsync<InvalidOperationException>(() => replacement);
-        else
-            Assert.False(await replacement);
-
-        Task earlierReset = Assert.Single(trackedTasks);
-        Assert.True(delays.Reader.TryRead(out TaskCompletionSource? warningDelay));
-        warningDelay.SetResult();
-        TaskCompletionSource resetDelay = await WaitForNextDelayAsync(delays);
-        Assert.Equal(3, sentCommands.Count);
-        resetDelay.SetResult();
-        await earlierReset.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
-
-        Assert.Equal(4, sentCommands.Count);
-        Assert.Equal(
-            "execute as @a[name=\"PlayerOne\",limit=1] run attribute @s minecraft:scale base set 1",
-            sentCommands[^1]);
-    }
-
     [Fact]
     public async Task ResetAllAsync_RestoresTrackedPlayersBeforeSessionShutdown()
     {

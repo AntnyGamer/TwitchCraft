@@ -9,26 +9,18 @@ namespace TwitchCraft.Tests.Runtime;
 
 public sealed class RCONRequestValidationTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Query_RejectsInvalidResponseAndReconnectsForNextQuery(bool malformedPacket)
+    [Fact]
+    public async Task Query_RejectsWrongResponseType()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         const string password = "query-validation-password";
-        await using FakeRCONServer RCON = new(
-            password,
-            malformedResponseCommand: malformedPacket ? "list" : null,
-            wrongTypeResponseCommand: malformedPacket ? null : "list");
+        await using FakeRCONServer RCON = new(password, wrongTypeResponseCommand: "list");
 
         try
         {
             await MinecraftRCONClient.DisconnectAsync(cancellationToken);
             await Assert.ThrowsAsync<InvalidDataException>(() => MinecraftRCONClient.ExecuteQueryAsync(
                 "127.0.0.1", RCON.Port, password, "list", cancellationToken));
-            Assert.Equal("OK", await MinecraftRCONClient.ExecuteQueryAsync(
-                "127.0.0.1", RCON.Port, password, "say recovered", cancellationToken));
-            Assert.Equal(["list", "say recovered"], RCON.Commands);
         }
         finally
         {

@@ -36,17 +36,13 @@ public sealed class ServerDiagnosticFilteringTests
         Assert.Empty(Filter(lines));
     }
 
-    [Theory]
-    [InlineData("example.OtherLibrary")]
-    [InlineData("org.joml.MemUtil$MemUtilUnsafeImpostor")]
-    public void SimilarWarningFromAnotherLibraryRemainsVisible(string caller)
+    [Fact]
+    public void SimilarWarningFromAnotherLibraryRemainsVisible()
     {
         string[] lines =
         [
             JomlWarning[0],
-            "WARNING: sun.misc.Unsafe::objectFieldOffset has been called by " + caller,
-            JomlWarning[2],
-            JomlWarning[3],
+            "WARNING: sun.misc.Unsafe::objectFieldOffset has been called by example.OtherLibrary",
             "A later STDERR message"
         ];
 

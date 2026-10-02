@@ -140,8 +140,8 @@ while (await Console.In.ReadLineAsync() is string line)
 
     if (line.EndsWith(" SelectedItem", StringComparison.Ordinal))
     {
-        while (File.Exists(jarPath + ".pause-item-probes"))
-            await Task.Delay(20);
+        if (int.TryParse(ReadState(jarPath, ".probe-delay", "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int delay) && delay > 0)
+            await Task.Delay(delay);
         if (!ConsumeCount(jarPath + ".drop-responses"))
         {
             string item = ReadState(

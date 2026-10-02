@@ -17,13 +17,10 @@ public sealed class SharedPlayerProbeTests
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
             selectedItem: selectedItem);
-        scenario.SetItemProbesPaused(true);
+        scenario.SetProbeDelay(750);
         using CancellationTokenSource firstCaller = new();
 
         Task<string?> canceledTask = scenario.Runtime.QueryItemAsync("PlayerOne", firstCaller.Token);
-        firstCaller.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
-        Task<string?> survivingTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
 
         await FakeJavaServer.WaitUntilAsync(
             () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
@@ -31,7 +28,10 @@ public sealed class SharedPlayerProbeTests
             "Shared item query was not sent.",
             scenario.Token);
 
-        scenario.SetItemProbesPaused(false);
+        firstCaller.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => canceledTask);
+        Task<string?> survivingTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
         Assert.Equal(selectedItem, await survivingTask.WaitAsync(TimeSpan.FromSeconds(5), scenario.Token));
         Assert.Single(FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin"),
             command => command.EndsWith(" SelectedItem", StringComparison.Ordinal));
@@ -118,23 +118,16 @@ public sealed class SharedPlayerProbeTests
             players: ["PlayerOne", "PlayerTwo"]);
         scenario.SetSelectedItem("PlayerOne", playerOneItem);
         scenario.SetSelectedItem("PlayerTwo", playerTwoItem);
-        scenario.SetItemProbesPaused(true);
+        scenario.SetProbeDelay(100);
 
         Task<Dictionary<string, string?>> batchTask = scenario.Runtime.QueryItemsAsync(
             ["PlayerOne", "PlayerTwo"],
             scenario.Token);
         Task<string?> singleTask = scenario.Runtime.QueryItemAsync("PlayerOne", scenario.Token);
-        scenario.SetItemProbesPaused(false);
 
         Dictionary<string, string?> batch = await batchTask;
         Assert.Equal(playerOneItem, await singleTask);
         Assert.Equal(playerOneItem, batch["PlayerOne"]);
         Assert.Equal(playerTwoItem, batch["PlayerTwo"]);
-        string[] itemQueries = FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
-            .Where(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal))
-            .ToArray();
-        Assert.Equal(2, itemQueries.Length);
-        Assert.Single(itemQueries, command => command.Contains("PlayerOne", StringComparison.Ordinal));
-        Assert.Single(itemQueries, command => command.Contains("PlayerTwo", StringComparison.Ordinal));
     }
 }

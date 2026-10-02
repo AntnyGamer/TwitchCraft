@@ -77,14 +77,7 @@ internal sealed class FakeRCONServer : IAsyncDisposable
             while (!cancellationToken.IsCancellationRequested)
             {
                 using TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
-                try
-                {
-                    await HandleClientAsync(client, cancellationToken).ConfigureAwait(false);
-                }
-                catch (IOException)
-                {
-                    // A client may disconnect after rejecting a response; keep accepting reconnects.
-                }
+                await HandleClientAsync(client, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

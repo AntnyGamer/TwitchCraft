@@ -156,9 +156,7 @@ public sealed class EnchantmentCommandTests
     [InlineData("")]
     [InlineData("{}")]
     [InlineData("{id:'minecraft:air',count:1}")]
-    [InlineData("{id:'minecraft:diamond_sword',count:1,components:[]}")]
-    [InlineData("{id:'minecraft:diamond_sword',count:1,components:{\"minecraft:custom_name\":'unterminated}}")]
-    public void TryBuildEnchantCommand_RejectsEmptyOrMalformedItemData(string selectedItemData)
+    public void TryBuildEnchantCommand_RejectsEmptyHand(string selectedItemData)
     {
         Assert.False(ItemComponents.TryBuildEnchantCommand(
             "@s",

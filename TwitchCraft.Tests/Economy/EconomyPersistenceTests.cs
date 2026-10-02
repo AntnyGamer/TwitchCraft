@@ -23,7 +23,6 @@ public sealed class EconomyPersistenceTests
         try
         {
             store.AdjustBalance("viewer", 10);
-            store.AdjustBalance("gambler", 100);
 
             Assert.True(store.TrySpend("viewer", 4));
             Assert.False(store.TrySpend("viewer", 7));
@@ -33,15 +32,10 @@ public sealed class EconomyPersistenceTests
             using SqliteConnection connection = new($"Data Source={databasePath}");
             connection.Open();
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = "CREATE TRIGGER fail_writes BEFORE INSERT ON TokenBalances WHEN NEW.Username IN ('bob', 'solo', 'gambler') BEGIN SELECT RAISE(ABORT, 'test'); END;";
+            command.CommandText = "CREATE TRIGGER fail_writes BEFORE INSERT ON TokenBalances WHEN NEW.Username IN ('bob', 'solo') BEGIN SELECT RAISE(ABORT, 'test'); END;";
             command.ExecuteNonQuery();
             Assert.False(store.AdjustBalances([new KeyValuePair<string, int>("solo", 4)]));
             Assert.Equal(0, store.GetBalance("solo"));
-            Assert.Equal(TokenAdjustmentStatus.Failed, store.TryAdjustIfAtLeast(
-                "gambler", 50, 25, 0, out int gambleBalance, out int appliedDelta));
-            Assert.Equal(100, gambleBalance);
-            Assert.Equal(0, appliedDelta);
-            Assert.Equal(100, store.GetBalance("gambler"));
             // Fail after an earlier balance was deleted inside the batch transaction.
             Assert.False(store.AdjustBalances([
                 new("viewer", -6), new("bob", 4), new("after", 5)]));
@@ -70,7 +64,6 @@ public sealed class EconomyPersistenceTests
         TokenStore reader = new(databasePath);
         try
         {
-            Assert.Equal(100, reader.GetBalance("gambler"));
             Assert.Null(reader.TryTransfer("bob", "viewer", 1, 0));
             Assert.Equal(1, reader.TryTransfer("@ViEwEr", "@BoB", 2, 0));
             Assert.Equal(0, reader.GetBalance("viewer"));

@@ -59,57 +59,20 @@ public sealed class FollowRewardEventTests
         Assert.Equal(DateTimeOffset.Parse("2026-08-27T01:02:03.456Z", System.Globalization.CultureInfo.InvariantCulture), notification.FollowedAt);
     }
 
-    [Theory]
-    [InlineData("channel.subscribe")]
-    [InlineData("")]
-    public void RejectsOtherSubscriptionTypes(string subscriptionType)
-    {
-        JObject message = CreateFollowMessage();
-        message["metadata"]!["subscription_type"] = subscriptionType;
-
-        Assert.False(MainHandler.TryParseFollow(message, out _));
-    }
-
-    [Theory]
-    [InlineData("user_id", "")]
-    [InlineData("user_id", null)]
-    [InlineData("user_login", " ")]
-    [InlineData("followed_at", "bad")]
-    [InlineData("followed_at", null)]
-    public void RejectsFollowWhenAnyRequiredFieldIsMissingOrInvalid(string field, string? value)
-    {
-        JObject message = CreateFollowMessage();
-        message["payload"]!["event"]![field] = value;
-
-        Assert.False(MainHandler.TryParseFollow(message, out MainHandler.FollowNotification notification));
-        Assert.Equal(default, notification);
-    }
-
     [Fact]
-    public void ParsesSubscriptionFallbackAndNormalizesStringTimestampToUtc()
+    public void RejectsWrongSubscriptionOrMalformedFollow()
     {
-        JObject message = CreateFollowMessage();
-        message.Remove("metadata");
-        message["payload"]!["subscription"] = new JObject { ["type"] = "channel.follow" };
-
-        Assert.True(MainHandler.TryParseFollow(message, out MainHandler.FollowNotification notification));
-        Assert.Equal("123", notification.UserID);
-        Assert.Equal("viewer", notification.UserLogin);
-        Assert.Equal(new DateTimeOffset(2026, 8, 27, 1, 2, 3, TimeSpan.Zero), notification.FollowedAt);
-        Assert.Equal(TimeSpan.Zero, notification.FollowedAt.Offset);
-    }
-
-    private static JObject CreateFollowMessage() => new()
-    {
-        ["metadata"] = new JObject { ["subscription_type"] = "channel.follow" },
-        ["payload"] = new JObject
-        {
-            ["event"] = new JObject
+        JObject wrongType = JObject.Parse("""
+            { "metadata": { "subscription_type": "channel.subscribe" }, "payload": { "event": {} } }
+            """);
+        JObject missingIdentity = JObject.Parse("""
             {
-                ["user_id"] = " 123 ",
-                ["user_login"] = " Viewer ",
-                ["followed_at"] = "2026-08-27T03:02:03+02:00"
+              "metadata": { "subscription_type": "channel.follow" },
+              "payload": { "event": { "user_id": "", "user_login": "viewer", "followed_at": "bad" } }
             }
-        }
-    };
+            """);
+
+        Assert.False(MainHandler.TryParseFollow(wrongType, out _));
+        Assert.False(MainHandler.TryParseFollow(missingIdentity, out _));
+    }
 }

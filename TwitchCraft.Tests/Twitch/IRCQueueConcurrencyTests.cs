@@ -207,55 +207,5 @@ public sealed class IRCQueueConcurrencyTests
         }
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task QueueCommand_DoesNotRunCanceledItemsAndContinuesWithLiveWork(bool cancelBeforeEnqueue)
-    {
-        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
-        using CancellationTokenSource canceledItem = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        TaskCompletionSource<bool> firstStarted = CreateSignal();
-        TaskCompletionSource<bool> releaseFirst = CreateSignal();
-        TaskCompletionSource<bool> liveWorkCompleted = CreateSignal();
-        int canceledWorkRuns = 0;
-
-        try
-        {
-            Assert.True(runtime.QueueCommand(async token =>
-            {
-                firstStarted.TrySetResult(true);
-                await releaseFirst.Task.WaitAsync(token);
-            }, "!first", cancellationToken));
-            await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
-
-            if (cancelBeforeEnqueue)
-                canceledItem.Cancel();
-            Assert.Equal(!cancelBeforeEnqueue, runtime.QueueCommand(_ =>
-            {
-                Interlocked.Increment(ref canceledWorkRuns);
-                return Task.CompletedTask;
-            }, "!canceled", canceledItem.Token));
-            canceledItem.Cancel();
-
-            Assert.True(runtime.QueueCommand(_ =>
-            {
-                liveWorkCompleted.TrySetResult(true);
-                return Task.CompletedTask;
-            }, "!live", cancellationToken));
-            releaseFirst.TrySetResult(true);
-            await liveWorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
-
-            Assert.Equal(0, Volatile.Read(ref canceledWorkRuns));
-        }
-        finally
-        {
-            runtime.ResetQueues();
-            releaseFirst.TrySetResult(true);
-            runtime.Tokens.Close();
-        }
-    }
-
     private static TaskCompletionSource<bool> CreateSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 }

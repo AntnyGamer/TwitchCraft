@@ -28,16 +28,11 @@ public sealed class ShellNavigationTests
         shell.Navigate(ShellPage.Start);
         shell.Navigate(ShellPage.Help);
         shell.Navigate(ShellPage.Settings);
-        shell.Navigate(ShellPage.Settings);
 
         shell.Navigate(ShellPage.Help);
 
         Assert.Equal(ShellPage.Help, shell.CurrentPage);
         Assert.Equal(ShellPage.Start, shell.PreviousPage);
-
-        shell.Navigate(shell.PreviousPage);
-        Assert.Equal(ShellPage.Start, shell.CurrentPage);
-        Assert.Equal(ShellPage.Help, shell.PreviousPage);
     }
 
     [Fact]

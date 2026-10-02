@@ -35,9 +35,9 @@ public sealed partial class ConfigurationStore
     private static readonly Lock IOGate = new();
     private static bool _writesDisabled;
     private static readonly UTF8Encoding UTF8NoBOM = new(false);
-    private static readonly string WorkingDirectoryPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        AppFolderName);
+    private static readonly string WorkingDirectoryPath = AppContext.GetData("TwitchCraft.DataDirectory") is string dataDirectory
+        ? Path.GetFullPath(dataDirectory)
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppFolderName);
     private static readonly string ConfigPathValue = Path.Combine(WorkingDirectoryPath, ConfigFileName);
     private static readonly string ConfigTempPathValue = ConfigPathValue + ".tmp";
     private static readonly string ViewerTokensPathValue = Path.Combine(WorkingDirectoryPath, ViewerTokensFileName);
