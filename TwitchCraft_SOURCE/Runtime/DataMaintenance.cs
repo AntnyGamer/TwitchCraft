@@ -116,14 +116,14 @@ internal sealed class DataMaintenance(
                 string completedDirectory = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
                 if (Directory.Exists(completedDirectory))
                     completedDirectory += "-" + Guid.NewGuid().ToString("N")[..6];
-                string backupDirectory = Path.Combine(root, ".pending-" + Path.GetFileName(completedDirectory));
+                string backupDirectory = Path.Combine(root, ".pending-" + Guid.NewGuid().ToString("N"));
                 Directory.CreateDirectory(backupDirectory);
 
                 if (!ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json")) ||
                     !_tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db")) ||
                     !StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db")))
                 {
-                    try { Directory.Delete(backupDirectory, recursive: true); } catch { }
+                    FileSystemHelper.DeleteDirectorySafe(backupDirectory);
                     return;
                 }
                 Directory.Move(backupDirectory, completedDirectory);
