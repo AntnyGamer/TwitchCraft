@@ -138,17 +138,19 @@ public static partial class MinigameManager
         {
             try
             {
-                TimeSpan remaining;
+                DateTime nowUtc = DateTime.UtcNow;
+                DateTime nextAtUtc;
                 lock (MinigameGate)
                 {
                     if (!MinigameLoops.TryGetValue(runtime, out LoopState? current) || !ReferenceEquals(current, loop))
                         break;
-                    remaining = loop.NextAtUtc - DateTime.UtcNow;
+                    nextAtUtc = loop.NextAtUtc;
                 }
 
+                TimeSpan remaining = nextAtUtc - nowUtc;
                 if (remaining > TimeSpan.Zero)
                 {
-                    await Task.Delay(remaining, cancellationToken).ConfigureAwait(false);
+                    await WaitForDelayAsync(runtime, loop, cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
@@ -224,6 +226,21 @@ public static partial class MinigameManager
             if (MinigameLoops.TryGetValue(runtime, out LoopState? loop))
                 loop.NextAtUtc = DateTime.UtcNow.AddMinutes(minutesFromNow);
         }
+    }
+
+    private static async Task WaitForDelayAsync(MainHandler runtime, LoopState expectedLoop, CancellationToken cancellationToken)
+    {
+        TimeSpan delay;
+        lock (MinigameGate)
+        {
+            if (!MinigameLoops.TryGetValue(runtime, out LoopState? loop) || !ReferenceEquals(loop, expectedLoop))
+                return;
+
+            delay = loop.NextAtUtc - DateTime.UtcNow;
+        }
+
+        if (delay > TimeSpan.Zero)
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
     }
 
 }
