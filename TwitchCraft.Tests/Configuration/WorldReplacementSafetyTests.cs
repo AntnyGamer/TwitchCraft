@@ -123,7 +123,7 @@ public sealed class WorldReplacementSafetyTests
     }
 
     [Fact]
-    public void ReplaceWorld_WhenStagedWorldIsIncomplete_PreservesExistingProgress()
+    public void ReplaceWorld_IncompleteStagePreservesExistingProgress()
     {
         using TemporaryDirectory directory = new();
         string source = System.IO.Path.Combine(directory.Path, "source");
