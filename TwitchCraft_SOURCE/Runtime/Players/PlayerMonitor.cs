@@ -73,7 +73,7 @@ public sealed partial class MainHandler
     private readonly Dictionary<string, Action> _pendingServerProbeMarkers = new(StringComparer.Ordinal);
     private readonly string _serverProbeMarkerSessionPrefix = ProbeMarkerPrefix + Guid.NewGuid().ToString("N") + "_";
     private long _serverProbeMarkerCounter;
-    private long _queryUnavailableUntilTicks;
+    private long _minecraftQueryUnavailableUntilTicks;
     private TaskCompletionSource<bool>? _onlinePlayerSnapshotRequest;
     private DateTime _lastSidebarRefreshErrorUtc = DateTime.MinValue;
     private int _playerSidebarRefreshQueued;
@@ -351,7 +351,7 @@ public sealed partial class MainHandler
             return false;
 
         long nowTicks = DateTime.UtcNow.Ticks;
-        if (Volatile.Read(ref _queryUnavailableUntilTicks) > nowTicks)
+        if (Volatile.Read(ref _minecraftQueryUnavailableUntilTicks) > nowTicks)
             return false;
 
         string host = GetQueryHost(config);
@@ -362,7 +362,7 @@ public sealed partial class MainHandler
             using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(MinecraftQueryTimeout);
             List<string> players = await MinecraftQueryClient.GetPlayersAsync(host, port, timeout.Token).ConfigureAwait(false);
-            Volatile.Write(ref _queryUnavailableUntilTicks, 0);
+            Volatile.Write(ref _minecraftQueryUnavailableUntilTicks, 0);
             ApplySnapshot(players);
             CompleteSnapshot(true);
             return true;
@@ -373,7 +373,7 @@ public sealed partial class MainHandler
         }
         catch
         {
-            Volatile.Write(ref _queryUnavailableUntilTicks, DateTime.UtcNow.Add(MinecraftQueryFailureBackoff).Ticks);
+            Volatile.Write(ref _minecraftQueryUnavailableUntilTicks, DateTime.UtcNow.Add(MinecraftQueryFailureBackoff).Ticks);
             return false;
         }
     }
