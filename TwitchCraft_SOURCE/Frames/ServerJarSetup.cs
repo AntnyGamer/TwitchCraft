@@ -19,7 +19,7 @@ public partial class Setup : UserControl
         {
             try
             {
-                JObject detail = JObject.Parse(await File.ReadAllTextAsync(localPath, cancellationToken));
+                JObject detail = JObject.Parse(await File.ReadAllTextAsync(localPath, cancellationToken).ConfigureAwait(false));
                 string? serverUrl = (string?)detail["downloads"]?["server"]?["url"];
                 string? serverSHA = (string?)detail["downloads"]?["server"]?["sha1"];
                 if (string.Equals((string?)detail["id"], versionID, StringComparison.OrdinalIgnoreCase)
@@ -36,7 +36,7 @@ public partial class Setup : UserControl
             }
         }
 
-        return JObject.Parse(await SetupHttpClient.GetStringAsync(detailUri, cancellationToken));
+        return JObject.Parse(await SetupHttpClient.GetStringAsync(detailUri, cancellationToken).ConfigureAwait(false));
     }
 
     private static async Task EnsureServerJarAsync(HttpClient http, string serverUrl, string jarPath, string expectedSHA, long? expectedSize, CancellationToken cancellationToken)
