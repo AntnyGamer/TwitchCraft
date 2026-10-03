@@ -142,7 +142,7 @@ public partial class Setup : UserControl
         return true;
     }
 
-    private static bool ServerJarMatches(string filePath, string expectedSHA, long? expectedSize = null)
+    private static bool ServerJarMatches(string filePath, string expectedSHA, long? expectedSize)
     {
         try
         {
@@ -160,7 +160,7 @@ public partial class Setup : UserControl
         }
     }
 
-    private static void VerifyServerJar(string filePath, string expectedSHA, long? expectedSize = null)
+    private static void VerifyServerJar(string filePath, string expectedSHA, long? expectedSize)
     {
         if (!ServerJarMatches(filePath, expectedSHA, expectedSize))
             throw new InvalidOperationException("The downloaded server jar did not match the expected size or SHA-1 checksum.");
