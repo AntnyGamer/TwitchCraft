@@ -87,7 +87,7 @@ public sealed class TwitchMessagingPolicyTests
     {
         Assert.Equal(
             expected,
-            BotResponsePolicy.ShouldSend(verbosity, Enum.Parse<BotResponseKind>(kind)));
+            BotResponseVerbositySettings.ShouldSend(verbosity, Enum.Parse<BotResponseKind>(kind)));
     }
 
     [Theory]
