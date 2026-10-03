@@ -71,7 +71,7 @@ public sealed class WorldReplacementSafetyTests
     }
 
     [Fact]
-    public void ReplaceWorld_WhenOptionalDatapackFails_CommitsTheWorldAndReportsWarning()
+    public void ReplaceWorld_OptionalDatapackFailureCommitsWorldAndWarns()
     {
         using TemporaryDirectory directory = new();
         string source = System.IO.Path.Combine(directory.Path, "source");
@@ -212,7 +212,7 @@ public sealed class WorldReplacementSafetyTests
     }
 
     [Fact]
-    public void ReplaceWorld_WhenAutomaticRestoreFails_PreservesBackupForManualRecovery()
+    public void ReplaceWorld_FailedRestorePreservesBackupForRecovery()
     {
         using TemporaryDirectory directory = new();
         string source = System.IO.Path.Combine(directory.Path, "source");
