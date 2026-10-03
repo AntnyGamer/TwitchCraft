@@ -179,7 +179,7 @@ public sealed class ConfigurationNormalizationTests
     }
 
     [Fact]
-    public void NormalizeRuntime_PreservesValidCustomEconomyCommandAndMaintenanceValues()
+    public void NormalizeRuntime_PreservesValidCustomSettings()
     {
         TwitchCraftConfig config = new();
         config.Settings.PassiveTokensPerPayout = 654_321;
