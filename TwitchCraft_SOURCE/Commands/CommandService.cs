@@ -27,7 +27,7 @@ public sealed class CommandService
     private readonly Dictionary<(string Command, string Sender), long> _customCommandCooldownUntil = [];
     private readonly Dictionary<string, long> _timedCommandCooldowns = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, long> _gambleCooldowns = new(StringComparer.OrdinalIgnoreCase);
-    private long _lastChannelCommandLimitNoticeTimestamp;
+    private long _lastChannelLimitNoticeTimestamp;
     private long _lastCommandStatePruneTimestamp;
     private int _fireworksRepeatActive;
     internal Func<string?, bool, CancellationToken, Task>? ResetHeartEffectsAsync;
@@ -193,10 +193,10 @@ public sealed class CommandService
     internal bool ShouldWarnChannelLimit(long? nowTimestamp = null)
     {
         long now = nowTimestamp ?? Stopwatch.GetTimestamp();
-        long previous = Volatile.Read(ref _lastChannelCommandLimitNoticeTimestamp);
+        long previous = Volatile.Read(ref _lastChannelLimitNoticeTimestamp);
         if (previous != 0 && now - previous < 10 * Stopwatch.Frequency)
             return false;
-        return Interlocked.CompareExchange(ref _lastChannelCommandLimitNoticeTimestamp, now, previous) == previous;
+        return Interlocked.CompareExchange(ref _lastChannelLimitNoticeTimestamp, now, previous) == previous;
     }
 
     internal bool ShouldWarnViewerLimit(string sender, long? nowTimestamp = null)
@@ -298,7 +298,7 @@ public sealed class CommandService
     }
 
     private long _lastGlobalCooldownTimestamp = -1;
-    private long _lastGambleCooldownPruneTimestamp;
+    private long _lastGamblePruneTimestamp;
     private long _switchMilkTagCounter;
 
     public string NextSwitchMilkTag()
@@ -460,9 +460,9 @@ public sealed class CommandService
         lock (_cooldownGate)
         {
             long now = Stopwatch.GetTimestamp();
-            if (_gambleCooldowns.Count > 4096 && now - _lastGambleCooldownPruneTimestamp >= 60 * Stopwatch.Frequency)
+            if (_gambleCooldowns.Count > 4096 && now - _lastGamblePruneTimestamp >= 60 * Stopwatch.Frequency)
             {
-                _lastGambleCooldownPruneTimestamp = now;
+                _lastGamblePruneTimestamp = now;
                 foreach (KeyValuePair<string, long> pair in _gambleCooldowns)
                     if (pair.Value <= now) _gambleCooldowns.Remove(pair.Key);
             }
