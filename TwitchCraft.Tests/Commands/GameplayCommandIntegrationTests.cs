@@ -10,7 +10,7 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class GameplayCommandIntegrationTests
 {
     [Fact]
-    public async Task Effect_DeliversValidAndRejectsInvalidCountsWithoutExtraCharge()
+    public async Task Effect_DeliversValidCountsAndRejectsInvalidWithoutExtraCharge()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
         scenario.Runtime.Tokens.Award("viewer", 100);
