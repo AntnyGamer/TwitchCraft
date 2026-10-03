@@ -175,7 +175,7 @@ public partial class Main : UserControl
 
     private void QueueLog(Queue<string> pendingLines, bool isMinecraftLog, string? line)
     {
-        bool shouldSchedule = false;
+        bool shouldSchedule;
 
         lock (_logGate)
         {
@@ -215,7 +215,7 @@ public partial class Main : UserControl
             }
             else if (batchCount > 1)
             {
-                batch = pendingLines.ToArray();
+                batch = [.. pendingLines];
                 pendingLines.Clear();
             }
 
