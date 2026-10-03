@@ -59,9 +59,9 @@ public partial class Settings : UserControl
     private static readonly int[] FollowRewardAmountOptions = [25, 50, 100, 200, 500, 1000];
     private static readonly string[] ResponseVerbosityOptions =
     [
-        BotResponseVerbositySettings.Normal,
-        BotResponseVerbositySettings.Reduced,
-        BotResponseVerbositySettings.EssentialOnly
+        BotResponsePolicy.Normal,
+        BotResponsePolicy.Reduced,
+        BotResponsePolicy.EssentialOnly
     ];
 
     private bool _initializing = true;
