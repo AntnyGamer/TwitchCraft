@@ -35,7 +35,7 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void BalanceWrites_PersistWholeLiveRosterAndNormalizedSingleUserEdits()
+    public void BalanceWrites_PersistRosterAndNormalizedUserEdits()
     {
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
@@ -95,7 +95,7 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void FollowReward_ReportsActualAwardWhenMaximumBalanceIsReached()
+    public void FollowReward_ReportsActualAwardAtBalanceLimit()
     {
         using TemporaryDirectory directory = new();
         TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
