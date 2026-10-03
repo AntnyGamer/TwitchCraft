@@ -497,7 +497,7 @@ public partial class Main : UserControl
             action(parent);
     }
 
-    private async Task WithTwitchCraftAsync(Func<TwitchCraft, Task> action, Action? onFailure = null)
+    private async Task WithTwitchCraftAsync(Func<TwitchCraft, Task> action, Action? onFailure)
     {
         TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
         if (parent != null)
