@@ -48,7 +48,7 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
-    public async Task NamedTargets_RejectOfflineAndSpectatorPlayersWithoutCharge()
+    public async Task NamedTargets_RejectOfflineOrSpectatorWithoutCharge()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync(
             ["PlayerOne", "PlayerTwo", "Spectator"],
@@ -275,7 +275,7 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
-    public async Task AdministrativeCommands_EnforcePermissionsAndStreamerProtection()
+    public async Task AdminCommands_EnforcePermissionsAndStreamerProtection()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync(["PlayerOne", "PlayerTwo"], multiplayer: true);
 
@@ -369,7 +369,7 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
-    public async Task RandomGameplayCommands_DispatchValidCommandsAndChargeOnceEach()
+    public async Task RandomCommands_DispatchValidAndChargeOnceEach()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
         scenario.Runtime.Tokens.Award("viewer", 100);
