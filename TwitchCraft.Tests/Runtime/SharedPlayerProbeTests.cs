@@ -75,7 +75,7 @@ public sealed class SharedPlayerProbeTests
     }
 
     [Fact]
-    public async Task QueryItem_AfterFullResponseLossRecoversForTheNextRequest()
+    public async Task QueryItem_RecoversAfterFullResponseLoss()
     {
         const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
