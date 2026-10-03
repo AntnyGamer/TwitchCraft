@@ -114,7 +114,7 @@ public sealed class EnchantmentCommandTests
     }
 
     [Fact]
-    public void TryBuildEnchantCommand_UpdatesExistingEnchantWithoutRemovingConflicts()
+    public void TryBuildEnchantCommand_UpdatesEnchantAndPreservesConflicts()
     {
         const string selectedItem = "{id:'minecraft:diamond_sword',count:1,components:{\"minecraft:enchantments\":{levels:{\"minecraft:sharpness\":5,\"minecraft:smite\":2}}}}";
 
@@ -134,7 +134,7 @@ public sealed class EnchantmentCommandTests
     }
 
     [Fact]
-    public void TryBuildEnchantCommand_UsesFlattenedComponentShapeFor1215AndNewer()
+    public void TryBuildEnchantCommand_UsesFlattenedComponentsFor1215AndNewer()
     {
         const string selectedItem = "{id:'minecraft:stick',count:1,components:{\"minecraft:enchantments\":{\"minecraft:infinity\":1}}}";
 
