@@ -15,7 +15,7 @@ public sealed class RollingLogPersistenceTests
     private static readonly UTF8Encoding UTF8NoBOM = new(false);
 
     [Fact]
-    public void TryWriteLine_RotatesDuringOneSessionWithoutLosingThePendingEvent()
+    public void TryWriteLine_RotationPreservesPendingEvent()
     {
         using TemporaryDirectory directory = new();
         string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
@@ -85,7 +85,7 @@ public sealed class RollingLogPersistenceTests
     }
 
     [Fact]
-    public void TryWriteLine_SerializesConcurrentWritesAndRotationsIntoValidJsonLines()
+    public void TryWriteLine_ConcurrentWritesStayValidAcrossRotations()
     {
         using TemporaryDirectory directory = new();
         string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
