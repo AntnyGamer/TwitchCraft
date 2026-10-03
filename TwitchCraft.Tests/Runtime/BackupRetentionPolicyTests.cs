@@ -49,7 +49,7 @@ public sealed class BackupRetentionPolicyTests
     }
 
     [Fact]
-    public void PruneBackups_OneBackupRemovesOldAndIncompleteButPreservesUnrelatedFolders()
+    public void PruneBackups_RemovesOldAndIncompleteButKeepsUnrelated()
     {
         using TemporaryDirectory root = new();
         CreateCompleteBackup(root.Path, "20260828-120000");
