@@ -36,7 +36,7 @@ public sealed class StartupAndEligibilityTests
     }
 
     [Fact]
-    public async Task LaterActivity_ExtendsEligibilityWindow()
+    public async Task LaterChatActivity_ExtendsEligibilityWindow()
     {
         using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
         {
