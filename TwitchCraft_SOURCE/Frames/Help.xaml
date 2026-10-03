@@ -60,7 +60,7 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,3,0,0">
                                 <TextBlock Text="TWITCHCRAFT IS OPEN SOURCE" FontFamily="Cascadia Mono" FontSize="12" FontWeight="Bold" Foreground="#B8B8B8" TextAlignment="Center" />
-                                <TextBlock Margin="0,8,0,0" Text="Independent community project • AGPL v3" FontSize="13" Foreground="#E0E0E0" TextAlignment="Center" />
+                                <TextBlock Margin="0,8,0,0" Text="Independent community project (AGPL v3)" FontSize="13" Foreground="#E0E0E0" TextAlignment="Center" />
                                 <TextBlock Margin="0,4,0,0" Text="Not affiliated with Mojang or Microsoft." FontSize="13" Foreground="#D0D0D0" TextAlignment="Center" />
                             </StackPanel>
                         </Grid>
