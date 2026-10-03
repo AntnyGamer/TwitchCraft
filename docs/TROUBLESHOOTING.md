@@ -211,4 +211,4 @@ On the Start screen, make sure:
 7. Open **Settings --> Dangerous** and lower the minimum and maximum RAM if Minecraft is using more memory than your PC can comfortably handle
 8. If you are still experiencing lag or low FPS, consider using a more powerful PC or reducing background usage
 
-If this troubleshooting guide does not resolve your issue or question, please contact the creator of TwitchCraft with the copied diagnostics and the smallest relevant sanitized excerpt from `TwitchCraft.log`, along with a description of the problem.
+If this guide does not resolve the issue, contact the TwitchCraft creator with the copied diagnostics, the smallest relevant sanitized excerpt from `TwitchCraft.log`, and a description of the problem.
