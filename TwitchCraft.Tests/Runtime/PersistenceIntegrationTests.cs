@@ -24,7 +24,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void SessionStatistics_SurviveRestartAndExportTheSameCommandAndDeathAccounting()
+    public void Statistics_PersistAcrossRestartAndExportCommandAndDeathAccounting()
     {
         List<string> deathRefreshes = [];
         List<string> respawnRefreshes = [];
@@ -235,7 +235,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ShutdownBackup_PreservesAConsistentRestorableSnapshotAfterLiveDataChanges()
+    public void ShutdownBackup_PreservesRestorablePointInTimeData()
     {
         TwitchCraftConfig config = new() { Twitch = { BotName = "savedbot" } };
         config.Settings.AutomaticBackupsEnabled = true;
@@ -308,7 +308,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void ConfigurationRecovery_PromotesACompletePendingWriteAndPreservesTheNextUpdate(bool malformedPrimary)
+    public void ConfigurationRecovery_PromotesPendingWriteAndPreservesNextUpdate(bool malformedPrimary)
     {
         TwitchCraftConfig config = new()
         {
