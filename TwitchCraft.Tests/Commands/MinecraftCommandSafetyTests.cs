@@ -52,7 +52,7 @@ public sealed class MinecraftCommandSafetyTests
     }
 
     [Fact]
-    public void Tellraw_UsesEscapedTextComponentRequiredByMinecraftVersion()
+    public void Tellraw_UsesVersionCorrectEscapedTextComponent()
     {
         Assert.Equal(
             "tellraw @a {\"text\":\"hello \\\"world\\\"\",\"color\":\"red\",\"bold\":true}",
