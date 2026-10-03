@@ -9,7 +9,7 @@ namespace TwitchCraft.Tests.Configuration;
 public sealed class ConfigurationNormalizationTests
 {
     [Fact]
-    public void NormalizeRuntime_RepairsExplicitNullGroupsFromJsonAndPreservesValidValues()
+    public void NormalizeRuntime_RepairsNullGroupsAndPreservesValidValues()
     {
         const string json = """
             {
