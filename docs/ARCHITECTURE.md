@@ -1,6 +1,6 @@
 # Architecture
 
-TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI. `MainHandler` is the application-facing coordinator; focused components own Twitch/Minecraft session resources, command, token, statistics, maintenance, and background-task behavior.
+TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, persistence, and the desktop UI. `MainHandler` coordinates the application while focused components own Twitch/Minecraft sessions, commands, tokens, statistics, maintenance, and background tasks.
 
 ```text
 WPF shell
