@@ -146,7 +146,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task StatisticsReset_RollsBackFailureThenClearsTotalsWithoutRecountingPreviousDeaths()
+    public async Task StatisticsReset_RollsBackFailureThenClearsWithoutRecountingDeaths()
     {
         Assert.True(StatisticsStore.ApplyDeathScore(3, 90, out long deaths));
         Assert.Equal(3, deaths);
@@ -285,7 +285,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ConfigurationUpdate_UnreadablePrimaryAndPendingWritePreservesBothFiles()
+    public void ConfigurationUpdate_PreservesUnreadablePrimaryAndPendingFiles()
     {
         const string primary = "{interrupted configuration";
         const string pending = "null";
