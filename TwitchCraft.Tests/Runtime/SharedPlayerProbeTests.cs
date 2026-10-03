@@ -11,7 +11,7 @@ namespace TwitchCraft.Tests.Runtime;
 public sealed class SharedPlayerProbeTests
 {
     [Fact]
-    public async Task QueryItem_CancelingOneCallerDoesNotCancelAnotherCallerForSamePlayer()
+    public async Task QueryItem_CancelingOneCallerPreservesSharedRequest()
     {
         const string selectedItem = "{}";
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
