@@ -21,7 +21,7 @@ dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build
 Pop-Location
 ```
 
-The root solution is the canonical validation entry point. Its Release build compiles TwitchCraft and `TwitchCraft.Tests`. The Release build and all tests must pass before a pull request is ready for review.
+The root solution is the canonical validation entry point. Its Release build compiles TwitchCraft and `TwitchCraft.Tests`; the build and all tests must pass before review.
 
 CI also collects a Cobertura coverage report and publishes it as the `code-coverage` workflow artifact. To reproduce that collection locally:
 
