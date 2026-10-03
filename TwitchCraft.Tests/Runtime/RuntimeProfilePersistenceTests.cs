@@ -13,7 +13,7 @@ namespace TwitchCraft.Tests.Runtime;
 public sealed class RuntimeProfilePersistenceTests
 {
     [Fact]
-    public async Task ProfileTransitions_PreserveLocalCredentialsAndRestoreTheLocalBind()
+    public async Task ProfileTransitions_PreserveCredentialsAndRestoreLocalBind()
     {
         Assert.Equal(TestApplicationData.Path, ConfigurationStore.WorkingDirectory);
         using TemporaryDirectory directory = new();
