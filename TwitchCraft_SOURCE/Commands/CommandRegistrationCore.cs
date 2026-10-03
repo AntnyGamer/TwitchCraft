@@ -106,7 +106,7 @@ public static partial class CommandList
                 onSendFailure);
         }
 
-        Task<bool> TrySendPaidNoCooldownAsync(string sender, int cost, string command, CancellationToken ct, Action? onSendFailure)
+        Task<bool> TrySendPaidNoCooldownAsync(string sender, int cost, string command, Action? onSendFailure, CancellationToken ct)
         {
             return RunPaidCommandAsync(
                 sender,
