@@ -90,7 +90,7 @@ public sealed class EnchantmentCommandTests
     }
 
     [Fact]
-    public void TryBuildEnchantCommand_AddsConflictingEnchantToAnyItemUsing1205ComponentShape()
+    public void TryBuildEnchantCommand_AddsConflictToAnyItemUsing1205Components()
     {
         const string selectedItem = "{id:'minecraft:stone',count:64,components:{\"minecraft:enchantments\":{levels:{\"minecraft:sharpness\":5},show_in_tooltip:1b},\"minecraft:custom_name\":'Rock'}}";
 
