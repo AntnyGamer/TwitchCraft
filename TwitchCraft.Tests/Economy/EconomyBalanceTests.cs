@@ -72,7 +72,7 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void PositiveAwards_RespectMaximumBalanceWithoutBreakingSpending()
+    public void PositiveAwards_RespectMaximumBalanceAndPreserveSpending()
     {
         using TemporaryDirectory directory = new();
         TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
