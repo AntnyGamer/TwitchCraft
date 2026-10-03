@@ -290,11 +290,11 @@ public sealed partial class ConfigurationStore
     internal static string NormalizeVerbosity(string? verbosity)
     {
         string value = (verbosity ?? string.Empty).Trim();
-        return value.Equals(BotResponseVerbositySettings.Reduced, StringComparison.OrdinalIgnoreCase)
-            ? BotResponseVerbositySettings.Reduced
-            : value.Equals(BotResponseVerbositySettings.EssentialOnly, StringComparison.OrdinalIgnoreCase)
-                ? BotResponseVerbositySettings.EssentialOnly
-                : BotResponseVerbositySettings.Normal;
+        return value.Equals(BotResponsePolicy.Reduced, StringComparison.OrdinalIgnoreCase)
+            ? BotResponsePolicy.Reduced
+            : value.Equals(BotResponsePolicy.EssentialOnly, StringComparison.OrdinalIgnoreCase)
+                ? BotResponsePolicy.EssentialOnly
+                : BotResponsePolicy.Normal;
     }
 
     internal static string NormalizeCommandPrefix(string? prefix, string fallback)
