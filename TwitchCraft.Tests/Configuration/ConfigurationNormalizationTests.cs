@@ -47,7 +47,7 @@ public sealed class ConfigurationNormalizationTests
     }
 
     [Fact]
-    public void NormalizeRuntime_RepairsInvalidValuesWithoutChangingValidIdentityData()
+    public void NormalizeRuntime_RepairsInvalidValuesAndPreservesIdentity()
     {
         TwitchCraftConfig config = new()
         {
