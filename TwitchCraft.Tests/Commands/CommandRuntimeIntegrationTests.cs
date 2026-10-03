@@ -115,7 +115,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task SingleplayerStartup_RemovesSidebarObjectivesLeftByMultiplayer()
+    public async Task SingleplayerStartup_RemovesMultiplayerSidebarObjectives()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -141,7 +141,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RemoteController_QueriesPlayerStateAndRejectsMalformedRCONResponse()
+    public async Task RemoteController_QueriesStateAndRejectsMalformedRCONResponse()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -206,7 +206,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RemoteManualCommand_RejectsMultilineInputWithoutSendingToServer()
+    public async Task RemoteManualCommand_RejectsMultilineWithoutSending()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -296,7 +296,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RejectedRCONDispatch_RefundsAndDoesNotConsumeCustomCooldown()
+    public async Task RejectedRCONDispatch_RefundsAndReleasesCustomCooldown()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
