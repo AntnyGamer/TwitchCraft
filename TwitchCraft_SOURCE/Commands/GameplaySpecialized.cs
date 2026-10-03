@@ -145,8 +145,8 @@ public static partial class CommandList
                     sender,
                     cost,
                     MinecraftCommandBuilder.Lightning(target.Selector),
-                    ct,
-                    () => runtime.Commands.ClearTimedCommandCooldown("lightning", reservation)).ConfigureAwait(false))
+                    () => runtime.Commands.ClearTimedCommandCooldown("lightning", reservation),
+                    ct).ConfigureAwait(false))
             {
                 return;
             }
