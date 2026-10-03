@@ -77,7 +77,7 @@ public sealed class MinigameTransactionTests
     [InlineData("damagewither", "abc", null, "viewer, please enter a valid token amount.")]
     [InlineData("damagewither", "201", null, "viewer, the max Wither Battle bet is 200 tokens.")]
     [InlineData("damagewither", "200", null, "viewer, a Wither Battle is not active right now.")]
-    public async Task MinigameHandlers_RejectInvalidOrInactiveRequestsWithoutSpendingTokens(
+    public async Task MinigameHandlers_RejectInvalidOrInactiveWithoutCharge(
         string command,
         string? firstArgument,
         string? secondArgument,
