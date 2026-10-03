@@ -111,7 +111,7 @@ public sealed partial class MainHandler
         string message,
         BotResponseKind kind,
         CancellationToken cancellationToken)
-        => BotResponseVerbositySettings.ShouldSend(BotResponseVerbosity, kind)
+        => BotResponsePolicy.ShouldSend(BotResponseVerbosity, kind)
             ? SendChatAsync(
                 FormatReply(
                     message,
