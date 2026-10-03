@@ -142,7 +142,7 @@ public partial class Setup : UserControl
         return true;
     }
 
-    private static bool ServerJarMatches(string filePath, string expectedSHA, long? expectedSize = null)
+    private static bool ServerJarMatches(string filePath, string expectedSHA, long? expectedSize)
     {
         try
         {
