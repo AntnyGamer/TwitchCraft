@@ -12,7 +12,7 @@ namespace TwitchCraft.Tests.Application;
 public sealed class AuthorizationUILifecycleTests
 {
     [Fact]
-    public void SettingsReopen_RestoresAuthorizationAndClearsVisibleCredentials()
+    public void SettingsReopen_ClearsCredentialsAndRestoresAuthorization()
     {
         Exception? failure = null;
         Thread thread = new(() =>
