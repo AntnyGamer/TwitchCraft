@@ -39,7 +39,7 @@ public sealed class RollingLogPersistenceTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void TryWriteLine_ReopeningAfterAnInterruptedAppendPreservesCompleteJson(bool completeTail)
+    public void TryWriteLine_ReopenAfterInterruptedAppendPreservesJson(bool completeTail)
     {
         using TemporaryDirectory directory = new();
         string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
