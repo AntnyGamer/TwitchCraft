@@ -11,7 +11,7 @@ namespace TwitchCraft.Tests.Runtime;
 public sealed class RCONRequestValidationTests
 {
     [Fact]
-    public async Task Queries_RecoverAfterOneInvalidResponseAndPreserveResultOrder()
+    public async Task Queries_RecoverAfterInvalidResponseAndPreserveOrder()
     {
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(10));
