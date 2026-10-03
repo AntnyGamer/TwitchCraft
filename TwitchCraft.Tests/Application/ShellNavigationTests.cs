@@ -40,7 +40,7 @@ public sealed class ShellNavigationTests
     }
 
     [Fact]
-    public void Navigate_EveryPageUpdatesHistoryAndShowsOnlyItsMatchingFrame()
+    public void Navigate_EveryPageUpdatesHistoryAndVisibility()
     {
         AppShellViewModel shell = new();
 
