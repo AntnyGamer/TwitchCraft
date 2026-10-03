@@ -64,7 +64,7 @@ Dependencies flow into components through small callbacks or focused collaborato
 5. Paid commands reserve/charge tokens before dispatch.
 6. Commands are built with selector, JSON, SNBT, and version-aware escaping.
 7. The local transport serializes writes to Java stdin; remote mode sends RCON packets.
-8. `PaidCommandTransaction` records statistics only after confirmed Minecraft delivery. Local write failures refund once and release that command's cooldown reservation. Remote RCON uses matching command-response packets rather than response wording; any confirmed command keeps a multi-command charge, while zero confirmations or authentication, transport, timeout, or protocol failures refund it.
+8. `PaidCommandTransaction` records statistics only after confirmed Minecraft delivery. Local write failures refund once and release that command's cooldown reservation. Remote RCON uses matching command-response packets rather than response wording; any confirmed command keeps a multi-command charge. If none are confirmed, authentication, transport, timeout, or protocol failures refund it.
 
 ## Local and remote modes
 
