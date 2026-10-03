@@ -86,7 +86,7 @@ Direct edits to a TwitchCraft-managed property may be replaced the next time Twi
 
 ## Backups and recovery
 
-Configuration saves use `config.json.tmp` as a temporary file with a replacement fallback. If the main config cannot be read, TwitchCraft can recover from a valid temporary file. Automatic backups are enabled by default. TwitchCraft creates a copy of `config.json` plus consistent SQLite copies of `viewer_tokens.db` and `statistics.db` under `backups/` at the selected interval and during a clean shutdown. A backup is complete only when all three files are saved successfully. Retention can be set to 1, 3, 5, 10, or 20 complete backup sets and defaults to three. These copies include sensitive Twitch authorization data and must remain private.
+Configuration saves use `config.json.tmp` with a replacement fallback, and TwitchCraft can recover from a valid temporary file if the main config is unreadable. Automatic backups are enabled by default and save `config.json`, `viewer_tokens.db`, and `statistics.db` under `backups/` at the selected interval and during clean shutdown. Retention counts only sets containing all three files, supports 1, 3, 5, 10, or 20 sets, and defaults to three. Backups can contain sensitive Twitch authorization data and must remain private.
 
 Before restoring an automatic backup:
 
