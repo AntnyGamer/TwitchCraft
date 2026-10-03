@@ -63,7 +63,7 @@ public sealed class SharedPlayerProbeTests
     }
 
     [Fact]
-    public async Task QueryHeartModifiers_MissingResponseReturnsNullWithoutHanging()
+    public async Task QueryHeartModifiers_MissingResponseReturnsNull()
     {
         await using MinecraftRuntimeScenario scenario = await MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken);
