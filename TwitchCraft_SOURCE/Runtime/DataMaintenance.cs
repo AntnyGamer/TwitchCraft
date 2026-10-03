@@ -112,21 +112,20 @@ internal sealed class DataMaintenance(
             try
             {
                 string root = ConfigurationStore.BackupsDirectory;
-                Directory.CreateDirectory(root);
-                string backupDirectory = Path.Combine(root, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture));
-                if (Directory.Exists(backupDirectory))
-                    backupDirectory += "-" + Guid.NewGuid().ToString("N")[..6];
-                Directory.CreateDirectory(backupDirectory);
+                string suffix = Guid.NewGuid().ToString("N");
+                string backupDirectory = Path.Combine(root, ".pending-" + suffix);
 
-                bool configSaved = ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json"));
-                bool tokensSaved = _tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db"));
-                if (!configSaved || !tokensSaved)
+                if (!ConfigurationStore.TryCopyConfig(Path.Combine(backupDirectory, "config.json")) ||
+                    !_tokens.TryBackup(Path.Combine(backupDirectory, "viewer_tokens.db")) ||
+                    !StatisticsStore.TryBackup(Path.Combine(backupDirectory, "statistics.db")))
                 {
-                    try { Directory.Delete(backupDirectory, recursive: true); } catch { }
+                    FileSystemHelper.DeleteDirectorySafe(backupDirectory);
                     return;
                 }
-
-                _lastAutomaticBackupUtc = DateTime.UtcNow;
+                DateTime completedUtc = DateTime.UtcNow;
+                string completedDirectory = Path.Combine(root, completedUtc.ToString("yyyyMMdd-HHmmss-", CultureInfo.InvariantCulture) + suffix[..6]);
+                Directory.Move(backupDirectory, completedDirectory);
+                _lastAutomaticBackupUtc = completedUtc;
                 _automaticBackupTimestampLoaded = true;
                 PruneBackups(root, retentionCount);
             }
@@ -213,5 +212,6 @@ internal sealed class DataMaintenance(
 
     private static bool IsBackupComplete(string directory)
         => File.Exists(Path.Combine(directory, "config.json")) &&
-           File.Exists(Path.Combine(directory, "viewer_tokens.db"));
+           File.Exists(Path.Combine(directory, "viewer_tokens.db")) &&
+           File.Exists(Path.Combine(directory, "statistics.db"));
 }

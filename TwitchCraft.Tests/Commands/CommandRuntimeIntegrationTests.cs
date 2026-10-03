@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -114,7 +115,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task SingleplayerStartup_RemovesSidebarObjectivesLeftByMultiplayer()
+    public async Task SingleplayerStartup_RemovesMultiplayerSidebarObjectives()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -140,7 +141,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RemoteController_QueriesPlayerStateAndRejectsMalformedRCONResponse()
+    public async Task RemoteController_QueriesStateAndRejectsMalformedRCONResponse()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -205,7 +206,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task RemoteManualCommand_RejectsMultilineInputWithoutSendingToServer()
+    public async Task RemoteManualCommand_RejectsMultilineWithoutSending()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -295,41 +296,55 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task FailedMinecraftSend_RefundsAndDoesNotConsumeCustomCooldown()
+    public async Task RejectedRCONDispatch_RefundsAndReleasesCustomCooldown()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
-        TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready");
+        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
+        ConcurrentQueue<int> balancesAtDispatch = new();
+        const string password = "paid-dispatch-password";
+        await using FakeRCONServer RCON = new(
+            password,
+            wrongTypeResponseCommand: "time set night",
+            responseFactory: command =>
+            {
+                if (command == "time set night")
+                    balancesAtDispatch.Enqueue(runtime.Tokens.GetBalance("viewer"));
+                return "OK";
+            });
+        TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path);
+        config.Settings.RemoteControlEnabled = true;
+        config.Server.RemoteHost = "127.0.0.1";
+        config.Server.RCON.Port = RCON.Port;
+        config.Server.RCON.Password = password;
         config.Settings.CommandCustomizations["night"] = new CommandCustomization
         {
             CooldownSeconds = 60
         };
-        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
-        using CancellationTokenSource serverCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         try
         {
-            int commandCursor = await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
+            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
+            await runtime.ApplySettingsAsync(config);
+            await runtime.EnsureRCONAsync(config, cancellationToken);
             runtime.Tokens.Award("viewer", 100);
 
-            await runtime.StopProcessSafeAsync(waitBriefly: false);
             await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
             Assert.Equal(100, runtime.Tokens.GetBalance("viewer"));
-            Assert.Equal(commandCursor, FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin").Count);
+            Assert.Equal([85], balancesAtDispatch.ToArray());
 
-            await runtime.StartServerAsync(config, serverCts.Token);
-            _ = runtime.ReadOutputAsync(serverCts.Token);
-            await runtime.VerifyServerProcessAsync(serverCts.Token);
+            await runtime.EnsureRCONAsync(config, cancellationToken);
             await QueueCommandAndWaitAsync(runtime, "!night", "viewer", cancellationToken);
 
-            await FakeJavaServer.WaitForLineCountAsync(config.Server.JarPath + ".stdin", commandCursor + 2, cancellationToken);
-            Assert.Equal(85, runtime.Tokens.GetBalance("viewer"));
+            Assert.Equal(100, runtime.Tokens.GetBalance("viewer"));
+            Assert.Equal([85, 85], balancesAtDispatch.ToArray());
+            Assert.Equal(2, RCON.Commands.Count(command => command == "time set night"));
         }
         finally
         {
-            serverCts.Cancel();
-            await FakeJavaServer.StopRuntimeAndProcessAsync(runtime, config.Server.JarPath);
+            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
+            runtime.Tokens.Close();
         }
     }
 

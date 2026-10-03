@@ -10,7 +10,7 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class GameplayCommandIntegrationTests
 {
     [Fact]
-    public async Task Effect_DeliversValidEffectsAndRejectsInvalidCountsWithoutExtraCharge()
+    public async Task Effect_DeliversValidCountsAndRejectsInvalidWithoutExtraCharge()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
         scenario.Runtime.Tokens.Award("viewer", 100);
@@ -48,7 +48,7 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
-    public async Task NamedTargets_RejectOfflineAndSpectatorPlayersWithoutCharge()
+    public async Task NamedTargets_RejectOfflineOrSpectatorWithoutCharge()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync(
             ["PlayerOne", "PlayerTwo", "Spectator"],
@@ -68,7 +68,7 @@ public sealed class GameplayCommandIntegrationTests
     [Fact]
     public async Task Enchant_RebuildsHeldItemsAndScalesCostAcrossTargets()
     {
-        const string heldItem = "{id:'minecraft:diamond_sword',count:1,components:{}}";
+        const string heldItem = "{id:'minecraft:diamond_sword',count:2,components:{\"minecraft:damage\":5}}";
         await using MinecraftRuntimeScenario scenario = await StartAsync(
             ["PlayerOne", "PlayerTwo"],
             multiplayer: true,
@@ -86,7 +86,14 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, enchants.Count);
-        Assert.All(enchants, enchant => Assert.Contains("minecraft:enchantments=", enchant, StringComparison.Ordinal));
+        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+            Assert.Single(enchants, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal));
+        Assert.All(enchants, enchant =>
+        {
+            Assert.Contains("minecraft:enchantments=", enchant, StringComparison.Ordinal);
+            Assert.Contains("minecraft:damage=5", enchant, StringComparison.Ordinal);
+            Assert.EndsWith(" 2", enchant, StringComparison.Ordinal);
+        });
     }
 
     [Fact]
@@ -110,6 +117,8 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, renames.Count);
+        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+            Assert.Single(renames, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal));
         Assert.All(renames, rename =>
         {
             Assert.Contains("minecraft:damage=5", rename, StringComparison.Ordinal);
@@ -137,7 +146,8 @@ public sealed class GameplayCommandIntegrationTests
             command => command.StartsWith("tag @a remove tc_switchmilk_", StringComparison.Ordinal));
         string tag = first["tag @a remove ".Length..];
         string tagged = "@a[tag=" + tag + "]";
-        Assert.True(commands.Exists(command => command.Contains("run tag @s add " + tag, StringComparison.Ordinal)));
+        Assert.Single(commands, command => command ==
+            "execute as @a[name=\"PlayerTwo\",gamemode=!spectator] if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + tag);
         Assert.True(commands.Exists(command => string.Equals(command, "execute as " + tagged + " run clear @s minecraft:milk_bucket 1", StringComparison.Ordinal)));
         Assert.True(commands.Exists(command => command.StartsWith("execute as " + tagged + " run give @s minecraft:", StringComparison.Ordinal)));
         Assert.True(commands.Exists(command =>
@@ -172,6 +182,7 @@ public sealed class GameplayCommandIntegrationTests
         int cursor = scenario.CaptureCommandCursor();
 
         await scenario.DispatchAsync("!johnny");
+        Assert.Equal(160, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!chargedcreeper");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
 
@@ -201,6 +212,10 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(150, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, commands.Count(command => command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal)));
+        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+            Assert.Single(commands, command =>
+                command.StartsWith("execute as @a[name=\"" + player + "\",", StringComparison.Ordinal) &&
+                command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal));
         Assert.Contains(commands, command => command.Contains(" modifier remove ffffffff-ffff-ffff-ffff-ffffffffffff", StringComparison.Ordinal));
         Assert.False(commands.Exists(command => command.Contains(" -2 add_value", StringComparison.Ordinal)));
     }
@@ -260,7 +275,7 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
-    public async Task AdministrativeCommands_EnforcePermissionsAndStreamerProtection()
+    public async Task AdminCommands_EnforcePermissionsAndStreamerProtection()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync(["PlayerOne", "PlayerTwo"], multiplayer: true);
 
@@ -354,15 +369,18 @@ public sealed class GameplayCommandIntegrationTests
     }
 
     [Fact]
-    public async Task RandomGameplayCommands_DispatchValidCommandsAndChargeOnceEach()
+    public async Task RandomCommands_DispatchValidAndChargeOnceEach()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
         scenario.Runtime.Tokens.Award("viewer", 100);
         int cursor = scenario.CaptureCommandCursor();
 
         await scenario.DispatchAsync("!loot");
+        Assert.Equal(95, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!mob");
+        Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!weather");
+        Assert.Equal(75, scenario.Runtime.Tokens.GetBalance("viewer"));
         await scenario.DispatchAsync("!insult");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
         int lootCommands = commands.Count(command =>

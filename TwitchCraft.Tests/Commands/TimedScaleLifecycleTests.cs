@@ -52,14 +52,14 @@ public sealed class TimedScaleLifecycleTests
             sentCommands);
 
         resetDelay.SetResult();
-        await trackedTasks[0];
+        await trackedTasks[0].WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         Assert.Equal(
             "execute as @a[name=\"PlayerOne\",limit=1] run attribute @s minecraft:generic.scale base set 1",
             sentCommands[^1]);
     }
 
     [Fact]
-    public async Task ApplyAsync_NewerSizeChangeSupersedesOlderResetTimer()
+    public async Task ApplyAsync_OnlySuccessfulSizeChangesReplaceResetTimer()
     {
         List<string> sentCommands = [];
         List<Task> trackedTasks = [];
@@ -71,9 +71,20 @@ public sealed class TimedScaleLifecycleTests
         Assert.Equal(2, trackedTasks.Count);
         Assert.Equal(2, delays.Reader.Count);
 
+        Assert.False(await controller.ApplyAsync(
+            ["PlayerOne"],
+            0.25,
+            usesModernAttributeIDs: true,
+            usesInlineTextComponents: true,
+            TimeSpan.FromSeconds(30),
+            (_, _) => Task.FromResult(false),
+            TestContext.Current.CancellationToken));
+        Assert.Equal(2, trackedTasks.Count);
+        Assert.Equal(2, delays.Reader.Count);
+
         Assert.True(delays.Reader.TryRead(out TaskCompletionSource? olderWarningDelay));
         olderWarningDelay.SetResult();
-        await trackedTasks[0];
+        await trackedTasks[0].WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         Assert.Empty(sentCommands);
 
         Assert.True(delays.Reader.TryRead(out TaskCompletionSource? newerWarningDelay));
@@ -81,7 +92,7 @@ public sealed class TimedScaleLifecycleTests
         TaskCompletionSource newerResetDelay = await WaitForNextDelayAsync(delays);
         Assert.Equal(3, sentCommands.Count);
         newerResetDelay.SetResult();
-        await trackedTasks[1];
+        await trackedTasks[1].WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         Assert.Equal(4, sentCommands.Count);
         Assert.EndsWith("minecraft:scale base set 1", sentCommands[^1], StringComparison.Ordinal);
     }
@@ -128,11 +139,15 @@ public sealed class TimedScaleLifecycleTests
 
         await controller.ResetAllAsync(CancellationToken.None);
 
-        Assert.Equal(2, sentCommands.Count);
-        Assert.All(sentCommands, command => Assert.EndsWith("minecraft:scale base set 1", command, StringComparison.Ordinal));
+        Assert.Equal(
+            [
+                "execute as @a[name=\"Alice\",limit=1] run attribute @s minecraft:scale base set 1",
+                "execute as @a[name=\"Bob\",limit=1] run attribute @s minecraft:scale base set 1"
+            ],
+            sentCommands);
         while (delays.Reader.TryRead(out TaskCompletionSource? delay))
             delay.SetResult();
-        await Task.WhenAll(trackedTasks);
+        await Task.WhenAll(trackedTasks).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         Assert.Equal(2, sentCommands.Count);
     }
 

@@ -58,8 +58,7 @@ internal static class MinecraftQueryClient
         if (end == buffer.Length)
             throw new InvalidOperationException("Minecraft query handshake was truncated.");
 
-        string text = Encoding.ASCII.GetString(buffer, 5, end - 5);
-        if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int token))
+        if (!int.TryParse(buffer.AsSpan(5, end - 5), NumberStyles.Integer, CultureInfo.InvariantCulture, out int token))
             throw new InvalidOperationException("Minecraft query handshake did not include a valid challenge token.");
 
         return token;

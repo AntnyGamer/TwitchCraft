@@ -14,8 +14,7 @@ internal readonly record struct TwitchOAuthResult(
     string Token,
     string Login,
     string Error,
-    string RefreshToken = "",
-    int ExpiresInSeconds = 0)
+    string RefreshToken = "")
 {
     public bool IsSuccess => !string.IsNullOrEmpty(Token) && string.IsNullOrEmpty(Error);
 }
@@ -142,10 +141,10 @@ internal static class TwitchOAuthAuthorizer
                 return Fail("Twitch could not renew the saved authorization. " + ReadError(json));
 
             using JsonDocument document = JsonDocument.Parse(json);
-            if (!TryReadTokens(document.RootElement, out string token, out string newRefreshToken, out int expiresIn, out string error))
+            if (!TryReadTokens(document.RootElement, out string token, out string newRefreshToken, out string error))
                 return Fail(error);
 
-            TwitchOAuthResult validated = await ValidateTokenAsync(token, newRefreshToken, expiresIn, normalizedClientID, cancellationToken).ConfigureAwait(false);
+            TwitchOAuthResult validated = await ValidateTokenAsync(token, newRefreshToken, normalizedClientID, cancellationToken).ConfigureAwait(false);
             return validated.IsSuccess ? validated : validated with { RefreshToken = newRefreshToken };
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -327,13 +326,12 @@ internal static class TwitchOAuthAuthorizer
             }
 
             using JsonDocument document = JsonDocument.Parse(json);
-            if (!TryReadTokens(document.RootElement, out string token, out string refreshToken, out int expiresIn, out string error))
+            if (!TryReadTokens(document.RootElement, out string token, out string refreshToken, out string error))
                 return new(DeviceTokenPollStatus.Complete, Fail(error));
 
             TwitchOAuthResult validated = await ValidateTokenAsync(
                 token,
                 refreshToken,
-                expiresIn,
                 clientID,
                 cancellationToken).ConfigureAwait(false);
             return new(DeviceTokenPollStatus.Complete, validated);
@@ -353,18 +351,16 @@ internal static class TwitchOAuthAuthorizer
         JsonElement root,
         out string token,
         out string refreshToken,
-        out int expiresIn,
         out string error)
     {
         token = GetString(root, "access_token");
         refreshToken = GetString(root, "refresh_token");
-        expiresIn = GetPositiveInt(root, "expires_in");
+        int expiresIn = GetPositiveInt(root, "expires_in");
         error = string.Empty;
         if (token.Length == 0 || refreshToken.Length == 0 || expiresIn <= 0)
         {
             token = string.Empty;
             refreshToken = string.Empty;
-            expiresIn = 0;
             error = "Twitch returned incomplete renewable token information.";
             return false;
         }
@@ -375,7 +371,6 @@ internal static class TwitchOAuthAuthorizer
     private static async Task<TwitchOAuthResult> ValidateTokenAsync(
         string token,
         string refreshToken,
-        int expiresIn,
         string clientID,
         CancellationToken cancellationToken)
     {
@@ -390,7 +385,7 @@ internal static class TwitchOAuthAuthorizer
             await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
             return TryReadIdentity(document.RootElement, clientID, out string login, out string error)
-                ? new(token, login, string.Empty, refreshToken, expiresIn)
+                ? new(token, login, string.Empty, refreshToken)
                 : Fail(error);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)

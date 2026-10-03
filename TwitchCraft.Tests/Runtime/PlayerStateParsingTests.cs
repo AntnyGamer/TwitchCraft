@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TwitchCraft_V1;
 using Xunit;
 
@@ -51,14 +52,24 @@ public sealed class PlayerStateParsingTests
     [Fact]
     public void Statistics_RecognizesSystemChatDeathFormats()
     {
-        int deathScoreRefreshes = 0;
+        List<string> deathScoreRefreshes = [];
         StatisticsService statistics = new(new(
             _ => ChatCommandStatisticFlags.None, _ => true, _ => false,
-            () => { }, () => { }, () => { }, _ => deathScoreRefreshes++, _ => { }));
+            () => { }, () => { }, () => { }, deathScoreRefreshes.Add, _ => { }));
         statistics.SetContext(true, "streamer", "Steve", "!");
+        statistics.RecordLine("[Server thread/INFO]: System chat: SteveOther fell from a high place", false);
+        statistics.RecordLine("[Server thread/INFO]: [System] [CHAT] Alex was slain by Steve", false);
+        statistics.RecordLine("[Server thread/INFO]: [System] [CHAT] <Steve> Steve fell from a high place", false);
+        statistics.RecordLine("[Server thread/INFO]: Steve joined the game", false);
+        Assert.Empty(deathScoreRefreshes);
+
         statistics.RecordLine("[Server thread/INFO]: System chat: Steve fell from a high place", false);
         statistics.RecordLine("[Server thread/INFO]: [System] [CHAT] Steve was slain by Zombie", false);
 
-        Assert.Equal(2, deathScoreRefreshes);
+        Assert.Equal(["Steve", "Steve"], deathScoreRefreshes);
+
+        statistics.SetContext(false, "streamer", "Steve", "!");
+        statistics.RecordLine("[Server thread/INFO]: System chat: Steve fell from a high place", false);
+        Assert.Equal(["Steve", "Steve"], deathScoreRefreshes);
     }
 }

@@ -51,7 +51,7 @@ public sealed class HelixIdentityParsingTests
     }
 
     [Fact]
-    public void ParseUserIDs_MatchesUsersByLoginRegardlessOfResponseOrder()
+    public void ParseUserIDs_MatchesRegardlessOfResponseOrder()
     {
         const string json = """
             {

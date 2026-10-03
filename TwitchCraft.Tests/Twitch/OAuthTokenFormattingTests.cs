@@ -8,6 +8,7 @@ public sealed class OAuthTokenFormattingTests
     [Theory]
     [InlineData(" oauth:secret ", "secret")]
     [InlineData("OAUTH:secret", "secret")]
+    [InlineData("oauth:   secret", "secret")]
     [InlineData("secret", "secret")]
     [InlineData(null, "")]
     public void NormalizeAccessToken_RemovesWhitespaceAndOAuthPrefix(string? value, string expected)

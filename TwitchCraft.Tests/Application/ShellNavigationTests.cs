@@ -8,20 +8,6 @@ namespace TwitchCraft.Tests.Application;
 public sealed class ShellNavigationTests
 {
     [Fact]
-    public void Navigate_UpdatesCurrentPreviousAndVisibility()
-    {
-        AppShellViewModel shell = new();
-
-        shell.Navigate(ShellPage.Start);
-        shell.Navigate(ShellPage.Main);
-
-        Assert.Equal(ShellPage.Main, shell.CurrentPage);
-        Assert.Equal(ShellPage.Start, shell.PreviousPage);
-        Assert.True(shell.IsConsoleVisible);
-        Assert.False(shell.IsLaunchVisible);
-    }
-
-    [Fact]
     public void Navigate_SettingsFromHelpPreservesBackTarget()
     {
         AppShellViewModel shell = new();
@@ -54,12 +40,13 @@ public sealed class ShellNavigationTests
     }
 
     [Fact]
-    public void EveryPage_ShowsOnlyItsMatchingFrame()
+    public void Navigate_EveryPageUpdatesHistoryAndVisibility()
     {
         AppShellViewModel shell = new();
 
         foreach (ShellPage page in Enum.GetValues<ShellPage>())
         {
+            ShellPage previousPage = shell.CurrentPage;
             shell.Navigate(page);
 
             bool[] visibility =
@@ -72,6 +59,8 @@ public sealed class ShellNavigationTests
                 shell.IsStatisticsVisible
             ];
             Assert.Equal(page, shell.CurrentPage);
+            if (page != previousPage)
+                Assert.Equal(previousPage, shell.PreviousPage);
             Assert.Single(visibility, visible => visible);
             Assert.True(visibility[(int)page]);
         }

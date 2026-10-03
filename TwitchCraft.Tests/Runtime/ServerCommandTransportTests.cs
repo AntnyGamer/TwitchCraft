@@ -21,6 +21,7 @@ public sealed class ServerCommandTransportTests
     [Theory]
     [InlineData(1, 5, 5)]
     [InlineData(100, 5, 15)]
+    [InlineData(11, 15, 17)]
     public void GetRCONTimeout_UsesTheBaseAndMaximumLimits(
         int commandCount,
         int baseSeconds,
@@ -32,18 +33,10 @@ public sealed class ServerCommandTransportTests
     }
 
     [Fact]
-    public void GetRCONTimeout_UsesConfiguredBaseTimeout()
-    {
-        Assert.Equal(
-            TimeSpan.FromSeconds(17),
-            MainHandler.GetRCONTimeout(11, TimeSpan.FromSeconds(15)));
-    }
-
-    [Fact]
-    public void SnapshotCommands_NormalizesValidCommandsAndRejectsUnsafeEntries()
+    public void SnapshotCommands_NormalizesAndRejectsUnsafeEntries()
     {
         List<string> result = MainHandler.SnapshotCommands(
-            [" say hi ", "", "stop\nnow", "\uFEFFsave-all"]);
+            [" say hi ", "", " \t ", "\uFEFF", "stop\nnow", "stop\rnow", "\uFEFFsave-all"]);
 
         Assert.Equal(["say hi", "save-all"], result);
     }

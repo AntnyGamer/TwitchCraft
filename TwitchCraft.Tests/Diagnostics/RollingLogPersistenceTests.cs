@@ -15,12 +15,12 @@ public sealed class RollingLogPersistenceTests
     private static readonly UTF8Encoding UTF8NoBOM = new(false);
 
     [Fact]
-    public void TryWriteLine_RotatesDuringOneSessionWithoutLosingThePendingEvent()
+    public void TryWriteLine_RotationPreservesPendingEvent()
     {
         using TemporaryDirectory directory = new();
         string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
-        string first = "{\"event\":\"first-boundary-event\"}";
-        string second = "{\"event\":\"second-boundary-event\"}";
+        string first = "{\"event\":\"éééééééééé\"}";
+        string second = "{\"event\":\"øøøøøøøøøø\"}";
 
         using (RollingJsonLogWriter writer = new(logPath, 48, 3, UTF8NoBOM))
         {
@@ -36,6 +36,31 @@ public sealed class RollingLogPersistenceTests
         Assert.Equal(second, Assert.Single(File.ReadAllLines(logPath)));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TryWriteLine_ReopenAfterInterruptedAppendPreservesJson(bool completeTail)
+    {
+        using TemporaryDirectory directory = new();
+        string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
+        const string retained = "{\"event\":\"retained\"}";
+        const string pending = "{\"event\":\"pending\"}";
+        string tail = completeTail ? "{\"event\":\"complete-tail\"}" : "{\"event\":";
+        File.WriteAllText(logPath, retained + System.Environment.NewLine + tail, UTF8NoBOM);
+
+        using (RollingJsonLogWriter writer = new(logPath, 1024, 3, UTF8NoBOM))
+            Assert.True(writer.TryWriteLine(pending));
+
+        string[] expected = completeTail ? [retained, tail, pending] : [retained, pending];
+        string[] lines = File.ReadAllLines(logPath);
+        Assert.Equal(expected, lines);
+        foreach (string line in lines)
+        {
+            using JsonDocument json = JsonDocument.Parse(line);
+            Assert.NotNull(json.RootElement.GetProperty("event").GetString());
+        }
+    }
+
     [Fact]
     public void TryWriteLine_RetainsOnlyTheConfiguredNumberOfRotatedFiles()
     {
@@ -49,13 +74,18 @@ public sealed class RollingLogPersistenceTests
         }
 
         string[] files = Directory.GetFiles(directory.Path, "TwitchCraft.log*");
-        Assert.InRange(files.Length, 1, 4);
+        Assert.Equal(4, files.Length);
         Assert.DoesNotContain(logPath + ".old4", files);
-        Assert.Contains("{\"event\":29,\"value\":\"abcdefghij\"}", ReadAllLogLines(logPath));
+        for (int retained = 0; retained <= 3; retained++)
+        {
+            string retainedPath = retained == 0 ? logPath : logPath + ".old" + retained;
+            string expected = "{\"event\":" + (29 - retained) + ",\"value\":\"abcdefghij\"}";
+            Assert.Equal(expected, Assert.Single(File.ReadAllLines(retainedPath)));
+        }
     }
 
     [Fact]
-    public void TryWriteLine_SerializesConcurrentWritesAndRotationsIntoValidJsonLines()
+    public void TryWriteLine_ConcurrentWritesStayValidAcrossRotations()
     {
         using TemporaryDirectory directory = new();
         string logPath = Path.Combine(directory.Path, "TwitchCraft.log");

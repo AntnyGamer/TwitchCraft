@@ -84,8 +84,12 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
 
     internal int CaptureCommandCursor() => FakeJavaServer.ReadAllLinesShared(JarPath + ".stdin").Count;
 
-    internal void SetProbeDelay(int milliseconds)
-        => File.WriteAllText(JarPath + ".probe-delay", Math.Max(0, milliseconds).ToString(CultureInfo.InvariantCulture));
+    internal void SetItemResponsesHeld(bool held)
+    {
+        string path = JarPath + ".hold-item-responses";
+        if (held) File.WriteAllText(path, string.Empty);
+        else File.Delete(path);
+    }
 
     internal void SetSelectedItem(string playerName, string selectedItem)
         => File.WriteAllText(JarPath + ".item." + playerName.ToLowerInvariant(), selectedItem);
@@ -115,6 +119,7 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        SetItemResponsesHeld(false);
         _cts.Cancel();
         await FakeJavaServer.StopRuntimeAndProcessAsync(Runtime, JarPath);
         _cts.Dispose();

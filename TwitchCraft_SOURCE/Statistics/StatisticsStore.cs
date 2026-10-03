@@ -89,6 +89,22 @@ internal static partial class StatisticsStore
         }
     }
 
+    public static bool TryBackup(string destinationPath)
+    {
+        try
+        {
+            lock (IOGate)
+                FileSystemHelper.BackupSqliteDatabase(GetConnectionNoLock(), destinationPath);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            FileSystemHelper.DeleteFileSafe(destinationPath);
+            ErrorHandling.LogNonFatal("Failed to back up statistics database", ex);
+            return false;
+        }
+    }
+
     public static bool ApplyCommandDelta(string commandName, long tokensSpent, string normalizedViewer, long dangerousScore, long niceScore)
     {
         long safeDangerousScore = Math.Max(0L, dangerousScore);
@@ -96,17 +112,9 @@ internal static partial class StatisticsStore
         string safeViewer = (safeDangerousScore > 0 || safeNiceScore > 0) && !string.IsNullOrEmpty(normalizedViewer)
             ? normalizedViewer
             : string.Empty;
+        string command = commandName ?? string.Empty;
+        long safeTokensSpent = Math.Max(0L, tokensSpent);
 
-        return ApplyCommandDeltaCore(
-            commandName ?? string.Empty,
-            Math.Max(0L, tokensSpent),
-            safeViewer,
-            safeDangerousScore,
-            safeNiceScore);
-    }
-
-    private static bool ApplyCommandDeltaCore(string command, long safeTokensSpent, string normalizedViewer, long safeDangerousScore, long safeNiceScore)
-    {
         try
         {
             lock (IOGate)
@@ -115,16 +123,11 @@ internal static partial class StatisticsStore
                 using SqliteTransaction transaction = connection.BeginTransaction();
 
                 AddCommandTotalsNoLock(transaction, safeTokensSpent);
-
                 if (command.Length > 0)
-                {
                     AddCommandUseNoLock(transaction, command);
-                }
 
-                if (normalizedViewer.Length > 0 && (safeDangerousScore > 0 || safeNiceScore > 0))
-                {
-                    SaveViewerScoreNoLock(transaction, normalizedViewer, safeDangerousScore, safeNiceScore);
-                }
+                if (safeViewer.Length > 0)
+                    SaveViewerScoreNoLock(transaction, safeViewer, safeDangerousScore, safeNiceScore);
 
                 transaction.Commit();
             }

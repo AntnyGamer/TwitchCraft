@@ -35,9 +35,9 @@ public sealed partial class ConfigurationStore
     private static readonly Lock IOGate = new();
     private static bool _writesDisabled;
     private static readonly UTF8Encoding UTF8NoBOM = new(false);
-    private static readonly string WorkingDirectoryPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        AppFolderName);
+    private static readonly string WorkingDirectoryPath = AppContext.GetData("TwitchCraft.DataDirectory") is string dataDirectory
+        ? Path.GetFullPath(dataDirectory)
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppFolderName);
     private static readonly string ConfigPathValue = Path.Combine(WorkingDirectoryPath, ConfigFileName);
     private static readonly string ConfigTempPathValue = ConfigPathValue + ".tmp";
     private static readonly string ViewerTokensPathValue = Path.Combine(WorkingDirectoryPath, ViewerTokensFileName);
@@ -121,14 +121,14 @@ public sealed partial class ConfigurationStore
 
         return new TwitchCraftConfig
         {
-            Server = new ServerConfig
+            Server =
             {
-                Java = new JavaConfig
+                Java =
                 {
                     ExecutablePath = source.Server.Java.ExecutablePath,
                     HomeDirectory = source.Server.Java.HomeDirectory
                 },
-                RCON = new RCONConfig
+                RCON =
                 {
                     Port = source.Server.RCON.Port,
                     Password = source.Server.RCON.Password
@@ -144,7 +144,7 @@ public sealed partial class ConfigurationStore
                 MemoryMinGB = source.Server.MemoryMinGB,
                 MemoryMaxGB = source.Server.MemoryMaxGB
             },
-            Twitch = new TwitchConfig
+            Twitch =
             {
                 ClientID = source.Twitch.ClientID,
                 BotToken = source.Twitch.BotToken,
@@ -152,11 +152,11 @@ public sealed partial class ConfigurationStore
                 StreamerName = source.Twitch.StreamerName,
                 BotName = source.Twitch.BotName
             },
-            Identity = new IdentityConfig
+            Identity =
             {
                 StreamerMinecraftName = source.Identity.StreamerMinecraftName
             },
-            Settings = new StartingProfile
+            Settings =
             {
                 MultiplayerEnabled = source.Settings.MultiplayerEnabled,
                 MultiplayerPvPEnabled = source.Settings.MultiplayerPvPEnabled,

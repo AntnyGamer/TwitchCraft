@@ -392,18 +392,18 @@
                                                 <ComboBox x:Name="SqliteOptimizeDropdown" AutomationProperties.Name="SQLite optimization interval" SelectionChanged="SqliteOptimize_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
-                                                <TextBlock Text="Enable automatic config and token backups:" Style="{StaticResource SettingLabel}" />
-                                                <CheckBox x:Name="AutomaticBackupsCheckbox" AutomationProperties.Name="Enable automatic config and token backups" Checked="Backups_Changed" Unchecked="Backups_Changed" />
+                                                <TextBlock Text="Enable automatic data backups:" Style="{StaticResource SettingLabel}" />
+                                                <CheckBox x:Name="AutomaticBackupsCheckbox" AutomationProperties.Name="Enable automatic data backups" Checked="Backups_Changed" Unchecked="Backups_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Automatic backup interval:" Style="{StaticResource SettingLabel}" />
-                                                <ComboBox x:Name="BackupIntervalDropdown" AutomationProperties.Name="Automatic backup interval" Style="{StaticResource DimWhenDisabledComboBox}" SelectionChanged="BackupInterval_Changed" ToolTipService.ShowOnDisabled="True" ToolTip="Available when automatic config and token backups are enabled." />
+                                                <ComboBox x:Name="BackupIntervalDropdown" AutomationProperties.Name="Automatic backup interval" Style="{StaticResource DimWhenDisabledComboBox}" SelectionChanged="BackupInterval_Changed" ToolTipService.ShowOnDisabled="True" ToolTip="Available when automatic config, token, and statistics backups are enabled." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Backups to keep:" Style="{StaticResource SettingLabel}" />
-                                                <ComboBox x:Name="BackupRetentionDropdown" AutomationProperties.Name="Backups to keep" Style="{StaticResource DimWhenDisabledComboBox}" SelectionChanged="BackupRetention_Changed" ToolTipService.ShowOnDisabled="True" ToolTip="Available when automatic config and token backups are enabled." />
+                                                <ComboBox x:Name="BackupRetentionDropdown" AutomationProperties.Name="Backups to keep" Style="{StaticResource DimWhenDisabledComboBox}" SelectionChanged="BackupRetention_Changed" ToolTipService.ShowOnDisabled="True" ToolTip="Available when automatic config, token, and statistics backups are enabled." />
                                             </DockPanel>
-                                            <TextBlock Style="{StaticResource CategoryNote}" Margin="0,8,0,0" Text="Automatic backups (including config.json and viewer_tokens.db) run on the selected interval and when TwitchCraft closes, and are stored locally in TwitchCraft\backups." />
+                                            <TextBlock Style="{StaticResource CategoryNote}" Margin="0,8,0,0" Text="Automatic backups (including config.json, viewer_tokens.db, and statistics.db) run on the selected interval and when TwitchCraft closes, and are stored locally in TwitchCraft\backups." />
                                         </StackPanel>
                                     </ScrollViewer>
                                 </Grid>
@@ -472,7 +472,7 @@
                                                 <TextBlock Width="410" Margin="0,0,0,25" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" VerticalAlignment="Center" Text="RAM changes apply on the next server start." />
                                                 <Button x:Name="AuthorizeTwitchButton" Content="Authorize Twitch" ToolTipService.ShowOnDisabled="True" Width="178" Height="30" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Center" />
                                                 <TextBlock Width="410" Margin="0,4,0,22" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" VerticalAlignment="Center" Text="TwitchCraft uses a public Twitch application. No Client ID or Client Secret is entered by the user, and your Twitch password is never provided to TwitchCraft. Authorization tokens are stored locally and sent only to Twitch as needed." />
-                                                <StackPanel x:Name="RCONPasswordEditor" Margin="0,0,0,8" IsKeyboardFocusWithinChanged="RCONPasswordEditor_IsKeyboardFocusWithinChanged">
+                                                <StackPanel x:Name="RCONPasswordEditor" Margin="0,0,0,8" IsKeyboardFocusWithinChanged="RCONPasswordEditor_FocusWithinChanged">
                                                     <Grid Width="410" HorizontalAlignment="Center" Margin="0,0,0,4">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto" />

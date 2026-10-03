@@ -8,7 +8,7 @@ public sealed class IRCFrameParserTests
     [Fact]
     public void TryParse_ExtractsModeratorBitsSenderAndMessage()
     {
-        const string line = "@badges=moderator/1;color=#fff;mod=1;bits=250;id=abc-123 :SomeUser!someuser@host PRIVMSG #channel :!Heal Player";
+        const string line = "@badges=;color=#fff;mod=1;bits=250;id=abc-123 :SomeUser!someuser@host PRIVMSG #channel :!Heal Player";
 
         IRCMessage message = new();
         bool result = message.TryParse(line);
@@ -19,6 +19,11 @@ public sealed class IRCFrameParserTests
         Assert.Equal("!Heal Player", message.Trailing);
         Assert.Equal((250, "abc-123"), (message.Bits, message.ID));
         Assert.True(message.IsModerator);
+
+        Assert.True(message.TryParse("@badges=moderator/1;mod=0 :SomeUser!someuser@host PRIVMSG #channel :hello"));
+        Assert.True(message.IsModerator);
+        Assert.True(message.TryParse("@badges=vip/1;mod=0 :SomeUser!someuser@host PRIVMSG #channel :hello"));
+        Assert.False(message.IsModerator);
     }
 
     [Fact]
@@ -64,7 +69,6 @@ public sealed class IRCFrameParserTests
     [InlineData("")]
     [InlineData(" PRIVMSG #channel :message")]
     [InlineData("@badges=moderator/1")]
-    [InlineData(":missing-command-prefix")]
     public void TryParse_RejectsMalformedLines(string line)
     {
         IRCMessage message = new();

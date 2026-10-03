@@ -33,7 +33,7 @@ public sealed partial class StatisticsService
         bool isEffectCommand = string.Equals(command, "effect", StringComparison.OrdinalIgnoreCase);
         int dangerousScore = (statisticFlags & ChatCommandStatisticFlags.Dangerous) != 0 && !isEffectCommand ? 1 : 0;
         int niceScore = (statisticFlags & ChatCommandStatisticFlags.Nice) != 0 && !isEffectCommand ? 1 : 0;
-        bool viewerCountsForRanking = viewer.Length > 0 && !IsStreamer(viewer);
+        bool viewerCountsForRanking = viewer.Length > 0 && !string.Equals(viewer, _streamerName, StringComparison.OrdinalIgnoreCase);
         long normalizedTokensSpent = Math.Max(0L, tokensSpent);
 
         lock (_deathStatisticsGate)
@@ -193,7 +193,6 @@ public sealed partial class StatisticsService
                 return;
             }
 
-            _sessionStatistics.CurrentLifeHasStarted = true;
             _sessionStatistics.CurrentLifeWaitingForRespawn = false;
             _sessionStatistics.CurrentLifeStartedUtc ??= now;
         }
@@ -212,11 +211,4 @@ public sealed partial class StatisticsService
         }
     }
 
-    private bool IsStreamer(string normalizedViewer)
-    {
-        string streamerName = _streamerName;
-        return normalizedViewer.Length > 0
-            && streamerName.Length > 0
-            && string.Equals(normalizedViewer, streamerName, StringComparison.OrdinalIgnoreCase);
-    }
 }

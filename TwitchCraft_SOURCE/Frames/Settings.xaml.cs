@@ -811,7 +811,7 @@ public partial class Settings : UserControl
         }
     }
 
-    private async void RCONPasswordEditor_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
+    private async void RCONPasswordEditor_FocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (_initializing || RCONPasswordEditor.IsKeyboardFocusWithin)
             return;

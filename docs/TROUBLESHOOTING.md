@@ -58,7 +58,7 @@ On the Start screen, make sure:
 
    * `AppData --> Roaming --> TwitchCraft --> config.json`
 3. Check for missing commas, missing quotes, or extra brackets
-4. If you are not sure what changed, restore `config.json` and `viewer_tokens.db` from the same timestamped folder under `TwitchCraft\backups`
+4. If you are not sure what changed, restore `config.json`, `viewer_tokens.db`, and `statistics.db` from the same timestamped folder under `TwitchCraft\backups`
 5. If there is no complete automatic backup, run Setup again to recreate the config file
 
 ## TWITCHCRAFT CRASHING OR NO ERROR REASON
@@ -211,4 +211,4 @@ On the Start screen, make sure:
 7. Open **Settings --> Dangerous** and lower the minimum and maximum RAM if Minecraft is using more memory than your PC can comfortably handle
 8. If you are still experiencing lag or low FPS, consider using a more powerful PC or reducing background usage
 
-If this troubleshooting guide does not resolve your issue or question, please contact the creator of TwitchCraft with the copied diagnostics and the smallest relevant sanitized excerpt from `TwitchCraft.log`, along with a description of the problem.
+If this guide does not resolve the issue, contact the TwitchCraft creator with the copied diagnostics, the smallest relevant sanitized excerpt from `TwitchCraft.log`, and a description of the problem.

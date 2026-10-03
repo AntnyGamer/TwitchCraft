@@ -86,15 +86,15 @@ Direct edits to a TwitchCraft-managed property may be replaced the next time Twi
 
 ## Backups and recovery
 
-Configuration saves use `config.json.tmp` as a temporary file with a replacement fallback. If the main config cannot be read, TwitchCraft can recover from a valid temporary file. Automatic backups are enabled by default. TwitchCraft creates a consistent SQLite copy of `viewer_tokens.db` beside a copy of `config.json` under `backups/` at the selected interval and during a clean shutdown. Retention can be set to 1, 3, 5, 10, or 20 complete backup sets and defaults to three. These copies include sensitive Twitch authorization data and must remain private.
+Configuration saves use `config.json.tmp` with a replacement fallback, and TwitchCraft can recover from a valid temporary file if the main config is unreadable. Automatic backups are enabled by default and save `config.json` plus consistent SQLite copies of `viewer_tokens.db` and `statistics.db` under `backups/` at the selected interval and during clean shutdown. Retention counts only sets containing all three files, supports 1, 3, 5, 10, or 20 sets, and defaults to three. Backups can contain sensitive Twitch authorization data and must remain private.
 
 Before restoring an automatic backup:
 
 1. Close TwitchCraft.
 2. Make a copy of the entire `%APPDATA%\TwitchCraft` directory.
 3. Inspect filenames carefully; never post their contents publicly.
-4. Restore `config.json` and `viewer_tokens.db` from the same timestamped backup folder.
-5. Start TwitchCraft and verify settings and balances before launching a server.
+4. Restore `config.json`, `viewer_tokens.db`, and `statistics.db` from the same timestamped backup folder.
+5. Start TwitchCraft and verify settings, balances, and statistics before launching a server.
 
 ## Sensitive values
 

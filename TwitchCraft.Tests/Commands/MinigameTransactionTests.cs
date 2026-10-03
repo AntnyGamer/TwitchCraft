@@ -62,48 +62,12 @@ public sealed class MinigameTransactionTests
         Assert.False(sent);
     }
 
-    [Fact]
-    public async Task RejectedMinigameBet_PreservesPersistedTokenBalance()
-    {
-        using TemporaryDirectory directory = new();
-        string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
-        MainHandler runtime = new(new AppShellViewModel(), databasePath);
-        Dictionary<string, ChatCommandHandler> handlers = new(StringComparer.OrdinalIgnoreCase);
-        MinigameManager.AddHandlers(
-            runtime,
-            handlers,
-            static (_, _) => Task.CompletedTask,
-            static (_, _) => Task.CompletedTask);
-
-        try
-        {
-            runtime.Tokens.Award("viewer", 500);
-            await handlers["chickenbet"](["100", "10"], "viewer", TestContext.Current.CancellationToken);
-            Assert.Equal(500, runtime.Tokens.GetBalance("viewer"));
-        }
-        finally
-        {
-            await MinigameManager.StopLoopsAsync(runtime);
-            runtime.Tokens.Close();
-        }
-
-        MainHandler reopened = new(new AppShellViewModel(), databasePath);
-        try
-        {
-            Assert.Equal(500, reopened.Tokens.GetBalance("viewer"));
-        }
-        finally
-        {
-            reopened.Tokens.Close();
-        }
-    }
-
     [Theory]
     [InlineData("chickenbet", null, null, "viewer, usage: !chickenbet <tokenamt> <seconds>")]
     [InlineData("chickenbet", "abc", "10", "viewer, please enter a valid token amount.")]
     [InlineData("chickenbet", "10", "abc", "viewer, please enter a valid second value.")]
     [InlineData("chickenbet", "10", "0", "viewer, please enter a valid second value.")]
-    [InlineData("chickenbet", "10", "10", "viewer, Chicken Run betting is not open right now.")]
+    [InlineData("chickenbet", "100", "10", "viewer, Chicken Run betting is not open right now.")]
     [InlineData("guess", null, null, "viewer, usage: !guess <number>")]
     [InlineData("guess", "abc", null, "viewer, please enter a valid number between 1 and 100.")]
     [InlineData("guess", "0", null, "viewer, please enter a valid number between 1 and 100.")]
@@ -113,16 +77,17 @@ public sealed class MinigameTransactionTests
     [InlineData("damagewither", "abc", null, "viewer, please enter a valid token amount.")]
     [InlineData("damagewither", "201", null, "viewer, the max Wither Battle bet is 200 tokens.")]
     [InlineData("damagewither", "200", null, "viewer, a Wither Battle is not active right now.")]
-    public async Task MinigameHandlers_RejectInvalidOrInactiveRequestsWithoutSpendingTokens(
+    public async Task MinigameHandlers_RejectInvalidOrInactiveWithoutCharge(
         string command,
         string? firstArgument,
         string? secondArgument,
         string expectedMessage)
     {
         using TemporaryDirectory directory = new();
+        string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
         MainHandler runtime = new(
             new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"));
+            databasePath);
         Dictionary<string, ChatCommandHandler> handlers = new(StringComparer.OrdinalIgnoreCase);
         List<string> errors = [];
         List<string> successes = [];
@@ -159,6 +124,16 @@ public sealed class MinigameTransactionTests
         {
             await MinigameManager.StopLoopsAsync(runtime);
             runtime.Tokens.Close();
+        }
+
+        TokenStore reopened = new(databasePath);
+        try
+        {
+            Assert.Equal(500, reopened.GetBalance("viewer"));
+        }
+        finally
+        {
+            reopened.CloseConnection();
         }
     }
 }

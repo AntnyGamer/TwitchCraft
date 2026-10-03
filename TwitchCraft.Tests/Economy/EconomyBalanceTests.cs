@@ -35,7 +35,7 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void BalanceWrites_PersistWholeLiveRosterAndNormalizedSingleUserEdits()
+    public void BalanceWrites_PersistRosterAndNormalizedUserEdits()
     {
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
@@ -72,7 +72,7 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void PositiveAwards_RespectMaximumBalanceWithoutBreakingSpending()
+    public void PositiveAwards_RespectMaximumBalanceAndPreserveSpending()
     {
         using TemporaryDirectory directory = new();
         TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
@@ -84,6 +84,7 @@ public sealed class EconomyBalanceTests
             Assert.Equal(100, store.GetBalance("viewer"));
 
             Assert.True(store.TrySpend("viewer", 30));
+            Assert.Equal(70, store.GetBalance("viewer"));
             store.AdjustBalance("viewer", 50, maximumBalance: 100);
             Assert.Equal(100, store.GetBalance("viewer"));
         }
@@ -94,7 +95,7 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void FollowReward_ReportsActualAwardWhenMaximumBalanceIsReached()
+    public void FollowReward_ReportsActualAwardAtBalanceLimit()
     {
         using TemporaryDirectory directory = new();
         TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
@@ -113,6 +114,12 @@ public sealed class EconomyBalanceTests
             Assert.Equal(FollowRewardResult.Rewarded, result);
             Assert.Equal(10, awarded);
             Assert.Equal(100, store.GetBalance("viewer"));
+            Assert.True(store.TrySpend("viewer", 20));
+            Assert.Equal(FollowRewardResult.AlreadyRewarded, store.TryRewardFollower(
+                "123456", "viewer", new DateTimeOffset(2026, 8, 27, 2, 2, 3, TimeSpan.Zero),
+                100, out int repeatedAward, maximumBalance: 100));
+            Assert.Equal(0, repeatedAward);
+            Assert.Equal(80, store.GetBalance("viewer"));
         }
         finally
         {

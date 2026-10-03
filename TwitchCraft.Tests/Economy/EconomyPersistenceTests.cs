@@ -19,10 +19,12 @@ public sealed class EconomyPersistenceTests
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
         TokenStore store = new(databasePath);
+        TokenService tokens = new(databasePath, () => 0);
 
         try
         {
             store.AdjustBalance("viewer", 10);
+            Assert.Equal(6, tokens.Award("gambler", 6));
 
             Assert.True(store.TrySpend("viewer", 4));
             Assert.False(store.TrySpend("viewer", 7));
@@ -32,8 +34,16 @@ public sealed class EconomyPersistenceTests
             using SqliteConnection connection = new($"Data Source={databasePath}");
             connection.Open();
             using SqliteCommand command = connection.CreateCommand();
-            command.CommandText = "CREATE TRIGGER fail_writes BEFORE INSERT ON TokenBalances WHEN NEW.Username IN ('bob', 'solo') BEGIN SELECT RAISE(ABORT, 'test'); END;";
+            command.CommandText = "CREATE TRIGGER fail_writes BEFORE INSERT ON TokenBalances WHEN NEW.Username IN ('bob', 'solo', 'gambler') BEGIN SELECT RAISE(ABORT, 'test'); END;";
             command.ExecuteNonQuery();
+            Assert.Equal(TokenAdjustmentStatus.Failed,
+                tokens.TryGamble("gambler", 4, -4, out int gambleBalance, out int appliedDelta));
+            Assert.Equal(6, gambleBalance);
+            Assert.Equal(0, appliedDelta);
+            Assert.Equal(6, tokens.GetBalance("gambler"));
+            Assert.Equal(6, store.GetBalance("gambler"));
+            command.CommandText = "SELECT Balance FROM TokenBalances WHERE Username = 'gambler';";
+            Assert.Equal(6L, command.ExecuteScalar());
             Assert.False(store.AdjustBalances([new KeyValuePair<string, int>("solo", 4)]));
             Assert.Equal(0, store.GetBalance("solo"));
             // Fail after an earlier balance was deleted inside the batch transaction.
@@ -58,12 +68,14 @@ public sealed class EconomyPersistenceTests
         }
         finally
         {
+            tokens.Close();
             store.CloseConnection();
         }
 
         TokenStore reader = new(databasePath);
         try
         {
+            Assert.Equal(6, reader.GetBalance("gambler"));
             Assert.Null(reader.TryTransfer("bob", "viewer", 1, 0));
             Assert.Equal(1, reader.TryTransfer("@ViEwEr", "@BoB", 2, 0));
             Assert.Equal(0, reader.GetBalance("viewer"));
@@ -72,30 +84,6 @@ public sealed class EconomyPersistenceTests
         finally
         {
             reader.CloseConnection();
-        }
-    }
-
-    [Fact]
-    public void FollowReward_IsPaidOnlyOncePerTwitchAccount()
-    {
-        using TemporaryDirectory directory = new();
-        TokenStore store = new(Path.Combine(directory.Path, "viewer_tokens.db"));
-
-        try
-        {
-            Assert.Equal(
-                FollowRewardResult.Rewarded,
-                store.TryRewardFollower("123456", "FirstName", DateTimeOffset.Parse("2026-08-27T01:02:03Z", System.Globalization.CultureInfo.InvariantCulture), 50, out _));
-            Assert.Equal(
-                FollowRewardResult.AlreadyRewarded,
-                store.TryRewardFollower("123456", "RenamedUser", DateTimeOffset.Parse("2026-08-27T02:03:04Z", System.Globalization.CultureInfo.InvariantCulture), 50, out _));
-
-            Assert.Equal(50, store.GetBalance("firstname"));
-            Assert.Equal(0, store.GetBalance("renameduser"));
-        }
-        finally
-        {
-            store.CloseConnection();
         }
     }
 
@@ -130,7 +118,13 @@ public sealed class EconomyPersistenceTests
             }
             Assert.Equal(
                 FollowRewardResult.Rewarded,
-                writer.TryRewardFollower("987654", "viewer", followedAt, 50, out _));
+                writer.TryRewardFollower("987654", "ViEwEr", followedAt, 50, out int firstAward));
+            Assert.Equal(50, firstAward);
+            Assert.Equal(FollowRewardResult.AlreadyRewarded,
+                writer.TryRewardFollower("987654", "RenamedUser", followedAt.AddHours(1), 50, out int repeatedAward));
+            Assert.Equal(0, repeatedAward);
+            Assert.Equal(50, writer.GetBalance("viewer"));
+            Assert.Equal(0, writer.GetBalance("renameduser"));
         }
         finally
         {
@@ -142,8 +136,10 @@ public sealed class EconomyPersistenceTests
         {
             Assert.Equal(
                 FollowRewardResult.AlreadyRewarded,
-                reader.TryRewardFollower("987654", "viewer", followedAt, 50, out _));
+                reader.TryRewardFollower("987654", "RenamedUser", followedAt.AddHours(2), 50, out int restartedAward));
+            Assert.Equal(0, restartedAward);
             Assert.Equal(50, reader.GetBalance("viewer"));
+            Assert.Equal(0, reader.GetBalance("renameduser"));
         }
         finally
         {
@@ -182,6 +178,8 @@ public sealed class EconomyPersistenceTests
         try
         {
             store.AdjustBalance("alice", 42);
+            Assert.Equal(FollowRewardResult.Rewarded, store.TryRewardFollower(
+                "123456", "follower", new DateTimeOffset(2026, 8, 27, 1, 2, 3, TimeSpan.Zero), 50, out _));
             Assert.True(store.TryBackup(backupPath));
             store.AdjustBalance("alice", 8);
         }
@@ -194,6 +192,11 @@ public sealed class EconomyPersistenceTests
         try
         {
             Assert.Equal(42, backup.GetBalance("alice"));
+            Assert.Equal(FollowRewardResult.AlreadyRewarded, backup.TryRewardFollower(
+                "123456", "RenamedFollower", new DateTimeOffset(2026, 8, 27, 2, 2, 3, TimeSpan.Zero), 50, out int awarded));
+            Assert.Equal(0, awarded);
+            Assert.Equal(50, backup.GetBalance("follower"));
+            Assert.Equal(0, backup.GetBalance("renamedfollower"));
             Assert.True(backup.TryOptimize());
         }
         finally

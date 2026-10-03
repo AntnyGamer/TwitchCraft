@@ -194,10 +194,10 @@ public sealed partial class MainHandler
         DateTime now = DateTime.UtcNow;
         lock (_playerGate)
         {
-            if (now - _lastPlayerSidebarRefreshErrorUtc < PlayerSidebarRefreshErrorLogInterval)
+            if (now - _lastSidebarRefreshErrorUtc < PlayerSidebarRefreshErrorLogInterval)
                 return;
 
-            _lastPlayerSidebarRefreshErrorUtc = now;
+            _lastSidebarRefreshErrorUtc = now;
         }
 
         _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Player sidebar refresh failed", ex));

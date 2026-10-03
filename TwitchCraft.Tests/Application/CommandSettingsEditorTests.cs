@@ -23,20 +23,42 @@ public sealed class CommandSettingsEditorTests
     public void Rows_PreserveTypedValuesAndSaveOnlyActualEdits(int? perUser, double? global)
     {
         List<(bool Enabled, int? PerUser, double? Global)> saves = [];
+        List<string?> changed = [];
         Settings.CommandSettingsRow row = new("heal", new() { CooldownSeconds = perUser, GlobalCooldownSeconds = global },
             edited => saves.Add((edited.Enabled, edited.PerUserCooldown.Value, edited.GlobalCooldown.Value)));
+        row.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
         Assert.Equal(perUser, row.PerUserCooldown.Value);
         Assert.Equal(global, row.GlobalCooldown.Value);
         row.Enabled = true;
         row.PerUserCooldown = row.PerUserCooldown;
+        row.PerUserCooldown = null!;
+        row.GlobalCooldown = row.GlobalCooldown;
         row.GlobalCooldown = null!;
         Assert.Empty(saves);
+        Assert.Empty(changed);
+        Assert.Equal(perUser, row.PerUserCooldown.Value);
+        Assert.Equal(global, row.GlobalCooldown.Value);
         row.Enabled = false;
         Assert.Equal((false, perUser, global), Assert.Single(saves));
+        Assert.Equal([nameof(Settings.CommandSettingsRow.Enabled)], changed);
         row.PerUserCooldown = row.PerUserOptions[0];
         row.GlobalCooldown = row.GlobalOptions[0];
         Assert.Null(row.PerUserCooldown.Value);
         Assert.Null(row.GlobalCooldown.Value);
+        List<(bool Enabled, int? PerUser, double? Global)> expectedSaves = [(false, perUser, global)];
+        List<string?> expectedChanges = [nameof(Settings.CommandSettingsRow.Enabled)];
+        if (perUser.HasValue)
+        {
+            expectedSaves.Add((false, null, global));
+            expectedChanges.Add(nameof(Settings.CommandSettingsRow.PerUserCooldown));
+        }
+        if (global.HasValue)
+        {
+            expectedSaves.Add((false, null, null));
+            expectedChanges.Add(nameof(Settings.CommandSettingsRow.GlobalCooldown));
+        }
+        Assert.Equal(expectedSaves, saves);
+        Assert.Equal(expectedChanges, changed);
     }
 
     [Fact]

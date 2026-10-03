@@ -67,7 +67,7 @@ public sealed class CommandCatalogTests
     }
 
     [Fact]
-    public async Task GiveTokensAll_UsesCompleteLiveRosterIncludingLongUsernames()
+    public async Task GiveTokensAll_UsesFullRosterIncludingLongUsernames()
     {
         using TemporaryDirectory directory = new();
         MainHandler runtime = new(

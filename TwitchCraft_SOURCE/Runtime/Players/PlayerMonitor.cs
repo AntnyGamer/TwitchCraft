@@ -75,7 +75,7 @@ public sealed partial class MainHandler
     private long _serverProbeMarkerCounter;
     private long _minecraftQueryUnavailableUntilTicks;
     private TaskCompletionSource<bool>? _onlinePlayerSnapshotRequest;
-    private DateTime _lastPlayerSidebarRefreshErrorUtc = DateTime.MinValue;
+    private DateTime _lastSidebarRefreshErrorUtc = DateTime.MinValue;
     private int _playerSidebarRefreshQueued;
     private int _gamemodeRefreshQueued;
     private int _respawnRefreshQueued;

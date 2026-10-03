@@ -81,6 +81,16 @@ public sealed class DatapackInstallerTests
         Assert.Equal(expectsSingularLayout, File.Exists(singularRun));
         string installedRun = File.ReadAllText(expectsSingularLayout ? singularRun : pluralRun);
         Assert.Contains(expectsInlineText ? InlineRunTellraw : LegacyRunTellraw, installedRun, StringComparison.Ordinal);
+        string installedPrint = File.ReadAllText(Path.Combine(
+            Path.GetDirectoryName(expectsSingularLayout ? singularRun : pluralRun)!, "print_one.mcfunction"));
+        string printCommand = Assert.Single(installedPrint.Split('\n'),
+            line => line.StartsWith("tellraw ", StringComparison.Ordinal));
+        Assert.StartsWith(
+            expectsInlineText ? "tellraw @a[tag=lp_requester,limit=1] [" : "tellraw @a[tag=lp_requester] [",
+            printCommand, StringComparison.Ordinal);
+        Assert.Contains(
+            expectsInlineText ? "nbt:'Dimension',entity:'@s'" : "\"nbt\":\"Dimension\",\"entity\":\"@s\"",
+            printCommand, StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(destination, "pack.mcmeta")));
     }
 

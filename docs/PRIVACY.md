@@ -50,7 +50,7 @@ This directory can include:
 - `viewer_tokens.db` — viewer usernames and token balances, plus rewarded-follow records containing Twitch user IDs, usernames, and follow times
 - `statistics.db` — TwitchCraft statistics, including viewer usernames and viewer scores
 - `exports\` — readable JSON exports of token balances and statistics
-- `backups\` — automatic copies of `config.json` and `viewer_tokens.db`
+- `backups\` — automatic copies of `config.json`, `viewer_tokens.db`, and `statistics.db`
 - `logs\` — local diagnostic logs
 - The managed Minecraft server directory and world data, when applicable
 
@@ -96,7 +96,7 @@ With TwitchCraft closed, the operator should remove that viewer's records from:
 - `TokenBalances` and `RewardedFollows` in `viewer_tokens.db`
 - `ViewerScores` in `statistics.db`
 - `exports\viewer_tokens.json` and `exports\statistics_viewers.json` by deleting the exports and allowing TwitchCraft to regenerate them
-- Any retained backup containing an older copy of `viewer_tokens.db` if complete removal from backups is also required
+- Any retained backup containing older copies of `viewer_tokens.db` or `statistics.db` if complete removal from backups is also required
 
 The TwitchCraft developer cannot remotely access or erase data stored on another user's computer.
 

@@ -1,6 +1,6 @@
 # Architecture
 
-TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, token/statistics persistence, and the desktop UI. `MainHandler` is the application-facing coordinator; focused components own Twitch/Minecraft session resources, command, token, statistics, maintenance, and background-task behavior.
+TwitchCraft is a Windows WPF application that coordinates Twitch IRC, a local or remote Minecraft Java server, persistence, and the desktop UI. `MainHandler` coordinates the application while focused components own Twitch/Minecraft sessions, commands, tokens, statistics, maintenance, and background tasks.
 
 ```text
 WPF shell
@@ -64,7 +64,7 @@ Dependencies flow into components through small callbacks or focused collaborato
 5. Paid commands reserve/charge tokens before dispatch.
 6. Commands are built with selector, JSON, SNBT, and version-aware escaping.
 7. The local transport serializes writes to Java stdin; remote mode sends RCON packets.
-8. The narrow `PaidCommandTransaction` coordinator records statistics only after the Minecraft send path reports success. Local write failures refund the charge exactly once and release only that command's cooldown reservation. Remote RCON charging is based on protocol confirmation rather than response wording: a matching command-response packet with the expected response type confirms delivery, and one confirmed response is enough for a multi-command batch even if the remainder is interrupted. If no command response is confirmed, authentication/transport/protocol failure causes the send to fail and the charge is refunded.
+8. `PaidCommandTransaction` records statistics only after confirmed Minecraft delivery. Local write failures refund once and release that command's cooldown reservation. Remote RCON uses matching command-response packets rather than response wording; any confirmed command keeps a multi-command charge. If none are confirmed, authentication, transport, timeout, or protocol failures refund it.
 
 ## Local and remote modes
 
@@ -73,7 +73,7 @@ Local mode owns Java process startup, output/error readers, server preparation, 
 ## Persistence
 
 * `config.json` uses normalized models, temporary-file writes, and replacement fallback.
-* Automatic timestamped backups pair `config.json` with a consistent SQLite copy of `viewer_tokens.db` and prune complete sets according to configured retention.
+* Automatic timestamped backups pair `config.json` with consistent SQLite copies of `viewer_tokens.db` and `statistics.db`; all three files are required for a complete set before retention pruning.
 * Viewer balances use SQLite with a readable JSON export.
 * Statistics use SQLite with aggregate/viewer JSON exports.
 * Database operations use synchronization and parameterized statements.

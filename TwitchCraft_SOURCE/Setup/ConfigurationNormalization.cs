@@ -255,7 +255,7 @@ public sealed partial class ConfigurationStore
         int bracketPortIndex = host.IndexOf("]:", StringComparison.Ordinal);
         if (host.StartsWith('[') && bracketPortIndex > 0)
         {
-            string portText = host[(bracketPortIndex + 2)..];
+            ReadOnlySpan<char> portText = host.AsSpan(bracketPortIndex + 2);
             if (int.TryParse(portText, NumberStyles.None, CultureInfo.InvariantCulture, out int bracketPort) && IsValidPort(bracketPort))
             {
                 server.RCON.Port = bracketPort;
@@ -267,7 +267,7 @@ public sealed partial class ConfigurationStore
             int colonIndex = host.LastIndexOf(':');
             if (colonIndex > 0 && host.IndexOf(':') == colonIndex)
             {
-                string portText = host[(colonIndex + 1)..];
+                ReadOnlySpan<char> portText = host.AsSpan(colonIndex + 1);
                 if (int.TryParse(portText, NumberStyles.None, CultureInfo.InvariantCulture, out int parsedPort) && IsValidPort(parsedPort))
                 {
                     server.RCON.Port = parsedPort;

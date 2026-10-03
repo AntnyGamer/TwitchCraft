@@ -82,26 +82,27 @@ public sealed class ServerPropertiesContractTests
 
         ServerPropertyEditor.WriteInitialFiles(config);
         string content = File.ReadAllText(propertiesPath);
+        string[] propertyLines = File.ReadAllLines(propertiesPath);
 
-        Assert.Contains("a-custom=first", content, StringComparison.Ordinal);
-        Assert.Contains(@"custom-setting=keep\=this", content, StringComparison.Ordinal);
-        Assert.Contains(@"escaped-value=hello\=world\\path", content, StringComparison.Ordinal);
-        Assert.Contains("z-custom=last", content, StringComparison.Ordinal);
-        Assert.Contains("view-distance=6", content, StringComparison.Ordinal);
-        Assert.Contains("simulation-distance=8", content, StringComparison.Ordinal);
-        Assert.Contains("entity-broadcast-range-percentage=75", content, StringComparison.Ordinal);
-        Assert.Contains("network-compression-threshold=128", content, StringComparison.Ordinal);
-        Assert.Contains("white-list=true", content, StringComparison.Ordinal);
-        Assert.Contains("enforce-whitelist=true", content, StringComparison.Ordinal);
-        Assert.Contains("level-name=Streamer World", content, StringComparison.Ordinal);
-        Assert.Contains("server-port=25570", content, StringComparison.Ordinal);
-        Assert.Contains("rcon.port=25580", content, StringComparison.Ordinal);
-        Assert.Contains(@"rcon.password=secret\:password", content, StringComparison.Ordinal);
-        Assert.Contains("max-players=7", content, StringComparison.Ordinal);
-        Assert.Contains("online-mode=false", content, StringComparison.Ordinal);
+        Assert.Contains("a-custom=first", propertyLines);
+        Assert.Contains(@"custom-setting=keep\=this", propertyLines);
+        Assert.Contains(@"escaped-value=hello\=world\\path", propertyLines);
+        Assert.Contains("z-custom=last", propertyLines);
+        Assert.Contains("view-distance=6", propertyLines);
+        Assert.Contains("simulation-distance=8", propertyLines);
+        Assert.Contains("entity-broadcast-range-percentage=75", propertyLines);
+        Assert.Contains("network-compression-threshold=128", propertyLines);
+        Assert.Contains("white-list=true", propertyLines);
+        Assert.Contains("enforce-whitelist=true", propertyLines);
+        Assert.Contains("level-name=Streamer World", propertyLines);
+        Assert.Contains("server-port=25570", propertyLines);
+        Assert.Contains("rcon.port=25580", propertyLines);
+        Assert.Contains(@"rcon.password=secret\:password", propertyLines);
+        Assert.Contains("max-players=7", propertyLines);
+        Assert.Contains("online-mode=false", propertyLines);
         Assert.DoesNotContain("\npvp=", "\n" + content, StringComparison.Ordinal);
-        Assert.Contains("difficulty=hard", content, StringComparison.Ordinal);
-        Assert.Contains("hardcore=false", content, StringComparison.Ordinal);
+        Assert.Contains("difficulty=hard", propertyLines);
+        Assert.Contains("hardcore=false", propertyLines);
         Assert.DoesNotContain("server-port=12345", content, StringComparison.Ordinal);
         foreach (string key in new[] { "allow-nether", "spawn-monsters", "enable-command-block" })
             Assert.DoesNotContain("\n" + key + "=", "\n" + content, StringComparison.Ordinal);

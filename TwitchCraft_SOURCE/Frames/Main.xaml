@@ -14,21 +14,14 @@
             <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
                 <Image Opacity="0.5" Width="58" Stretch="Fill" Source="/Assets/TwitchLogo.png" Height="58" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="258,86,0,0">
                     <Image.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform />
-                            <SkewTransform />
-                            <RotateTransform Angle="35" />
-                            <TranslateTransform />
-                        </TransformGroup>
+                        <RotateTransform Angle="35" />
                     </Image.RenderTransform>
                 </Image>
                 <Image Width="59" Opacity="0.5" Stretch="Fill" Source="/Assets/DiamondPickaxe.png" Height="58" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="268,263,0,0">
                     <Image.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform ScaleX="-1" />
-                            <SkewTransform />
                             <RotateTransform Angle="20" />
-                            <TranslateTransform />
                         </TransformGroup>
                     </Image.RenderTransform>
                 </Image>

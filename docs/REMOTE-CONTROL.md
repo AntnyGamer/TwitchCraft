@@ -45,7 +45,7 @@ Use `127.0.0.1` only when TwitchCraft and the remote-controlled server run on th
 - Command delivery uses RCON rather than local Java standard input.
 - Remote mode cannot manage the remote Java process or local server files.
 - Local-only administrator operations (`!ban`, `!kick`, `!unban`, `!whitelistadd`, and `!whitelistremove`) are unavailable in Remote Control Mode.
-- Token charging uses RCON protocol confirmation, not Minecraft response wording. A command counts as delivered only after TwitchCraft receives a response packet with the matching request ID and expected response type. For a multi-command action, one confirmed command response is enough to keep the charge if the remainder is interrupted; if no command response is confirmed, the action fails and paid-command handling refunds it. Authentication, connection, timeout-before-confirmation, and malformed-protocol failures therefore do not count as confirmed delivery.
+- Token charging uses RCON protocol confirmation, not Minecraft response wording. A matching request ID and response type confirms delivery; any confirmed command keeps a multi-command charge, while zero confirmations refund it. Authentication, connection, pre-confirmation timeout, and malformed-protocol failures do not count as delivery.
 
 ## Troubleshooting
 

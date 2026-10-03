@@ -63,16 +63,23 @@ public sealed class FollowRewardEventTests
     public void RejectsWrongSubscriptionOrMalformedFollow()
     {
         JObject wrongType = JObject.Parse("""
-            { "metadata": { "subscription_type": "channel.subscribe" }, "payload": { "event": {} } }
+            {
+              "metadata": { "subscription_type": "channel.subscribe" },
+              "payload": { "event": { "user_id": "123456", "user_login": "viewer", "followed_at": "2026-08-27T01:02:03Z" } }
+            }
             """);
-        JObject missingIdentity = JObject.Parse("""
+        JObject malformedFollow = JObject.Parse("""
             {
               "metadata": { "subscription_type": "channel.follow" },
-              "payload": { "event": { "user_id": "", "user_login": "viewer", "followed_at": "bad" } }
+              "payload": { "event": { "user_id": "", "user_login": "viewer", "followed_at": "2026-08-27T01:02:03Z" } }
             }
             """);
 
         Assert.False(MainHandler.TryParseFollow(wrongType, out _));
-        Assert.False(MainHandler.TryParseFollow(missingIdentity, out _));
+        Assert.False(MainHandler.TryParseFollow(malformedFollow, out _));
+
+        malformedFollow["payload"]!["event"]!["user_id"] = "123456";
+        malformedFollow["payload"]!["event"]!["followed_at"] = "bad";
+        Assert.False(MainHandler.TryParseFollow(malformedFollow, out _));
     }
 }
