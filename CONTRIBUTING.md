@@ -47,7 +47,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the runtime flow.
 - Never commit Twitch tokens, RCON passwords, authorization headers, real `config.json` files, user databases, server worlds, logs, or public IP addresses.
 - Do not block network, database, or filesystem work on the WPF UI thread.
 - Preserve command names, prices, permissions, targeting, cooldowns, messages, and statistics flags unless a behavior change is explicitly approved.
-- Paid commands must refund tokens exactly once when the Minecraft send path cannot confirm delivery. In Remote Control Mode, do not parse Minecraft response wording for charging decisions: require a matching RCON command-response packet with the expected response type. For a multi-command RCON action, one confirmed command response is enough to keep the charge if the rest is interrupted; if none are confirmed, return failure so the paid-command transaction refunds and releases its cooldown reservation.
+- Paid commands must refund tokens exactly once when delivery cannot be confirmed. In Remote Control Mode, use RCON protocol confirmation rather than Minecraft response text: a matching command-response packet with the expected type confirms delivery. For multi-command actions, any confirmed command keeps the charge; if none are confirmed, fail so the transaction refunds and releases its cooldown reservation.
 - New targeted commands must validate target names, reject unavailable players, respect protected users, and scale costs consistently.
 - Minecraft-version-specific syntax belongs in the existing version-support and command-building layers.
 - Database schema changes require a safe migration, backward-compatibility review, and tests.
