@@ -152,7 +152,7 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> SendRCONCommandAsync(TwitchCraftConfig config, string command, CancellationToken cancellationToken, bool applyTimeout = true)
+    private async Task<bool> SendRCONCommandAsync(TwitchCraftConfig config, string command, CancellationToken cancellationToken, bool applyTimeout)
     {
         await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         CancellationTokenSource? timeoutCts = null;
