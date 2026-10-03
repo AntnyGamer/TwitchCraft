@@ -472,7 +472,7 @@
                                                 <TextBlock Width="410" Margin="0,0,0,25" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" VerticalAlignment="Center" Text="RAM changes apply on the next server start." />
                                                 <Button x:Name="AuthorizeTwitchButton" Content="Authorize Twitch" ToolTipService.ShowOnDisabled="True" Width="178" Height="30" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Center" />
                                                 <TextBlock Width="410" Margin="0,4,0,22" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" VerticalAlignment="Center" Text="TwitchCraft uses a public Twitch application. No Client ID or Client Secret is entered by the user, and your Twitch password is never provided to TwitchCraft. Authorization tokens are stored locally and sent only to Twitch as needed." />
-                                                <StackPanel x:Name="RCONPasswordEditor" Margin="0,0,0,8" IsKeyboardFocusWithinChanged="RCONPasswordEditor_IsKeyboardFocusWithinChanged">
+                                                <StackPanel x:Name="RCONPasswordEditor" Margin="0,0,0,8" IsKeyboardFocusWithinChanged="RCONPasswordEditor_FocusChanged">
                                                     <Grid Width="410" HorizontalAlignment="Center" Margin="0,0,0,4">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto" />
