@@ -235,7 +235,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void ShutdownBackup_PreservesRestorablePointInTimeData()
+    public void ShutdownBackup_PreservesRestorableSnapshotAfterLiveChanges()
     {
         TwitchCraftConfig config = new() { Twitch = { BotName = "savedbot" } };
         config.Settings.AutomaticBackupsEnabled = true;
