@@ -23,7 +23,7 @@ Use the 64-bit Windows installer. TwitchCraft checks `JAVA_HOME`, `PATH`, and co
 4. Confirm that TwitchCraft fills in the authorized bot account automatically.
 5. In the streamer's Twitch chat, use `/mod BOT_NAME` if the bot needs moderator privileges.
 
-TwitchCraft uses its built-in public Twitch application. You do not create a Twitch Developer application, enter a Client ID, configure a localhost redirect, provide a Client Secret, or copy and paste a bot token. Treat `config.json` as sensitive because it stores the renewable authorization used by the app.
+TwitchCraft uses its built-in public Twitch application, so you do not need a developer application, Client ID or Secret, localhost redirect, or pasted bot token. Treat `config.json` as sensitive because it stores the app's renewable Twitch authorization.
 
 ## First launch
 
