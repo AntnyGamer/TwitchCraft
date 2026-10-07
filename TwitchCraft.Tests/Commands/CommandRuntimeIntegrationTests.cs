@@ -365,7 +365,8 @@ public sealed class CommandRuntimeIntegrationTests
                 List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
                 return commands.Contains(restore) &&
                     commands.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_playerlist") &&
-                    commands.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_health");
+                    commands.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_health") &&
+                    commands.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run data modify storage twitchcraft:runtime sidebar_initialized set value 0b");
             },
             "Startup maintenance commands did not complete within 10 seconds.",
             cancellationToken);
