@@ -14,7 +14,7 @@ public sealed partial class MainHandler
 {
     private static readonly UTF8Encoding ServerCommandEncoding = new(false);
     private static readonly byte[] ServerCommandNewLineBytes = ServerCommandEncoding.GetBytes(Environment.NewLine);
-    private static readonly string[] ClearPlayerSidebarCommands = ["execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_playerlist", "execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_health", "execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run data modify storage twitchcraft:runtime sidebar_initialized set value 0b"];
+    private static readonly string[] ClearPlayerSidebarCommands = ["scoreboard objectives remove tc_playerlist", "scoreboard objectives remove tc_health"];
     private static readonly TimeSpan ServerLogUnlockWaitTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan StopCommandTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan ManualCommandTimeout = TimeSpan.FromSeconds(5);
