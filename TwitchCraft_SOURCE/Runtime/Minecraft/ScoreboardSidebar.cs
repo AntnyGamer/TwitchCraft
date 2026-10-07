@@ -10,13 +10,8 @@ public sealed partial class MainHandler
 {
     private async Task ClearSidebarAsync(CancellationToken cancellationToken)
     {
-        if (_minecraftSession.ServerReady)
-        {
-            if (RemoteControlEnabled)
-                await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
-            else if (_activeConfig is { } config)
-                await SendRCONCommandsAsync(config, ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
-        }
+        if (_minecraftSession.ServerReady && _activeConfig is { } config)
+            await SendRCONCommandsAsync(config, ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
 
         lock (_playerGate)
         {
