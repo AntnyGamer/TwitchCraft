@@ -198,7 +198,7 @@ public sealed partial class MainHandler
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(GetRCONTimeout(commands.Count));
             return await MinecraftRCONClient.ExecuteCommandsAsync(
-                GetRCONHost(config),
+                config.Settings.RemoteControlEnabled ? GetRCONHost(config) : GetQueryHost(config),
                 config.Server.RCON.Port,
                 config.Server.RCON.Password,
                 commands,
