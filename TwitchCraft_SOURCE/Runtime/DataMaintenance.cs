@@ -165,7 +165,6 @@ internal sealed class DataMaintenance(
             bool pendingBackup = directory.Name.Length == 41 && directory.Name.StartsWith(".pending-", StringComparison.Ordinal) && Guid.TryParseExact(directory.Name.AsSpan(9), "N", out _);
             if (pendingBackup && directory.LastWriteTimeUtc <= DateTime.UtcNow.AddHours(-1)) FileSystemHelper.DeleteDirectorySafe(directory.FullName);
             if (pendingBackup) continue;
-
             if (!TryGetBackupTime(directory, requireCompleteBackup: false, out DateTime timestamp))
                 continue;
 
