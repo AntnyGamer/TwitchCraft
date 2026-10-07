@@ -115,7 +115,7 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task SingleplayerStartup_ClearsMultiplayerSidebarDisplays()
+    public async Task SingleplayerStartup_RemovesMultiplayerSidebarObjectives()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
@@ -130,8 +130,8 @@ public sealed class CommandRuntimeIntegrationTests
                 .Take(commandCursor)
                 .ToList();
 
-            Assert.Contains("scoreboard objectives setdisplay sidebar", startupCommands);
-            Assert.Contains("scoreboard objectives setdisplay list", startupCommands);
+            Assert.Contains("scoreboard objectives remove tc_playerlist", startupCommands);
+            Assert.Contains("scoreboard objectives remove tc_health", startupCommands);
         }
         finally
         {
@@ -364,8 +364,8 @@ public sealed class CommandRuntimeIntegrationTests
             {
                 List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
                 return commands.Contains(restore) &&
-                    commands.Contains("scoreboard objectives setdisplay sidebar") &&
-                    commands.Contains("scoreboard objectives setdisplay list");
+                    commands.Contains("scoreboard objectives remove tc_playerlist") &&
+                    commands.Contains("scoreboard objectives remove tc_health");
             },
             "Startup maintenance commands did not complete within 10 seconds.",
             cancellationToken);
