@@ -13,27 +13,9 @@ public sealed partial class MainHandler
         if (_minecraftSession.ServerReady)
         {
             if (RemoteControlEnabled)
-            {
                 await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
-            }
             else if (_activeConfig is { } config)
-            {
-                try
-                {
-                    using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    timeout.CancelAfter(RCONTimeout);
-                    _ = await MinecraftRCONClient.ExecuteCommandsAsync(
-                        GetRCONHost(config),
-                        config.Server.RCON.Port,
-                        config.Server.RCON.Password,
-                        ClearPlayerSidebarCommands,
-                        timeout.Token).ConfigureAwait(false);
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-                {
-                    ErrorHandling.LogNonFatal("Local sidebar cleanup over RCON failed", ex);
-                }
-            }
+                await SendRCONCommandsAsync(config, ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
         }
 
         lock (_playerGate)
