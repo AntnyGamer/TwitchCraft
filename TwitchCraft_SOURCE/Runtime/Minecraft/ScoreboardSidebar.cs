@@ -67,19 +67,20 @@ public sealed partial class MainHandler
         const string objective = "tc_playerlist";
         const string healthObjective = "tc_health";
 
-        List<string> commands = new((needsInitialization ? 7 : 0) + previousPlayers.Count + players.Count);
+        List<string> commands = new((needsInitialization ? 8 : 0) + previousPlayers.Count + players.Count);
         if (needsInitialization)
         {
             string playerListDisplay = BuildScoreboardText("Player List:", usesInlineTextComponents);
             string healthDisplay = BuildScoreboardText("Health", usesInlineTextComponents);
 
-            commands.Add("scoreboard objectives remove " + objective);
-            commands.Add("scoreboard objectives remove " + healthObjective);
+            commands.Add("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove " + objective);
+            commands.Add("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove " + healthObjective);
             commands.Add("scoreboard objectives add " + objective + " dummy " + playerListDisplay);
             commands.Add("scoreboard objectives add " + healthObjective + " health " + healthDisplay);
             commands.Add("scoreboard objectives modify " + healthObjective + " rendertype hearts");
             commands.Add("scoreboard objectives setdisplay sidebar " + objective);
             commands.Add("scoreboard objectives setdisplay list " + healthObjective);
+            commands.Add("data modify storage twitchcraft:runtime sidebar_initialized set value 1b");
         }
 
         int playerIndex = 0;
