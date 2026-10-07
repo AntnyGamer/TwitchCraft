@@ -89,7 +89,7 @@ public sealed partial class MainHandler
 
                     HandleReadyState(line, cancellationToken);
                     if (!RemoteControlEnabled && line.Contains("RCON running on", StringComparison.OrdinalIgnoreCase))
-                        TrackTask(ClearSidebarAsync(cancellationToken));
+                        await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 
