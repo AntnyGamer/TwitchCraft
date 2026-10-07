@@ -96,23 +96,14 @@ public sealed partial class MainHandler
 
     public Task<double?> QueryMaxHealthAsync(string playerName, CancellationToken cancellationToken)
         => QueryPlayerAsync<double?>(playerName, _maxHealthProbeGate, _pendingMaxHealthRequests,
-            (complete, ct) => SendProbeAsync(
-                "execute as " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) +
-                " run attribute @s " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get",
-                complete,
-                ct),
-            cancellationToken);
+            (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get", complete, ct), cancellationToken);
 
     private Task<string?> QueryEntityDataAsync(
         string playerName, string path, Lock gate,
         Dictionary<string, TaskCompletionSource<string?>> pendingRequests,
         CancellationToken cancellationToken)
         => QueryPlayerAsync<string?>(playerName, gate, pendingRequests,
-            (complete, ct) => SendProbeAsync(
-                "execute as " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " run data get entity @s " + path,
-                complete,
-                ct),
-            cancellationToken);
+            (complete, ct) => SendProbeAsync("data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path, complete, ct), cancellationToken);
 
     public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
         => QueryEntityDataAsync(playerName, UsesModernEntityAttributeNbt ? "attributes" : "Attributes",
@@ -197,7 +188,7 @@ public sealed partial class MainHandler
             playerName,
             _respawnProbeGate,
             _pendingRespawnRequests,
-            (complete, ct) => SendProbeAsync("execute as " + selector + " run data get entity @s Pos", complete, ct),
+            (complete, ct) => SendProbeAsync("data get entity " + selector + " Pos", complete, ct),
             cancellationToken);
     }
 
