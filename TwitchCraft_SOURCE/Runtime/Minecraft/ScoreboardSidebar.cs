@@ -96,8 +96,6 @@ public sealed partial class MainHandler
             string playerListDisplay = BuildScoreboardText("Player List:", usesInlineTextComponents);
             string healthDisplay = BuildScoreboardText("Health", usesInlineTextComponents);
 
-            commands.Add("scoreboard objectives remove " + objective);
-            commands.Add("scoreboard objectives remove " + healthObjective);
             commands.Add("scoreboard objectives add " + objective + " dummy " + playerListDisplay);
             commands.Add("scoreboard objectives add " + healthObjective + " health " + healthDisplay);
             commands.Add("scoreboard objectives modify " + healthObjective + " rendertype hearts");
