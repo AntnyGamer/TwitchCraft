@@ -190,7 +190,7 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> SendRCONCommandsAsync(TwitchCraftConfig config, List<string> commands, CancellationToken cancellationToken)
+    private async Task<bool> SendRCONCommandsAsync(TwitchCraftConfig config, IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
         await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
