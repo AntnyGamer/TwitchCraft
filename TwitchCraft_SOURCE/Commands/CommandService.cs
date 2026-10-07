@@ -290,10 +290,16 @@ public sealed class CommandService
             _viewerCommandTimestamps.Clear();
             _viewerCommandLimitNotices.Clear();
             _customCommandCooldownUntil.Clear();
+            _lastCommandStatePruneTimestamp = 0;
         }
 
+        Interlocked.Exchange(ref _lastChannelLimitNoticeTimestamp, 0);
         lock (_cooldownGate)
+        {
             _timedCommandCooldowns.Clear();
+            _gambleCooldowns.Clear();
+            _lastGamblePruneTimestamp = 0;
+        }
         ClearGlobalCooldown();
     }
 
