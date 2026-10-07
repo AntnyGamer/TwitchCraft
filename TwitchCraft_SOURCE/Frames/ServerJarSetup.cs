@@ -83,8 +83,7 @@ public partial class Setup : UserControl
         cancellationToken = downloadCts.Token;
         using HttpResponseMessage response = await http.GetAsync(downloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        if (response.RequestMessage?.RequestUri is not Uri finalUri || !IsTrustedMinecraftUri(finalUri))
-            throw new InvalidOperationException("The Minecraft server download redirected outside Mojang.");
+        _ = CreateHttpsUri(response.RequestMessage?.RequestUri?.AbsoluteUri, "Minecraft server download redirect");
 
         long? contentLength = response.Content.Headers.ContentLength;
         if (contentLength.HasValue && (contentLength.Value <= 0 || contentLength.Value > MaxServerJarDownloadBytes))
@@ -138,8 +137,7 @@ public partial class Setup : UserControl
     {
         using HttpResponseMessage response = await http.GetAsync(uri, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        if (response.RequestMessage?.RequestUri is not Uri finalUri || !IsTrustedMinecraftUri(finalUri))
-            throw new InvalidOperationException("The " + description + " redirected outside Mojang.");
+        _ = CreateHttpsUri(response.RequestMessage?.RequestUri?.AbsoluteUri, description + " redirect");
         return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
     }
 
