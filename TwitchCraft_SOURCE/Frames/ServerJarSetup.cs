@@ -36,7 +36,7 @@ public partial class Setup : UserControl
             }
         }
 
-        return JObject.Parse(await GetMojangStringAsync(SetupHttpClient, detailUri, "Minecraft version detail manifest", cancellationToken).ConfigureAwait(false));
+        return JObject.Parse(await SetupHttpClient.GetStringAsync(detailUri, cancellationToken).ConfigureAwait(false));
     }
 
     private static async Task EnsureServerJarAsync(HttpClient http, string serverUrl, string jarPath, string expectedSHA, long? expectedSize, CancellationToken cancellationToken)
@@ -132,14 +132,6 @@ public partial class Setup : UserControl
         => uri.Scheme == Uri.UriSchemeHttps &&
            (string.Equals(uri.Host, "mojang.com", StringComparison.OrdinalIgnoreCase) ||
             uri.Host.EndsWith(".mojang.com", StringComparison.OrdinalIgnoreCase));
-
-    private static async Task<string> GetMojangStringAsync(HttpClient http, Uri uri, string description, CancellationToken cancellationToken)
-    {
-        using HttpResponseMessage response = await http.GetAsync(uri, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        _ = CreateHttpsUri(response.RequestMessage?.RequestUri?.AbsoluteUri, description + " redirect");
-        return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-    }
 
     private static bool IsValidSHA1Hex(string? expectedSHA)
     {
