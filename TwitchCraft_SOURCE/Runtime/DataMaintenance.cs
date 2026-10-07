@@ -163,12 +163,10 @@ internal sealed class DataMaintenance(
         DateTime stalePendingCutoffUtc = DateTime.UtcNow.AddHours(-1);
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
-            string name = directory.Name;
-            if (name.Length == 41 && name.StartsWith(".pending-", StringComparison.Ordinal) &&
-                Guid.TryParseExact(name.AsSpan(9), "N", out _))
+            if (directory.Name.Length == 41 && directory.Name.StartsWith(".pending-", StringComparison.Ordinal) &&
+                Guid.TryParseExact(directory.Name.AsSpan(9), "N", out _))
             {
-                if (directory.LastWriteTimeUtc <= stalePendingCutoffUtc)
-                    FileSystemHelper.DeleteDirectorySafe(directory.FullName);
+                if (directory.LastWriteTimeUtc <= stalePendingCutoffUtc) FileSystemHelper.DeleteDirectorySafe(directory.FullName);
                 continue;
             }
 
