@@ -56,7 +56,6 @@ string mode = File.Exists(jarPath)
     ? (await File.ReadAllTextAsync(jarPath)).Trim()
     : string.Empty;
 bool responsive = string.Equals(mode, "ready-responsive", StringComparison.Ordinal);
-bool rconReady = string.Equals(mode, "ready-rcon", StringComparison.Ordinal);
 await File.WriteAllLinesAsync(jarPath + ".args", args);
 await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString(CultureInfo.InvariantCulture));
 
@@ -66,7 +65,7 @@ if (string.Equals(mode, "exit-immediately", StringComparison.Ordinal))
 if (mode.StartsWith("ready", StringComparison.Ordinal))
 {
     await Console.Out.WriteLineAsync("[Server thread/INFO]: Done (0.500s)! For help, type \"help\"");
-    if (rconReady)
+    if (string.Equals(mode, "ready-rcon", StringComparison.Ordinal))
         await Console.Out.WriteLineAsync("[Server thread/INFO]: RCON running on 127.0.0.1:25575");
     if (responsive)
     {
