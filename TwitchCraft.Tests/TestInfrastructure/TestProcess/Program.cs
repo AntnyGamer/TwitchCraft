@@ -128,23 +128,13 @@ while (await Console.In.ReadLineAsync() is string line)
     if (targetPlayer.Length == 0)
         continue;
 
-    if ((line.StartsWith("attribute ", StringComparison.Ordinal) ||
-         line.Contains(" run attribute @s ", StringComparison.Ordinal)) &&
-        line.EndsWith(" get", StringComparison.Ordinal))
+    if (line.StartsWith("attribute ", StringComparison.Ordinal) && line.EndsWith(" get", StringComparison.Ordinal))
     {
         if (!ConsumeCount(jarPath + ".drop-responses"))
         {
             string health = ReadState(jarPath, ".health", "20");
             await WriteOutputAsync("Value of attribute Max Health for entity " + targetPlayer + " is " + health);
         }
-        continue;
-    }
-
-    if (line.EndsWith(" run data get entity @s playerGameType", StringComparison.Ordinal))
-    {
-        string[] spectators = ReadNames(jarPath, ".spectators");
-        bool spectator = Array.Exists(spectators, value => string.Equals(value, targetPlayer, StringComparison.OrdinalIgnoreCase));
-        await WriteOutputAsync(targetPlayer + " has the following entity data: " + (spectator ? "3" : "0"));
         continue;
     }
 
