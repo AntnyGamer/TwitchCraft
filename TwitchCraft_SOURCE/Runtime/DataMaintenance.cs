@@ -22,6 +22,7 @@ internal sealed class DataMaintenance(
     private readonly Func<string, CancellationToken, Task<string>> _validateBot = validateBot ?? throw new ArgumentNullException(nameof(validateBot));
     private readonly Action<string, string> _saveBot = saveBot ?? throw new ArgumentNullException(nameof(saveBot));
     private readonly Func<string, CancellationToken, Task<bool>> _tryRefreshAuth = tryRefreshAuth ?? throw new ArgumentNullException(nameof(tryRefreshAuth));
+    private static readonly TimeSpan StalePendingBackupAge = TimeSpan.FromHours(1);
     private readonly Lock _automaticBackupGate = new();
     private DateTime _lastDatabaseOptimizeUtc = DateTime.MinValue;
     private DateTime _lastTwitchValidationUtc = DateTime.MinValue;
@@ -160,8 +161,16 @@ internal sealed class DataMaintenance(
     internal static void PruneBackups(string root, int retentionCount)
     {
         List<(DirectoryInfo Directory, DateTime Timestamp)> backups = [];
+        DateTime stalePendingCutoffUtc = DateTime.UtcNow - StalePendingBackupAge;
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
+            if (IsStalePendingBackup(directory, stalePendingCutoffUtc))
+            {
+                try { directory.Delete(recursive: true); }
+                catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to remove a stale pending automatic backup", ex); }
+                continue;
+            }
+
             if (!TryGetBackupTime(directory, requireCompleteBackup: false, out DateTime timestamp))
                 continue;
 
@@ -186,6 +195,16 @@ internal sealed class DataMaintenance(
             try { backups[i].Directory.Delete(recursive: true); }
             catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to prune an old automatic backup", ex); }
         }
+    }
+
+    private static bool IsStalePendingBackup(DirectoryInfo directory, DateTime cutoffUtc)
+    {
+        const string PendingPrefix = ".pending-";
+        string name = directory.Name;
+        return name.Length == PendingPrefix.Length + 32 &&
+            name.StartsWith(PendingPrefix, StringComparison.Ordinal) &&
+            Guid.TryParseExact(name[PendingPrefix.Length..], "N", out _) &&
+            directory.LastWriteTimeUtc <= cutoffUtc;
     }
 
     private static bool TryGetBackupTime(
