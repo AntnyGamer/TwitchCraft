@@ -160,13 +160,11 @@ internal sealed class DataMaintenance(
     internal static void PruneBackups(string root, int retentionCount)
     {
         List<(DirectoryInfo Directory, DateTime Timestamp)> backups = [];
-        DateTime stalePendingCutoffUtc = DateTime.UtcNow.AddHours(-1);
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
-            if (directory.Name.Length == 41 && directory.Name.StartsWith(".pending-", StringComparison.Ordinal) &&
-                Guid.TryParseExact(directory.Name.AsSpan(9), "N", out _))
+            if (directory.Name.Length == 41 && directory.Name.StartsWith(".pending-", StringComparison.Ordinal) && Guid.TryParseExact(directory.Name.AsSpan(9), "N", out _))
             {
-                if (directory.LastWriteTimeUtc <= stalePendingCutoffUtc) FileSystemHelper.DeleteDirectorySafe(directory.FullName);
+                if (directory.LastWriteTimeUtc <= DateTime.UtcNow.AddHours(-1)) FileSystemHelper.DeleteDirectorySafe(directory.FullName);
                 continue;
             }
 
