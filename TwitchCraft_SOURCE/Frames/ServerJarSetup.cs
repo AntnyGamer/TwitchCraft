@@ -25,7 +25,7 @@ public partial class Setup : UserControl
                 if (string.Equals((string?)detail["id"], versionID, StringComparison.OrdinalIgnoreCase)
                     && IsValidSHA1Hex(serverSHA)
                     && Uri.TryCreate(serverUrl, UriKind.Absolute, out Uri? serverUri)
-                    && serverUri.Scheme == Uri.UriSchemeHttps)
+                    && IsTrustedMinecraftUri(serverUri))
                 {
                     return detail;
                 }
@@ -121,11 +121,16 @@ public partial class Setup : UserControl
 
     private static Uri CreateHttpsUri(string? url, string description)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || uri.Scheme != Uri.UriSchemeHttps)
-            throw new InvalidOperationException("The " + description + " URL was not a valid HTTPS URL.");
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || !IsTrustedMinecraftUri(uri))
+            throw new InvalidOperationException("The " + description + " URL was not a valid Mojang HTTPS URL.");
 
         return uri;
     }
+
+    private static bool IsTrustedMinecraftUri(Uri uri)
+        => uri.Scheme == Uri.UriSchemeHttps &&
+            (string.Equals(uri.Host, "mojang.com", StringComparison.OrdinalIgnoreCase) ||
+             uri.Host.EndsWith(".mojang.com", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsValidSHA1Hex(string? expectedSHA)
     {
