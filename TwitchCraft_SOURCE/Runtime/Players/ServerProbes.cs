@@ -34,7 +34,6 @@ public sealed partial class MainHandler
 
         TrackTask(RecoverSlaughterGameRuleAsync(cancellationToken));
         TrackTask(ApplyPvPGameRuleAsync());
-        if (!MultiplayerEnabled) TrackTask(ClearSidebarAsync(cancellationToken));
         QueueDeathSetup();
         QueueFirstSnapshot();
         QueueSidebarRefresh();

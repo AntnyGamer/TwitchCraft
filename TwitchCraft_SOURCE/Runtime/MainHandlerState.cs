@@ -110,9 +110,6 @@ public sealed partial class MainHandler
 
     private void InitializeApplicationState()
     {
-        // Load lifetime totals off the UI thread so construction does not block on disk I/O.
-        _ = Task.Run(Statistics.Load);
-
         try
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => SafeCleanup();

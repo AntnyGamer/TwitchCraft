@@ -15,14 +15,16 @@ public sealed partial class MainHandler
 {
     private void ClearRoster()
     {
-        List<string> emptyViewers = [];
+        List<string>? emptyViewers = null;
         lock (_viewerGate)
         {
-            _knownViewers = emptyViewers;
             _viewerRewardSchedule.Clear();
+            if (_knownViewers.Count > 0)
+                _knownViewers = emptyViewers = [];
         }
 
-        _shellWindow?.UpdateViewers(emptyViewers);
+        if (emptyViewers != null)
+            _shellWindow?.UpdateViewers(emptyViewers);
     }
 
     private async Task RunPassiveRewardsAsync(CancellationToken cancellationToken)
