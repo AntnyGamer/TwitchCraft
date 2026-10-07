@@ -43,11 +43,7 @@ public sealed partial class MainHandler
                     playerName,
                     _spectatorProbeGate,
                     _pendingGamemodeRequests,
-                    (complete, ct) => SendProbeAsync(
-                        "execute as " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) +
-                        " run data get entity @s playerGameType",
-                        complete,
-                        ct),
+                    (complete, ct) => SendProbeAsync($"data get entity {playerName} playerGameType", complete, ct),
                     t).ConfigureAwait(false);
             },
             () => Interlocked.Exchange(ref _gamemodeRefreshQueued, 0),
