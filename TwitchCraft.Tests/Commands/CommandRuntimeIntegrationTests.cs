@@ -130,8 +130,8 @@ public sealed class CommandRuntimeIntegrationTests
                 .Take(commandCursor)
                 .ToList();
 
-            Assert.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_playerlist", startupCommands);
-            Assert.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_health", startupCommands);
+            Assert.Contains("scoreboard objectives remove tc_playerlist", startupCommands);
+            Assert.Contains("scoreboard objectives remove tc_health", startupCommands);
         }
         finally
         {
@@ -181,8 +181,8 @@ public sealed class CommandRuntimeIntegrationTests
             Assert.Contains(
                 "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + runtime.MobLootGameRuleName + " true",
                 RCON.Commands);
-            Assert.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_playerlist", RCON.Commands);
-            Assert.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_health", RCON.Commands);
+            Assert.Contains("scoreboard objectives remove tc_playerlist", RCON.Commands);
+            Assert.Contains("scoreboard objectives remove tc_health", RCON.Commands);
 
             Assert.Equal(36, await runtime.QueryMaxHealthAsync("PlayerOne", cancellationToken));
             Assert.Equal(selectedItem, await runtime.QueryItemAsync("PlayerOne", cancellationToken));
@@ -364,9 +364,8 @@ public sealed class CommandRuntimeIntegrationTests
             {
                 List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
                 return commands.Contains(restore) &&
-                    commands.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_playerlist") &&
-                    commands.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run scoreboard objectives remove tc_health") &&
-                    commands.Contains("execute if data storage twitchcraft:runtime {sidebar_initialized:1b} run data modify storage twitchcraft:runtime sidebar_initialized set value 0b");
+                    commands.Contains("scoreboard objectives remove tc_playerlist") &&
+                    commands.Contains("scoreboard objectives remove tc_health");
             },
             "Startup maintenance commands did not complete within 10 seconds.",
             cancellationToken);
