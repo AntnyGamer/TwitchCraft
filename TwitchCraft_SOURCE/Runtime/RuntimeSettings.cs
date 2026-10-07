@@ -34,21 +34,31 @@ public sealed partial class MainHandler
         if (!mentionViewer || sender.Length == 0 || string.IsNullOrWhiteSpace(message))
             return message;
 
-        if (message.Length > sender.Length &&
-            message[0] == '@' &&
-            message.AsSpan(1).StartsWith(sender.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        if (message[0] == '@' &&
+            StartsWithReplyUsername(message, sender, startIndex: 1))
         {
             return message;
         }
 
-        if (message.Length > sender.Length &&
-            message[sender.Length] == ',' &&
-            message.AsSpan(0, sender.Length).Equals(sender.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        if (StartsWithReplyUsername(message, sender, startIndex: 0))
         {
             return "@" + message;
         }
 
         return "@" + sender + " " + message;
+    }
+
+    private static bool StartsWithReplyUsername(string message, string sender, int startIndex)
+    {
+        if (message.Length < startIndex + sender.Length ||
+            !message.AsSpan(startIndex, sender.Length).Equals(sender.AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        int nextIndex = startIndex + sender.Length;
+        return nextIndex == message.Length ||
+            !(char.IsAsciiLetterOrDigit(message[nextIndex]) || message[nextIndex] == '_');
     }
 
     internal static string ApplyPrefix(string message, string prefix)
