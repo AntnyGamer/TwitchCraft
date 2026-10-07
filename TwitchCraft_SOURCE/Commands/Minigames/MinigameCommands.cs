@@ -165,8 +165,13 @@ public static partial class MinigameManager
                 return;
             }
 
-            runtime.Tokens.Award(sender, 10); //Guess Number Win
-            await saySuccessfulToChannel(sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + " and won 10 tokens!", ct).ConfigureAwait(false);
+            int awardedTokens = runtime.Tokens.Award(sender, 10); //Guess Number Win
+            string rewardText = awardedTokens > 0
+                ? " and won " + FormatTokens(awardedTokens) + (awardedTokens < 10 ? " before reaching the maximum balance!" : "!")
+                : ", but no tokens could be added to your balance.";
+            await saySuccessfulToChannel(
+                sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + rewardText,
+                ct).ConfigureAwait(false);
         };
 
         handlers["damagewither"] = async delegate (string[] args, string sender, CancellationToken ct)
