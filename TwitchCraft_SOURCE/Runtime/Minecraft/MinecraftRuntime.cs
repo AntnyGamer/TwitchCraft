@@ -50,7 +50,8 @@ public sealed partial class MainHandler
         _minecraftSession.ServerReady = true;
         _minecraftSession.RCONHealthy = true;
         await RecoverSlaughterGameRuleAsync(cancellationToken).ConfigureAwait(false);
-        await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
+        if (!MultiplayerEnabled)
+            await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
         _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" + config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
         QueueFirstSnapshot();
         QueueSnapshot();
