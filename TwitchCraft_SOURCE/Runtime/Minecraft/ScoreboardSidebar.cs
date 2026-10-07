@@ -11,7 +11,30 @@ public sealed partial class MainHandler
     private async Task ClearSidebarAsync(CancellationToken cancellationToken)
     {
         if (_minecraftSession.ServerReady)
-            await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
+        {
+            if (RemoteControlEnabled)
+            {
+                await SendServerCommandsAsync(ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
+            }
+            else if (_activeConfig is { } config)
+            {
+                try
+                {
+                    using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    timeout.CancelAfter(RCONTimeout);
+                    _ = await MinecraftRCONClient.ExecuteCommandsAsync(
+                        "127.0.0.1",
+                        config.Server.RCON.Port,
+                        config.Server.RCON.Password,
+                        ClearPlayerSidebarCommands,
+                        timeout.Token).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+                {
+                    ErrorHandling.LogNonFatal("Local sidebar cleanup over RCON failed", ex);
+                }
+            }
+        }
 
         lock (_playerGate)
         {
@@ -67,7 +90,7 @@ public sealed partial class MainHandler
         const string objective = "tc_playerlist";
         const string healthObjective = "tc_health";
 
-        List<string> commands = new((needsInitialization ? 7 : 0) + previousPlayers.Count + players.Count);
+        List<string> commands = new((needsInitialization ? 5 : 0) + previousPlayers.Count + players.Count);
         if (needsInitialization)
         {
             string playerListDisplay = BuildScoreboardText("Player List:", usesInlineTextComponents);
