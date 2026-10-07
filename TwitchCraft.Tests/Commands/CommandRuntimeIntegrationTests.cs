@@ -115,27 +115,35 @@ public sealed class CommandRuntimeIntegrationTests
     }
 
     [Fact]
-    public async Task SingleplayerStartup_RemovesMultiplayerSidebarObjectives()
+    public async Task SingleplayerStartup_CleansSidebarThroughRCONWithoutConsoleErrors()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using TemporaryDirectory directory = new();
-        TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready");
+        const string password = "local-sidebar-cleanup-password";
+        await using FakeRCONServer RCON = new(password);
+        TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready-rcon");
+        config.Server.RCON.Port = RCON.Port;
+        config.Server.RCON.Password = password;
         MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
         using CancellationTokenSource serverCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         try
         {
-            int commandCursor = await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
-            List<string> startupCommands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin")
-                .Take(commandCursor)
-                .ToList();
+            await StartReadyRuntimeAsync(runtime, config, serverCts.Token);
+            await FakeJavaServer.WaitUntilAsync(
+                () => RCON.Commands.Contains("scoreboard objectives remove tc_playerlist") &&
+                      RCON.Commands.Contains("scoreboard objectives remove tc_health"),
+                "Sidebar cleanup was not sent through local RCON within 10 seconds.",
+                cancellationToken);
 
-            Assert.Contains("scoreboard objectives remove tc_playerlist", startupCommands);
-            Assert.Contains("scoreboard objectives remove tc_health", startupCommands);
+            List<string> startupCommands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
+            Assert.DoesNotContain("scoreboard objectives remove tc_playerlist", startupCommands);
+            Assert.DoesNotContain("scoreboard objectives remove tc_health", startupCommands);
         }
         finally
         {
             serverCts.Cancel();
+            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
             await FakeJavaServer.StopRuntimeAndProcessAsync(runtime, config.Server.JarPath);
         }
     }
@@ -364,8 +372,8 @@ public sealed class CommandRuntimeIntegrationTests
             {
                 List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
                 return commands.Contains(restore) &&
-                    commands.Contains("scoreboard objectives remove tc_playerlist") &&
-                    commands.Contains("scoreboard objectives remove tc_health");
+                    commands.Contains("scoreboard objectives add tc_deaths deathCount") &&
+                    commands.Exists(command => command.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal));
             },
             "Startup maintenance commands did not complete within 10 seconds.",
             cancellationToken);
