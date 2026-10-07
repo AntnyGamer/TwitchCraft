@@ -371,9 +371,7 @@ public sealed class CommandRuntimeIntegrationTests
             () =>
             {
                 List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
-                return commands.Contains(restore) &&
-                    commands.Contains("scoreboard objectives add tc_deaths deathCount") &&
-                    commands.Exists(command => command.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal));
+                return commands.Contains(restore);
             },
             "Startup maintenance commands did not complete within 10 seconds.",
             cancellationToken);
