@@ -96,7 +96,12 @@ public sealed partial class MainHandler
 
     public Task<double?> QueryMaxHealthAsync(string playerName, CancellationToken cancellationToken)
         => QueryPlayerAsync<double?>(playerName, _maxHealthProbeGate, _pendingMaxHealthRequests,
-            (complete, ct) => SendProbeAsync("attribute " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get", complete, ct), cancellationToken);
+            (complete, ct) => SendProbeAsync(
+                "execute as " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) +
+                " run attribute @s " + (UsesModernAttributeIDs ? "minecraft:max_health" : "minecraft:generic.max_health") + " get",
+                complete,
+                ct),
+            cancellationToken);
 
     private Task<string?> QueryEntityDataAsync(
         string playerName, string path, Lock gate,
