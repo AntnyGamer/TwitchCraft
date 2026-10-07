@@ -10,8 +10,10 @@ public sealed partial class MainHandler
 {
     private static string GetRCONHost(TwitchCraftConfig config)
     {
-        string host = (config.Server.RemoteHost ?? string.Empty).Trim();
-        return host.Length == 0 ? "127.0.0.1" : host;
+        string host = config.Settings.RemoteControlEnabled
+            ? (config.Server.RemoteHost ?? string.Empty).Trim()
+            : ConfigurationStore.NormalizeBindIP(config.Server.BindIP);
+        return host switch { "" or "0.0.0.0" => "127.0.0.1", "::" => "::1", _ => host };
     }
 
     private void ResetSession()
