@@ -88,6 +88,11 @@ public sealed partial class MainHandler
                         isMinecraftCommandErrorContext);
 
                     HandleReadyState(line, cancellationToken);
+                    if (!RemoteControlEnabled && !MultiplayerEnabled &&
+                        line.Contains("RCON running on", StringComparison.OrdinalIgnoreCase))
+                    {
+                        TrackTask(ClearSidebarAsync(cancellationToken));
+                    }
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 
