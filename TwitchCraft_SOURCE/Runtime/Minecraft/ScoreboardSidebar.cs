@@ -67,12 +67,14 @@ public sealed partial class MainHandler
         const string objective = "tc_playerlist";
         const string healthObjective = "tc_health";
 
-        List<string> commands = new((needsInitialization ? 5 : 0) + previousPlayers.Count + players.Count);
+        List<string> commands = new((needsInitialization ? 7 : 0) + previousPlayers.Count + players.Count);
         if (needsInitialization)
         {
             string playerListDisplay = BuildScoreboardText("Player List:", usesInlineTextComponents);
             string healthDisplay = BuildScoreboardText("Health", usesInlineTextComponents);
 
+            commands.Add("scoreboard objectives remove " + objective);
+            commands.Add("scoreboard objectives remove " + healthObjective);
             commands.Add("scoreboard objectives add " + objective + " dummy " + playerListDisplay);
             commands.Add("scoreboard objectives add " + healthObjective + " health " + healthDisplay);
             commands.Add("scoreboard objectives modify " + healthObjective + " rendertype hearts");
