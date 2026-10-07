@@ -124,6 +124,15 @@ public sealed class TwitchMessagingPolicyTests
         Assert.Equal(
             "@viewer Unknown command.",
             MainHandler.FormatReply("Unknown command.", "viewer", mentionViewer: true));
+        Assert.Equal(
+            "@antny_is_epic gave 500 tokens to dugosssxd.",
+            MainHandler.FormatReply(
+                "antny_is_epic gave 500 tokens to dugosssxd.",
+                "antny_is_epic",
+                mentionViewer: true));
+        Assert.Equal(
+            "@ann announcement ready.",
+            MainHandler.FormatReply("announcement ready.", "ann", mentionViewer: true));
     }
 
     [Fact]
