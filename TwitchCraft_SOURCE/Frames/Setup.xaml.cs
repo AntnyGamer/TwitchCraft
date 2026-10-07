@@ -235,7 +235,7 @@ public partial class Setup : UserControl
 
     private async Task LoadOnlineManifestAsync(CancellationToken cancellationToken)
     {
-        string json = await SetupHttpClient.GetStringAsync(new Uri("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"), cancellationToken);
+        string json = await GetMojangStringAsync(SetupHttpClient, new Uri("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"), "Minecraft version manifest", cancellationToken);
         _manifest = JObject.Parse(json);
         _manifestLoadAttempted = true;
     }
