@@ -108,7 +108,11 @@ public sealed partial class MainHandler
         Dictionary<string, TaskCompletionSource<string?>> pendingRequests,
         CancellationToken cancellationToken)
         => QueryPlayerAsync<string?>(playerName, gate, pendingRequests,
-            (complete, ct) => SendProbeAsync("data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path, complete, ct), cancellationToken);
+            (complete, ct) => SendProbeAsync(
+                "execute as " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " run data get entity @s " + path,
+                complete,
+                ct),
+            cancellationToken);
 
     public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
         => QueryEntityDataAsync(playerName, UsesModernEntityAttributeNbt ? "attributes" : "Attributes",
