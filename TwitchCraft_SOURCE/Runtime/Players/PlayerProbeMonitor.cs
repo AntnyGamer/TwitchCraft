@@ -197,7 +197,7 @@ public sealed partial class MainHandler
             playerName,
             _respawnProbeGate,
             _pendingRespawnRequests,
-            (complete, ct) => SendProbeAsync("data get entity " + selector + " Pos", complete, ct),
+            (complete, ct) => SendProbeAsync("execute as " + selector + " run data get entity @s Pos", complete, ct),
             cancellationToken);
     }
 
