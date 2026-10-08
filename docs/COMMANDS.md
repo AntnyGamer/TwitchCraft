@@ -27,7 +27,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!tokens` | `!tokens [twitch-user]` | Free | Twitch user | Everyone | Shows your balance or another viewer's balance. |
 | `!tokenrank` | `!tokenrank [twitch-user]` | Free | Twitch user | Everyone | Shows your exact token-leaderboard position and balance, or checks another viewer. |
 | `!tokenleaderboard` | `!tokenleaderboard` | Free | Twitch viewers | Everyone | Shows the five viewers with the highest token balances. |
-| `!followreward` | `!followreward` | Free | None | Everyone | Shows the current configured token amount for the automatic one-time follow reward (100 by default). |
+| `!followreward` | `!followreward` | Free | None | Everyone | Shows the current configured token amount for the automatic one-time follow reward (50 by default). |
 | `!commandstats` | `!commandstats` | Free | Current session | Everyone | Shows session game-command, dangerous-command, nice-command, token-spend, and most-used-command statistics. |
 | `!tradetokens` | `!tradetokens <twitch-user> <amount>` | Entered amount | Twitch user | Everyone | Requires at least 2 tokens. Spends the sender's tokens and gives the recipient half the amount, rounded down and limited by the configured maximum balance. |
 | `!gambletokens` | `!gambletokens <amount> [risk 1-10]` | 5–150 token bet | Self | Everyone | Gambles tokens; risk defaults to 5 and is clamped to 1–10. Five-minute cooldown. |
