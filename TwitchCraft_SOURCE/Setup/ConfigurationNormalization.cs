@@ -181,7 +181,7 @@ public sealed partial class ConfigurationStore
         }
 
         if (config.Settings.FollowRewardAmount < 1 || config.Settings.FollowRewardAmount > 1_000_000)
-            config.Settings.FollowRewardAmount = DefaultFollowRewardAmount;
+            config.Settings.FollowRewardAmount = StartingProfile.DefaultFollowRewardAmount;
 
         if (!double.IsFinite(config.Settings.CommandCostMultiplier) ||
             config.Settings.CommandCostMultiplier < 0.0 ||

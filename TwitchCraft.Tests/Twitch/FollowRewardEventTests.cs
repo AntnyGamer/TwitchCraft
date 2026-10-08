@@ -12,7 +12,7 @@ namespace TwitchCraft.Tests.Twitch;
 public sealed class FollowRewardEventTests
 {
     [Fact]
-    public async Task FollowRewardAmount_DefaultsTo100AndAppliesConfiguredValue()
+    public async Task FollowRewardAmount_DefaultsTo50AndAppliesConfiguredValue()
     {
         using TemporaryDirectory directory = new();
         MainHandler runtime = new(
@@ -21,7 +21,7 @@ public sealed class FollowRewardEventTests
 
         try
         {
-            Assert.Equal(100, runtime.FollowRewardAmount);
+            Assert.Equal(StartingProfile.DefaultFollowRewardAmount, runtime.FollowRewardAmount);
             TwitchCraftConfig config = new();
             config.Settings.FollowRewardAmount = 250;
             await runtime.ApplySettingsAsync(config);

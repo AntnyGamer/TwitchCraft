@@ -56,6 +56,7 @@ public sealed class IdentityConfig
 public sealed class StartingProfile
 {
     internal const int DefaultAutomaticBackupRetentionCount = 3;
+    internal const int DefaultFollowRewardAmount = 50;
 
     public bool MultiplayerEnabled { get; set; }
     public bool MultiplayerPvPEnabled { get; set; }
@@ -70,7 +71,7 @@ public sealed class StartingProfile
     public double GlobalGameCommandCooldownSeconds { get; set; } = 10.0;
     public bool PassiveTokenEarningEnabled { get; set; } = true;
     public bool AutomaticFollowRewardsEnabled { get; set; } = true;
-    public int FollowRewardAmount { get; set; } = 100;
+    public int FollowRewardAmount { get; set; } = DefaultFollowRewardAmount;
     public bool AutomaticBitRewardsEnabled { get; set; } = true;
     public double CommandCostMultiplier { get; set; } = 1.0;
     public string BotResponseVerbosity { get; set; } = "Normal";

@@ -131,7 +131,7 @@ public sealed class ConfigurationNormalizationTests
         Assert.Equal("Medium", config.Settings.Difficulty);
         Assert.Equal(15, config.Settings.MinigameCooldown);
         Assert.Equal(10.0, config.Settings.GlobalGameCommandCooldownSeconds);
-        Assert.Equal(100, config.Settings.FollowRewardAmount);
+        Assert.Equal(StartingProfile.DefaultFollowRewardAmount, config.Settings.FollowRewardAmount);
         Assert.Equal(1.0, config.Settings.CommandCostMultiplier);
         Assert.Equal("Normal", config.Settings.BotResponseVerbosity);
         Assert.Equal("!", config.Settings.CommandPrefix);

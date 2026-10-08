@@ -22,7 +22,6 @@ public sealed partial class ConfigurationStore
     private const int DefaultMemoryGB = 8;
     private const int DefaultMinigameCooldown = 15;
     private const double DefaultGlobalGameCommandCooldownSeconds = 10.0;
-    private const int DefaultFollowRewardAmount = 100;
     private const double DefaultCommandCostMultiplier = 1.0;
     private const int DefaultPassiveTokensPerPayout = 1;
 
