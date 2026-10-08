@@ -144,6 +144,8 @@ public sealed partial class MainHandler
 
     public int MinigameCooldown => CurrentSettings.MinigameCooldown;
 
+    private static string NormalizeUser(string? user) => CommandUserHelper.NormalizeUser(user);
+
     private void SetConfig(TwitchCraftConfig config)
     {
         string previousMinecraftVersion = _activeConfig?.Server.MinecraftVersion ?? string.Empty;
