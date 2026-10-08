@@ -391,6 +391,12 @@ public sealed partial class MainHandler
         }, CancellationToken.None));
     }
 
+    private bool IsSpectatorPlayer(string playerName)
+    {
+        lock (_spectatorProbeGate)
+            return _spectatorPlayers.Contains(playerName);
+    }
+
     private void RemoveSpectator(string playerName)
     {
         lock (_spectatorProbeGate)

@@ -73,7 +73,7 @@ public static partial class MinigameManager
             {
                 state = GetChickenStateNoLock(runtime);
                 state.BettingOpen = false;
-                killAtSeconds = CommandRandom.Next(minSeconds, maxSeconds + 1);
+                killAtSeconds = CommandRandom.Next(minSeconds - 1, maxSeconds + 1);
             }
 
             await PlaySoundAsync(runtime, "minecraft:entity.chicken.ambient", cancellationToken).ConfigureAwait(false);
