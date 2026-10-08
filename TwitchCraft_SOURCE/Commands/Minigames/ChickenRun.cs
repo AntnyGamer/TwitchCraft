@@ -42,7 +42,7 @@ public static partial class MinigameManager
                 maxSeconds.ToString(CultureInfo.InvariantCulture) +
                 " seconds for how long the chicken survives! Max " +
                 MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
-                " tokens per person. The chicken has a 1-in-8 chance of dying before the lowest bet time! Max-second bets pay 3x if it survives the full range. (!chickenbet <amount> <seconds>)",
+                " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
                 cancellationToken).ConfigureAwait(false);
 
             await Task.Delay(ChickenRunBettingDelay, cancellationToken).ConfigureAwait(false);
@@ -73,10 +73,7 @@ public static partial class MinigameManager
             {
                 state = GetChickenStateNoLock(runtime);
                 state.BettingOpen = false;
-                // Early death makes every allowed prediction genuinely risky.
-                killAtSeconds = CommandRandom.Next(8) == 0
-                    ? CommandRandom.Next(1, minSeconds)
-                    : CommandRandom.Next(minSeconds, maxSeconds + 1);
+                killAtSeconds = CommandRandom.Next(minSeconds - 1, maxSeconds + 1);
             }
 
             await PlaySoundAsync(runtime, "minecraft:entity.chicken.ambient", cancellationToken).ConfigureAwait(false);
@@ -109,7 +106,7 @@ public static partial class MinigameManager
                     continue;
 
                 double multiplier = 1.02 + ((bet.BetSeconds - minSeconds) * multiplierPerSecond);
-                int payout = (int)Math.Floor(bet.TokenAmount * multiplier);
+                int payout = (int)Math.Round(bet.TokenAmount * multiplier, MidpointRounding.AwayFromZero);
                 if (payout > 0)
                     payouts.Add(new(bet.Viewer, payout)); //Chicken Run Win
             }
