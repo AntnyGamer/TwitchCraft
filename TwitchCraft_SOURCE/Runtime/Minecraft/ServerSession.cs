@@ -120,7 +120,4 @@ public sealed partial class MainHandler
         StatisticsService.FlushForShutdown();
         CloseStores();
     }
-
-    private static string NormalizeUser(string? user) => CommandUserHelper.NormalizeUser(user);
-
 }
