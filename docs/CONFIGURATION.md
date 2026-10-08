@@ -46,7 +46,7 @@ The access and refresh tokens remain sensitive and are intentionally not exposed
 
 TwitchCraft uses its built-in public Twitch application and device authorization. Users do not enter a Client ID or Client Secret, create a developer application, configure a localhost redirect, or run a callback listener. Existing installations can replace the saved authorization from **Settings --> Dangerous --> Reauthorize Twitch**. If no authorization is currently saved, the button is labeled **Authorize Twitch** instead. TwitchCraft automatically renews an expired authorization when possible; otherwise it asks you to reauthorize. The authorization requests chat, viewer-roster, and follower permissions.
 
-New follows grant up to the configured number of tokens once per Twitch account (100 by default), limited by the configured maximum balance. The persistent follow-reward record is stored in `viewer_tokens.db`, so EventSub reconnects, duplicate notifications, and unfollow/refollow cycles cannot pay the same account twice. When automatic Bit rewards are enabled, each Bit awards one token, limited by the configured maximum balance.
+New follows grant up to the configured number of tokens once per Twitch account (50 by default), limited by the configured maximum balance. The persistent follow-reward record is stored in `viewer_tokens.db`, so EventSub reconnects, duplicate notifications, and unfollow/refollow cycles cannot pay the same account twice. When automatic Bit rewards are enabled, each Bit awards one token, limited by the configured maximum balance.
 
 ### Identity
 
