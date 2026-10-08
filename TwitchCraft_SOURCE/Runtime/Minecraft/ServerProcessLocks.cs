@@ -118,7 +118,7 @@ public sealed partial class MainHandler
                         processIDs.Add(uniqueProcess.dwProcessID);
                 }
 
-                return [.. processIDs];
+                return processIDs;
             }
             finally
             {
