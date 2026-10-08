@@ -262,11 +262,3 @@ internal sealed record StatisticsDependencies(
     Action<string> QueueDeathScore,
     Action<string> QueueRespawn);
 
-public sealed partial class MainHandler
-{
-    private bool IsSpectatorPlayer(string playerName)
-    {
-        lock (_spectatorProbeGate)
-            return _spectatorPlayers.Contains(playerName);
-    }
-}
