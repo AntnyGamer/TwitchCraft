@@ -234,8 +234,8 @@ public sealed partial class MainHandler
             using FileStream secondStream = new(secondPath, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.SequentialScan);
             while (true)
             {
-                int firstRead = firstStream.Read(firstBuffer, 0, firstBuffer.Length);
-                int secondRead = secondStream.Read(secondBuffer, 0, secondBuffer.Length);
+                int firstRead = firstStream.Read(firstBuffer, 0, 8192);
+                int secondRead = secondStream.ReadAtLeast(secondBuffer.AsSpan(0, firstRead), firstRead, throwOnEndOfStream: false);
                 if (firstRead != secondRead)
                     return false;
                 if (firstRead == 0)
