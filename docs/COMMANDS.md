@@ -89,7 +89,7 @@ These commands are meaningful only while their matching minigame is active. Paid
 
 | Command | Syntax | Cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
-| `!chickenbet` | `!chickenbet <token-amount> <seconds>` | Bet amount | Active Chicken Run | Everyone | Bets on the chicken's finishing time. |
+| `!chickenbet` | `!chickenbet <token-amount> <seconds>` | Bet amount | Active Chicken Run | Everyone | Bets on the chicken's survival time. Every bet has a chance to lose: there is a 1-in-8 chance of death before the earliest allowed bet. Winning payouts are rounded down to whole tokens (up to 3×). |
 | `!guess` | `!guess <1-100>` | Free | Active number round | Everyone | Guesses the current number; correct guesses award 10 tokens, limited by the configured maximum balance. Five-second per-viewer guess cooldown. |
 | `!damagewither` | `!damagewither <token-amount>` | Bet amount | Active Wither Battle | Everyone | Spends tokens as Wither damage and records the viewer's contribution. |
 
