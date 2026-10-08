@@ -237,7 +237,7 @@ public sealed partial class MainHandler
                 int firstRead = firstStream.Read(firstBuffer, 0, 8192);
                 int secondRead = secondStream.ReadAtLeast(secondBuffer.AsSpan(0, firstRead), firstRead, throwOnEndOfStream: false);
                 if (firstRead == 0)
-                    return true;
+                    return secondStream.ReadByte() == -1;
 
                 if (!firstBuffer.AsSpan(0, firstRead).SequenceEqual(secondBuffer.AsSpan(0, secondRead)))
                     return false;
