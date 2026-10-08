@@ -240,8 +240,9 @@ internal sealed partial class TokenStore(string path)
                 if (newBalance != current)
                 {
                     using SqliteCommand upsert = CreateUpsertCommand(connection, transaction);
-                    using SqliteCommand delete = CreateDeleteCommand(connection, transaction);
-                    SaveBalanceNoLock(upsert, delete, normalizedUsername, newBalance);
+                    upsert.Parameters[0].Value = normalizedUsername;
+                    upsert.Parameters[1].Value = newBalance;
+                    upsert.ExecuteNonQuery();
                 }
 
                 transaction.Commit();
