@@ -46,8 +46,8 @@ public static partial class CommandList
         async Task HelpAsync(string[]? _, string sender, CancellationToken ct)
         {
             string details = runtime.MultiTargetingEnabled
-                ? "Most commands support targeting (!command player|all|random). Full list: https://rentry.co/bot-commands"
-                : "Use your tokens with these commands: https://rentry.co/bot-commands";
+                ? "Most commands support targeting (!command player|all|random). Full list: https://antnygamer.github.io/TwitchCraft/"
+                : "Use your tokens with these commands: https://antnygamer.github.io/TwitchCraft/";
             await SuccessAsync(sender + ", welcome! Earn tokens by watching the stream. " + details, ct).ConfigureAwait(false);
         }
         async Task PlayerListAsync(string[]? _, string sender, CancellationToken ct)
