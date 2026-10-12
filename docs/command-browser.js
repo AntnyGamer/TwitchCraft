@@ -150,10 +150,10 @@
     const top = make('div', 'card-top');
     const name = make('h4', 'command-name', item.name);
     const free = item.cost.toLowerCase().startsWith('free');
-    const price = make('span', free ? 'cost is-free' : 'cost', free ? item.cost : item.cost + ' tokens');
-    // Costs may be dynamic descriptions ("50 per heart", "5–150 token bet").
-    // Keep the exact source text rather than guessing units.
-    if (!free) price.textContent = item.cost;
+    // The source costs are defaults. Explicit numeric values represent tokens;
+    // descriptions such as "50 per heart" or "Bet amount" stay verbatim.
+    const costLabel = /^\d+$/.test(item.cost) ? item.cost + ' tokens' : item.cost;
+    const price = make('span', free ? 'cost is-free' : 'cost', 'Cost: ' + costLabel);
     top.append(name, price);
 
     const description = make('p', 'card-description', item.description);
