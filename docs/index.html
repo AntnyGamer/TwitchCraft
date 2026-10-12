@@ -54,8 +54,9 @@
       <section class="summary-strip" aria-label="Command counts">
         <div class="summary-item"><strong id="total-count">—</strong><span>Built-in commands</span></div>
         <div class="summary-item"><strong id="gameplay-count">—</strong><span>Gameplay</span></div>
-        <div class="summary-item"><strong id="utility-count">—</strong><span>Utility &amp; economy</span></div>
         <div class="summary-item"><strong id="minigame-count">—</strong><span>Minigames</span></div>
+        <div class="summary-item"><strong id="utility-count">—</strong><span>Utility</span></div>
+        <div class="summary-item"><strong id="streamer-count">—</strong><span>Streamer commands</span></div>
       </section>
 
       <section class="browser" id="catalog" aria-labelledby="catalog-heading">
@@ -79,8 +80,9 @@
           <div class="category-row" id="category-row" role="group" aria-label="Command categories">
             <button type="button" class="category-button is-selected" data-category="all" aria-pressed="true">All <span data-count="all"></span></button>
             <button type="button" class="category-button" data-category="gameplay" aria-pressed="false">Gameplay <span data-count="gameplay"></span></button>
-            <button type="button" class="category-button" data-category="utility" aria-pressed="false">Utility &amp; economy <span data-count="utility"></span></button>
             <button type="button" class="category-button" data-category="minigame" aria-pressed="false">Minigames <span data-count="minigame"></span></button>
+            <button type="button" class="category-button" data-category="utility" aria-pressed="false">Utility <span data-count="utility"></span></button>
+            <button type="button" class="category-button" data-category="streamer" aria-pressed="false">Streamer <span data-count="streamer"></span></button>
           </div>
         </div>
 
@@ -110,9 +112,10 @@
         </div>
         <div class="note-grid">
           <div class="note"><span class="note-number">01</span><h3>Replace placeholders</h3><p>Copied syntax is a template. Replace values in <code>&lt;angle brackets&gt;</code>; square brackets indicate optional arguments.</p></div>
-          <div class="note"><span class="note-number">02</span><h3>Costs are defaults</h3><p>Streamers can change prefixes, token multipliers, permissions, enabled commands, and cooldowns. Multiplayer targeting can raise token costs.</p></div>
+          <div class="note"><span class="note-number">02</span><h3>Costs are defaults</h3><p>Streamers can change prefixes, token multipliers, permissions, enabled commands, and cooldowns. In multiplayer, using <code>all</code> scales the base cost by <code>(player count + 1) / 2</code> before rounding and the configured multiplier.</p></div>
           <div class="note"><span class="note-number">03</span><h3>Some commands are conditional</h3><p>Minigame commands work only during their rounds. Certain admin commands require broadcaster or moderator permission and local multiplayer.</p></div>
         </div>
+        <p class="reward-note"><strong>Token rewards:</strong> If Bit rewards are enabled, 1 Bit earns 1 token. New followers receive a one-time reward of 50 tokens by default, unless the streamer changes the amount. Streamer commands are for the broadcaster and bot, and moderators where enabled.</p>
       </aside>
     </main>
 
