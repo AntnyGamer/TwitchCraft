@@ -313,7 +313,7 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 ## 15. Links
 
 * TwitchCraft website: https://antnygamer.wixsite.com/twitchcraft
-* TwitchCraft commands: https://rentry.co/bot-commands
+* TwitchCraft commands: https://antnygamer.github.io/TwitchCraft/
 * TwitchCraft trailer: https://www.youtube.com/watch?v=HM2Um3Uf1hk
 * TwitchCraft setup tutorial: https://bit.ly/tutorial-twitchcraft
 * TwitchCraft troubleshooting: https://bit.ly/troubleshooting-twitchcraft
