@@ -40,19 +40,20 @@ This feature was developed on `feature/command-browser`; creating the branch **d
 
 The browser reads these Markdown headings:
 
-- `## Utility and economy`
-- `## Gameplay commands`
-- `## Minigame commands`
+- `## Game Commands`
+- `## Minigame Commands`
+- `## Utility Commands`
+- `## Streamer Commands`
 
 Each command table row must contain exactly six columns: command name, syntax, default cost, targeting, permission, and description.
 
-Whenever the built-in command registry changes, update `COMMANDS.md` in the same pull request. Check that every built-in command appears once and no command was removed without updating the documentation. The browser itself needs no manual updates for command additions, deletions, or changed descriptions/costs, as long as the table format stays consistent.
+The descriptions use concise Rentry-style wording, adjusted where the older Rentry page no longer matches the program (for example, new-follower rewards default to 50 and `!mlg` differs by dimension). Whenever the built-in command registry changes, update `COMMANDS.md` in the same pull request. Check that every built-in command appears once and no command was removed without updating the documentation. The browser itself needs no manual updates for command additions, deletions, or changed descriptions/costs, as long as the table format stays consistent.
 
 Public command costs are **defaults**. Streamers can override the command prefix, enabled commands, token-cost multiplier, and cooldowns. Multiplayer targeting can change prices. The site is intentionally not connected to anyone's local app settings or Twitch account.
 
 ## Quick manual checks
 
-- All 56 commands currently in `COMMANDS.md` appear: 37 gameplay, 16 utility/economy, 3 minigame.
+- All 56 commands currently in `COMMANDS.md` appear: 37 game, 4 minigame (including the independent gamble command), 8 utility, and 7 streamer commands.
 - Search by a partial name (`heal`), description (`lightning`), and permission (`moderators`).
 - Switching categories and the **Free only** filter adjusts the results correctly.
 - Copying `!givetokens` preserves `[twitch-user|all|random]` without splitting the table row.
