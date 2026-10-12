@@ -15,6 +15,7 @@
   const validCategories = new Set(['all', ...sectionOrder]);
   const searchInput = document.getElementById('command-search');
   const freeOnlyInput = document.getElementById('free-only');
+  const multiplierSelect = document.getElementById('price-multiplier');
   const categoryRow = document.getElementById('category-row');
   const resultsElement = document.getElementById('command-results');
   const resultLabel = document.getElementById('results-label');
@@ -30,6 +31,7 @@
   let toastTimer = 0;
   searchInput.value = (params.get('q') || '').slice(0, 150);
   freeOnlyInput.checked = params.get('free') === '1';
+  const requestedMultiplier = params.get('multiplier');
 
   function make(tag, className, value) {
     const node = document.createElement(tag);
@@ -152,15 +154,81 @@
     return copied;
   }
 
+  // The desktop app's preset list is the source of truth. Fetch it from the
+  // public main branch so the website picks up future preset changes without
+  // maintaining a separate preset array in the frontend.
+  const presetSource = 'https://raw.githubusercontent.com/AntnyGamer/TwitchCraft/main/TwitchCraft_SOURCE/Frames/Settings.xaml.cs';
+
+  function parseMultiplierOptions(source) {
+    const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
+    if (!definition) throw new Error('Multiplier presets were not found in Settings.xaml.cs');
+    const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
+      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×') }));
+    if (!options.length || !options.some(item => item.value === '1')
+        || options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
+      throw new Error('Multiplier preset values are invalid');
+    }
+    return options;
+  }
+
+  async function refreshMultiplierOptions() {
+    // The HTML keeps the exact currently-supported presets as an offline
+    // fallback; an unavailable GitHub host must not break the command list.
+    try {
+      const response = await fetch(presetSource);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const presets = parseMultiplierOptions(await response.text());
+      multiplierSelect.replaceChildren();
+      for (const option of presets) {
+        const element = document.createElement('option');
+        element.value = option.value;
+        element.textContent = option.label;
+        multiplierSelect.appendChild(element);
+      }
+    } catch (error) {
+      console.warn('Using local multiplier presets:', error);
+    }
+    if (requestedMultiplier && Array.from(multiplierSelect.options).some(option => option.value === requestedMultiplier)) {
+      multiplierSelect.value = requestedMultiplier;
+    } else {
+      multiplierSelect.value = Array.from(multiplierSelect.options).some(option => option.value === '1')
+        ? '1' : multiplierSelect.options[0].value;
+    }
+  }
+
+  function displayCost(item) {
+    const source = item.cost.trim();
+    const originalFree = source.toLowerCase().startsWith('free');
+    const multiplier = Number(multiplierSelect.value);
+
+    // The command-cost multiplier belongs to gameplay command charging.
+    // Economy transfers, wagers and admin commands use their own amounts.
+    if (item.section !== 'gameplay' || originalFree) {
+      return { label: /^\d+$/.test(source) ? source + ' tokens' : source, free: originalFree };
+    }
+    if (multiplier === 0) return { label: 'Free (0 tokens)', free: true };
+
+    // Mirrors TwitchCraft CommandService.GetCommandCost: round UP to integer.
+    const scale = amount => Math.ceil(amount * multiplier);
+    if (/^\d+$/.test(source)) {
+      return { label: scale(Number(source)) + ' tokens', free: false };
+    }
+    const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
+    if (perUnit) {
+      const base = Number(perUnit[1]);
+      const maximum = perUnit[2].toLowerCase() === 'heart' ? 5 : 25;
+      const unit = maximum === 5 ? 'hearts' : 'effects';
+      return { label: scale(base) + '–' + scale(base * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
+    }
+    return { label: source, free: false };
+  }
+
   function createCommandCard(item) {
     const card = make('article', 'command-card');
     const top = make('div', 'card-top');
     const name = make('h4', 'command-name', item.name);
-    const free = item.cost.toLowerCase().startsWith('free');
-    // The source costs are defaults. Explicit numeric values represent tokens;
-    // descriptions such as "50 per heart" or "Bet amount" stay verbatim.
-    const costLabel = /^\d+$/.test(item.cost) ? item.cost + ' tokens' : item.cost;
-    const price = make('span', free ? 'cost is-free' : 'cost', 'Cost: ' + costLabel);
+    const priceInfo = displayCost(item);
+    const price = make('span', priceInfo.free ? 'cost is-free' : 'cost', 'Cost: ' + priceInfo.label);
     top.append(name, price);
 
     const description = make('p', 'card-description', item.description);
@@ -221,6 +289,8 @@
     else next.searchParams.delete('category');
     if (freeOnlyInput.checked) next.searchParams.set('free', '1');
     else next.searchParams.delete('free');
+    if (multiplierSelect.value !== '1') next.searchParams.set('multiplier', multiplierSelect.value);
+    else next.searchParams.delete('multiplier');
     window.history.replaceState(null, '', next.pathname + next.search + next.hash);
   }
 
@@ -229,9 +299,9 @@
     const onlyFree = freeOnlyInput.checked;
     const filtered = commands.filter(item => {
       if (category !== 'all' && item.section !== category) return false;
-      if (onlyFree && !item.cost.toLowerCase().startsWith('free')) return false;
+      if (onlyFree && !displayCost(item).free) return false;
       if (!query) return true;
-      return [item.name, item.syntax, item.cost, item.targeting, item.permission,
+      return [item.name, item.syntax, item.cost, displayCost(item).label, item.targeting, item.permission,
         item.description, sectionLabels[item.section]].some(field => field.toLocaleLowerCase().includes(query));
     });
     const fragment = document.createDocumentFragment();
@@ -265,6 +335,7 @@
   function wireEvents() {
     searchInput.addEventListener('input', render);
     freeOnlyInput.addEventListener('change', render);
+    multiplierSelect.addEventListener('change', render);
     categoryRow.addEventListener('click', event => {
       const button = event.target.closest('[data-category]');
       if (!button || !categoryRow.contains(button)) return;
@@ -285,8 +356,9 @@
 
   async function initialize() {
     wireEvents();
+    await refreshMultiplierOptions();
     try {
-      const response = await fetch('./COMMANDS.md', { cache: 'no-cache' });
+      const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const markdown = await response.text();
       if (/^\s*<!doctype html/i.test(markdown) || /^\s*<html/i.test(markdown)) {
