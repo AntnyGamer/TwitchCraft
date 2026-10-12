@@ -18,7 +18,7 @@ Paid gameplay commands refund when delivery cannot be confirmed. Remote Control 
 
 The optional global gameplay-command cooldown applies to normal gameplay commands. By default, `!lightning`, `!tiny`, and `!giant` each use an independent five-minute cooldown shared by all viewers. `!addheart` and `!removeheart` share one five-minute cooldown, while `!gambletokens` uses a five-minute per-viewer cooldown. Per-command cooldown settings can override these defaults.
 
-## Game Commands
+## Gameplay commands
 
 `[target]` can be a Minecraft username, `all`, or `random` in multiplayer. If no target is given, it defaults to the streamer. Costs and cooldowns are the streamer's defaults and may be customized.
 
@@ -62,7 +62,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!clear` | `!clear [target]` | 125 | Player(s) | Everyone | Clears the player's entire inventory. |
 | `!mlg` | `!mlg [target]` | 150 | Player(s) | Everyone | Launches the player 200 blocks into the air with a water bucket, or 50 blocks with a cobweb in the Nether. |
 
-## Minigame Commands
+## Minigame commands
 
 `!chickenbet`, `!guess`, and `!damagewither` only work during their matching minigame. `!gambletokens` is a separate token gamble that does **not** require a minigame to be active. Paid bets are rejected or refunded if a minigame round closes during an update.
 
@@ -73,7 +73,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!gambletokens` | `!gambletokens <amount> [risk 1-10]` | 5–150 token bet | Self | Everyone | Gambles 5–150 tokens with optional risk level 1–10 (5-minute per-viewer cooldown). |
 | `!guess` | `!guess <1-100>` | Free | Active number round | Everyone | Guesses a number from 1 to 100 during Number Guess (correct guesses earn 10 tokens). |
 
-## Utility Commands
+## Utility and economy
 
 | Command | Syntax | Cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
@@ -86,7 +86,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!tokens` | `!tokens [twitch-user]` | Free | Twitch user | Everyone | Checks how many tokens you or another viewer has. |
 | `!tradetokens` | `!tradetokens <twitch-user> <amount>` | Entered amount | Twitch user | Everyone | Gives another viewer half of the specified tokens, rounded down, while removing the full amount from you (minimum 2 tokens). |
 
-## Streamer Commands
+### Streamer Commands
 
 These commands are available to the broadcaster and authorized bot; moderators may also use them if enabled. Minecraft player administration requires local multiplayer mode.
 
