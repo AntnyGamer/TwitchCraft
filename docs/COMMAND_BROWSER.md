@@ -38,12 +38,14 @@ This feature was developed on `feature/command-browser`; creating the branch **d
 
 ## Keeping the catalog accurate
 
-The browser reads these Markdown headings:
+The browser reads these Markdown headings (including compatibility aliases for older scripts):
 
-- `## Game Commands`
-- `## Minigame Commands`
-- `## Utility Commands`
-- `## Streamer Commands`
+- `## Gameplay commands` → **Game Commands**
+- `## Minigame commands` → **Minigame Commands**
+- `## Utility and economy` → **Utility Commands**
+- `### Streamer Commands` → **Streamer Commands**
+
+The streamer heading stays nested under Utility in Markdown so an older cached command-browser script still shows all 56 commands, even before receiving the updated JavaScript. The current script recognizes the nested heading and places its seven commands in their own category. When changing the parser or section format, bump the script's version query in `index.html` to invalidate cached assets. The parser throws an error rather than silently showing a partial list if command rows cannot be categorized.
 
 Each command table row must contain exactly six columns: command name, syntax, default cost, targeting, permission, and description.
 
