@@ -32,6 +32,9 @@
   searchInput.value = (params.get('q') || '').slice(0, 150);
   freeOnlyInput.checked = params.get('free') === '1';
   const requestedMultiplier = params.get('multiplier');
+  if (requestedMultiplier && Array.from(multiplierSelect.options).some(option => option.value === requestedMultiplier)) {
+    multiplierSelect.value = requestedMultiplier;
+  }
 
   function make(tag, className, value) {
     const node = document.createElement(tag);
@@ -178,6 +181,7 @@
       const response = await fetch(presetSource);
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const presets = parseMultiplierOptions(await response.text());
+      const previousSelection = multiplierSelect.value;
       multiplierSelect.replaceChildren();
       for (const option of presets) {
         const element = document.createElement('option');
@@ -185,14 +189,12 @@
         element.textContent = option.label;
         multiplierSelect.appendChild(element);
       }
+      const values = Array.from(multiplierSelect.options).map(option => option.value);
+      multiplierSelect.value = values.includes(previousSelection) ? previousSelection
+        : values.includes('1') ? '1' : values[0];
+      if (commands.length) render();
     } catch (error) {
       console.warn('Using local multiplier presets:', error);
-    }
-    if (requestedMultiplier && Array.from(multiplierSelect.options).some(option => option.value === requestedMultiplier)) {
-      multiplierSelect.value = requestedMultiplier;
-    } else {
-      multiplierSelect.value = Array.from(multiplierSelect.options).some(option => option.value === '1')
-        ? '1' : multiplierSelect.options[0].value;
     }
   }
 
@@ -356,7 +358,8 @@
 
   async function initialize() {
     wireEvents();
-    await refreshMultiplierOptions();
+    // Never block the command catalog on an optional external preset lookup.
+    void refreshMultiplierOptions();
     try {
       const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
       if (!response.ok) throw new Error('HTTP ' + response.status);
