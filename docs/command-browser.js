@@ -6,11 +6,12 @@
  */
 (function () {
   const sectionLabels = {
-    gameplay: 'Gameplay commands',
-    utility: 'Utility & economy',
-    minigame: 'Minigame commands'
+    gameplay: 'Game Commands',
+    minigame: 'Minigame Commands',
+    utility: 'Utility Commands',
+    streamer: 'Streamer Commands'
   };
-  const sectionOrder = ['gameplay', 'utility', 'minigame'];
+  const sectionOrder = ['gameplay', 'minigame', 'utility', 'streamer'];
   const validCategories = new Set(['all', ...sectionOrder]);
   const searchInput = document.getElementById('command-search');
   const freeOnlyInput = document.getElementById('free-only');
@@ -82,13 +83,15 @@
     for (const line of markdown.split(/\r?\n/)) {
       if (line.startsWith('## ')) {
         const title = line.slice(3).trim().toLowerCase();
-        section = title === 'gameplay commands'
+        section = title === 'game commands' || title === 'gameplay commands'
           ? 'gameplay'
-          : title === 'utility and economy'
-            ? 'utility'
-            : title === 'minigame commands'
-              ? 'minigame'
-              : null;
+          : title === 'minigame commands'
+            ? 'minigame'
+            : title === 'utility commands' || title === 'utility and economy'
+              ? 'utility'
+              : title === 'streamer commands'
+                ? 'streamer'
+                : null;
       }
       if (!section || !/^\|\s*\x60![a-z0-9]+\x60\s*\|/i.test(line)) continue;
 
@@ -189,7 +192,7 @@
   }
 
   function updateCategoryButtons() {
-    const counts = { all: commands.length, gameplay: 0, utility: 0, minigame: 0 };
+    const counts = { all: commands.length, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
     for (const item of commands) counts[item.section]++;
     for (const button of categoryRow.querySelectorAll('[data-category]')) {
       const active = button.dataset.category === category;
@@ -202,6 +205,7 @@
     document.getElementById('gameplay-count').textContent = String(counts.gameplay);
     document.getElementById('utility-count').textContent = String(counts.utility);
     document.getElementById('minigame-count').textContent = String(counts.minigame);
+    document.getElementById('streamer-count').textContent = String(counts.streamer);
   }
 
   function syncAddress() {
