@@ -81,8 +81,8 @@
     const parsed = [];
 
     for (const line of markdown.split(/\r?\n/)) {
-      if (line.startsWith('## ')) {
-        const title = line.slice(3).trim().toLowerCase();
+      if (/^#{2,3} /.test(line)) {
+        const title = line.replace(/^#{2,3} /, '').trim().toLowerCase();
         section = title === 'game commands' || title === 'gameplay commands'
           ? 'gameplay'
           : title === 'minigame commands'
@@ -110,7 +110,11 @@
       parsed.push({ name, syntax, cost, targeting, permission, description, section });
     }
 
-    if (!parsed.length) throw new Error('No commands found in COMMANDS.md');
+    // Fail loudly instead of silently showing just one section if headings change.
+    const documentedRows = (markdown.match(/^\|\s*`![a-z0-9]+`\s*\|/gim) || []).length;
+    if (!parsed.length || parsed.length !== documentedRows) {
+      throw new Error('Command documentation mismatch: parsed ' + parsed.length + ' of ' + documentedRows + ' commands.');
+    }
     return parsed.sort((a, b) => a.name.localeCompare(b.name));
   }
 
