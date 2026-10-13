@@ -43,10 +43,10 @@ public sealed partial class MainHandler
         if (maxBytes <= 0 || message.Length == 0)
             return string.Empty;
 
-        if (message.Length <= maxBytes && Ascii.IsValid(message))
-            return message;
-
-        if (TwitchSession.UTF8NoBOM.GetByteCount(message) <= maxBytes)
+        // Every UTF-16 code unit requires at least one UTF-8 byte. Avoid
+        // counting an entire oversized message before truncating its prefix.
+        if (message.Length <= maxBytes &&
+            (Ascii.IsValid(message) || TwitchSession.UTF8NoBOM.GetByteCount(message) <= maxBytes))
             return message;
 
         int usedBytes = 0;
