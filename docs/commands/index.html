@@ -307,6 +307,7 @@ a:hover{color:var(--accent)}
   freeOnlyInput.checked = params.get('free') === '1';
   sortSelect.value = validSorts.has(params.get('sort')) ? params.get('sort') : 'category';
   const requestedMultiplier = params.get('multiplier');
+  let multiplierChangedByUser = false;
   if (requestedMultiplier && Array.from(multiplierSelect.options).some(option => option.value === requestedMultiplier)) {
     multiplierSelect.value = requestedMultiplier;
   }
@@ -470,8 +471,12 @@ a:hover{color:var(--accent)}
         multiplierSelect.appendChild(element);
       }
       const values = Array.from(multiplierSelect.options).map(option => option.value);
-      multiplierSelect.value = values.includes(previousSelection) ? previousSelection
-        : values.includes('1') ? '1' : values[0];
+      // Apply new presets from the URL, but never override a manual choice
+      // made while the remote preset list was loading.
+      multiplierSelect.value = !multiplierChangedByUser && values.includes(requestedMultiplier)
+        ? requestedMultiplier
+        : values.includes(previousSelection) ? previousSelection
+          : values.includes('1') ? '1' : values[0];
       if (commands.length) render();
     } catch (error) {
       console.warn('Using local multiplier presets:', error);
@@ -650,7 +655,10 @@ a:hover{color:var(--accent)}
   function wireEvents() {
     searchInput.addEventListener('input', render);
     freeOnlyInput.addEventListener('change', render);
-    multiplierSelect.addEventListener('change', render);
+    multiplierSelect.addEventListener('change', () => {
+      multiplierChangedByUser = true;
+      render();
+    });
     sortSelect.addEventListener('change', render);
     categoryRow.addEventListener('click', event => {
       const button = event.target.closest('[data-category]');
