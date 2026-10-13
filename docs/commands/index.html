@@ -650,7 +650,10 @@ a:hover{color:var(--accent)}
     return card;
   }
 
+  let renderedCategory = null;
   function updateCategoryButtons() {
+    if (renderedCategory === category) return;
+    renderedCategory = category;
     for (const button of categoryRow.querySelectorAll('[data-category]')) {
       const active = button.dataset.category === category;
       button.classList.toggle('is-selected', active);
