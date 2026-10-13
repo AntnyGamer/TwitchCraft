@@ -8,8 +8,114 @@
   <meta name="description" content="Browse TwitchCraft Minecraft and Twitch chat commands. Search syntax, default token costs, permissions and targeting, then copy commands for chat.">
   <title>Command Library | TwitchCraft</title>
   <link rel="icon" type="image/png" href="./server-icon.png">
-  <link rel="stylesheet" href="../command-browser.css?v=20261013-cleanup">
-  <script defer src="../command-browser.js?v=20261013-sort">
+<style>
+:root{color-scheme:dark;--bg:#16161b;--panel:#202028;--edge:#383741;--fg:#f2f0f5;--muted:#b7b2c1;--accent:#c392df}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+[hidden]{display:none!important}
+.site{max-width:1400px;margin:auto}
+.visually-hidden,.skip-link:not(:focus){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link:focus{position:fixed;top:8px;left:8px;z-index:5;background:var(--accent);padding:12px;color:#19131d}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
+.brand,.footer-brand{display:flex;gap:10px;align-items:center;min-width:0}
+.brand-logo{width:40px;height:40px;object-fit:contain;image-rendering:pixelated;border-radius:4px}
+.brand-name{font-size:16px;font-weight:750;letter-spacing:.01em}
+.brand-name span{color:var(--accent)}
+.top-links{display:flex;gap:24px}
+.top-links a,.secondary-link{color:var(--muted);font-size:13px}
+a:hover{color:var(--accent)}
+.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,.75fr);align-items:center;gap:42px;padding:36px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
+.eyebrow{margin:0 0 7px;color:var(--accent);font-size:12px;font-weight:650}
+.hero h1{margin:0 0 11px;font-size:clamp(30px,3.6vw,47px);line-height:1.16;letter-spacing:-.035em}
+.lead{margin:0;max-width:580px;color:var(--muted)}
+.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:17px;margin-top:22px}
+.primary-link{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 15px;background:var(--accent);border:1px solid var(--accent);border-radius:5px;color:#241629;font-weight:700;font-size:13px}
+.primary-link:hover{background:#d4afea;color:#241629}
+.hero-art{min-width:0}
+.console-window{background:#1c1b23;border:1px solid #45404d;border-radius:5px;overflow:hidden}
+.console-top{padding:10px 14px;border-bottom:1px solid #3a3741;color:#a9a4b1;font:650 10px Consolas,monospace}
+.console-lines{display:grid;gap:8px;padding:14px;font:12px/1.5 Consolas,monospace}
+.console-lines>div{display:flex;gap:16px;align-items:baseline}
+.console-user{color:#c4a0eb;overflow-wrap:anywhere}
+.console-command{color:#e0dce5}
+.summary-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#1d1c24;padding:13px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
+.summary-item{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;padding:2px 14px;border-left:1px solid var(--edge)}
+.summary-item:first-child{padding-left:0;border:0}
+.summary-item strong{font-size:24px;line-height:1.3;font-weight:750}
+.summary-item span{font-size:12px;color:var(--muted)}
+.browser{padding:40px clamp(20px,5vw,65px) 56px}
+.section-intro h2,.how-it-works h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
+.section-intro p{margin:0;color:var(--muted);font-size:13px}
+.browser-panel{padding:16px;margin-top:21px;border:1px solid var(--edge);border-radius:6px;background:var(--panel)}
+.toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.search-box{display:flex;align-items:center;gap:10px;min-width:0;min-height:42px;flex:1 1 230px;padding:0 12px;background:#14141a;border:1px solid #4b4754;border-radius:4px}
+.search-box:focus-within{border-color:var(--accent)}
+.search-box svg{width:18px;height:18px;stroke:#b0aabb;stroke-width:2;flex:none}
+.search-box input{width:100%;min-width:0;padding:9px 0;color:var(--fg);border:0;outline:0;background:transparent;font-size:13px}
+.search-box input::placeholder{color:#9994a1}
+.search-box kbd{border:1px solid var(--edge);border-radius:3px;padding:2px 6px;color:#a49ba9;font:12px Consolas,monospace}
+.free-toggle{display:inline-flex;align-items:center;gap:8px;color:#d5cfd9;font-size:12px;white-space:nowrap;cursor:pointer}
+.free-toggle input{margin:0;width:16px;height:16px;accent-color:var(--accent)}
+.toolbar-select{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;white-space:nowrap}
+.toolbar-select select{max-width:180px;min-height:40px;padding:7px 9px;color:var(--fg);background:#14141a;border:1px solid #4b4754;border-radius:4px}
+.multiplier-note{margin:11px 0 0;font-size:12px;color:#aaa5b2}
+.category-row{display:flex;flex-wrap:wrap;gap:7px;padding-top:15px}
+.category-button{padding:7px 11px;background:#2a2933;color:#d2ced8;border:1px solid #44414e;border-radius:4px;font-size:12px;font-weight:600}
+.category-button:hover{border-color:#806d8d}
+.category-button.is-selected{background:#35263f;color:#eccdf6;border-color:#88689c}
+.category-button span{margin-left:4px;color:#b6aabe;font-size:11px}
+.result-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 15px}
+.result-bar p{margin:0;color:var(--muted);font-size:13px}
+.clear-button{background:transparent;border:0;color:var(--accent);font-size:12px}
+.command-group{margin-top:28px}
+.command-group:first-child{margin-top:0}
+.group-heading{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 13px;padding:0 0 10px;border-bottom:1px solid var(--edge)}
+.group-heading h3{margin:0;font-size:17px;font-weight:650}
+.group-heading span{font-size:12px;color:var(--muted)}
+.command-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.command-card{display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
+.command-card:hover{border-color:#68566f}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:9px}
+.command-name{margin:0;font-size:16px;color:#dfc1ef;overflow-wrap:anywhere}
+.cost{flex:0 1 48%;font-size:11px;font-weight:600;color:#e2dce6;text-align:right}
+.cost.is-free{color:#b9ddc1}
+.card-description{flex:1;margin:10px 0 14px;font-size:13px;color:#d9d4df}
+.syntax{display:block;padding:9px;background:#16161c;border:1px solid #3b3946;border-radius:4px;font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.meta-tag{border:1px solid #4a4651;border-radius:3px;padding:2px 6px;font-size:10px;color:#aaa4b4}
+.category-tag{color:#d5b9e7}
+.meta-tag.admin{border-color:#756083;color:#e2c8ef}
+.copy-button{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:12px;padding:9px 11px;color:#dfbde9;border:1px solid #796487;border-radius:4px;background:transparent;font-size:12px;font-weight:600}
+.copy-button:hover,.copy-button.copied{background:#32273b}
+.empty-state{text-align:center;padding:35px 15px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
+.empty-icon{color:var(--accent);font-size:28px;font-weight:700}
+.empty-state h3{margin:5px 0}
+.empty-state p{color:var(--muted)}
+.how-it-works{border-top:1px solid var(--edge);padding:37px clamp(20px,5vw,65px)}
+.note-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;margin-top:20px}
+.note{border-top:1px solid var(--edge);padding-top:10px}
+.note-number{font-size:12px;color:var(--muted)}
+.note h3{margin:8px 0 6px;font-size:14px}
+.note p{margin:0;color:var(--muted);font-size:12px}
+.note code,.reward-note code{color:#dfc3ed}
+.reward-note{margin:22px 0 0;color:var(--muted);font-size:12px}
+.reward-note strong{color:var(--fg)}
+.footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;padding:21px clamp(20px,5vw,65px);background:#111116;border-top:1px solid var(--edge)}
+.footer-brand{font-size:12px;font-weight:700}
+.footer-logo{width:28px;height:28px;object-fit:contain;image-rendering:pixelated;border-radius:4px}
+.footer p{margin:0;color:var(--muted);font-size:11px}
+.footer a{color:var(--muted);font-size:12px}
+.toast{position:fixed;right:16px;bottom:16px;z-index:20;padding:11px 15px;background:#34253e;border:1px solid #9b7bb1;border-radius:4px;color:#f1dffa;font-size:12px}
+@media(max-width:1000px){.command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary-item{padding-left:9px}}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding-top:28px;padding-bottom:28px}.hero-art{display:none}.summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.summary-item,.summary-item:first-child{padding:2px;border:0}.note-grid{grid-template-columns:1fr;gap:15px}}
+@media(max-width:570px){.top-links a:last-child{display:none}.brand-name{font-size:14px}.hero h1{font-size:31px}.hero-actions{flex-direction:column;align-items:flex-start}.search-box{flex-basis:100%}.search-box kbd{display:none}.toolbar-select{flex:1 1 135px;justify-content:space-between}.toolbar-select select{min-width:120px;max-width:160px}.command-grid{grid-template-columns:1fr}.summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
 </head>
 <body>
   <a class="skip-link" href="#catalog">Skip to commands</a>
@@ -96,7 +202,7 @@
               </select>
             </label>
           </div>
-          <p class="multiplier-note" id="multiplier-note">Multiplier changes gameplay prices only. Price sorting uses the selected multiplier and treats variable-cost bets and transfers separately.</p>
+          <p class="multiplier-note" id="multiplier-note">Multiplier changes gameplay prices only. Price sorting uses the selected multiplier; variable-cost bets and transfers are placed last.</p>
           <div class="category-row" id="category-row" role="group" aria-label="Command categories">
             <button type="button" class="category-button is-selected" data-category="all" aria-pressed="true">All <span data-count="all"></span></button>
             <button type="button" class="category-button" data-category="gameplay" aria-pressed="false">Gameplay <span data-count="gameplay"></span></button>
@@ -145,5 +251,440 @@
     </footer>
   </div>
   <div id="copy-status" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+<script>
+'use strict';
+
+/*
+ * The command catalog is built from docs/COMMANDS.md, the project's existing
+ * canonical command reference. Do not duplicate commands or prices here.
+ */
+(function () {
+  const sectionLabels = {
+    gameplay: 'Game Commands',
+    minigame: 'Minigame Commands',
+    utility: 'Utility Commands',
+    streamer: 'Streamer Commands'
+  };
+  const sectionOrder = ['gameplay', 'minigame', 'utility', 'streamer'];
+  const validCategories = new Set(['all', ...sectionOrder]);
+  const searchInput = document.getElementById('command-search');
+  const freeOnlyInput = document.getElementById('free-only');
+  const multiplierSelect = document.getElementById('price-multiplier');
+  const sortSelect = document.getElementById('command-sort');
+  const validSorts = new Set(['category', 'name-asc', 'name-desc', 'price-asc', 'price-desc']);
+  const categoryRow = document.getElementById('category-row');
+  const resultsElement = document.getElementById('command-results');
+  const resultLabel = document.getElementById('results-label');
+  const clearButton = document.getElementById('clear-filters');
+  const emptyState = document.getElementById('empty-state');
+  const errorState = document.getElementById('load-error');
+  const toast = document.getElementById('copy-status');
+  const params = new URLSearchParams(window.location.search);
+  const initialCategory = params.get('category') || 'all';
+
+  let commands = [];
+  let category = validCategories.has(initialCategory) ? initialCategory : 'all';
+  let toastTimer = 0;
+  searchInput.value = (params.get('q') || '').slice(0, 150);
+  freeOnlyInput.checked = params.get('free') === '1';
+  sortSelect.value = validSorts.has(params.get('sort')) ? params.get('sort') : 'category';
+  const requestedMultiplier = params.get('multiplier');
+  if (requestedMultiplier && Array.from(multiplierSelect.options).some(option => option.value === requestedMultiplier)) {
+    multiplierSelect.value = requestedMultiplier;
+  }
+
+  function make(tag, className, value) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (value !== undefined) node.textContent = value;
+    return node;
+  }
+
+  // Markdown table cells may include backtick code spans and escaped pipes.
+  // Avoid splitting on pipes that are part of commands such as <user|all|random>.
+  function splitRow(line) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('|')) return [];
+    let raw = trimmed.slice(1);
+    if (raw.endsWith('|')) raw = raw.slice(0, -1);
+    const cells = [];
+    let cell = '';
+    let inCode = false;
+    for (let i = 0; i < raw.length; i++) {
+      const character = raw[i];
+      if (character === '\\' && i + 1 < raw.length && raw[i + 1] === '|') {
+        cell += '|';
+        i++;
+      } else if (character.charCodeAt(0) === 96) {
+        inCode = !inCode;
+        cell += character;
+      } else if (character === '|' && !inCode) {
+        cells.push(cell.trim());
+        cell = '';
+      } else {
+        cell += character;
+      }
+    }
+    cells.push(cell.trim());
+    return cells;
+  }
+
+  function plainText(value) {
+    return value
+      .replace(/\x60/g, '')
+      .replace(/\\\|/g, '|')
+      .replace(/\\([\\*_])/g, '$1')
+      .trim();
+  }
+
+  function parseCommands(markdown) {
+    let section = null;
+    const seen = new Set();
+    const parsed = [];
+
+    for (const line of markdown.split(/\r?\n/)) {
+      if (/^#{2,3} /.test(line)) {
+        const title = line.replace(/^#{2,3} /, '').trim().toLowerCase();
+        section = title === 'game commands' || title === 'gameplay commands'
+          ? 'gameplay'
+          : title === 'minigame commands'
+            ? 'minigame'
+            : title === 'utility commands' || title === 'utility and economy'
+              ? 'utility'
+              : title === 'streamer commands'
+                ? 'streamer'
+                : null;
+      }
+      if (!section || !/^\|\s*\x60![a-z0-9]+\x60\s*\|/i.test(line)) continue;
+
+      const fields = splitRow(line).map(plainText);
+      if (fields.length !== 6) {
+        throw new Error('Unexpected command table format for ' + fields[0]);
+      }
+      const [name, syntax, cost, targeting, permission, description] = fields;
+      if (!/^![a-z0-9]+$/i.test(name) || !syntax.startsWith(name)) {
+        throw new Error('Invalid command syntax for ' + name);
+      }
+      if (seen.has(name.toLowerCase())) {
+        throw new Error('Duplicate command in documentation: ' + name);
+      }
+      seen.add(name.toLowerCase());
+      parsed.push({ name, syntax, cost, targeting, permission, description, section });
+    }
+
+    // Fail loudly instead of silently showing just one section if headings change.
+    const documentedRows = (markdown.match(/^\|\s*`![a-z0-9]+`\s*\|/gim) || []).length;
+    if (!parsed.length || parsed.length !== documentedRows) {
+      throw new Error('Command documentation mismatch: parsed ' + parsed.length + ' of ' + documentedRows + ' commands.');
+    }
+    return parsed.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  function showToast(message) {
+    window.clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.hidden = false;
+    toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2500);
+  }
+
+  async function copyToClipboard(value) {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch {
+        // Fall through for browsers that deny the Clipboard API.
+      }
+    }
+    const textarea = make('textarea');
+    textarea.value = value;
+    textarea.readOnly = true;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    } finally {
+      textarea.remove();
+    }
+    return copied;
+  }
+
+  // The desktop app's preset list is the source of truth. Fetch it from the
+  // public main branch so the website picks up future preset changes without
+  // maintaining a separate preset array in the frontend.
+  const presetSource = 'https://raw.githubusercontent.com/AntnyGamer/TwitchCraft/main/TwitchCraft_SOURCE/Frames/Settings.xaml.cs';
+
+  function parseMultiplierOptions(source) {
+    const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
+    if (!definition) throw new Error('Multiplier presets were not found in Settings.xaml.cs');
+    const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
+      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×') }));
+    if (!options.length || !options.some(item => item.value === '1')
+        || options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
+      throw new Error('Multiplier preset values are invalid');
+    }
+    return options;
+  }
+
+  async function refreshMultiplierOptions() {
+    // The HTML keeps the exact currently-supported presets as an offline
+    // fallback; an unavailable GitHub host must not break the command list.
+    try {
+      const response = await fetch(presetSource);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const presets = parseMultiplierOptions(await response.text());
+      const previousSelection = multiplierSelect.value;
+      multiplierSelect.replaceChildren();
+      for (const option of presets) {
+        const element = document.createElement('option');
+        element.value = option.value;
+        element.textContent = option.label;
+        multiplierSelect.appendChild(element);
+      }
+      const values = Array.from(multiplierSelect.options).map(option => option.value);
+      multiplierSelect.value = values.includes(previousSelection) ? previousSelection
+        : values.includes('1') ? '1' : values[0];
+      if (commands.length) render();
+    } catch (error) {
+      console.warn('Using local multiplier presets:', error);
+    }
+  }
+
+  function displayCost(item) {
+    const source = item.cost.trim();
+    const originalFree = source.toLowerCase().startsWith('free');
+    const multiplier = Number(multiplierSelect.value);
+
+    // The command-cost multiplier belongs to gameplay command charging.
+    // Economy transfers, wagers and admin commands use their own amounts.
+    if (item.section !== 'gameplay' || originalFree) {
+      return { label: /^\d+$/.test(source) ? source + ' tokens' : source, free: originalFree };
+    }
+    if (multiplier === 0) return { label: 'Free (0 tokens)', free: true };
+
+    // Mirrors TwitchCraft CommandService.GetCommandCost: round UP to integer.
+    const scale = amount => Math.ceil(amount * multiplier);
+    if (/^\d+$/.test(source)) {
+      return { label: scale(Number(source)) + ' tokens', free: false };
+    }
+    const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
+    if (perUnit) {
+      const base = Number(perUnit[1]);
+      const maximum = perUnit[2].toLowerCase() === 'heart' ? 5 : 25;
+      const unit = maximum === 5 ? 'hearts' : 'effects';
+      return { label: scale(base) + '–' + scale(base * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
+    }
+    return { label: source, free: false };
+  }
+
+  // Price sorting uses the minimum charge for a single target. Viewer-entered
+  // transfer amounts and bets do not have a fixed price and sort last.
+  function sortablePrice(item) {
+    const source = item.cost.trim();
+    if (/^free\b/i.test(source)) return 0;
+    if (item.section !== 'gameplay') return null;
+    const base = source.match(/^(\d+)(?:\s+per\s+(?:heart|effect))?$/i);
+    if (!base) return null;
+    return Math.ceil(Number(base[1]) * Number(multiplierSelect.value));
+  }
+
+  function sortCommands(items) {
+    const mode = sortSelect.value;
+    return items.sort((a, b) => {
+      if (mode === 'category') {
+        const categoryOrder = sectionOrder.indexOf(a.section) - sectionOrder.indexOf(b.section);
+        if (categoryOrder) return categoryOrder;
+      }
+      if (mode === 'price-asc' || mode === 'price-desc') {
+        const aPrice = sortablePrice(a), bPrice = sortablePrice(b);
+        if (aPrice === null && bPrice !== null) return 1;
+        if (bPrice === null && aPrice !== null) return -1;
+        if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
+          return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
+        }
+      }
+      const nameOrder = a.name.localeCompare(b.name);
+      return mode === 'name-desc' ? -nameOrder : nameOrder;
+    });
+  }
+
+  function createCommandCard(item, showCategory) {
+    const card = make('article', 'command-card');
+    const top = make('div', 'card-top');
+    const name = make('h4', 'command-name', item.name);
+    const priceInfo = displayCost(item);
+    const price = make('span', priceInfo.free ? 'cost is-free' : 'cost', 'Cost: ' + priceInfo.label);
+    top.append(name, price);
+
+    const description = make('p', 'card-description', item.description);
+    const syntax = make('code', 'syntax', item.syntax);
+    const meta = make('div', 'card-meta');
+    if (showCategory) meta.append(make('span', 'meta-tag category-tag', sectionLabels[item.section]));
+    meta.append(
+      make('span', 'meta-tag', item.targeting),
+      make('span', item.permission === 'Everyone' ? 'meta-tag' : 'meta-tag admin', item.permission)
+    );
+    const copy = make('button', 'copy-button');
+    copy.type = 'button';
+    const copyLabel = make('span', '', 'Copy syntax');
+    const copyGlyph = make('span', '', '↗');
+    copyGlyph.setAttribute('aria-hidden', 'true');
+    copy.append(copyLabel, copyGlyph);
+    copy.setAttribute('aria-label', 'Copy syntax for ' + item.name);
+    copy.addEventListener('click', async () => {
+      const success = await copyToClipboard(item.syntax);
+      if (success) {
+        copyLabel.textContent = 'Copied!';
+        copy.classList.add('copied');
+        showToast('Copied ' + item.name + ' syntax. Replace placeholders before sending.');
+        window.setTimeout(() => {
+          copyLabel.textContent = 'Copy syntax';
+          copy.classList.remove('copied');
+        }, 1400);
+      } else {
+        showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
+      }
+    });
+    card.append(top, description, syntax, meta, copy);
+    return card;
+  }
+
+  function updateCategoryButtons() {
+    const counts = { all: commands.length, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
+    for (const item of commands) counts[item.section]++;
+    for (const button of categoryRow.querySelectorAll('[data-category]')) {
+      const active = button.dataset.category === category;
+      button.classList.toggle('is-selected', active);
+      button.setAttribute('aria-pressed', String(active));
+      const countElement = button.querySelector('[data-count]');
+      if (countElement) countElement.textContent = String(counts[button.dataset.category]);
+    }
+    document.getElementById('total-count').textContent = String(counts.all);
+    document.getElementById('gameplay-count').textContent = String(counts.gameplay);
+    document.getElementById('utility-count').textContent = String(counts.utility);
+    document.getElementById('minigame-count').textContent = String(counts.minigame);
+    document.getElementById('streamer-count').textContent = String(counts.streamer);
+  }
+
+  function syncAddress() {
+    const next = new URL(window.location.href);
+    const query = searchInput.value.trim();
+    if (query) next.searchParams.set('q', query);
+    else next.searchParams.delete('q');
+    if (category !== 'all') next.searchParams.set('category', category);
+    else next.searchParams.delete('category');
+    if (freeOnlyInput.checked) next.searchParams.set('free', '1');
+    else next.searchParams.delete('free');
+    if (multiplierSelect.value !== '1') next.searchParams.set('multiplier', multiplierSelect.value);
+    else next.searchParams.delete('multiplier');
+    if (sortSelect.value !== 'category') next.searchParams.set('sort', sortSelect.value);
+    else next.searchParams.delete('sort');
+    window.history.replaceState(null, '', next.pathname + next.search + next.hash);
+  }
+
+  function render() {
+    const query = searchInput.value.toLocaleLowerCase().trim();
+    const onlyFree = freeOnlyInput.checked;
+    const filtered = commands.filter(item => {
+      if (category !== 'all' && item.section !== category) return false;
+      if (onlyFree && !displayCost(item).free) return false;
+      if (!query) return true;
+      return [item.name, item.syntax, item.cost, displayCost(item).label, item.targeting, item.permission,
+        item.description, sectionLabels[item.section]].some(field => field.toLocaleLowerCase().includes(query));
+    });
+    const sorted = sortCommands(filtered);
+    const fragment = document.createDocumentFragment();
+    // Keep the familiar category layout by default. Alternative sorts use
+    // one ordered list so prices and A–Z order are genuinely global.
+    const grouped = sortSelect.value === 'category' && category === 'all';
+    const sections = grouped
+      ? sectionOrder.map(section => ({
+          name: sectionLabels[section],
+          items: sorted.filter(item => item.section === section)
+        }))
+      : [{
+          name: category === 'all' ? 'All commands' : sectionLabels[category],
+          items: sorted
+        }];
+    for (const section of sections) {
+      if (!section.items.length) continue;
+      const wrapper = make('section', 'command-group');
+      wrapper.setAttribute('aria-label', section.name);
+      const heading = make('div', 'group-heading');
+      heading.append(make('h3', '', section.name), make('span', '', section.items.length + (section.items.length === 1 ? ' command' : ' commands')));
+      const grid = make('div', 'command-grid');
+      for (const item of section.items) grid.appendChild(createCommandCard(item, category === 'all' && !grouped));
+      wrapper.append(heading, grid);
+      fragment.appendChild(wrapper);
+    }
+    resultsElement.replaceChildren(fragment);
+    resultLabel.textContent = 'Showing ' + filtered.length + ' of ' + commands.length + (commands.length === 1 ? ' command' : ' commands');
+    emptyState.hidden = filtered.length > 0;
+    clearButton.hidden = !query && category === 'all' && !onlyFree;
+    updateCategoryButtons();
+    syncAddress();
+  }
+
+  function clearFilters() {
+    searchInput.value = '';
+    freeOnlyInput.checked = false;
+    category = 'all';
+    render();
+  }
+
+  function wireEvents() {
+    searchInput.addEventListener('input', render);
+    freeOnlyInput.addEventListener('change', render);
+    multiplierSelect.addEventListener('change', render);
+    sortSelect.addEventListener('change', render);
+    categoryRow.addEventListener('click', event => {
+      const button = event.target.closest('[data-category]');
+      if (!button || !categoryRow.contains(button)) return;
+      category = validCategories.has(button.dataset.category) ? button.dataset.category : 'all';
+      render();
+    });
+    clearButton.addEventListener('click', clearFilters);
+    document.getElementById('empty-reset').addEventListener('click', clearFilters);
+    document.addEventListener('keydown', event => {
+      const element = document.activeElement;
+      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.isContentEditable);
+      if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey && !typing) {
+        event.preventDefault();
+        searchInput.focus();
+      }
+    });
+  }
+
+  async function initialize() {
+    wireEvents();
+    // Never block the command catalog on an optional external preset lookup.
+    void refreshMultiplierOptions();
+    try {
+      const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const markdown = await response.text();
+      if (/^\s*<!doctype html/i.test(markdown) || /^\s*<html/i.test(markdown)) {
+        throw new Error('GitHub Pages transformed COMMANDS.md to HTML. Ensure docs/.nojekyll exists.');
+      }
+      commands = parseCommands(markdown);
+      render();
+      resultsElement.setAttribute('aria-busy', 'false');
+    } catch (error) {
+      console.error('Unable to load TwitchCraft command catalog:', error);
+      resultsElement.setAttribute('aria-busy', 'false');
+      resultLabel.textContent = 'Command list unavailable';
+      errorState.hidden = false;
+    }
+  }
+
+  initialize();
+})();
+
+</script>
 </body>
 </html>
