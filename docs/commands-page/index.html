@@ -789,9 +789,8 @@ a:hover{color:var(--accent)}
       const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const markdown = await response.text();
-      if (/^\s*<!doctype html/i.test(markdown) || /^\s*<html/i.test(markdown)) {
-        throw new Error('GitHub Pages transformed COMMANDS.md to HTML. Ensure docs/.nojekyll exists.');
-      }
+      if (/^\s*<(?:!doctype html|html)/i.test(markdown))
+        throw new Error('Command documentation returned HTML instead of Markdown. Check the GitHub Pages deployment source.');
       commands = parseCommands(markdown);
       counts.all = commands.length;
       for (const item of commands) counts[item.section]++;
