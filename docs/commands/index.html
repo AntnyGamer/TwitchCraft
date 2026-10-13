@@ -688,7 +688,8 @@ a:hover{color:var(--accent)}
     document.getElementById('empty-reset').addEventListener('click', clearFilters);
     document.addEventListener('keydown', event => {
       const element = document.activeElement;
-      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.isContentEditable);
+      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA'
+        || element.tagName === 'SELECT' || element.isContentEditable);
       if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey && !typing) {
         event.preventDefault();
         searchInput.focus();
