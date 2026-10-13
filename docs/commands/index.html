@@ -414,6 +414,9 @@ a:hover{color:var(--accent)}
       });
     }
 
+    // An unterminated example would otherwise hide every command after it.
+    if (codeFence) throw new Error('Unclosed Markdown code fence in command documentation.');
+
     // Fail loudly instead of silently showing just one section if headings change.
     if (!parsed.length || parsed.length !== documentedRows) {
       throw new Error('Command documentation mismatch: parsed ' + parsed.length + ' of ' + documentedRows + ' commands.');
