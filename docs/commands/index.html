@@ -303,7 +303,7 @@ a:hover{color:var(--accent)}
               </table>
             </div>
             <p class="gamble-footnote">Multipliers and win chances are rounded for display. Actual token gains are rounded to whole tokens, with at least one token gained on a win.</p>
-            <p><strong>Example:</strong> A winning 150-token gamble at risk 10 gains 300 tokens, equivalent to <strong>450 tokens returned</strong> including the 150-token stake. A loss deducts the tokens gambled. A configured maximum token balance may cap the amount gained.</p>
+            <p><strong>Example:</strong> Winning a 150-token bet at risk 10 adds <strong>300 tokens</strong> to your balance. The 150-token wager is not deducted on a win; a loss deducts it. A configured maximum token balance may cap the gain.</p>
             <p><strong>Cooldown:</strong> Five minutes per viewer by default; custom command cooldown settings can override it.</p>
           </div>
         </details>
@@ -742,13 +742,12 @@ a:hover{color:var(--accent)}
     });
     // One copy listener handles all command cards, even after filtering.
     resultsElement.addEventListener('click', async event => {
-      const helpLink = event.target.closest('.gamble-help-link');
-      if (helpLink && resultsElement.contains(helpLink)) {
+      if (event.target.closest('.gamble-help-link')) {
         document.getElementById('gamble-help').open = true;
         return;
       }
       const button = event.target.closest('.copy-button');
-      if (!button || !resultsElement.contains(button)) return;
+      if (!button) return;
       const success = await copyToClipboard(button.dataset.syntax);
       if (!success) {
         showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
