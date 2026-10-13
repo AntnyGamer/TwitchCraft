@@ -739,7 +739,7 @@ a:hover{color:var(--accent)}
     sortSelect.addEventListener('change', render);
     categoryRow.addEventListener('click', event => {
       const button = event.target.closest('[data-category]');
-      if (!button || !categoryRow.contains(button)) return;
+      if (!button || !categoryRow.contains(button) || button.dataset.category === category) return;
       category = validCategories.has(button.dataset.category) ? button.dataset.category : 'all';
       render();
     });
