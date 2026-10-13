@@ -242,7 +242,7 @@ public sealed class ConfigurationNormalizationTests
     }
 
     [Fact]
-    public void GenerateRCONPassword_ReturnsValidTwentyFourByteCredential()
+    public void GenerateRCONPassword_ReturnsValid24ByteCredential()
     {
         string password = ConfigurationStore.GenerateRCONPassword();
 
