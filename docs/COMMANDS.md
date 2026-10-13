@@ -60,7 +60,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!teleport` | `!teleport [target]` | 70 | Player(s) | Everyone | Teleports the player to a random location, up to approximately 2,000 blocks away. |
 | `!totem` | `!totem [target]` | 100 | Player(s) | Everyone | Gives the player a Totem of Undying in their off-hand. |
 | `!clear` | `!clear [target]` | 125 | Player(s) | Everyone | Clears the player's entire inventory. |
-| `!mlg` | `!mlg [target]` | 150 | Player(s) | Everyone | Launches the player 200 blocks into the air with a water bucket, or 50 blocks with a cobweb in the Nether. |
+| `!mlg` | `!mlg [target]` | 150 | Player(s) | Everyone | Launches the player 150 blocks into the air with a water bucket, or 50 blocks with a cobweb in the Nether. |
 
 ## Minigame commands
 
