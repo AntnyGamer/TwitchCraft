@@ -494,21 +494,20 @@ a:hover{color:var(--accent)}
     if (item.section !== 'gameplay' || originalFree) {
       return { label: /^\d+$/.test(source) ? source + ' tokens' : source, free: originalFree };
     }
+    const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
+    const numeric = /^\d+$/.test(source);
+    // An undocumented/variable price must not be labeled free at 0×.
+    if (!numeric && !perUnit) return { label: source, free: false };
     if (multiplier === 0) return { label: 'Free (0 tokens)', free: true };
 
     // Mirrors TwitchCraft CommandService.GetCommandCost: round UP to integer.
     const scale = amount => Math.ceil(amount * multiplier);
-    if (/^\d+$/.test(source)) {
-      return { label: scale(Number(source)) + ' tokens', free: false };
-    }
-    const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
-    if (perUnit) {
-      const base = Number(perUnit[1]);
-      const maximum = perUnit[2].toLowerCase() === 'heart' ? 5 : 25;
-      const unit = maximum === 5 ? 'hearts' : 'effects';
-      return { label: scale(base) + '–' + scale(base * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
-    }
-    return { label: source, free: false };
+    if (numeric) return { label: scale(Number(source)) + ' tokens', free: false };
+
+    const base = Number(perUnit[1]);
+    const maximum = perUnit[2].toLowerCase() === 'heart' ? 5 : 25;
+    const unit = maximum === 5 ? 'hearts' : 'effects';
+    return { label: scale(base) + '–' + scale(base * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
   }
 
   // Price sorting uses the minimum charge for a single target. Viewer-entered
@@ -516,10 +515,12 @@ a:hover{color:var(--accent)}
   function sortablePrice(item) {
     const source = item.cost.trim();
     if (/^free\b/i.test(source)) return 0;
-    if (item.section !== 'gameplay') return null;
     const base = source.match(/^(\d+)(?:\s+per\s+(?:heart|effect))?$/i);
     if (!base) return null;
-    return Math.ceil(Number(base[1]) * Number(multiplierSelect.value));
+    // Only gameplay prices use the multiplier; other fixed costs sort as listed.
+    return item.section === 'gameplay'
+      ? Math.ceil(Number(base[1]) * Number(multiplierSelect.value))
+      : Number(base[1]);
   }
 
   function sortCommands(items) {
