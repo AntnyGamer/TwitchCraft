@@ -62,7 +62,7 @@ public sealed class RollingLogPersistenceTests
     }
 
     [Fact]
-    public void TryWriteLine_RetainsOnlyTheConfiguredNumberOfRotatedFiles()
+    public void TryWriteLine_EnforcesRotationLimit()
     {
         using TemporaryDirectory directory = new();
         string logPath = Path.Combine(directory.Path, "TwitchCraft.log");
