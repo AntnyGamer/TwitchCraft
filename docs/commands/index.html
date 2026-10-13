@@ -324,7 +324,6 @@ a:hover{color:var(--accent)}
   // Avoid splitting on pipes that are part of commands such as <user|all|random>.
   function splitRow(line) {
     const trimmed = line.trim();
-    if (!trimmed.startsWith('|')) return [];
     let raw = trimmed.slice(1);
     if (raw.endsWith('|')) raw = raw.slice(0, -1);
     const cells = [];
@@ -490,7 +489,7 @@ a:hover{color:var(--accent)}
         element.textContent = option.label;
         multiplierSelect.appendChild(element);
       }
-      const values = Array.from(multiplierSelect.options).map(option => option.value);
+      const values = presets.map(option => option.value);
       // Apply new presets from the URL, but never override a manual choice
       // made while the remote preset list was loading.
       multiplierSelect.value = !multiplierChangedByUser && values.includes(requestedMultiplier)
@@ -505,7 +504,7 @@ a:hover{color:var(--accent)}
   }
 
   function displayCost(item) {
-    const source = item.cost.trim();
+    const source = item.cost;
     const free = /^free\b/i.test(source);
     const numeric = /^\d+$/.test(source);
     const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
@@ -540,7 +539,7 @@ a:hover{color:var(--accent)}
   // Price sorting uses the minimum charge for a single target. Viewer-entered
   // transfer amounts and bets do not have a fixed price and sort last.
   function sortablePrice(item) {
-    const source = item.cost.trim();
+    const source = item.cost;
     if (/^free\b/i.test(source) || source === '0') return 0;
     const base = source.match(/^(\d+)(?:\s+per\s+(?:heart|effect))?$/i);
     if (!base) return null;
