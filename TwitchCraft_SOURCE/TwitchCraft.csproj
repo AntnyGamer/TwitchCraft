@@ -46,7 +46,7 @@
 		<EmbeddedResource Include="Assets\locateplayers\**\*">
 			<LogicalName>TwitchCraft.locateplayers/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
 		</EmbeddedResource>
-		<EmbeddedResource Include="..\docs\commands\server-icon.png" LogicalName="TwitchCraft.server-icon.png" />
+		<EmbeddedResource Include="..\docs\commands-page\server-icon.png" LogicalName="TwitchCraft.server-icon.png" />
 	</ItemGroup>
 
 	<ItemGroup>
