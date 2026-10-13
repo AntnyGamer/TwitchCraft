@@ -357,14 +357,14 @@ a:hover{color:var(--accent)}
 
   function parseCommands(markdown) {
     // Accept backticked or plain Markdown command names.
-    const commandRow = /^\|\s*`?!/i;
+    const commandRow = /^ {0,3}\|\s*`?!/i;
     let section = null;
     const seen = new Set();
     const parsed = [];
 
     for (const line of markdown.split(/\r?\n/)) {
-      if (/^#{2,3} /.test(line)) {
-        const title = line.replace(/^#{2,3} /, '').trim().toLowerCase();
+      if (/^ {0,3}#{2,3} /.test(line)) {
+        const title = line.replace(/^ {0,3}#{2,3} /, '').trim().toLowerCase();
         section = title === 'game commands' || title === 'gameplay commands'
           ? 'gameplay'
           : title === 'minigame commands'
@@ -382,7 +382,9 @@ a:hover{color:var(--accent)}
         throw new Error('Unexpected command table format for ' + fields[0]);
       }
       const [name, syntax, cost, targeting, permission, description] = fields;
-      if (!/^![a-z0-9_-]+$/i.test(name) || (syntax !== name && !syntax.startsWith(name + ' '))) {
+      if (!/^![a-z0-9_-]+$/i.test(name) ||
+          (syntax.toLowerCase() !== name.toLowerCase() &&
+            !syntax.toLowerCase().startsWith(name.toLowerCase() + ' '))) {
         throw new Error('Invalid command syntax for ' + name);
       }
       if (seen.has(name.toLowerCase())) {
