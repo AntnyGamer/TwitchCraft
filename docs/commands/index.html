@@ -124,7 +124,8 @@ a:hover{color:var(--accent)}
 .gamble-table-wrap{max-width:640px;overflow-x:auto;margin:14px 0}
 .gamble-table{width:100%;border-collapse:collapse;text-align:left}
 .gamble-table th,.gamble-table td{padding:8px 12px;border-bottom:1px solid var(--edge)}
-.gamble-table th{color:var(--fg);background:#2b2933;font-weight:650}
+.gamble-table th{color:var(--fg);font-weight:650}
+.gamble-table thead th{background:#2b2933}
 .gamble-table tbody tr:last-child td{border-bottom:0}
 .gamble-footnote{font-style:italic;color:var(--muted)}
 .footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;padding:21px clamp(20px,5vw,65px);background:#111116;border-top:1px solid var(--edge)}
@@ -288,16 +289,16 @@ a:hover{color:var(--accent)}
                 <caption class="visually-hidden">Gamble payout multipliers and win probabilities by risk level</caption>
                 <thead><tr><th scope="col">Risk</th><th scope="col">Payout multiplier</th><th scope="col">Win chance</th></tr></thead>
                 <tbody>
-                <tr><td>1</td><td>1.05×</td><td>90.00%</td></tr>
-                <tr><td>2</td><td>1.27×</td><td>81.11%</td></tr>
-                <tr><td>3</td><td>1.48×</td><td>72.22%</td></tr>
-                <tr><td>4</td><td>1.70×</td><td>63.33%</td></tr>
-                <tr><td>5</td><td>1.92×</td><td>54.44%</td></tr>
-                <tr><td>6</td><td>2.13×</td><td>45.56%</td></tr>
-                <tr><td>7</td><td>2.35×</td><td>36.67%</td></tr>
-                <tr><td>8</td><td>2.57×</td><td>27.78%</td></tr>
-                <tr><td>9</td><td>2.78×</td><td>18.89%</td></tr>
-                <tr><td>10</td><td>3.00×</td><td>10.00%</td></tr>
+                <tr><th scope="row">1</th><td>1.05×</td><td>90.00%</td></tr>
+                <tr><th scope="row">2</th><td>1.27×</td><td>81.11%</td></tr>
+                <tr><th scope="row">3</th><td>1.48×</td><td>72.22%</td></tr>
+                <tr><th scope="row">4</th><td>1.70×</td><td>63.33%</td></tr>
+                <tr><th scope="row">5</th><td>1.92×</td><td>54.44%</td></tr>
+                <tr><th scope="row">6</th><td>2.13×</td><td>45.56%</td></tr>
+                <tr><th scope="row">7</th><td>2.35×</td><td>36.67%</td></tr>
+                <tr><th scope="row">8</th><td>2.57×</td><td>27.78%</td></tr>
+                <tr><th scope="row">9</th><td>2.78×</td><td>18.89%</td></tr>
+                <tr><th scope="row">10</th><td>3.00×</td><td>10.00%</td></tr>
                 </tbody>
               </table>
             </div>
