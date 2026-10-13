@@ -395,6 +395,9 @@ a:hover{color:var(--accent)}
         throw new Error('Unexpected command table format for ' + fields[0]);
       }
       const [name, syntax, cost, targeting, permission, description] = fields;
+      if (fields.some(field => !field)) {
+        throw new Error('Missing command details for ' + name);
+      }
       if (!/^![a-z0-9_-]+$/i.test(name) ||
           (syntax.toLowerCase() !== name.toLowerCase() &&
             !syntax.toLowerCase().startsWith(name.toLowerCase() + ' '))) {
