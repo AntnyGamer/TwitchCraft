@@ -76,5 +76,4 @@ public sealed class StartupAndEligibilityTests
             runtime.Tokens.Close();
         }
     }
-
 }
