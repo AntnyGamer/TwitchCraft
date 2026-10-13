@@ -28,6 +28,7 @@ jobs:
           cp -R docs site
           mv site/commands-page/landing.html site/index.html
           mv site/commands-page site/commands
+          cp TwitchCraft_SOURCE/Assets/server-icon.png site/commands/server-icon.png
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Upload site
