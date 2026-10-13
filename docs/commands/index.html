@@ -589,14 +589,7 @@ a:hover{color:var(--accent)}
       const active = button.dataset.category === category;
       button.classList.toggle('is-selected', active);
       button.setAttribute('aria-pressed', String(active));
-      const countElement = button.querySelector('[data-count]');
-      if (countElement) countElement.textContent = String(counts[button.dataset.category]);
     }
-    document.getElementById('total-count').textContent = String(counts.all);
-    document.getElementById('gameplay-count').textContent = String(counts.gameplay);
-    document.getElementById('utility-count').textContent = String(counts.utility);
-    document.getElementById('minigame-count').textContent = String(counts.minigame);
-    document.getElementById('streamer-count').textContent = String(counts.streamer);
   }
 
   function syncAddress() {
@@ -723,6 +716,13 @@ a:hover{color:var(--accent)}
       commands = parseCommands(markdown);
       counts.all = commands.length;
       for (const item of commands) counts[item.section]++;
+      for (const button of categoryRow.querySelectorAll('[data-category]')) {
+        const countElement = button.querySelector('[data-count]');
+        if (countElement) countElement.textContent = String(counts[button.dataset.category]);
+      }
+      for (const section of ['all', ...sectionOrder]) {
+        document.getElementById((section === 'all' ? 'total' : section) + '-count').textContent = String(counts[section]);
+      }
       render();
       resultsElement.setAttribute('aria-busy', 'false');
     } catch (error) {
