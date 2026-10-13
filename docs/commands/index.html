@@ -350,12 +350,13 @@ a:hover{color:var(--accent)}
   function plainText(value) {
     return value
       .replace(/\x60/g, '')
-      .replace(/\\\|/g, '|')
       .replace(/\\([\\*_])/g, '$1')
       .trim();
   }
 
   function parseCommands(markdown) {
+    // Accept backticked or plain Markdown command names.
+    const commandRow = /^\|\s*`?![a-z0-9]+`?\s*\|/i;
     let section = null;
     const seen = new Set();
     const parsed = [];
@@ -373,7 +374,7 @@ a:hover{color:var(--accent)}
                 ? 'streamer'
                 : null;
       }
-      if (!section || !/^\|\s*\x60![a-z0-9]+\x60\s*\|/i.test(line)) continue;
+      if (!section || !commandRow.test(line)) continue;
 
       const fields = splitRow(line).map(plainText);
       if (fields.length !== 6) {
@@ -387,15 +388,19 @@ a:hover{color:var(--accent)}
         throw new Error('Duplicate command in documentation: ' + name);
       }
       seen.add(name.toLowerCase());
-      parsed.push({ name, syntax, cost, targeting, permission, description, section });
+      parsed.push({
+        name, syntax, cost, targeting, permission, description, section,
+        searchText: [name, syntax, cost, targeting, permission, description, sectionLabels[section]]
+          .join(' ').toLowerCase()
+      });
     }
 
     // Fail loudly instead of silently showing just one section if headings change.
-    const documentedRows = (markdown.match(/^\|\s*`![a-z0-9]+`\s*\|/gim) || []).length;
+    const documentedRows = markdown.split(/\r?\n/).filter(line => commandRow.test(line)).length;
     if (!parsed.length || parsed.length !== documentedRows) {
       throw new Error('Command documentation mismatch: parsed ' + parsed.length + ' of ' + documentedRows + ' commands.');
     }
-    return parsed.sort((a, b) => a.name.localeCompare(b.name));
+    return parsed; // sortCommands handles display order.
   }
 
   function showToast(message) {
@@ -554,20 +559,8 @@ a:hover{color:var(--accent)}
     copyGlyph.setAttribute('aria-hidden', 'true');
     copy.append(copyLabel, copyGlyph);
     copy.setAttribute('aria-label', 'Copy syntax for ' + item.name);
-    copy.addEventListener('click', async () => {
-      const success = await copyToClipboard(item.syntax);
-      if (success) {
-        copyLabel.textContent = 'Copied!';
-        copy.classList.add('copied');
-        showToast('Copied ' + item.name + ' syntax. Replace placeholders before sending.');
-        window.setTimeout(() => {
-          copyLabel.textContent = 'Copy syntax';
-          copy.classList.remove('copied');
-        }, 1400);
-      } else {
-        showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
-      }
-    });
+    copy.dataset.syntax = item.syntax;
+    copy.dataset.command = item.name;
     card.append(top, description, syntax, meta, copy);
     return card;
   }
@@ -612,8 +605,7 @@ a:hover{color:var(--accent)}
       if (category !== 'all' && item.section !== category) return false;
       if (onlyFree && !displayCost(item).free) return false;
       if (!query) return true;
-      return [item.name, item.syntax, item.cost, displayCost(item).label, item.targeting, item.permission,
-        item.description, sectionLabels[item.section]].some(field => field.toLocaleLowerCase().includes(query));
+      return item.searchText.includes(query) || displayCost(item).label.toLowerCase().includes(query);
     });
     const sorted = sortCommands(filtered);
     const fragment = document.createDocumentFragment();
@@ -665,6 +657,24 @@ a:hover{color:var(--accent)}
       if (!button || !categoryRow.contains(button)) return;
       category = validCategories.has(button.dataset.category) ? button.dataset.category : 'all';
       render();
+    });
+    // One copy listener handles all command cards, even after filtering.
+    resultsElement.addEventListener('click', async event => {
+      const button = event.target.closest('.copy-button');
+      if (!button || !resultsElement.contains(button)) return;
+      const success = await copyToClipboard(button.dataset.syntax);
+      if (!success) {
+        showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
+        return;
+      }
+      const label = button.querySelector('span');
+      label.textContent = 'Copied!';
+      button.classList.add('copied');
+      showToast('Copied ' + button.dataset.command + ' syntax. Replace placeholders before sending.');
+      window.setTimeout(() => {
+        label.textContent = 'Copy syntax';
+        button.classList.remove('copied');
+      }, 1400);
     });
     clearButton.addEventListener('click', clearFilters);
     document.getElementById('empty-reset').addEventListener('click', clearFilters);
