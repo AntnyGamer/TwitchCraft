@@ -37,6 +37,14 @@ public sealed class TwitchMessagingPolicyTests
         Assert.Equal(expected, MainHandler.TruncateUTF8(message, maxBytes));
     }
 
+    [Fact]
+    public void TruncateUTF8_SkipsWholeMessageByteCountingWhenInputIsTooLong()
+    {
+        Assert.Equal(new string('a', 500), MainHandler.TruncateUTF8(new string('a', 100_000), 500));
+        Assert.Equal(new string('é', 250), MainHandler.TruncateUTF8(new string('é', 10_000), 500));
+        Assert.Equal(new string('😀', 125), MainHandler.TruncateUTF8(string.Concat(System.Linq.Enumerable.Repeat("😀", 10_000)), 500));
+    }
+
     [Theory]
     [InlineData("NightBot", "mybot", false, true)]
     [InlineData("StreamLabs", "mybot", false, true)]
