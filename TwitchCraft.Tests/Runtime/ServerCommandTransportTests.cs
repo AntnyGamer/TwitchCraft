@@ -11,7 +11,7 @@ public sealed class ServerCommandTransportTests
     [InlineData("  say hi  ", "say hi")]
     [InlineData("\uFEFFstop\uFEFF", "stop")]
     [InlineData("say hi\r\nstop", "")]
-    public void CleanServerCommand_TrimsBoundariesAndRejectsMultipleLines(
+    public void CleanServerCommand_TrimsAndRejectsMultiline(
         string command,
         string expected)
     {
@@ -22,7 +22,7 @@ public sealed class ServerCommandTransportTests
     [InlineData(1, 5, 5)]
     [InlineData(100, 5, 15)]
     [InlineData(11, 15, 17)]
-    public void GetRCONTimeout_UsesTheBaseAndMaximumLimits(
+    public void GetRCONTimeout_RespectsBaseAndCap(
         int commandCount,
         int baseSeconds,
         int expectedSeconds)
