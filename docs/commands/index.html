@@ -609,6 +609,7 @@ a:hover{color:var(--accent)}
   }
 
   function render() {
+    if (!commands.length) return; // Keep the loading/error state until a catalog is available.
     const query = searchInput.value.toLowerCase().trim();
     const onlyFree = freeOnlyInput.checked;
     const filtered = commands.filter(item => {
