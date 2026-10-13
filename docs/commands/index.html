@@ -37,12 +37,18 @@ a:hover{color:var(--accent)}
 .primary-link{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 15px;background:var(--accent);border:1px solid var(--accent);border-radius:5px;color:#241629;font-weight:700;font-size:13px}
 .primary-link:hover{background:#d4afea;color:#241629}
 .hero-art{min-width:0}
-.console-window{background:#1c1b23;border:1px solid #45404d;border-radius:5px;overflow:hidden}
-.console-top{padding:10px 14px;border-bottom:1px solid #3a3741;color:#a9a4b1;font:650 10px Consolas,monospace}
-.console-lines{display:grid;gap:8px;padding:14px;font:12px/1.5 Consolas,monospace}
-.console-lines>div{display:flex;gap:16px;align-items:baseline}
-.console-user{color:#c4a0eb;overflow-wrap:anywhere}
-.console-command{color:#e0dce5}
+.console-window{background:linear-gradient(180deg,#211d29,#191821);border:1px solid #514659;border-radius:8px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,.28)}
+.console-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid #423a49;background:#27222e;font:650 10px/1.5 Consolas,monospace;letter-spacing:.035em}
+.console-title{color:#dcd5e2}
+.console-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid #826393;border-radius:999px;background:#392746;color:#edcef9;font:700 10px/1.2 Consolas,monospace}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#cf8ce9}
+.console-lines{display:grid;gap:13px;padding:15px;font:12px/1.5 Consolas,monospace}
+.chat-row{display:grid;gap:5px}
+.chat-meta{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.console-user{color:#d0aef0;font-weight:700;overflow-wrap:anywhere}
+.chat-time{color:#9e96a6;font-size:11px;white-space:nowrap}
+.chat-bubble{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:7px 11px;border:1px solid #514b5b;border-radius:5px;background:#2b2632}
+.console-command{color:#f0e9f3;font-weight:700}
 .summary-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#1d1c24;padding:13px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
 .summary-item{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;padding:2px 14px;border-left:1px solid var(--edge)}
 .summary-item:first-child{padding-left:0;border:0}
@@ -81,9 +87,9 @@ a:hover{color:var(--accent)}
 .command-card{display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
 .command-card:hover{border-color:#68566f}
 .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:9px}
-.command-name{margin:0;font-size:16px;color:#dfc1ef;overflow-wrap:anywhere}
-.cost{flex:0 1 48%;font-size:11px;font-weight:600;color:#e2dce6;text-align:right}
-.cost.is-free{color:#b9ddc1}
+.command-name{margin:0;font-size:17px;color:#dfc1ef;overflow-wrap:anywhere}
+.cost{flex:0 1 52%;min-width:0;font-size:14px;line-height:1.4;font-weight:700;color:#f4eaf6;text-align:right;overflow-wrap:anywhere}
+.cost.is-free{color:#c7ebce}
 .card-description{flex:1;margin:10px 0 14px;font-size:13px;color:#d9d4df}
 .syntax{display:block;padding:9px;background:#16161c;border:1px solid #3b3946;border-radius:4px;font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 .card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
@@ -142,13 +148,25 @@ a:hover{color:var(--accent)}
             <a class="secondary-link" href="https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/COMMANDS.md">Technical documentation ↗</a>
           </div>
         </div>
-        <div class="hero-art" aria-label="Example commands in Twitch chat">
+        <div class="hero-art" aria-label="Illustration of example commands in Twitch chat">
           <div class="console-window">
-            <div class="console-top">EXAMPLE CHAT COMMANDS</div>
+            <div class="console-top">
+              <span class="console-title">EXAMPLE CHAT COMMANDS</span>
+              <span class="console-badge"><span class="live-dot" aria-hidden="true"></span> LIVE</span>
+            </div>
             <div class="console-lines">
-              <div><span class="console-user">antny_is_epic</span><span class="console-command">!heal</span></div>
-              <div><span class="console-user">NickChunk</span><span class="console-command">!lightning</span></div>
-              <div><span class="console-user">Joelmath0</span><span class="console-command">!mob</span></div>
+              <div class="chat-row">
+                <div class="chat-meta"><span class="console-user">antny_is_epic</span><span class="chat-time">8:41 PM</span></div>
+                <div class="chat-bubble"><span class="console-command">!heal</span></div>
+              </div>
+              <div class="chat-row">
+                <div class="chat-meta"><span class="console-user">NickChunk</span><span class="chat-time">8:42 PM</span></div>
+                <div class="chat-bubble"><span class="console-command">!lightning</span></div>
+              </div>
+              <div class="chat-row">
+                <div class="chat-meta"><span class="console-user">Joelmath0</span><span class="chat-time">8:42 PM</span></div>
+                <div class="chat-bubble"><span class="console-command">!mob</span></div>
+              </div>
             </div>
           </div>
         </div>
