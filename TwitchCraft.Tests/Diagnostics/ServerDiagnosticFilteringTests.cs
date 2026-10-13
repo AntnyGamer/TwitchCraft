@@ -23,7 +23,7 @@ public sealed class ServerDiagnosticFilteringTests
     }
 
     [Fact]
-    public void DisplayPrefixesAndDifferentJomlVersionsAreRecognized()
+    public void JomlWarnings_FilterPrefixesAcrossVersions()
     {
         string[] lines =
         [
