@@ -16,6 +16,8 @@
   const searchInput = document.getElementById('command-search');
   const freeOnlyInput = document.getElementById('free-only');
   const multiplierSelect = document.getElementById('price-multiplier');
+  const sortSelect = document.getElementById('command-sort');
+  const validSorts = new Set(['category', 'name-asc', 'name-desc', 'price-asc', 'price-desc']);
   const categoryRow = document.getElementById('category-row');
   const resultsElement = document.getElementById('command-results');
   const resultLabel = document.getElementById('results-label');
@@ -31,6 +33,7 @@
   let toastTimer = 0;
   searchInput.value = (params.get('q') || '').slice(0, 150);
   freeOnlyInput.checked = params.get('free') === '1';
+  sortSelect.value = validSorts.has(params.get('sort')) ? params.get('sort') : 'category';
   const requestedMultiplier = params.get('multiplier');
   if (requestedMultiplier && Array.from(multiplierSelect.options).some(option => option.value === requestedMultiplier)) {
     multiplierSelect.value = requestedMultiplier;
@@ -225,7 +228,38 @@
     return { label: source, free: false };
   }
 
-  function createCommandCard(item) {
+  // Price sorting uses the minimum charge for a single target. Viewer-entered
+  // transfer amounts and bets do not have a fixed price and sort last.
+  function sortablePrice(item) {
+    const source = item.cost.trim();
+    if (/^free\b/i.test(source)) return 0;
+    if (item.section !== 'gameplay') return null;
+    const base = source.match(/^(\d+)(?:\s+per\s+(?:heart|effect))?$/i);
+    if (!base) return null;
+    return Math.ceil(Number(base[1]) * Number(multiplierSelect.value));
+  }
+
+  function sortCommands(items) {
+    const mode = sortSelect.value;
+    return items.sort((a, b) => {
+      if (mode === 'category') {
+        const categoryOrder = sectionOrder.indexOf(a.section) - sectionOrder.indexOf(b.section);
+        if (categoryOrder) return categoryOrder;
+      }
+      if (mode === 'price-asc' || mode === 'price-desc') {
+        const aPrice = sortablePrice(a), bPrice = sortablePrice(b);
+        if (aPrice === null && bPrice !== null) return 1;
+        if (bPrice === null && aPrice !== null) return -1;
+        if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
+          return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
+        }
+      }
+      const nameOrder = a.name.localeCompare(b.name);
+      return mode === 'name-desc' ? -nameOrder : nameOrder;
+    });
+  }
+
+  function createCommandCard(item, showCategory) {
     const card = make('article', 'command-card');
     const top = make('div', 'card-top');
     const name = make('h4', 'command-name', item.name);
@@ -236,6 +270,7 @@
     const description = make('p', 'card-description', item.description);
     const syntax = make('code', 'syntax', item.syntax);
     const meta = make('div', 'card-meta');
+    if (showCategory) meta.append(make('span', 'meta-tag category-tag', sectionLabels[item.section]));
     meta.append(
       make('span', 'meta-tag', item.targeting),
       make('span', item.permission === 'Everyone' ? 'meta-tag' : 'meta-tag admin', item.permission)
@@ -293,6 +328,8 @@
     else next.searchParams.delete('free');
     if (multiplierSelect.value !== '1') next.searchParams.set('multiplier', multiplierSelect.value);
     else next.searchParams.delete('multiplier');
+    if (sortSelect.value !== 'category') next.searchParams.set('sort', sortSelect.value);
+    else next.searchParams.delete('sort');
     window.history.replaceState(null, '', next.pathname + next.search + next.hash);
   }
 
@@ -306,16 +343,28 @@
       return [item.name, item.syntax, item.cost, displayCost(item).label, item.targeting, item.permission,
         item.description, sectionLabels[item.section]].some(field => field.toLocaleLowerCase().includes(query));
     });
+    const sorted = sortCommands(filtered);
     const fragment = document.createDocumentFragment();
-    for (const section of sectionOrder) {
-      const list = filtered.filter(item => item.section === section);
-      if (!list.length) continue;
+    // Keep the familiar category layout by default. Alternative sorts use
+    // one ordered list so prices and A–Z order are genuinely global.
+    const grouped = sortSelect.value === 'category' && category === 'all';
+    const sections = grouped
+      ? sectionOrder.map(section => ({
+          name: sectionLabels[section],
+          items: sorted.filter(item => item.section === section)
+        }))
+      : [{
+          name: category === 'all' ? 'All commands' : sectionLabels[category],
+          items: sorted
+        }];
+    for (const section of sections) {
+      if (!section.items.length) continue;
       const wrapper = make('section', 'command-group');
-      wrapper.setAttribute('aria-label', sectionLabels[section]);
+      wrapper.setAttribute('aria-label', section.name);
       const heading = make('div', 'group-heading');
-      heading.append(make('h3', '', sectionLabels[section]), make('span', '', list.length + (list.length === 1 ? ' command' : ' commands')));
+      heading.append(make('h3', '', section.name), make('span', '', section.items.length + (section.items.length === 1 ? ' command' : ' commands')));
       const grid = make('div', 'command-grid');
-      for (const item of list) grid.appendChild(createCommandCard(item));
+      for (const item of section.items) grid.appendChild(createCommandCard(item, category === 'all' && !grouped));
       wrapper.append(heading, grid);
       fragment.appendChild(wrapper);
     }
@@ -338,6 +387,7 @@
     searchInput.addEventListener('input', render);
     freeOnlyInput.addEventListener('change', render);
     multiplierSelect.addEventListener('change', render);
+    sortSelect.addEventListener('change', render);
     categoryRow.addEventListener('click', event => {
       const button = event.target.closest('[data-category]');
       if (!button || !categoryRow.contains(button)) return;
