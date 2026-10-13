@@ -339,13 +339,13 @@ a:hover{color:var(--accent)}
         inCode = !inCode;
         cell += character;
       } else if (character === '|' && !inCode) {
-        cells.push(cell.trim());
+        cells.push(cell);
         cell = '';
       } else {
         cell += character;
       }
     }
-    cells.push(cell.trim());
+    cells.push(cell);
     return cells;
   }
 
