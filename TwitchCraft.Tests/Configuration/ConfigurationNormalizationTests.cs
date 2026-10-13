@@ -131,7 +131,7 @@ public sealed class ConfigurationNormalizationTests
         Assert.Equal("Medium", config.Settings.Difficulty);
         Assert.Equal(15, config.Settings.MinigameCooldown);
         Assert.Equal(10.0, config.Settings.GlobalGameCommandCooldownSeconds);
-        Assert.Equal(StartingProfile.DefaultFollowRewardAmount, config.Settings.FollowRewardAmount);
+        Assert.Equal(50, config.Settings.FollowRewardAmount);
         Assert.Equal(1.0, config.Settings.CommandCostMultiplier);
         Assert.Equal("Normal", config.Settings.BotResponseVerbosity);
         Assert.Equal("!", config.Settings.CommandPrefix);
@@ -144,7 +144,7 @@ public sealed class ConfigurationNormalizationTests
         Assert.Equal(0, config.Settings.ViewerCommandLimitPerMinute);
         Assert.Equal(10, config.Settings.PassiveActivityWindowMinutes);
         Assert.Equal(24, config.Settings.AutomaticBackupIntervalHours);
-        Assert.Equal(StartingProfile.DefaultAutomaticBackupRetentionCount, config.Settings.AutomaticBackupRetentionCount);
+        Assert.Equal(3, config.Settings.AutomaticBackupRetentionCount);
         Assert.Equal(250, config.Settings.MaxVisibleTwitchLogLines);
         Assert.Equal(250, config.Settings.MaxVisibleMinecraftLogLines);
         Assert.Equal(30, config.Settings.ViewerRosterRefreshIntervalSeconds);
