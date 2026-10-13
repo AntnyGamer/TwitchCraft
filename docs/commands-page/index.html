@@ -111,6 +111,23 @@ a:hover{color:var(--accent)}
 .note code,.reward-note code{color:#dfc3ed}
 .reward-note{margin:22px 0 0;color:var(--muted);font-size:12px}
 .reward-note strong{color:var(--fg)}
+.gamble-help-link{align-self:flex-start;margin-top:10px;color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.gamble-section{padding:0 clamp(20px,5vw,65px) 40px}
+.gamble-details{border:1px solid var(--edge);border-radius:6px;background:var(--panel);overflow:hidden}
+.gamble-details summary{padding:17px 20px;cursor:pointer;color:#e6caef;font-size:16px;font-weight:700}
+.gamble-details summary::marker{color:var(--accent)}
+.gamble-details[open] summary{border-bottom:1px solid var(--edge)}
+.gamble-body{padding:18px 20px 22px;color:#d9d4df;font-size:13px}
+.gamble-body p{margin:0 0 14px}
+.gamble-body p:last-child{margin-bottom:0}
+.gamble-body code{color:#ecc9f6;font-family:Consolas,monospace}
+.gamble-table-wrap{max-width:640px;overflow-x:auto;margin:14px 0}
+.gamble-table{width:100%;border-collapse:collapse;text-align:left}
+.gamble-table th,.gamble-table td{padding:8px 12px;border-bottom:1px solid var(--edge)}
+.gamble-table th{color:var(--fg);font-weight:650;text-align:left}
+.gamble-table thead th{background:#2b2933}
+.gamble-table tbody tr:last-child > *{border-bottom:0}
+.gamble-footnote{font-style:italic;color:var(--muted)}
 .footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;padding:21px clamp(20px,5vw,65px);background:#111116;border-top:1px solid var(--edge)}
 .footer-brand{font-size:12px;font-weight:700}
 .footer-logo{width:28px;height:28px;object-fit:contain;image-rendering:pixelated;border-radius:4px}
@@ -260,6 +277,37 @@ a:hover{color:var(--accent)}
         </div>
         <p class="reward-note"><strong>Token rewards:</strong> If Bit rewards are enabled, 1 Bit earns 1 token. New followers receive a one-time reward of 50 tokens by default, unless the streamer changes the amount. Streamer commands are for the broadcaster and bot, and moderators if enabled.</p>
       </aside>
+
+      <section class="gamble-section" aria-label="Gambling command guide">
+        <details class="gamble-details" id="gamble-help">
+          <summary>!gambletokens Command Help — risk levels, odds and payouts</summary>
+          <div class="gamble-body">
+            <p><strong>Command:</strong> <code>!gambletokens &lt;amount&gt; [risk 1-10]</code> (example: <code>!gambletokens 20 5</code>).</p>
+            <p>Enter the number of tokens you want to gamble (minimum <strong>5</strong>, maximum <strong>150</strong>). Choose a risk level from <strong>1–10</strong>. Higher risks have a lower chance of winning but a higher payout. The risk argument is optional and defaults to <strong>5</strong>.</p>
+            <div class="gamble-table-wrap">
+              <table class="gamble-table">
+                <caption class="visually-hidden">Gamble payout multipliers and win probabilities by risk level</caption>
+                <thead><tr><th scope="col">Risk</th><th scope="col">Payout multiplier</th><th scope="col">Win chance</th></tr></thead>
+                <tbody>
+                <tr><th scope="row">1</th><td>1.05×</td><td>90.00%</td></tr>
+                <tr><th scope="row">2</th><td>1.27×</td><td>81.11%</td></tr>
+                <tr><th scope="row">3</th><td>1.48×</td><td>72.22%</td></tr>
+                <tr><th scope="row">4</th><td>1.70×</td><td>63.33%</td></tr>
+                <tr><th scope="row">5</th><td>1.92×</td><td>54.44%</td></tr>
+                <tr><th scope="row">6</th><td>2.13×</td><td>45.56%</td></tr>
+                <tr><th scope="row">7</th><td>2.35×</td><td>36.67%</td></tr>
+                <tr><th scope="row">8</th><td>2.57×</td><td>27.78%</td></tr>
+                <tr><th scope="row">9</th><td>2.78×</td><td>18.89%</td></tr>
+                <tr><th scope="row">10</th><td>3.00×</td><td>10.00%</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="gamble-footnote">Multipliers and win chances are rounded for display. Actual token gains are rounded to whole tokens, with at least one token gained on a win.</p>
+            <p><strong>Example:</strong> A winning 150-token gamble at risk 10 gains 300 tokens, equivalent to <strong>450 tokens returned</strong> including the 150-token stake. A loss deducts the tokens gambled. A configured maximum token balance may cap the amount gained.</p>
+            <p><strong>Cooldown:</strong> Five minutes per viewer by default; custom command cooldown settings can override it.</p>
+          </div>
+        </details>
+      </section>
     </main>
 
     <footer class="footer">
@@ -446,15 +494,13 @@ a:hover{color:var(--accent)}
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
     textarea.select();
-    let copied = false;
     try {
-      copied = document.execCommand('copy');
+      return document.execCommand('copy');
     } catch {
-      copied = false;
+      return false;
     } finally {
       textarea.remove();
     }
-    return copied;
   }
 
   // The desktop app's preset list is the source of truth. Fetch it from the
@@ -551,21 +597,17 @@ a:hover{color:var(--accent)}
 
   function sortCommands(items) {
     const mode = sortSelect.value;
+    if (mode === 'category' || mode === 'name-asc') return items;
+    if (mode === 'name-desc') return items.reverse();
+    const prices = new Map(items.map(item => [item, sortablePrice(item)]));
     return items.sort((a, b) => {
-      if (mode === 'category') {
-        const categoryOrder = sectionOrder.indexOf(a.section) - sectionOrder.indexOf(b.section);
-        if (categoryOrder) return categoryOrder;
+      const aPrice = prices.get(a), bPrice = prices.get(b);
+      if (aPrice === null && bPrice !== null) return 1;
+      if (bPrice === null && aPrice !== null) return -1;
+      if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
+        return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
       }
-      if (mode === 'price-asc' || mode === 'price-desc') {
-        const aPrice = sortablePrice(a), bPrice = sortablePrice(b);
-        if (aPrice === null && bPrice !== null) return 1;
-        if (bPrice === null && aPrice !== null) return -1;
-        if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
-          return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
-        }
-      }
-      const nameOrder = a.name.localeCompare(b.name);
-      return mode === 'name-desc' ? -nameOrder : nameOrder;
+      return a.name.localeCompare(b.name);
     });
   }
 
@@ -594,11 +636,20 @@ a:hover{color:var(--accent)}
     copy.setAttribute('aria-label', 'Copy syntax for ' + item.name);
     copy.dataset.syntax = item.syntax;
     copy.dataset.command = item.name;
-    card.append(top, description, syntax, meta, copy);
+    card.append(top, description, syntax, meta);
+    if (item.name.toLowerCase() === '!gambletokens') {
+      const helpLink = make('a', 'gamble-help-link', 'View risk levels, odds and payouts ↓');
+      helpLink.href = '#gamble-help';
+      card.append(helpLink);
+    }
+    card.append(copy);
     return card;
   }
 
+  let renderedCategory = null;
   function updateCategoryButtons() {
+    if (renderedCategory === category) return;
+    renderedCategory = category;
     for (const button of categoryRow.querySelectorAll('[data-category]')) {
       const active = button.dataset.category === category;
       button.classList.toggle('is-selected', active);
@@ -628,9 +679,10 @@ a:hover{color:var(--accent)}
     const onlyFree = freeOnlyInput.checked;
     const filtered = commands.filter(item => {
       if (category !== 'all' && item.section !== category) return false;
-      if (onlyFree && !displayCost(item).free) return false;
+      const cost = onlyFree ? displayCost(item) : null;
+      if (onlyFree && !cost.free) return false;
       if (!query) return true;
-      return item.searchText.includes(query) || displayCost(item).label.toLowerCase().includes(query);
+      return item.searchText.includes(query) || (cost || displayCost(item)).label.toLowerCase().includes(query);
     });
     const sorted = sortCommands(filtered);
     const fragment = document.createDocumentFragment();
@@ -682,14 +734,18 @@ a:hover{color:var(--accent)}
     sortSelect.addEventListener('change', render);
     categoryRow.addEventListener('click', event => {
       const button = event.target.closest('[data-category]');
-      if (!button || !categoryRow.contains(button)) return;
+      if (!button || !categoryRow.contains(button) || button.dataset.category === category) return;
       category = validCategories.has(button.dataset.category) ? button.dataset.category : 'all';
       render();
     });
     // One copy listener handles all command cards, even after filtering.
     resultsElement.addEventListener('click', async event => {
+      if (event.target.closest('.gamble-help-link')) {
+        document.getElementById('gamble-help').open = true;
+        return;
+      }
       const button = event.target.closest('.copy-button');
-      if (!button || !resultsElement.contains(button)) return;
+      if (!button) return;
       const success = await copyToClipboard(button.dataset.syntax);
       if (!success) {
         showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
@@ -719,16 +775,21 @@ a:hover{color:var(--accent)}
 
   async function initialize() {
     wireEvents();
+    const revealGambleGuide = () => {
+      if (window.location.hash === '#gamble-help')
+        document.getElementById('gamble-help').open = true;
+    };
+    window.addEventListener('hashchange', revealGambleGuide);
+    revealGambleGuide();
     // Never block the command catalog on an optional external preset lookup.
     void refreshMultiplierOptions();
     try {
       const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const markdown = await response.text();
-      if (/^\s*<!doctype html/i.test(markdown) || /^\s*<html/i.test(markdown)) {
-        throw new Error('GitHub Pages transformed COMMANDS.md to HTML. Ensure docs/.nojekyll exists.');
-      }
-      commands = parseCommands(markdown);
+      if (/^\s*<(?:!doctype html|html)/i.test(markdown))
+        throw new Error('Command documentation returned HTML instead of Markdown. Check the GitHub Pages deployment source.');
+      commands = parseCommands(markdown).sort((a, b) => a.name.localeCompare(b.name));
       counts.all = commands.length;
       for (const item of commands) counts[item.section]++;
       for (const button of categoryRow.querySelectorAll('[data-category]')) {

@@ -87,24 +87,24 @@ internal static class FileSystemHelper
         }
     }
 
-    public static void CopyDirectory(string sourceDirectory, string destinationDirectory, bool skipReparsePoints)
+    public static void CopyDirectory(string sourceDirectory, string destinationDirectory)
     {
         DirectoryInfo source = new(sourceDirectory);
-        if (skipReparsePoints && (source.Attributes & FileAttributes.ReparsePoint) != 0)
+        if ((source.Attributes & FileAttributes.ReparsePoint) != 0)
             return;
 
         Directory.CreateDirectory(destinationDirectory);
 
         foreach (FileInfo file in source.EnumerateFiles())
         {
-            if (!skipReparsePoints || (file.Attributes & FileAttributes.ReparsePoint) == 0)
+            if ((file.Attributes & FileAttributes.ReparsePoint) == 0)
                 file.CopyTo(Path.Combine(destinationDirectory, file.Name), true);
         }
 
         foreach (DirectoryInfo directory in source.EnumerateDirectories())
         {
-            if (!skipReparsePoints || (directory.Attributes & FileAttributes.ReparsePoint) == 0)
-                CopyDirectory(directory.FullName, Path.Combine(destinationDirectory, directory.Name), skipReparsePoints);
+            if ((directory.Attributes & FileAttributes.ReparsePoint) == 0)
+                CopyDirectory(directory.FullName, Path.Combine(destinationDirectory, directory.Name));
         }
     }
 
