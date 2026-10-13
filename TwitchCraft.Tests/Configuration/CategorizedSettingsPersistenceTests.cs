@@ -88,7 +88,7 @@ public sealed class CategorizedSettingsPersistenceTests
         Assert.Equal("?", profile.CommandPrefix);
         Assert.True(profile.HardcoreEnabled);
         Assert.True(profile.PassiveTokenEarningEnabled);
-        Assert.Equal(StartingProfile.DefaultAutomaticBackupRetentionCount, profile.AutomaticBackupRetentionCount);
+        Assert.Equal(3, profile.AutomaticBackupRetentionCount);
     }
 
     [Fact]

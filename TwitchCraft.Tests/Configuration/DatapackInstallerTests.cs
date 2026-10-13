@@ -14,7 +14,7 @@ public sealed class DatapackInstallerTests
     private const string InlineRunTellraw = "tellraw @s {text:'Players online:',color:'yellow',bold:true}";
 
     [Fact]
-    public void SyncLocateDatapack_FilesystemFailureReportsWarningAndContinues()
+    public void SyncLocateDatapack_ReportsIOFailureAndKeepsFile()
     {
         using TemporaryDirectory directory = new();
         string world = Path.Combine(directory.Path, "world");

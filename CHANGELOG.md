@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
+## [1.10.0] - Unreleased
+
+### Added
+- Added `!addheart` and `!removeheart` commands for timed Minecraft health adjustments.
+- Added a GitHub Pages command browser with detailed `!gambletokens` help.
+
+### Changed
+- Changed the default Twitch follower reward from 100 to 50 tokens.
+- Strengthened Twitch/Minecraft runtime separation and command-handling test coverage.
+- Updated NuGet packages and GitHub Actions dependencies.
+
+### Fixed
+- Fixed Chicken Run minimum-bet behavior and duplicate usernames in bot responses.
+- Fixed server-property and player-probe reset races.
+- Improved paid-command delivery, token/refund reliability, and test-fixture resource cleanup.
+
 ## [1.9.0] - 2026-09-15
 
 - Added support for Minecraft version 26.3

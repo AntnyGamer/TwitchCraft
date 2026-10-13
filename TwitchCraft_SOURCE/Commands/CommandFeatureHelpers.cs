@@ -84,37 +84,37 @@ internal static class ItemComponents
 
         string namespacedEnchantID = "minecraft:" + normalizedEnchantID;
         int enchantmentsIndex = FindFieldIndex(componentEntries, "minecraft:enchantments");
-        List<string> enchantmentComponentEntries = [];
+        List<string> enchantmentEntries = [];
         if (enchantmentsIndex >= 0)
         {
             string existingEnchantments = GetFieldValue(componentEntries[enchantmentsIndex]);
-            if (!TryParseCompound(existingEnchantments, out enchantmentComponentEntries))
+            if (!TryParseCompound(existingEnchantments, out enchantmentEntries))
                 return false;
         }
 
         if (usesFlattenedEnchantmentsComponent)
         {
-            RemoveField(enchantmentComponentEntries, namespacedEnchantID);
-            enchantmentComponentEntries.Add("\"" + namespacedEnchantID + "\":" + level.ToString(CultureInfo.InvariantCulture));
+            RemoveField(enchantmentEntries, namespacedEnchantID);
+            enchantmentEntries.Add("\"" + namespacedEnchantID + "\":" + level.ToString(CultureInfo.InvariantCulture));
         }
         else
         {
-            int levelsIndex = FindFieldIndex(enchantmentComponentEntries, "levels");
+            int levelsIndex = FindFieldIndex(enchantmentEntries, "levels");
             List<string> levelEntries = [];
             if (levelsIndex >= 0 &&
-                !TryParseCompound(GetFieldValue(enchantmentComponentEntries[levelsIndex]), out levelEntries))
+                !TryParseCompound(GetFieldValue(enchantmentEntries[levelsIndex]), out levelEntries))
                 return false;
 
             RemoveField(levelEntries, namespacedEnchantID);
             levelEntries.Add("\"" + namespacedEnchantID + "\":" + level.ToString(CultureInfo.InvariantCulture));
             string levelsEntry = "levels:{" + string.Join(",", levelEntries) + "}";
             if (levelsIndex >= 0)
-                enchantmentComponentEntries[levelsIndex] = levelsEntry;
+                enchantmentEntries[levelsIndex] = levelsEntry;
             else
-                enchantmentComponentEntries.Insert(0, levelsEntry);
+                enchantmentEntries.Insert(0, levelsEntry);
         }
 
-        string enchantmentsEntry = "\"minecraft:enchantments\":{" + string.Join(",", enchantmentComponentEntries) + "}";
+        string enchantmentsEntry = "\"minecraft:enchantments\":{" + string.Join(",", enchantmentEntries) + "}";
         if (enchantmentsIndex >= 0)
             componentEntries[enchantmentsIndex] = enchantmentsEntry;
         else

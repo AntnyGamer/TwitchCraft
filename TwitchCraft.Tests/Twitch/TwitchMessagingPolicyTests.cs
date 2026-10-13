@@ -10,8 +10,7 @@ public sealed class TwitchMessagingPolicyTests
     [InlineData(" hello ", "hello")]
     [InlineData(" line one\r\nline two ", "line one  line two")]
     public void CleanChannelMessage_TrimsAndRemovesProtocolLineBreaks(
-        string message,
-        string expected)
+        string message, string expected)
     {
         Assert.Equal(expected, MainHandler.CleanChannelMessage(message));
     }

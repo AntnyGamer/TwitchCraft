@@ -78,8 +78,8 @@ public sealed class CommandCatalogTests
 
         List<string> viewers = runtime.GetViewerRosterSnapshot();
         Assert.Equal(4, viewers.Count);
-        Assert.Contains("randomdudereincarnatedx3", viewers);
-        Assert.Contains("twitchcraft", viewers);
+        Assert.All(new[] { "viewer_one", "randomdudereincarnatedx3", "twitchcraft", "viewer_two" },
+            name => Assert.Contains(viewers, actual => string.Equals(name, actual, StringComparison.OrdinalIgnoreCase)));
         Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
     }
 

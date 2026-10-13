@@ -78,11 +78,9 @@ public sealed class GameplayCommandIntegrationTests
 
         await scenario.DispatchAsync("!enchant all");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
-        List<string> enchants = commands
-            .Where(command =>
+        List<string> enchants = commands.FindAll(command =>
                 command.StartsWith("item replace entity @a[name=\"", StringComparison.Ordinal) &&
-                command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal))
-            .ToList();
+                command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal));
 
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, enchants.Count);
@@ -109,11 +107,9 @@ public sealed class GameplayCommandIntegrationTests
 
         await scenario.DispatchAsync("!rename all");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
-        List<string> renames = commands
-            .Where(command =>
+        List<string> renames = commands.FindAll(command =>
                 command.StartsWith("item replace entity @a[name=\"", StringComparison.Ordinal) &&
-                command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal))
-            .ToList();
+                command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal));
 
         Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, renames.Count);
@@ -318,9 +314,7 @@ public sealed class GameplayCommandIntegrationTests
 
         await scenario.DispatchAsync("!swarm");
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
-        List<string> summons = commands
-            .Where(command => command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:", StringComparison.Ordinal))
-            .ToList();
+        List<string> summons = commands.FindAll(command => command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:", StringComparison.Ordinal));
 
         Assert.Equal(55, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(5, summons.Count);

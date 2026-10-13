@@ -30,10 +30,10 @@ public sealed partial class MainHandler
         if (string.IsNullOrWhiteSpace(line) || TryHandleHealthProbe(line))
             return;
 
-        int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-        if (entityDataMarkerIndex >= 0)
+        int entityMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+        if (entityMarkerIndex >= 0)
         {
-            HandleEntity(line, entityDataMarkerIndex);
+            HandleEntity(line, entityMarkerIndex);
             return;
         }
 
@@ -63,10 +63,10 @@ public sealed partial class MainHandler
                     if (TryHandleProbe(line) || TryHandleHealthProbe(line))
                         continue;
 
-                    int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-                    if (entityDataMarkerIndex >= 0)
+                    int entityMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+                    if (entityMarkerIndex >= 0)
                     {
-                        HandleEntity(line, entityDataMarkerIndex);
+                        HandleEntity(line, entityMarkerIndex);
                         continue;
                     }
 
@@ -79,13 +79,13 @@ public sealed partial class MainHandler
                         || line.Contains("error", StringComparison.OrdinalIgnoreCase);
                     bool isCommandParserError = mightContainCommandError && IsParserError(line);
                     bool isUnexpectedCommandError = mightContainCommandError && IsUnexpectedError(line);
-                    bool isMinecraftCommandErrorContext = mightContainCommandError && IsErrorContext(line);
+                    bool isCommandErrorContext = mightContainCommandError && IsErrorContext(line);
                     bool isSidebarObjectiveIssue = IsSidebarErrorLine(
                         line,
                         flags,
                         isCommandParserError,
                         isUnexpectedCommandError,
-                        isMinecraftCommandErrorContext);
+                        isCommandErrorContext);
 
                     HandleReadyState(line, cancellationToken);
                     if (!RemoteControlEnabled && !MultiplayerEnabled && line.Contains("RCON running on", StringComparison.OrdinalIgnoreCase))
@@ -93,15 +93,15 @@ public sealed partial class MainHandler
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 
-                    bool suppressServerLogLine = ShouldHideLogLine(
+                    bool hideServerLine = ShouldHideLogLine(
                         line,
                         flags,
                         isCommandParserError,
                         isUnexpectedCommandError,
-                        isMinecraftCommandErrorContext,
+                        isCommandErrorContext,
                         isSidebarObjectiveIssue);
-                    bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
-                    if (!suppressServerLogLine && !suppressOnlinePlayersLogLine)
+                    bool hidePlayerListLine = !hideServerLine && ShouldHidePlayerList(line);
+                    if (!hideServerLine && !hidePlayerListLine)
                         _shellWindow?.AddServerLogLine(line);
 
                     CapturePlayers(line);
