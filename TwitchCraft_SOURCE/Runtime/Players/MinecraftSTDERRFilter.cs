@@ -60,12 +60,8 @@ internal sealed class MinecraftSTDERRFilter
             : line;
 
     private static bool IsJomlCallerLine(string line)
-    {
-        if (!line.StartsWith(JomlCallerPrefix, StringComparison.Ordinal))
-            return false;
-
-        return line.Length == JomlCallerPrefix.Length ||
-            char.IsWhiteSpace(line[JomlCallerPrefix.Length]) ||
-            line[JomlCallerPrefix.Length] == '(';
-    }
+        => line.StartsWith(JomlCallerPrefix, StringComparison.Ordinal) &&
+            (line.Length == JomlCallerPrefix.Length ||
+             char.IsWhiteSpace(line[JomlCallerPrefix.Length]) ||
+             line[JomlCallerPrefix.Length] == '(');
 }
