@@ -486,35 +486,42 @@ a:hover{color:var(--accent)}
 
   function displayCost(item) {
     const source = item.cost.trim();
-    const originalFree = source.toLowerCase().startsWith('free');
-    const multiplier = Number(multiplierSelect.value);
-
-    // The command-cost multiplier belongs to gameplay command charging.
-    // Economy transfers, wagers and admin commands use their own amounts.
-    if (item.section !== 'gameplay' || originalFree) {
-      return { label: /^\d+$/.test(source) ? source + ' tokens' : source, free: originalFree };
-    }
-    const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
+    const free = /^free\b/i.test(source);
     const numeric = /^\d+$/.test(source);
-    // An undocumented/variable price must not be labeled free at 0×.
-    if (!numeric && !perUnit) return { label: source, free: false };
+    const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
+    const baseCost = numeric ? Number(source) : perUnit ? Number(perUnit[1]) : null;
+
+    if (free || baseCost === 0) {
+      return { label: free ? source : 'Free (0 tokens)', free: true };
+    }
+    // Only gameplay charges are affected by the bot's multiplier.
+    if (item.section !== 'gameplay') {
+      return { label: numeric ? source + ' tokens' : source, free: false };
+    }
+    // Unknown or viewer-entered prices must never be shown as free at 0×.
+    if (baseCost === null) return { label: source, free: false };
+
+    const multiplier = Number(multiplierSelect.value);
     if (multiplier === 0) return { label: 'Free (0 tokens)', free: true };
-
-    // Mirrors TwitchCraft CommandService.GetCommandCost: round UP to integer.
     const scale = amount => Math.ceil(amount * multiplier);
-    if (numeric) return { label: scale(Number(source)) + ' tokens', free: false };
+    if (numeric) return { label: scale(baseCost) + ' tokens', free: false };
 
-    const base = Number(perUnit[1]);
-    const maximum = perUnit[2].toLowerCase() === 'heart' ? 5 : 25;
-    const unit = maximum === 5 ? 'hearts' : 'effects';
-    return { label: scale(base) + '–' + scale(base * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
+    // Read the supported amount from the documented syntax instead of
+    // embedding the heart/effect limits in the website.
+    const quantity = item.syntax.match(/\b1-(\d+)\b/);
+    if (!quantity) {
+      return { label: scale(baseCost) + ' tokens per ' + perUnit[2].toLowerCase(), free: false };
+    }
+    const maximum = Number(quantity[1]);
+    const unit = perUnit[2].toLowerCase() + 's';
+    return { label: scale(baseCost) + '–' + scale(baseCost * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
   }
 
   // Price sorting uses the minimum charge for a single target. Viewer-entered
   // transfer amounts and bets do not have a fixed price and sort last.
   function sortablePrice(item) {
     const source = item.cost.trim();
-    if (/^free\b/i.test(source)) return 0;
+    if (/^free\b/i.test(source) || source === '0') return 0;
     const base = source.match(/^(\d+)(?:\s+per\s+(?:heart|effect))?$/i);
     if (!base) return null;
     // Only gameplay prices use the multiplier; other fixed costs sort as listed.
