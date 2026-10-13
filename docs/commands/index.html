@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#16161b">
+  <meta name="description" content="Browse TwitchCraft Minecraft and Twitch chat commands. Search syntax, default token costs, permissions and targeting, then copy commands for chat.">
+  <title>Command Library | TwitchCraft</title>
+  <link rel="icon" type="image/png" href="./server-icon.png">
+<style>
+:root{color-scheme:dark;--bg:#16161b;--panel:#202028;--edge:#383741;--fg:#f2f0f5;--muted:#b7b2c1;--accent:#c392df}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+[hidden]{display:none!important}
+.site{max-width:1400px;margin:auto}
+.visually-hidden,.skip-link:not(:focus){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link:focus{position:fixed;top:8px;left:8px;z-index:5;background:var(--accent);padding:12px;color:#19131d}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
+.brand,.footer-brand{display:flex;gap:10px;align-items:center;min-width:0}
+.brand-logo{width:40px;height:40px;object-fit:contain;image-rendering:pixelated;border-radius:4px}
+.brand-name{font-size:16px;font-weight:750;letter-spacing:.01em}
+.brand-name span{color:var(--accent)}
+.top-links{display:flex;gap:24px}
+.top-links a,.secondary-link{color:var(--muted);font-size:13px}
+a:hover{color:var(--accent)}
+.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,.75fr);align-items:center;gap:42px;padding:36px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
+.eyebrow{margin:0 0 7px;color:var(--accent);font-size:12px;font-weight:650}
+.hero h1{margin:0 0 11px;font-size:clamp(30px,3.6vw,47px);line-height:1.16;letter-spacing:-.035em}
+.lead{margin:0;max-width:580px;color:var(--muted)}
+.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:17px;margin-top:22px}
+.primary-link{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 15px;background:var(--accent);border:1px solid var(--accent);border-radius:5px;color:#241629;font-weight:700;font-size:13px}
+.primary-link:hover{background:#d4afea;color:#241629}
+.hero-art{min-width:0}
+.console-window{background:linear-gradient(180deg,#211d29,#191821);border:2px solid #514659;border-radius:8px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,.28)}
+.console-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid #423a49;background:#27222e;font:650 10px/1.5 Consolas,monospace;letter-spacing:.035em}
+.console-title{color:#dcd5e2}
+.console-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid #826393;border-radius:999px;background:#392746;color:#edcef9;font:700 10px/1.2 Consolas,monospace}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#cf8ce9}
+.console-lines{display:grid;gap:13px;padding:15px;font:12px/1.5 Consolas,monospace}
+.chat-row{display:grid;gap:5px}
+.chat-meta{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.console-user{color:#d0aef0;font-weight:700;overflow-wrap:anywhere}
+.chat-time{color:#9e96a6;font-size:11px;white-space:nowrap}
+.chat-bubble{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:7px 11px;border:1px solid #514b5b;border-radius:5px;background:#2b2632}
+.console-command{color:#f0e9f3;font-weight:700}
+.summary-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#1d1c24;padding:13px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
+.summary-item{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;padding:2px 14px;border-left:1px solid var(--edge)}
+.summary-item:first-child{padding-left:0;border:0}
+.summary-item strong{font-size:24px;line-height:1.3;font-weight:750}
+.summary-item span{font-size:12px;color:var(--muted)}
+.browser{padding:40px clamp(20px,5vw,65px) 56px}
+.section-intro h2,.how-it-works h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
+.section-intro p{margin:0;color:var(--muted);font-size:13px}
+.browser-panel{padding:16px;margin-top:21px;border:1px solid var(--edge);border-radius:6px;background:var(--panel)}
+.toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.search-box{display:flex;align-items:center;gap:10px;min-width:0;min-height:42px;flex:1 1 230px;padding:0 12px;background:#14141a;border:1px solid #4b4754;border-radius:4px}
+.search-box:focus-within{border-color:var(--accent)}
+.search-box svg{width:18px;height:18px;stroke:#b0aabb;stroke-width:2;flex:none}
+.search-box input{width:100%;min-width:0;padding:9px 0;color:var(--fg);border:0;outline:0;background:transparent;font-size:13px}
+.search-box input::placeholder{color:#9994a1}
+.search-box kbd{border:1px solid var(--edge);border-radius:3px;padding:2px 6px;color:#a49ba9;font:12px Consolas,monospace}
+.free-toggle{display:inline-flex;align-items:center;gap:8px;color:#d5cfd9;font-size:12px;white-space:nowrap;cursor:pointer}
+.free-toggle input{margin:0;width:16px;height:16px;accent-color:var(--accent)}
+.toolbar-select{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;white-space:nowrap}
+.toolbar-select select{max-width:180px;min-height:40px;padding:7px 9px;color:var(--fg);background:#14141a;border:1px solid #4b4754;border-radius:4px}
+.multiplier-note{margin:11px 0 0;font-size:12px;color:#aaa5b2}
+.category-row{display:flex;flex-wrap:wrap;gap:7px;padding-top:15px}
+.category-button{padding:7px 11px;background:#2a2933;color:#d2ced8;border:1px solid #44414e;border-radius:4px;font-size:12px;font-weight:600}
+.category-button:hover{border-color:#806d8d}
+.category-button.is-selected{background:#35263f;color:#eccdf6;border-color:#88689c}
+.category-button span{margin-left:4px;color:#b6aabe;font-size:11px}
+.result-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 15px}
+.result-bar p{margin:0;color:var(--muted);font-size:13px}
+.clear-button{background:transparent;border:0;color:var(--accent);font-size:12px}
+.command-group{margin-top:28px}
+.command-group:first-child{margin-top:0}
+.group-heading{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 13px;padding:0 0 10px;border-bottom:1px solid var(--edge)}
+.group-heading h3{margin:0;font-size:17px;font-weight:650}
+.group-heading span{font-size:12px;color:var(--muted)}
+.command-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.command-card{display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
+.command-card:hover{border-color:#68566f}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:9px}
+.command-name{margin:0;font-size:17px;color:#dfc1ef;overflow-wrap:anywhere}
+.cost{flex:0 1 52%;min-width:0;font-size:14px;line-height:1.4;font-weight:700;color:#f4eaf6;text-align:right;overflow-wrap:anywhere}
+.cost.is-free{color:#c7ebce}
+.card-description{flex:1;margin:10px 0 14px;font-size:13px;color:#d9d4df}
+.syntax{display:block;padding:9px;background:#16161c;border:1px solid #3b3946;border-radius:4px;font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.meta-tag{border:1px solid #4a4651;border-radius:3px;padding:2px 6px;font-size:10px;color:#aaa4b4}
+.category-tag{color:#d5b9e7}
+.meta-tag.admin{border-color:#756083;color:#e2c8ef}
+.copy-button{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:12px;padding:9px 11px;color:#dfbde9;border:1px solid #796487;border-radius:4px;background:transparent;font-size:12px;font-weight:600}
+.copy-button:hover,.copy-button.copied{background:#32273b}
+.empty-state{text-align:center;padding:35px 15px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
+.empty-icon{color:var(--accent);font-size:28px;font-weight:700}
+.empty-state h3{margin:5px 0}
+.empty-state p{color:var(--muted)}
+.how-it-works{border-top:1px solid var(--edge);padding:37px clamp(20px,5vw,65px)}
+.note-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;margin-top:20px}
+.note{border-top:1px solid var(--edge);padding-top:10px}
+.note-number{font-size:12px;color:var(--muted)}
+.note h3{margin:8px 0 6px;font-size:14px}
+.note p{margin:0;color:var(--muted);font-size:12px}
+.note code,.reward-note code{color:#dfc3ed}
+.reward-note{margin:22px 0 0;color:var(--muted);font-size:12px}
+.reward-note strong{color:var(--fg)}
+.footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;padding:21px clamp(20px,5vw,65px);background:#111116;border-top:1px solid var(--edge)}
+.footer-brand{font-size:12px;font-weight:700}
+.footer-logo{width:28px;height:28px;object-fit:contain;image-rendering:pixelated;border-radius:4px}
+.footer p{margin:0;color:var(--muted);font-size:11px}
+.footer a{color:var(--muted);font-size:12px}
+.toast{position:fixed;right:16px;bottom:16px;z-index:20;padding:11px 15px;background:#34253e;border:1px solid #9b7bb1;border-radius:4px;color:#f1dffa;font-size:12px}
+@media(max-width:1000px){.command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary-item{padding-left:9px}}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding-top:28px;padding-bottom:28px}.hero-art{display:none}.summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.summary-item,.summary-item:first-child{padding:2px;border:0}.note-grid{grid-template-columns:1fr;gap:15px}}
+@media(max-width:570px){.top-links a:last-child{display:none}.brand-name{font-size:14px}.hero h1{font-size:31px}.hero-actions{flex-direction:column;align-items:flex-start}.search-box{flex-basis:100%}.search-box kbd{display:none}.toolbar-select{flex:1 1 135px;justify-content:space-between}.toolbar-select select{min-width:120px;max-width:160px}.command-grid{grid-template-columns:1fr}.summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#catalog">Skip to commands</a>
+  <div class="site">
+    <header class="topbar">
+      <a class="brand" href="https://github.com/AntnyGamer/TwitchCraft" aria-label="TwitchCraft on GitHub">
+        <img class="brand-logo" src="./server-icon.png" width="40" height="40" alt="">
+        <span class="brand-name">TWITCH<span>CRAFT</span></span>
+      </a>
+      <nav class="top-links" aria-label="Project links">
+        <a href="https://github.com/AntnyGamer/TwitchCraft/releases/latest">Download app <span aria-hidden="true">↗</span></a>
+        <a href="https://github.com/AntnyGamer/TwitchCraft">Source <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-content">
+          <p class="eyebrow">TWITCHCRAFT / COMMAND REFERENCE</p>
+          <h1 id="page-title">TwitchCraft commands</h1>
+          <p class="lead">Browse the commands viewers can use in chat. Check the cost, find the syntax, and copy a command when you need it.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#catalog">Browse commands ↓</a>
+            <a class="secondary-link" href="../COMMANDS.md">Technical documentation ↗</a>
+          </div>
+        </div>
+        <div class="hero-art" aria-label="Illustration of example commands in Twitch chat">
+          <div class="console-window">
+            <div class="console-top">
+              <span class="console-title">EXAMPLE CHAT COMMANDS</span>
+              <span class="console-badge"><span class="live-dot" aria-hidden="true"></span> LIVE</span>
+            </div>
+            <div class="console-lines">
+              <div class="chat-row">
+                <div class="chat-meta"><span class="console-user">antny_is_epic</span><span class="chat-time">8:41 PM</span></div>
+                <div class="chat-bubble"><span class="console-command">!heal</span></div>
+              </div>
+              <div class="chat-row">
+                <div class="chat-meta"><span class="console-user">NickChunk</span><span class="chat-time">8:42 PM</span></div>
+                <div class="chat-bubble"><span class="console-command">!lightning</span></div>
+              </div>
+              <div class="chat-row">
+                <div class="chat-meta"><span class="console-user">Joelmath0</span><span class="chat-time">8:42 PM</span></div>
+                <div class="chat-bubble"><span class="console-command">!mob</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="summary-strip" aria-label="Command counts">
+        <div class="summary-item"><strong id="total-count">—</strong><span>Built-in commands</span></div>
+        <div class="summary-item"><strong id="gameplay-count">—</strong><span>Gameplay</span></div>
+        <div class="summary-item"><strong id="minigame-count">—</strong><span>Minigames</span></div>
+        <div class="summary-item"><strong id="utility-count">—</strong><span>Utility</span></div>
+        <div class="summary-item"><strong id="streamer-count">—</strong><span>Streamer commands</span></div>
+      </section>
+
+      <section class="browser" id="catalog" aria-labelledby="catalog-heading">
+        <div class="section-intro">
+          <div>
+            <h2 id="catalog-heading">Command list</h2>
+            <p>Search or filter the commands below. Prices are based on TwitchCraft's default settings.</p>
+          </div>
+        </div>
+        <div class="browser-panel">
+          <div class="toolbar">
+            <label class="search-box" for="command-search">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 5 5"></path></svg>
+              <span class="visually-hidden">Search commands</span>
+              <input id="command-search" type="search" maxlength="150" autocomplete="off" spellcheck="false" placeholder="Search commands, e.g. lightning, tokens…">
+              <kbd>/</kbd>
+            </label>
+            <label class="free-toggle" for="free-only"><input type="checkbox" id="free-only"><span>Free only</span></label>
+            <label class="toolbar-select" for="price-multiplier">
+              <span>Multiplier</span>
+              <select id="price-multiplier" aria-describedby="multiplier-note">
+                <option value="0">0×</option>
+                <option value="0.5">0.5×</option>
+                <option value="0.75">0.75×</option>
+                <option value="1" selected>1× (default)</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+                <option value="3">3×</option>
+              </select>
+            </label>
+            <label class="toolbar-select" for="command-sort">
+              <span>Sort</span>
+              <select id="command-sort">
+                <option value="category">By category</option>
+                <option value="name-asc">Name (A–Z)</option>
+                <option value="name-desc">Name (Z–A)</option>
+                <option value="price-asc">Price (low to high)</option>
+                <option value="price-desc">Price (high to low)</option>
+              </select>
+            </label>
+          </div>
+          <p class="multiplier-note" id="multiplier-note">Multiplier changes gameplay prices only. Price sorting uses the selected multiplier; variable-cost bets and transfers are placed last.</p>
+          <div class="category-row" id="category-row" role="group" aria-label="Command categories">
+            <button type="button" class="category-button is-selected" data-category="all" aria-pressed="true">All <span data-count="all"></span></button>
+            <button type="button" class="category-button" data-category="gameplay" aria-pressed="false">Gameplay <span data-count="gameplay"></span></button>
+            <button type="button" class="category-button" data-category="minigame" aria-pressed="false">Minigames <span data-count="minigame"></span></button>
+            <button type="button" class="category-button" data-category="utility" aria-pressed="false">Utility <span data-count="utility"></span></button>
+            <button type="button" class="category-button" data-category="streamer" aria-pressed="false">Streamer <span data-count="streamer"></span></button>
+          </div>
+        </div>
+
+        <div class="result-bar">
+          <p id="results-label" role="status" aria-live="polite">Loading commands…</p>
+          <button id="clear-filters" class="clear-button" type="button" hidden>Clear filters <span aria-hidden="true">×</span></button>
+        </div>
+        <div id="command-results" aria-busy="true"></div>
+        <div class="empty-state" id="empty-state" hidden>
+          <div class="empty-icon" aria-hidden="true">?</div>
+          <h3>No commands found</h3>
+          <p>Try a different search or remove a filter.</p>
+          <button class="primary-link" id="empty-reset" type="button">Show all commands</button>
+        </div>
+        <div class="empty-state" id="load-error" hidden role="alert">
+          <div class="empty-icon" aria-hidden="true">!</div>
+          <h3>Couldn't load the command list</h3>
+          <p>This page reads TwitchCraft's COMMANDS.md file. Refresh the page or view the repository copy, which may differ from this preview.</p>
+          <a class="primary-link" href="https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/COMMANDS.md">View repository copy on GitHub ↗</a>
+        </div>
+      </section>
+
+      <aside class="how-it-works" aria-labelledby="notes-heading">
+        <div>
+          <h2 id="notes-heading">Before you use a command</h2>
+        </div>
+        <div class="note-grid">
+          <div class="note"><span class="note-number">1.</span><h3>Replace placeholders</h3><p>Copied syntax is a template. Replace values in <code>&lt;angle brackets&gt;</code>; square brackets indicate optional arguments.</p></div>
+          <div class="note"><span class="note-number">2.</span><h3>Costs are defaults</h3><p>The price multiplier above is a preview, not a live connection to a streamer's settings. It affects gameplay command prices only. Multiplayer targeting scales the base cost by <code>(player count + 1) / 2</code> (rounded down), then applies the multiplier (rounded up).</p></div>
+          <div class="note"><span class="note-number">3.</span><h3>Some commands are conditional</h3><p>Chicken Run, Number Guess, and Wither Battle commands require an active round; <code>!gambletokens</code> works independently. Some admin commands require local multiplayer.</p></div>
+        </div>
+        <p class="reward-note"><strong>Token rewards:</strong> If Bit rewards are enabled, 1 Bit earns 1 token. New followers receive a one-time reward of 50 tokens by default, unless the streamer changes the amount. Streamer commands are for the broadcaster and bot, and moderators if enabled.</p>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-brand"><img class="footer-logo" src="./server-icon.png" width="30" height="30" alt=""><span>TWITCHCRAFT</span></div>
+      <p>Independent community project. Not affiliated with Mojang, Microsoft, or Twitch.</p>
+      <a href="../COMMANDS.md">Command documentation ↗</a>
+    </footer>
+  </div>
+  <div id="copy-status" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+<script>
+'use strict';
+
+/*
+ * The command catalog is built from docs/COMMANDS.md, the project's existing
+ * canonical command reference. Do not duplicate commands or prices here.
+ */
+(function () {
+  const sectionLabels = {
+    gameplay: 'Game Commands',
+    minigame: 'Minigame Commands',
+    utility: 'Utility Commands',
+    streamer: 'Streamer Commands'
+  };
+  const sectionOrder = ['gameplay', 'minigame', 'utility', 'streamer'];
+  const validCategories = new Set(['all', ...sectionOrder]);
+  const searchInput = document.getElementById('command-search');
+  const freeOnlyInput = document.getElementById('free-only');
+  const multiplierSelect = document.getElementById('price-multiplier');
+  const sortSelect = document.getElementById('command-sort');
+  const validSorts = new Set(['category', 'name-asc', 'name-desc', 'price-asc', 'price-desc']);
+  const categoryRow = document.getElementById('category-row');
+  const resultsElement = document.getElementById('command-results');
+  const resultLabel = document.getElementById('results-label');
+  const clearButton = document.getElementById('clear-filters');
+  const emptyState = document.getElementById('empty-state');
+  const errorState = document.getElementById('load-error');
+  const toast = document.getElementById('copy-status');
+  const params = new URLSearchParams(window.location.search);
+  const initialCategory = params.get('category') || 'all';
+
+  let commands = [];
+  const counts = { all: 0, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
+  let category = validCategories.has(initialCategory) ? initialCategory : 'all';
+  let toastTimer = 0;
+  searchInput.value = (params.get('q') || '').slice(0, 150);
+  freeOnlyInput.checked = params.get('free') === '1';
+  sortSelect.value = validSorts.has(params.get('sort')) ? params.get('sort') : 'category';
+  const requestedMultiplier = params.get('multiplier');
+  let multiplierChangedByUser = false;
+  if (requestedMultiplier && Array.from(multiplierSelect.options).some(option => option.value === requestedMultiplier)) {
+    multiplierSelect.value = requestedMultiplier;
+  }
+
+  function make(tag, className, value) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (value !== undefined) node.textContent = value;
+    return node;
+  }
+
+  // Markdown table cells may include backtick code spans and escaped pipes.
+  // Avoid splitting on pipes that are part of commands such as <user|all|random>.
+  function splitRow(line) {
+    const trimmed = line.trim();
+    let raw = trimmed.slice(1);
+    if (raw.endsWith('|')) raw = raw.slice(0, -1);
+    const cells = [];
+    let cell = '';
+    let inCode = false;
+    for (let i = 0; i < raw.length; i++) {
+      const character = raw[i];
+      if (character === '\\' && i + 1 < raw.length && raw[i + 1] === '|') {
+        cell += '|';
+        i++;
+      } else if (character.charCodeAt(0) === 96) {
+        inCode = !inCode;
+        cell += character;
+      } else if (character === '|' && !inCode) {
+        cells.push(cell);
+        cell = '';
+      } else {
+        cell += character;
+      }
+    }
+    cells.push(cell);
+    return cells;
+  }
+
+  function plainText(value) {
+    return value
+      .replace(/\x60/g, '')
+      .replace(/\\([\\*_])/g, '$1')
+      .trim();
+  }
+
+  function parseCommands(markdown) {
+    // Accept backticked or plain Markdown command names.
+    const commandRow = /^ {0,3}\|\s*`?!/i;
+    let section = null;
+    let codeFence = '';
+    const seen = new Set();
+    const parsed = [];
+    let documentedRows = 0;
+
+    for (const line of markdown.split(/\r?\n/)) {
+      // Examples inside fenced Markdown blocks are not command registrations.
+      const fence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+      if (fence) {
+        if (!codeFence) codeFence = fence[1];
+        else if (fence[1][0] === codeFence[0] && fence[1].length >= codeFence.length && !fence[2].trim()) codeFence = '';
+        continue;
+      }
+      if (codeFence) continue;
+      if (/^ {0,3}#{2,3} /.test(line)) {
+        const title = line.replace(/^ {0,3}#{2,3} /, '').trim().toLowerCase();
+        section = title === 'game commands' || title === 'gameplay commands'
+          ? 'gameplay'
+          : title === 'minigame commands'
+            ? 'minigame'
+            : title === 'utility commands' || title === 'utility and economy'
+              ? 'utility'
+              : title === 'streamer commands'
+                ? 'streamer'
+                : null;
+      }
+      if (!commandRow.test(line)) continue;
+      documentedRows++;
+      if (!section) continue;
+
+      const fields = splitRow(line).map(plainText);
+      if (fields.length !== 6) {
+        throw new Error('Unexpected command table format for ' + fields[0]);
+      }
+      const [name, syntax, cost, targeting, permission, description] = fields;
+      if (fields.some(field => !field)) {
+        throw new Error('Missing command details for ' + name);
+      }
+      if (!/^![a-z0-9_-]+$/i.test(name) ||
+          (syntax.toLowerCase() !== name.toLowerCase() &&
+            !syntax.toLowerCase().startsWith(name.toLowerCase() + ' '))) {
+        throw new Error('Invalid command syntax for ' + name);
+      }
+      if (seen.has(name.toLowerCase())) {
+        throw new Error('Duplicate command in documentation: ' + name);
+      }
+      seen.add(name.toLowerCase());
+      parsed.push({
+        name, syntax, cost, targeting, permission, description, section,
+        searchText: [name, syntax, cost, targeting, permission, description, sectionLabels[section]]
+          .join(' ').toLowerCase()
+      });
+    }
+
+    // An unterminated example would otherwise hide every command after it.
+    if (codeFence) throw new Error('Unclosed Markdown code fence in command documentation.');
+
+    // Fail loudly instead of silently showing just one section if headings change.
+    if (!parsed.length || parsed.length !== documentedRows) {
+      throw new Error('Command documentation mismatch: parsed ' + parsed.length + ' of ' + documentedRows + ' commands.');
+    }
+    return parsed; // sortCommands handles display order.
+  }
+
+  function showToast(message) {
+    window.clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.hidden = false;
+    toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2500);
+  }
+
+  async function copyToClipboard(value) {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch {
+        // Fall through for browsers that deny the Clipboard API.
+      }
+    }
+    const textarea = make('textarea');
+    textarea.value = value;
+    textarea.readOnly = true;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    } finally {
+      textarea.remove();
+    }
+    return copied;
+  }
+
+  // The desktop app's preset list is the source of truth. Fetch it from the
+  // public main branch so the website picks up future preset changes without
+  // maintaining a separate preset array in the frontend.
+  const presetSource = 'https://raw.githubusercontent.com/AntnyGamer/TwitchCraft/main/TwitchCraft_SOURCE/Frames/Settings.xaml.cs';
+
+  function parseMultiplierOptions(source) {
+    const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
+    if (!definition) throw new Error('Multiplier presets were not found in Settings.xaml.cs');
+    const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
+      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×') }));
+    if (!options.length || !options.some(item => item.value === '1')
+        || options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
+      throw new Error('Multiplier preset values are invalid');
+    }
+    return options;
+  }
+
+  async function refreshMultiplierOptions() {
+    // The HTML keeps the exact currently-supported presets as an offline
+    // fallback; an unavailable GitHub host must not break the command list.
+    try {
+      const response = await fetch(presetSource);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const presets = parseMultiplierOptions(await response.text());
+      const previousSelection = multiplierSelect.value;
+      multiplierSelect.replaceChildren();
+      for (const option of presets) {
+        const element = document.createElement('option');
+        element.value = option.value;
+        element.textContent = option.label;
+        multiplierSelect.appendChild(element);
+      }
+      const values = presets.map(option => option.value);
+      // Apply new presets from the URL, but never override a manual choice
+      // made while the remote preset list was loading.
+      multiplierSelect.value = !multiplierChangedByUser && values.includes(requestedMultiplier)
+        ? requestedMultiplier
+        : values.includes(previousSelection) ? previousSelection
+          : values.includes('1') ? '1' : values[0];
+      // Updating the options alone does not change any displayed prices.
+      if (commands.length && multiplierSelect.value !== previousSelection) render();
+    } catch (error) {
+      console.warn('Using local multiplier presets:', error);
+    }
+  }
+
+  function displayCost(item) {
+    const source = item.cost;
+    const free = /^free\b/i.test(source);
+    const numeric = /^\d+$/.test(source);
+    const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
+    const baseCost = numeric ? Number(source) : perUnit ? Number(perUnit[1]) : null;
+
+    if (free || baseCost === 0) {
+      return { label: free ? source : 'Free (0 tokens)', free: true };
+    }
+    // Only gameplay charges are affected by the bot's multiplier.
+    if (item.section !== 'gameplay') {
+      return { label: numeric ? source + ' tokens' : source, free: false };
+    }
+    // Unknown or viewer-entered prices must never be shown as free at 0×.
+    if (baseCost === null) return { label: source, free: false };
+
+    const multiplier = Number(multiplierSelect.value);
+    if (multiplier === 0) return { label: 'Free (0 tokens)', free: true };
+    const scale = amount => Math.ceil(amount * multiplier);
+    if (numeric) return { label: scale(baseCost) + ' tokens', free: false };
+
+    // Read the supported amount from the documented syntax instead of
+    // embedding the heart/effect limits in the website.
+    const quantity = item.syntax.match(/\b1-(\d+)\b/);
+    if (!quantity) {
+      return { label: scale(baseCost) + ' tokens per ' + perUnit[2].toLowerCase(), free: false };
+    }
+    const maximum = Number(quantity[1]);
+    const unit = perUnit[2].toLowerCase() + 's';
+    return { label: scale(baseCost) + '–' + scale(baseCost * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
+  }
+
+  // Price sorting uses the minimum charge for a single target. Viewer-entered
+  // transfer amounts and bets do not have a fixed price and sort last.
+  function sortablePrice(item) {
+    const source = item.cost;
+    if (/^free\b/i.test(source) || source === '0') return 0;
+    const base = source.match(/^(\d+)(?:\s+per\s+(?:heart|effect))?$/i);
+    if (!base) return null;
+    // Only gameplay prices use the multiplier; other fixed costs sort as listed.
+    return item.section === 'gameplay'
+      ? Math.ceil(Number(base[1]) * Number(multiplierSelect.value))
+      : Number(base[1]);
+  }
+
+  function sortCommands(items) {
+    const mode = sortSelect.value;
+    return items.sort((a, b) => {
+      if (mode === 'category') {
+        const categoryOrder = sectionOrder.indexOf(a.section) - sectionOrder.indexOf(b.section);
+        if (categoryOrder) return categoryOrder;
+      }
+      if (mode === 'price-asc' || mode === 'price-desc') {
+        const aPrice = sortablePrice(a), bPrice = sortablePrice(b);
+        if (aPrice === null && bPrice !== null) return 1;
+        if (bPrice === null && aPrice !== null) return -1;
+        if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
+          return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
+        }
+      }
+      const nameOrder = a.name.localeCompare(b.name);
+      return mode === 'name-desc' ? -nameOrder : nameOrder;
+    });
+  }
+
+  function createCommandCard(item, showCategory) {
+    const card = make('article', 'command-card');
+    const top = make('div', 'card-top');
+    const name = make('h4', 'command-name', item.name);
+    const priceInfo = displayCost(item);
+    const price = make('span', priceInfo.free ? 'cost is-free' : 'cost', 'Cost: ' + priceInfo.label);
+    top.append(name, price);
+
+    const description = make('p', 'card-description', item.description);
+    const syntax = make('code', 'syntax', item.syntax);
+    const meta = make('div', 'card-meta');
+    if (showCategory) meta.append(make('span', 'meta-tag category-tag', sectionLabels[item.section]));
+    meta.append(
+      make('span', 'meta-tag', item.targeting),
+      make('span', item.permission === 'Everyone' ? 'meta-tag' : 'meta-tag admin', item.permission)
+    );
+    const copy = make('button', 'copy-button');
+    copy.type = 'button';
+    const copyLabel = make('span', '', 'Copy syntax');
+    const copyGlyph = make('span', '', '↗');
+    copyGlyph.setAttribute('aria-hidden', 'true');
+    copy.append(copyLabel, copyGlyph);
+    copy.setAttribute('aria-label', 'Copy syntax for ' + item.name);
+    copy.dataset.syntax = item.syntax;
+    copy.dataset.command = item.name;
+    card.append(top, description, syntax, meta, copy);
+    return card;
+  }
+
+  function updateCategoryButtons() {
+    for (const button of categoryRow.querySelectorAll('[data-category]')) {
+      const active = button.dataset.category === category;
+      button.classList.toggle('is-selected', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
+  }
+
+  function syncAddress() {
+    const next = new URL(window.location.href);
+    const query = searchInput.value.trim();
+    if (query) next.searchParams.set('q', query);
+    else next.searchParams.delete('q');
+    if (category !== 'all') next.searchParams.set('category', category);
+    else next.searchParams.delete('category');
+    if (freeOnlyInput.checked) next.searchParams.set('free', '1');
+    else next.searchParams.delete('free');
+    if (multiplierSelect.value !== '1') next.searchParams.set('multiplier', multiplierSelect.value);
+    else next.searchParams.delete('multiplier');
+    if (sortSelect.value !== 'category') next.searchParams.set('sort', sortSelect.value);
+    else next.searchParams.delete('sort');
+    window.history.replaceState(null, '', next.pathname + next.search + next.hash);
+  }
+
+  function render() {
+    if (!commands.length) return; // Keep the loading/error state until a catalog is available.
+    const query = searchInput.value.toLowerCase().trim();
+    const onlyFree = freeOnlyInput.checked;
+    const filtered = commands.filter(item => {
+      if (category !== 'all' && item.section !== category) return false;
+      if (onlyFree && !displayCost(item).free) return false;
+      if (!query) return true;
+      return item.searchText.includes(query) || displayCost(item).label.toLowerCase().includes(query);
+    });
+    const sorted = sortCommands(filtered);
+    const fragment = document.createDocumentFragment();
+    // Keep the familiar category layout by default. Alternative sorts use
+    // one ordered list so prices and A–Z order are genuinely global.
+    const grouped = sortSelect.value === 'category' && category === 'all';
+    const sections = grouped
+      ? sectionOrder.map(section => ({
+          name: sectionLabels[section],
+          items: sorted.filter(item => item.section === section)
+        }))
+      : [{
+          name: category === 'all' ? 'All commands' : sectionLabels[category],
+          items: sorted
+        }];
+    for (const section of sections) {
+      if (!section.items.length) continue;
+      const wrapper = make('section', 'command-group');
+      wrapper.setAttribute('aria-label', section.name);
+      const heading = make('div', 'group-heading');
+      heading.append(make('h3', '', section.name), make('span', '', section.items.length + (section.items.length === 1 ? ' command' : ' commands')));
+      const grid = make('div', 'command-grid');
+      for (const item of section.items) grid.appendChild(createCommandCard(item, category === 'all' && !grouped));
+      wrapper.append(heading, grid);
+      fragment.appendChild(wrapper);
+    }
+    resultsElement.replaceChildren(fragment);
+    resultLabel.textContent = 'Showing ' + filtered.length + ' of ' + commands.length + (commands.length === 1 ? ' command' : ' commands');
+    emptyState.hidden = filtered.length > 0;
+    clearButton.hidden = !query && category === 'all' && !onlyFree;
+    updateCategoryButtons();
+    syncAddress();
+  }
+
+  function clearFilters() {
+    searchInput.value = '';
+    freeOnlyInput.checked = false;
+    category = 'all';
+    render();
+  }
+
+  function wireEvents() {
+    searchInput.addEventListener('input', render);
+    freeOnlyInput.addEventListener('change', render);
+    multiplierSelect.addEventListener('change', () => {
+      multiplierChangedByUser = true;
+      render();
+    });
+    sortSelect.addEventListener('change', render);
+    categoryRow.addEventListener('click', event => {
+      const button = event.target.closest('[data-category]');
+      if (!button || !categoryRow.contains(button)) return;
+      category = validCategories.has(button.dataset.category) ? button.dataset.category : 'all';
+      render();
+    });
+    // One copy listener handles all command cards, even after filtering.
+    resultsElement.addEventListener('click', async event => {
+      const button = event.target.closest('.copy-button');
+      if (!button || !resultsElement.contains(button)) return;
+      const success = await copyToClipboard(button.dataset.syntax);
+      if (!success) {
+        showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
+        return;
+      }
+      const label = button.querySelector('span');
+      label.textContent = 'Copied!';
+      button.classList.add('copied');
+      showToast('Copied ' + button.dataset.command + ' syntax. Replace placeholders before sending.');
+      window.setTimeout(() => {
+        label.textContent = 'Copy syntax';
+        button.classList.remove('copied');
+      }, 1400);
+    });
+    clearButton.addEventListener('click', clearFilters);
+    document.getElementById('empty-reset').addEventListener('click', clearFilters);
+    document.addEventListener('keydown', event => {
+      const element = document.activeElement;
+      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA'
+        || element.tagName === 'SELECT' || element.isContentEditable);
+      if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey && !typing) {
+        event.preventDefault();
+        searchInput.focus();
+      }
+    });
+  }
+
+  async function initialize() {
+    wireEvents();
+    // Never block the command catalog on an optional external preset lookup.
+    void refreshMultiplierOptions();
+    try {
+      const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const markdown = await response.text();
+      if (/^\s*<!doctype html/i.test(markdown) || /^\s*<html/i.test(markdown)) {
+        throw new Error('GitHub Pages transformed COMMANDS.md to HTML. Ensure docs/.nojekyll exists.');
+      }
+      commands = parseCommands(markdown);
+      counts.all = commands.length;
+      for (const item of commands) counts[item.section]++;
+      for (const button of categoryRow.querySelectorAll('[data-category]')) {
+        const countElement = button.querySelector('[data-count]');
+        if (countElement) countElement.textContent = String(counts[button.dataset.category]);
+      }
+      for (const section of ['all', ...sectionOrder]) {
+        document.getElementById((section === 'all' ? 'total' : section) + '-count').textContent = String(counts[section]);
+      }
+      render();
+      resultsElement.setAttribute('aria-busy', 'false');
+    } catch (error) {
+      console.error('Unable to load TwitchCraft command catalog:', error);
+      resultsElement.setAttribute('aria-busy', 'false');
+      resultLabel.textContent = 'Command list unavailable';
+      errorState.hidden = false;
+    }
+  }
+
+  initialize();
+})();
+
+</script>
+</body>
+</html>

@@ -340,6 +340,9 @@ public sealed class GameplayCommandIntegrationTests
         Assert.Equal(50, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(5, commands.Count(command => command.Contains("dimension minecraft:the_nether", StringComparison.Ordinal)));
         Assert.True(commands.Exists(command => command.Contains("if dimension minecraft:the_nether run fill", StringComparison.Ordinal)));
+        Assert.True(commands.Exists(command => command.Contains("if dimension minecraft:the_nether run tp @s ~ ~50 ~", StringComparison.Ordinal)));
+        Assert.True(commands.Exists(command => command.Contains("unless dimension minecraft:the_nether run tp @s ~ ~150 ~", StringComparison.Ordinal)));
+        Assert.DoesNotContain(commands, command => command.Contains("unless dimension minecraft:the_nether run tp @s ~ ~200 ~", StringComparison.Ordinal));
         Assert.True(commands.Exists(command => command.Contains("unless dimension minecraft:the_nether run give @s minecraft:water_bucket 1", StringComparison.Ordinal)));
     }
 

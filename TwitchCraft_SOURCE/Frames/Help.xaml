@@ -33,7 +33,7 @@
                 </TextBlock>
 
                 <TextBlock FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,90,0,0">
-                    <Hyperlink NavigateUri="https://rentry.co/bot-commands" KeyboardNavigation.TabIndex="3">View Bot Commands Online</Hyperlink>
+                    <Hyperlink NavigateUri="https://antnygamer.github.io/TwitchCraft/commands/" KeyboardNavigation.TabIndex="3">View Bot Commands Online</Hyperlink>
                 </TextBlock>
 
                 <TextBlock FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,90,34,0">
