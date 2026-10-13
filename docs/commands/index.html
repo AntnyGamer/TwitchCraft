@@ -357,7 +357,7 @@ a:hover{color:var(--accent)}
 
   function parseCommands(markdown) {
     // Accept backticked or plain Markdown command names.
-    const commandRow = /^\|\s*`?![a-z0-9]+`?\s*\|/i;
+    const commandRow = /^\|\s*`?!/i;
     let section = null;
     const seen = new Set();
     const parsed = [];
@@ -382,7 +382,7 @@ a:hover{color:var(--accent)}
         throw new Error('Unexpected command table format for ' + fields[0]);
       }
       const [name, syntax, cost, targeting, permission, description] = fields;
-      if (!/^![a-z0-9]+$/i.test(name) || !syntax.startsWith(name)) {
+      if (!/^![a-z0-9_-]+$/i.test(name) || (syntax !== name && !syntax.startsWith(name + ' '))) {
         throw new Error('Invalid command syntax for ' + name);
       }
       if (seen.has(name.toLowerCase())) {
