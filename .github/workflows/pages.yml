@@ -26,6 +26,7 @@ jobs:
       - name: Keep /commands/ URL
         run: |
           cp -R docs site
+          mv site/commands-page/landing.html site/index.html
           mv site/commands-page site/commands
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
