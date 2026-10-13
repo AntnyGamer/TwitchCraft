@@ -62,7 +62,7 @@ internal static class MinecraftWorldImporter
         bool destinationExisted = Directory.Exists(plan.DestinationWorldPath);
         try
         {
-            TwitchCraft_V1.FileSystemHelper.CopyDirectory(plan.SourceWorldPath, plan.StagingWorldPath, skipReparsePoints: true);
+            TwitchCraft_V1.FileSystemHelper.CopyDirectory(plan.SourceWorldPath, plan.StagingWorldPath);
             if (!IsWorldFolder(plan.StagingWorldPath)) throw new InvalidDataException("The staged world is incomplete.");
             if (destinationExisted)
             {
