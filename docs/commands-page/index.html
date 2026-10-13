@@ -597,19 +597,17 @@ a:hover{color:var(--accent)}
 
   function sortCommands(items) {
     const mode = sortSelect.value;
-    const byPrice = mode === 'price-asc' || mode === 'price-desc';
-    const prices = byPrice ? new Map(items.map(item => [item, sortablePrice(item)])) : null;
+    if (mode === 'category' || mode === 'name-asc') return items;
+    if (mode === 'name-desc') return items.reverse();
+    const prices = new Map(items.map(item => [item, sortablePrice(item)]));
     return items.sort((a, b) => {
-      if (byPrice) {
-        const aPrice = prices.get(a), bPrice = prices.get(b);
-        if (aPrice === null && bPrice !== null) return 1;
-        if (bPrice === null && aPrice !== null) return -1;
-        if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
-          return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
-        }
+      const aPrice = prices.get(a), bPrice = prices.get(b);
+      if (aPrice === null && bPrice !== null) return 1;
+      if (bPrice === null && aPrice !== null) return -1;
+      if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
+        return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
       }
-      const nameOrder = a.name.localeCompare(b.name);
-      return mode === 'name-desc' ? -nameOrder : nameOrder;
+      return a.name.localeCompare(b.name);
     });
   }
 
@@ -791,7 +789,7 @@ a:hover{color:var(--accent)}
       const markdown = await response.text();
       if (/^\s*<(?:!doctype html|html)/i.test(markdown))
         throw new Error('Command documentation returned HTML instead of Markdown. Check the GitHub Pages deployment source.');
-      commands = parseCommands(markdown);
+      commands = parseCommands(markdown).sort((a, b) => a.name.localeCompare(b.name));
       counts.all = commands.length;
       for (const item of commands) counts[item.section]++;
       for (const button of categoryRow.querySelectorAll('[data-category]')) {
