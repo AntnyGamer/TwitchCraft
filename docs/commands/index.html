@@ -360,11 +360,20 @@ a:hover{color:var(--accent)}
     // Accept backticked or plain Markdown command names.
     const commandRow = /^ {0,3}\|\s*`?!/i;
     let section = null;
+    let codeFence = '';
     const seen = new Set();
     const parsed = [];
     let documentedRows = 0;
 
     for (const line of markdown.split(/\r?\n/)) {
+      // Examples inside fenced Markdown blocks are not command registrations.
+      const fence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+      if (fence) {
+        if (!codeFence) codeFence = fence[1];
+        else if (fence[1][0] === codeFence[0] && fence[1].length >= codeFence.length && !fence[2].trim()) codeFence = '';
+        continue;
+      }
+      if (codeFence) continue;
       if (/^ {0,3}#{2,3} /.test(line)) {
         const title = line.replace(/^ {0,3}#{2,3} /, '').trim().toLowerCase();
         section = title === 'game commands' || title === 'gameplay commands'
