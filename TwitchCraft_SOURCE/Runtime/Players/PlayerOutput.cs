@@ -79,13 +79,13 @@ public sealed partial class MainHandler
                         || line.Contains("error", StringComparison.OrdinalIgnoreCase);
                     bool isCommandParserError = mightContainCommandError && IsParserError(line);
                     bool isUnexpectedCommandError = mightContainCommandError && IsUnexpectedError(line);
-                    bool isMinecraftCommandErrorContext = mightContainCommandError && IsErrorContext(line);
+                    bool isCommandErrorContext = mightContainCommandError && IsErrorContext(line);
                     bool isSidebarObjectiveIssue = IsSidebarErrorLine(
                         line,
                         flags,
                         isCommandParserError,
                         isUnexpectedCommandError,
-                        isMinecraftCommandErrorContext);
+                        isCommandErrorContext);
 
                     HandleReadyState(line, cancellationToken);
                     if (!RemoteControlEnabled && !MultiplayerEnabled && line.Contains("RCON running on", StringComparison.OrdinalIgnoreCase))
@@ -98,7 +98,7 @@ public sealed partial class MainHandler
                         flags,
                         isCommandParserError,
                         isUnexpectedCommandError,
-                        isMinecraftCommandErrorContext,
+                        isCommandErrorContext,
                         isSidebarObjectiveIssue);
                     bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
                     if (!suppressServerLogLine && !suppressOnlinePlayersLogLine)
