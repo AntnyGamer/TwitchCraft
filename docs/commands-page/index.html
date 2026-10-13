@@ -494,15 +494,13 @@ a:hover{color:var(--accent)}
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
     textarea.select();
-    let copied = false;
     try {
-      copied = document.execCommand('copy');
+      return document.execCommand('copy');
     } catch {
-      copied = false;
+      return false;
     } finally {
       textarea.remove();
     }
-    return copied;
   }
 
   // The desktop app's preset list is the source of truth. Fetch it from the
