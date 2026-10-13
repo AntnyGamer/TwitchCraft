@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#10151b">
+  <meta name="theme-color" content="#16161b">
   <meta name="description" content="Browse TwitchCraft Minecraft and Twitch chat commands. Search syntax, default token costs, permissions and targeting, then copy commands for chat.">
   <title>Command Library | TwitchCraft</title>
   <link rel="icon" type="image/png" href="./server-icon.png">
@@ -192,7 +192,7 @@ a:hover{color:var(--accent)}
             <label class="search-box" for="command-search">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"></circle><path d="m16 16 5 5"></path></svg>
               <span class="visually-hidden">Search commands</span>
-              <input id="command-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search commands, e.g. lightning, tokens…">
+              <input id="command-search" type="search" maxlength="150" autocomplete="off" spellcheck="false" placeholder="Search commands, e.g. lightning, tokens…">
               <kbd>/</kbd>
             </label>
             <label class="free-toggle" for="free-only"><input type="checkbox" id="free-only"><span>Free only</span></label>
@@ -599,7 +599,7 @@ a:hover{color:var(--accent)}
   }
 
   function render() {
-    const query = searchInput.value.toLocaleLowerCase().trim();
+    const query = searchInput.value.toLowerCase().trim();
     const onlyFree = freeOnlyInput.checked;
     const filtered = commands.filter(item => {
       if (category !== 'all' && item.section !== category) return false;
