@@ -30,10 +30,10 @@ public sealed partial class MainHandler
         if (string.IsNullOrWhiteSpace(line) || TryHandleHealthProbe(line))
             return;
 
-        int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-        if (entityDataMarkerIndex >= 0)
+        int entityMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+        if (entityMarkerIndex >= 0)
         {
-            HandleEntity(line, entityDataMarkerIndex);
+            HandleEntity(line, entityMarkerIndex);
             return;
         }
 
@@ -63,10 +63,10 @@ public sealed partial class MainHandler
                     if (TryHandleProbe(line) || TryHandleHealthProbe(line))
                         continue;
 
-                    int entityDataMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
-                    if (entityDataMarkerIndex >= 0)
+                    int entityMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
+                    if (entityMarkerIndex >= 0)
                     {
-                        HandleEntity(line, entityDataMarkerIndex);
+                        HandleEntity(line, entityMarkerIndex);
                         continue;
                     }
 
@@ -93,15 +93,15 @@ public sealed partial class MainHandler
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 
-                    bool suppressServerLogLine = ShouldHideLogLine(
+                    bool hideServerLine = ShouldHideLogLine(
                         line,
                         flags,
                         isCommandParserError,
                         isUnexpectedCommandError,
                         isCommandErrorContext,
                         isSidebarObjectiveIssue);
-                    bool suppressOnlinePlayersLogLine = !suppressServerLogLine && ShouldHidePlayerList(line);
-                    if (!suppressServerLogLine && !suppressOnlinePlayersLogLine)
+                    bool hidePlayerListLine = !hideServerLine && ShouldHidePlayerList(line);
+                    if (!hideServerLine && !hidePlayerListLine)
                         _shellWindow?.AddServerLogLine(line);
 
                     CapturePlayers(line);
