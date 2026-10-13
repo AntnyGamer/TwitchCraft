@@ -30,8 +30,8 @@ public sealed class RollingLogPersistenceTests
 
         string[] lines = ReadAllLogLines(logPath);
         Assert.Equal(2, lines.Length);
-        Assert.Equal(1, lines.Count(line => line == first));
-        Assert.Equal(1, lines.Count(line => line == second));
+        Assert.Single(lines, line => line == first);
+        Assert.Single(lines, line => line == second);
         Assert.True(File.Exists(logPath + ".old1"));
         Assert.Equal(second, Assert.Single(File.ReadAllLines(logPath)));
     }
