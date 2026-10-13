@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using Xunit;
@@ -29,11 +28,9 @@ public sealed class ScaleCooldownIsolationTests
 
         Assert.Equal(110, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(200, scenario.Runtime.Tokens.GetBalance("another_viewer"));
-        Assert.Equal(1, commands.Count(command =>
-            command.Contains("minecraft:scale base set 0.5", StringComparison.Ordinal)));
-        Assert.Equal(1, commands.Count(command =>
-            command.Contains("minecraft:scale base set 2", StringComparison.Ordinal)));
-        Assert.Equal(1, commands.Count(command =>
-            command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:lightning_bolt", StringComparison.Ordinal)));
+        Assert.Single(commands, command => command.Contains("minecraft:scale base set 0.5", StringComparison.Ordinal));
+        Assert.Single(commands, command => command.Contains("minecraft:scale base set 2", StringComparison.Ordinal));
+        Assert.Single(commands, command =>
+            command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:lightning_bolt", StringComparison.Ordinal));
     }
 }
