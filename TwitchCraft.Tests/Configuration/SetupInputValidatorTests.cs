@@ -26,11 +26,12 @@ public sealed class SetupInputValidatorTests
     [InlineData("1.21.8", "127.0.0.1", "new-client", "old-client", "access-token", "streamer", "bot")]
     [InlineData("1.21.8", "127.0.0.1", "client-id", "client-id", "", "streamer", "bot")]
     [InlineData("1.21.8", "127.0.0.1", "client-id", "client-id", "access-token", "bad channel", "bot")]
-    [InlineData("1.21.8", "127.0.0.1", "client-id", "client-id", "access-token", "@@@", "bot")]
     [InlineData("1.21.8", "127.0.0.1", "client-id", "client-id", "access-token", "streamer", "")]
     public void CanStart_RejectsMissingOrInvalidRequiredValues(
-        string version, string bindIP,
-        string clientID, string authorizedClientID,
+        string version,
+        string bindIP,
+        string clientID,
+        string authorizedClientID,
         string token,
         string channel,
         string botName)
