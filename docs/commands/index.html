@@ -477,7 +477,8 @@ a:hover{color:var(--accent)}
         ? requestedMultiplier
         : values.includes(previousSelection) ? previousSelection
           : values.includes('1') ? '1' : values[0];
-      if (commands.length) render();
+      // Updating the options alone does not change any displayed prices.
+      if (commands.length && multiplierSelect.value !== previousSelection) render();
     } catch (error) {
       console.warn('Using local multiplier presets:', error);
     }
