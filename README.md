@@ -329,4 +329,4 @@ Troubleshooting has moved to a document for long-term use and dynamic updating
 
 TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
 
-**README — September 15th, 2026 (for TwitchCraft v1.9.0)**
+**README — October 13th, 2026 (for TwitchCraft v1.10.0)**
