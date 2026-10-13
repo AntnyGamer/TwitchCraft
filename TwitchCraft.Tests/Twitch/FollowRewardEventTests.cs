@@ -21,7 +21,7 @@ public sealed class FollowRewardEventTests
 
         try
         {
-            Assert.Equal(StartingProfile.DefaultFollowRewardAmount, runtime.FollowRewardAmount);
+            Assert.Equal(50, runtime.FollowRewardAmount);
             TwitchCraftConfig config = new();
             config.Settings.FollowRewardAmount = 250;
             await runtime.ApplySettingsAsync(config);
