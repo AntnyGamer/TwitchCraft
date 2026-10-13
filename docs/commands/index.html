@@ -301,6 +301,7 @@ a:hover{color:var(--accent)}
   const initialCategory = params.get('category') || 'all';
 
   let commands = [];
+  const counts = { all: 0, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
   let category = validCategories.has(initialCategory) ? initialCategory : 'all';
   let toastTimer = 0;
   searchInput.value = (params.get('q') || '').slice(0, 150);
@@ -361,6 +362,7 @@ a:hover{color:var(--accent)}
     let section = null;
     const seen = new Set();
     const parsed = [];
+    let documentedRows = 0;
 
     for (const line of markdown.split(/\r?\n/)) {
       if (/^ {0,3}#{2,3} /.test(line)) {
@@ -375,7 +377,9 @@ a:hover{color:var(--accent)}
                 ? 'streamer'
                 : null;
       }
-      if (!section || !commandRow.test(line)) continue;
+      if (!commandRow.test(line)) continue;
+      documentedRows++;
+      if (!section) continue;
 
       const fields = splitRow(line).map(plainText);
       if (fields.length !== 6) {
@@ -399,7 +403,6 @@ a:hover{color:var(--accent)}
     }
 
     // Fail loudly instead of silently showing just one section if headings change.
-    const documentedRows = markdown.split(/\r?\n/).filter(line => commandRow.test(line)).length;
     if (!parsed.length || parsed.length !== documentedRows) {
       throw new Error('Command documentation mismatch: parsed ' + parsed.length + ' of ' + documentedRows + ' commands.');
     }
@@ -582,8 +585,6 @@ a:hover{color:var(--accent)}
   }
 
   function updateCategoryButtons() {
-    const counts = { all: commands.length, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
-    for (const item of commands) counts[item.section]++;
     for (const button of categoryRow.querySelectorAll('[data-category]')) {
       const active = button.dataset.category === category;
       button.classList.toggle('is-selected', active);
@@ -720,6 +721,8 @@ a:hover{color:var(--accent)}
         throw new Error('GitHub Pages transformed COMMANDS.md to HTML. Ensure docs/.nojekyll exists.');
       }
       commands = parseCommands(markdown);
+      counts.all = commands.length;
+      for (const item of commands) counts[item.section]++;
       render();
       resultsElement.setAttribute('aria-busy', 'false');
     } catch (error) {
