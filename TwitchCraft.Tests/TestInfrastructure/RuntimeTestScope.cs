@@ -12,7 +12,17 @@ internal sealed class RuntimeTestScope : IDisposable
     internal MainHandler Runtime { get; }
 
     internal RuntimeTestScope()
-        => Runtime = FakeJavaServer.CreateRuntime(_directory.Path);
+    {
+        try
+        {
+            Runtime = FakeJavaServer.CreateRuntime(_directory.Path);
+        }
+        catch
+        {
+            _directory.Dispose();
+            throw;
+        }
+    }
 
     internal static async Task<RuntimeTestScope> CreateAsync(Action<StartingProfile> configure)
     {
@@ -34,7 +44,13 @@ internal sealed class RuntimeTestScope : IDisposable
 
     public void Dispose()
     {
-        Runtime.Tokens.Close();
-        _directory.Dispose();
+        try
+        {
+            Runtime.Tokens.Close();
+        }
+        finally
+        {
+            _directory.Dispose();
+        }
     }
 }
