@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1.Frames;
 using Xunit;
 
@@ -64,66 +63,55 @@ public sealed class CommandSettingsEditorTests
     [Fact]
     public void Recycling_PreservesEditsWithoutSavingOnScrollOrPrefixChanges()
     {
-        Exception? failure = null;
-        Thread thread = new(() =>
+        StaTestRunner.Run(() =>
         {
-            try
-            {
-                Settings settings = new();
-                settings.Resources["CommandSettingsPrefix"] = "!";
-                ((Grid)settings.FindName("CommandsSettingsPage")).Visibility = Visibility.Collapsed;
-                ((Grid)settings.FindName("CustomCommandsSettingsPage")).Visibility = Visibility.Visible;
-                ListBox list = (ListBox)settings.FindName("CommandCustomizationList");
-                int saves = 0;
-                Settings.CommandSettingsRow[] rows = Enumerable.Range(0, 200)
-                    .Select(i => new Settings.CommandSettingsRow($"command{i}", new() { GlobalCooldownSeconds = 0.123456789 }, _ => saves++)).ToArray();
-                Assert.Same(rows[0].PerUserOptions, rows[1].PerUserOptions);
-                list.ItemsSource = rows;
-                settings.Measure(new Size(800, 450));
-                settings.Arrange(new Rect(0, 0, 800, 450));
-                settings.UpdateLayout();
-                Assert.InRange(Descendants<ListBoxItem>(list).Count(), 1, 30);
-                ListBoxItem first = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
-                byte[] unselectedPixels = RenderPixels(first);
-                first.IsSelected = true;
-                Pump();
-                settings.UpdateLayout();
-                Assert.Equal(unselectedPixels, RenderPixels(first));
-                CheckBox enabled = Assert.Single(Descendants<CheckBox>(first));
-                enabled.SetCurrentValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, false);
-                ComboBox perUser = Descendants<ComboBox>(first).First();
-                perUser.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, rows[0].PerUserOptions[1]);
-                Pump();
-                Assert.False(rows[0].Enabled);
-                Assert.Equal(0, rows[0].PerUserCooldown.Value);
-                Assert.Equal(2, saves);
-                VirtualizingStackPanel panel = Assert.Single(Descendants<VirtualizingStackPanel>(list));
-                panel.SetVerticalOffset(panel.ExtentHeight);
-                list.UpdateLayout();
-                Pump();
-                settings.UpdateLayout();
-                Assert.NotNull(list.ItemContainerGenerator.ContainerFromIndex(rows.Length - 1));
-                Assert.InRange(Descendants<ListBoxItem>(list).Count(), 1, 30);
-                settings.Resources["CommandSettingsPrefix"] = "?";
-                panel.SetVerticalOffset(0);
-                list.UpdateLayout();
-                Pump();
-                settings.UpdateLayout();
-                first = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
-                Assert.False(Assert.Single(Descendants<CheckBox>(first)).IsChecked);
-                Assert.Equal(rows[0].PerUserOptions[1], Descendants<ComboBox>(first).First().SelectedItem);
-                Assert.Contains(Descendants<TextBlock>(first), text => text.Text == "?command0");
-                Assert.Equal(0.123456789, rows[0].GlobalCooldown.Value);
-                Assert.Equal(2, saves);
-            }
-            catch (Exception ex) { failure = ex; }
-            finally { Dispatcher.CurrentDispatcher.InvokeShutdown(); }
-        })
-        { IsBackground = true };
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        Assert.True(thread.Join(TimeSpan.FromSeconds(20)), "Command editor test timed out.");
-        if (failure != null) ExceptionDispatchInfo.Capture(failure).Throw();
+            Settings settings = new();
+            settings.Resources["CommandSettingsPrefix"] = "!";
+            ((Grid)settings.FindName("CommandsSettingsPage")).Visibility = Visibility.Collapsed;
+            ((Grid)settings.FindName("CustomCommandsSettingsPage")).Visibility = Visibility.Visible;
+            ListBox list = (ListBox)settings.FindName("CommandCustomizationList");
+            int saves = 0;
+            Settings.CommandSettingsRow[] rows = Enumerable.Range(0, 200)
+                .Select(i => new Settings.CommandSettingsRow($"command{i}", new() { GlobalCooldownSeconds = 0.123456789 }, _ => saves++)).ToArray();
+            Assert.Same(rows[0].PerUserOptions, rows[1].PerUserOptions);
+            list.ItemsSource = rows;
+            settings.Measure(new Size(800, 450));
+            settings.Arrange(new Rect(0, 0, 800, 450));
+            settings.UpdateLayout();
+            Assert.InRange(Descendants<ListBoxItem>(list).Count(), 1, 30);
+            ListBoxItem first = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
+            byte[] unselectedPixels = RenderPixels(first);
+            first.IsSelected = true;
+            Pump();
+            settings.UpdateLayout();
+            Assert.Equal(unselectedPixels, RenderPixels(first));
+            CheckBox enabled = Assert.Single(Descendants<CheckBox>(first));
+            enabled.SetCurrentValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, false);
+            ComboBox perUser = Descendants<ComboBox>(first).First();
+            perUser.SetCurrentValue(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, rows[0].PerUserOptions[1]);
+            Pump();
+            Assert.False(rows[0].Enabled);
+            Assert.Equal(0, rows[0].PerUserCooldown.Value);
+            Assert.Equal(2, saves);
+            VirtualizingStackPanel panel = Assert.Single(Descendants<VirtualizingStackPanel>(list));
+            panel.SetVerticalOffset(panel.ExtentHeight);
+            list.UpdateLayout();
+            Pump();
+            settings.UpdateLayout();
+            Assert.NotNull(list.ItemContainerGenerator.ContainerFromIndex(rows.Length - 1));
+            Assert.InRange(Descendants<ListBoxItem>(list).Count(), 1, 30);
+            settings.Resources["CommandSettingsPrefix"] = "?";
+            panel.SetVerticalOffset(0);
+            list.UpdateLayout();
+            Pump();
+            settings.UpdateLayout();
+            first = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
+            Assert.False(Assert.Single(Descendants<CheckBox>(first)).IsChecked);
+            Assert.Equal(rows[0].PerUserOptions[1], Descendants<ComboBox>(first).First().SelectedItem);
+            Assert.Contains(Descendants<TextBlock>(first), text => text.Text == "?command0");
+            Assert.Equal(0.123456789, rows[0].GlobalCooldown.Value);
+            Assert.Equal(2, saves);
+        }, TimeSpan.FromSeconds(20), "Command editor test timed out.");
     }
 
     private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);

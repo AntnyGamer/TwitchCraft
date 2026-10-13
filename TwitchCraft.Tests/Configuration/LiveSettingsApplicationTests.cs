@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
 using TwitchCraft_V1;
@@ -13,10 +12,8 @@ public sealed class LiveSettingsApplicationTests
     [Fact]
     public async Task ApplySettings_ClonesNestedSettings()
     {
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = new(
-            new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"));
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
         TwitchCraftConfig config = new();
         config.Settings.MaximumTokenBalance = 100;
         config.Settings.CommandCustomizations["heal"] = new CommandCustomization
@@ -26,36 +23,27 @@ public sealed class LiveSettingsApplicationTests
             GlobalCooldownSeconds = 2.5
         };
 
-        try
-        {
-            await runtime.ApplySettingsAsync(config);
+        await runtime.ApplySettingsAsync(config);
 
-            config.Settings.MaximumTokenBalance = 999;
-            config.Settings.CommandCustomizations["heal"].Enabled = true;
-            config.Settings.CommandCustomizations["heal"].CooldownSeconds = null;
-            config.Settings.CommandCustomizations["heal"].GlobalCooldownSeconds = null;
-            config.Settings.CommandCustomizations["lightning"] = new CommandCustomization { Enabled = false };
+        config.Settings.MaximumTokenBalance = 999;
+        config.Settings.CommandCustomizations["heal"].Enabled = true;
+        config.Settings.CommandCustomizations["heal"].CooldownSeconds = null;
+        config.Settings.CommandCustomizations["heal"].GlobalCooldownSeconds = null;
+        config.Settings.CommandCustomizations["lightning"] = new CommandCustomization { Enabled = false };
 
-            Assert.Equal(100, runtime.Tokens.MaximumBalance);
-            Assert.True(runtime.Commands.TryGetCommandSettings("heal", out CommandCustomization applied));
-            Assert.False(applied.Enabled);
-            Assert.Equal(5, applied.CooldownSeconds);
-            Assert.Equal(2.5, applied.GlobalCooldownSeconds);
-            Assert.False(runtime.Commands.TryGetCommandSettings("lightning", out _));
-        }
-        finally
-        {
-            runtime.Tokens.Close();
-        }
+        Assert.Equal(100, runtime.Tokens.MaximumBalance);
+        Assert.True(runtime.Commands.TryGetCommandSettings("heal", out CommandCustomization applied));
+        Assert.False(applied.Enabled);
+        Assert.Equal(5, applied.CooldownSeconds);
+        Assert.Equal(2.5, applied.GlobalCooldownSeconds);
+        Assert.False(runtime.Commands.TryGetCommandSettings("lightning", out _));
     }
 
     [Fact]
     public async Task ApplySettings_UpdatesLive()
     {
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = new(
-            new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"));
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
         TwitchCraftConfig config = new();
         config.Twitch.StreamerName = "streamer";
         config.Settings.MaximumTokenBalance = 100;
@@ -67,60 +55,44 @@ public sealed class LiveSettingsApplicationTests
         config.Settings.PassiveTokenPayoutMaximumSeconds = 60;
         config.Settings.PassiveRewardsRequireActivity = true;
 
-        try
-        {
-            await runtime.ApplySettingsAsync(config);
+        await runtime.ApplySettingsAsync(config);
 
-            Assert.Equal(100, runtime.Tokens.MaximumBalance);
-            Assert.False(runtime.Commands.AllowAllPlayerTarget);
-            Assert.False(runtime.Commands.AllowRandomPlayerTarget);
-            Assert.Equal(5, runtime.PassiveTokensPerPayout);
-            Assert.Equal(60, runtime.GetPassivePayoutDelay());
-            Assert.True(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 100));
-            Assert.True(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 101));
-            Assert.False(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 102));
+        Assert.Equal(100, runtime.Tokens.MaximumBalance);
+        Assert.False(runtime.Commands.AllowAllPlayerTarget);
+        Assert.False(runtime.Commands.AllowRandomPlayerTarget);
+        Assert.Equal(5, runtime.PassiveTokensPerPayout);
+        Assert.Equal(60, runtime.GetPassivePayoutDelay());
+        Assert.True(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 100));
+        Assert.True(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 101));
+        Assert.False(runtime.Commands.TryUseCommandSlots(string.Empty, out _, 102));
 
-            runtime.RecordChatActivity("viewer", 1000);
-            Assert.True(runtime.IsRewardEligibleNoLock("viewer", 1599));
-            Assert.False(runtime.IsRewardEligibleNoLock("viewer", 1601));
-        }
-        finally
-        {
-            runtime.Tokens.Close();
-        }
+        runtime.RecordChatActivity("viewer", 1000);
+        Assert.True(runtime.IsRewardEligibleNoLock("viewer", 1599));
+        Assert.False(runtime.IsRewardEligibleNoLock("viewer", 1601));
     }
 
     [Fact]
     public async Task ApplySettings_PassiveActivityToggleClearsOldActivity()
     {
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = new(new AppShellViewModel(), Path.Combine(directory.Path, "viewer_tokens.db"));
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
         TwitchCraftConfig config = new() { Settings = { PassiveRewardsRequireActivity = true } };
 
-        try
-        {
-            await runtime.ApplySettingsAsync(config);
-            runtime.RecordChatActivity("viewer", 1000);
-            config.Settings.PassiveRewardsRequireActivity = false;
-            await runtime.ApplySettingsAsync(config);
-            config.Settings.PassiveRewardsRequireActivity = true;
-            await runtime.ApplySettingsAsync(config);
+        await runtime.ApplySettingsAsync(config);
+        runtime.RecordChatActivity("viewer", 1000);
+        config.Settings.PassiveRewardsRequireActivity = false;
+        await runtime.ApplySettingsAsync(config);
+        config.Settings.PassiveRewardsRequireActivity = true;
+        await runtime.ApplySettingsAsync(config);
 
-            Assert.False(runtime.IsRewardEligibleNoLock("viewer", 1000));
-        }
-        finally
-        {
-            runtime.Tokens.Close();
-        }
+        Assert.False(runtime.IsRewardEligibleNoLock("viewer", 1000));
     }
 
     [Fact]
     public async Task PerformanceAndCommandSettings_ApplyLiveAndRemainPerViewer()
     {
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = new(
-            new AppShellViewModel(),
-            Path.Combine(directory.Path, "viewer_tokens.db"));
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
         TwitchCraftConfig config = new();
         config.Settings.ViewerCommandLimitPerMinute = 2;
         config.Settings.PassiveRewardsRequireActivity = true;
@@ -136,35 +108,28 @@ public sealed class LiveSettingsApplicationTests
         config.Settings.CommandCustomizations["heal"] = new CommandCustomization { CooldownSeconds = 5 };
         config.Settings.CommandCustomizations["tiny"] = new CommandCustomization { GlobalCooldownSeconds = 2.5 };
 
-        try
-        {
-            await runtime.ApplySettingsAsync(config);
+        await runtime.ApplySettingsAsync(config);
 
-            const long now = 10_000;
-            Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now));
-            Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 1));
-            Assert.False(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 2));
-            Assert.True(runtime.Commands.TryUseCommandSlots("differentviewer", out _, now + 2));
-            Assert.True(runtime.Commands.HasPerUserCooldownOverride("heal"));
-            Assert.False(runtime.Commands.HasPerUserCooldownOverride("lightning"));
-            Assert.True(runtime.Commands.HasGlobalCooldownOverride("tiny"));
-            Assert.False(runtime.Commands.HasGlobalCooldownOverride("heal"));
-            Assert.Equal(100, runtime.MaxVisibleTwitchLogLines);
-            Assert.Equal(100, runtime.MaxVisibleMinecraftLogLines);
-            Assert.Equal(60, runtime.ViewerRosterRefreshIntervalSeconds);
-            Assert.Equal(35, runtime.MaxGameplayCommandQueue);
-            Assert.Equal(TimeSpan.FromSeconds(15), runtime.RCONTimeout);
-            Assert.Equal(TimeSpan.FromSeconds(30), runtime.GracefulShutdownTimeout);
-            Assert.Contains("tiny", runtime.RegisteredCommandNames);
+        const long now = 10_000;
+        Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now));
+        Assert.True(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 1));
+        Assert.False(runtime.Commands.TryUseCommandSlots("viewer", out _, now + 2));
+        Assert.True(runtime.Commands.TryUseCommandSlots("differentviewer", out _, now + 2));
+        Assert.True(runtime.Commands.HasPerUserCooldownOverride("heal"));
+        Assert.False(runtime.Commands.HasPerUserCooldownOverride("lightning"));
+        Assert.True(runtime.Commands.HasGlobalCooldownOverride("tiny"));
+        Assert.False(runtime.Commands.HasGlobalCooldownOverride("heal"));
+        Assert.Equal(100, runtime.MaxVisibleTwitchLogLines);
+        Assert.Equal(100, runtime.MaxVisibleMinecraftLogLines);
+        Assert.Equal(60, runtime.ViewerRosterRefreshIntervalSeconds);
+        Assert.Equal(35, runtime.MaxGameplayCommandQueue);
+        Assert.Equal(TimeSpan.FromSeconds(15), runtime.RCONTimeout);
+        Assert.Equal(TimeSpan.FromSeconds(30), runtime.GracefulShutdownTimeout);
+        Assert.Contains("tiny", runtime.RegisteredCommandNames);
 
-            runtime.RecordChatActivity("recent", 1000);
-            Assert.True(runtime.IsRewardEligibleNoLock("recent", 1120));
-            Assert.False(runtime.IsRewardEligibleNoLock("recent", 1121));
-        }
-        finally
-        {
-            runtime.Tokens.Close();
-        }
+        runtime.RecordChatActivity("recent", 1000);
+        Assert.True(runtime.IsRewardEligibleNoLock("recent", 1120));
+        Assert.False(runtime.IsRewardEligibleNoLock("recent", 1121));
     }
 
     [Fact]

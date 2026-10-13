@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft.Tests.TestInfrastructure;
@@ -16,7 +15,7 @@ public sealed class StartupAndEligibilityTests
     [InlineData(true, false)]
     public async Task Eligibility_UnrecordedViewerUsesActivityRequirement(bool requireActivity, bool expectedEligible)
     {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings => settings.PassiveRewardsRequireActivity = requireActivity);
+        using RuntimeTestScope scope = await RuntimeTestScope.CreateAsync(settings => settings.PassiveRewardsRequireActivity = requireActivity);
 
         Assert.Equal(expectedEligible, scope.Runtime.IsRewardEligibleNoLock("quietviewer", 1_000));
     }
@@ -24,7 +23,7 @@ public sealed class StartupAndEligibilityTests
     [Fact]
     public async Task RecordedActivity_UsesNormalizedTwitchIdentity()
     {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
+        using RuntimeTestScope scope = await RuntimeTestScope.CreateAsync(settings =>
         {
             settings.PassiveRewardsRequireActivity = true;
             settings.PassiveActivityWindowMinutes = 1;
@@ -38,7 +37,7 @@ public sealed class StartupAndEligibilityTests
     [Fact]
     public async Task LaterChatActivity_ExtendsEligibilityWindow()
     {
-        using RuntimeScope scope = await RuntimeScope.CreateAsync(settings =>
+        using RuntimeTestScope scope = await RuntimeTestScope.CreateAsync(settings =>
         {
             settings.PassiveRewardsRequireActivity = true;
             settings.PassiveActivityWindowMinutes = 1;
@@ -75,37 +74,6 @@ public sealed class StartupAndEligibilityTests
         finally
         {
             runtime.Tokens.Close();
-        }
-    }
-
-    private sealed class RuntimeScope : IDisposable
-    {
-        private readonly TemporaryDirectory _directory;
-
-        private RuntimeScope(TemporaryDirectory directory, MainHandler runtime)
-        {
-            _directory = directory;
-            Runtime = runtime;
-        }
-
-        internal MainHandler Runtime { get; }
-
-        internal static async Task<RuntimeScope> CreateAsync(Action<StartingProfile> configure)
-        {
-            TemporaryDirectory directory = new();
-            MainHandler runtime = new(
-                new AppShellViewModel(),
-                Path.Combine(directory.Path, "viewer_tokens.db"));
-            TwitchCraftConfig config = new();
-            configure(config.Settings);
-            await runtime.ApplySettingsAsync(config);
-            return new RuntimeScope(directory, runtime);
-        }
-
-        public void Dispose()
-        {
-            Runtime.Tokens.Close();
-            _directory.Dispose();
         }
     }
 }

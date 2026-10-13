@@ -42,24 +42,26 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         string? attributes = null, string? minecraftVersion = null)
     {
         TemporaryDirectory directory = new();
-        CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready-responsive");
-        config.Server.MinecraftVersion = minecraftVersion ?? config.Server.MinecraftVersion;
-        IReadOnlyList<string> playerList = players ?? ["PlayerOne"];
-        config.Identity.StreamerMinecraftName = playerList.Count > 0 ? playerList[0] : "PlayerOne";
-        config.Settings.MultiplayerEnabled = multiplayer;
-        FakeJavaServer.ConfigureResponsiveServer(
-            config.Server.JarPath,
-            playerList,
-            spectators,
-            maxHealth,
-            selectedItem,
-            attributes);
-
-        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
-        MinecraftRuntimeScenario scenario = new(directory, cts, config, runtime);
+        CancellationTokenSource? cts = null;
+        MinecraftRuntimeScenario? scenario = null;
         try
         {
+            cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path, "ready-responsive");
+            config.Server.MinecraftVersion = minecraftVersion ?? config.Server.MinecraftVersion;
+            IReadOnlyList<string> playerList = players ?? ["PlayerOne"];
+            config.Identity.StreamerMinecraftName = playerList.Count > 0 ? playerList[0] : "PlayerOne";
+            config.Settings.MultiplayerEnabled = multiplayer;
+            FakeJavaServer.ConfigureResponsiveServer(
+                config.Server.JarPath,
+                playerList,
+                spectators,
+                maxHealth,
+                selectedItem,
+                attributes);
+
+            MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
+            scenario = new(directory, cts, config, runtime);
             await runtime.ApplySettingsAsync(config);
             await runtime.StartServerAsync(config, cts.Token);
             _ = runtime.ReadOutputAsync(cts.Token);
@@ -74,7 +76,13 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         }
         catch
         {
-            await scenario.DisposeAsync();
+            if (scenario != null)
+                await scenario.DisposeAsync();
+            else
+            {
+                cts?.Dispose();
+                directory.Dispose();
+            }
             throw;
         }
     }
@@ -119,10 +127,22 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        SetItemResponsesHeld(false);
-        _cts.Cancel();
-        await FakeJavaServer.StopRuntimeAndProcessAsync(Runtime, JarPath);
-        _cts.Dispose();
-        _directory.Dispose();
+        try
+        {
+            SetItemResponsesHeld(false);
+        }
+        finally
+        {
+            try
+            {
+                _cts.Cancel();
+                await FakeJavaServer.StopRuntimeAndProcessAsync(Runtime, JarPath);
+            }
+            finally
+            {
+                _cts.Dispose();
+                _directory.Dispose();
+            }
+        }
     }
 }
