@@ -13,18 +13,15 @@ public sealed class PaidDispatchAtomicityTests
     public async Task SuccessfulPaidCommand_ChargesDispatchesAndRecordsOnce()
     {
         TransactionHarness harness = new();
-        int statisticsAtDispatch = -1;
         harness.DispatchOverride = _ =>
         {
-            statisticsAtDispatch = harness.StatisticsCalls;
+            Assert.Equal(0, harness.StatisticsCalls);
             return Task.FromResult(true);
         };
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(
-            () => Assert.Equal(0, statisticsAtDispatch),
-            () => Assert.True(succeeded),
+        Assert.Multiple(() => Assert.True(succeeded),
             () => Assert.Equal(75, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(0, harness.RefundCalls),
@@ -40,18 +37,15 @@ public sealed class PaidDispatchAtomicityTests
     public async Task FailedPaidCommand_RefundsOnceReportsFailureAndSkipsStatistics()
     {
         TransactionHarness harness = new();
-        int statisticsAtDispatch = -1;
         harness.DispatchOverride = _ =>
         {
-            statisticsAtDispatch = harness.StatisticsCalls;
+            Assert.Equal(0, harness.StatisticsCalls);
             return Task.FromResult(false);
         };
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(
-            () => Assert.Equal(0, statisticsAtDispatch),
-            () => Assert.False(succeeded),
+        Assert.Multiple(() => Assert.False(succeeded),
             () => Assert.Equal(100, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(1, harness.RefundCalls),
@@ -75,8 +69,7 @@ public sealed class PaidDispatchAtomicityTests
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(
-            () => Assert.False(succeeded),
+        Assert.Multiple(() => Assert.False(succeeded),
             () => Assert.Equal(75, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(1, harness.RefundCalls),
@@ -99,8 +92,7 @@ public sealed class PaidDispatchAtomicityTests
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() => harness.ExecuteAsync(25, TestContext.Current.CancellationToken));
 
-        Assert.Multiple(
-            () => Assert.Contains("could not be built", exception.Message, StringComparison.Ordinal),
+        Assert.Multiple(() => Assert.Contains("could not be built", exception.Message, StringComparison.Ordinal),
             () => Assert.Equal(100, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(1, harness.RefundCalls),
@@ -123,8 +115,7 @@ public sealed class PaidDispatchAtomicityTests
 
         bool succeeded = await harness.ExecuteAsync(10, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(
-            () => Assert.False(succeeded),
+        Assert.Multiple(() => Assert.False(succeeded),
             () => Assert.Equal(100, harness.Balance),
             () => Assert.Equal(1, harness.RefundCalls),
             () => Assert.Equal(1, harness.DispatchCalls),
@@ -140,8 +131,7 @@ public sealed class PaidDispatchAtomicityTests
 
         bool succeeded = await harness.ExecuteAsync(125, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(
-            () => Assert.False(succeeded),
+        Assert.Multiple(() => Assert.False(succeeded),
             () => Assert.Equal(100, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(0, harness.DispatchCalls),
@@ -160,8 +150,7 @@ public sealed class PaidDispatchAtomicityTests
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(
-            () => Assert.False(succeeded),
+        Assert.Multiple(() => Assert.False(succeeded),
             () => Assert.Equal(100, harness.Balance),
             () => Assert.Equal(0, harness.SpendCalls),
             () => Assert.Equal(0, harness.RefundCalls),
@@ -197,8 +186,7 @@ public sealed class PaidDispatchAtomicityTests
             OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
                 () => execution.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
 
-            Assert.Multiple(
-                () => Assert.Equal(cancellation.Token, exception.CancellationToken),
+            Assert.Multiple(() => Assert.Equal(cancellation.Token, exception.CancellationToken),
                 () => Assert.Equal(100, harness.Balance),
                 () => Assert.Equal(1, harness.SpendCalls),
                 () => Assert.Equal(1, harness.RefundCalls),
