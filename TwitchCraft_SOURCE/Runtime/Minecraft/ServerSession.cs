@@ -101,8 +101,9 @@ public sealed partial class MainHandler
         {
             MinigameManager.StopLoops(this);
         }
-        catch
+        catch (Exception ex)
         {
+            ErrorHandling.LogNonFatal("Failed to stop minigames during cleanup", ex);
         }
 
         try
