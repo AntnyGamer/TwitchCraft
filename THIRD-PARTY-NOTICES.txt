@@ -67,10 +67,6 @@ Licensed under the Apache License, Version 2.0.
 This covers SQLitePCLRaw.bundle_e_sqlite3 and its transitive SQLitePCLRaw
 config, provider, and core packages, version 3.0.5.
 
-xunit.v3 4.0.2 (development/test-only)
-Copyright (c) .NET Foundation and Contributors
-Licensed under the Apache License, Version 2.0.
-
 SQLitePCLRaw NOTICE information:
 
 ------------------------------------------------------------
@@ -114,6 +110,15 @@ Apache v2.
 //
 // See the Apache 2 License for the specific language governing permissions and
 // limitations under the License.
+
+============================================================
+               XUNIT.V3 4.0.2 (TEST ONLY)
+============================================================
+
+xunit.v3 is used to build and run TwitchCraft's tests, not in the
+published TwitchCraft application.
+Copyright (c) .NET Foundation and Contributors
+Licensed under the Apache License, Version 2.0.
 
 ============================================================
                 APACHE LICENSE, VERSION 2.0
