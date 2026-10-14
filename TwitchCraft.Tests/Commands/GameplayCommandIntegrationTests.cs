@@ -82,16 +82,15 @@ public sealed class GameplayCommandIntegrationTests
                 command.StartsWith("item replace entity @a[name=\"", StringComparison.Ordinal) &&
                 command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal));
 
-        Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(2, enchants.Count);
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
-            Assert.Single(enchants, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal));
-        Assert.All(enchants, enchant =>
-        {
-            Assert.Contains("minecraft:enchantments=", enchant, StringComparison.Ordinal);
-            Assert.Contains("minecraft:damage=5", enchant, StringComparison.Ordinal);
-            Assert.EndsWith(" 2", enchant, StringComparison.Ordinal);
-        });
+        Assert.Multiple(
+            () => Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer")),
+            () => Assert.Equal(2, enchants.Count),
+            () => Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
+                Assert.Single(enchants, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal))),
+            () => Assert.All(enchants, enchant => Assert.Multiple(
+                () => Assert.Contains("minecraft:enchantments=", enchant, StringComparison.Ordinal),
+                () => Assert.Contains("minecraft:damage=5", enchant, StringComparison.Ordinal),
+                () => Assert.EndsWith(" 2", enchant, StringComparison.Ordinal))));
     }
 
     [Fact]
@@ -111,17 +110,16 @@ public sealed class GameplayCommandIntegrationTests
                 command.StartsWith("item replace entity @a[name=\"", StringComparison.Ordinal) &&
                 command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal));
 
-        Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(2, renames.Count);
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
-            Assert.Single(renames, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal));
-        Assert.All(renames, rename =>
-        {
-            Assert.Contains("minecraft:damage=5", rename, StringComparison.Ordinal);
-            Assert.Contains("minecraft:custom_name=", rename, StringComparison.Ordinal);
-            Assert.Contains("Diamond Sword", rename, StringComparison.Ordinal);
-            Assert.EndsWith(" 2", rename, StringComparison.Ordinal);
-        });
+        Assert.Multiple(
+            () => Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer")),
+            () => Assert.Equal(2, renames.Count),
+            () => Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
+                Assert.Single(renames, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal))),
+            () => Assert.All(renames, rename => Assert.Multiple(
+                () => Assert.Contains("minecraft:damage=5", rename, StringComparison.Ordinal),
+                () => Assert.Contains("minecraft:custom_name=", rename, StringComparison.Ordinal),
+                () => Assert.Contains("Diamond Sword", rename, StringComparison.Ordinal),
+                () => Assert.EndsWith(" 2", rename, StringComparison.Ordinal))));
     }
 
     [Fact]
@@ -208,10 +206,10 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(150, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, commands.Count(command => command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal)));
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+        Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
             Assert.Single(commands, command =>
                 command.StartsWith("execute as @a[name=\"" + player + "\",", StringComparison.Ordinal) &&
-                command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal));
+                command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal)));
         Assert.Contains(commands, command => command.Contains(" modifier remove ffffffff-ffff-ffff-ffff-ffffffffffff", StringComparison.Ordinal));
         Assert.False(commands.Exists(command => command.Contains(" -2 add_value", StringComparison.Ordinal)));
     }
@@ -283,11 +281,12 @@ public sealed class GameplayCommandIntegrationTests
         await scenario.DispatchAsync("!whitelistremove PlayerTwo", "streamer");
         List<string> allowed = await scenario.DrainCommandsAsync(allowedCursor);
 
-        Assert.Contains("ban PlayerTwo griefing hard", allowed);
-        Assert.Contains("kick PlayerTwo testing", allowed);
-        Assert.Contains("pardon PlayerTwo", allowed);
-        Assert.Contains("whitelist add PlayerTwo", allowed);
-        Assert.Contains("whitelist remove PlayerTwo", allowed);
+        Assert.Multiple(
+            () => Assert.Contains("ban PlayerTwo griefing hard", allowed),
+            () => Assert.Contains("kick PlayerTwo testing", allowed),
+            () => Assert.Contains("pardon PlayerTwo", allowed),
+            () => Assert.Contains("whitelist add PlayerTwo", allowed),
+            () => Assert.Contains("whitelist remove PlayerTwo", allowed));
 
         int rejectedCursor = scenario.CaptureCommandCursor();
         await scenario.DispatchAsync("!ban PlayerTwo", "viewer");
@@ -298,11 +297,12 @@ public sealed class GameplayCommandIntegrationTests
         await scenario.DispatchAsync("!whitelistadd bad-name", "streamer");
         List<string> rejected = await scenario.DrainCommandsAsync(rejectedCursor);
 
-        Assert.False(rejected.Exists(command => command.StartsWith("ban ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("kick ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("pardon ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("whitelist add ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("whitelist remove ", StringComparison.Ordinal)));
+        Assert.Multiple(
+            () => Assert.False(rejected.Exists(command => command.StartsWith("ban ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("kick ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("pardon ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("whitelist add ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("whitelist remove ", StringComparison.Ordinal))));
     }
 
     [Fact]

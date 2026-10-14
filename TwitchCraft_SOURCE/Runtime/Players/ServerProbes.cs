@@ -119,13 +119,7 @@ public sealed partial class MainHandler
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(
-            static state =>
-            {
-                (MainHandler handler, string marker) = ((MainHandler Handler, string Marker))state!;
-                handler.CompleteProbe(marker);
-            },
-            (this, marker));
+        using CancellationTokenRegistration registration = RegisterProbeCancellation(marker, cancellationToken);
 
         try
         {
@@ -194,13 +188,7 @@ public sealed partial class MainHandler
         }
 
         string marker = AddProbeMarker(onProbeCompleted);
-        using CancellationTokenRegistration registration = cancellationToken.Register(
-            static state =>
-            {
-                (MainHandler handler, string marker) = ((MainHandler Handler, string Marker))state!;
-                handler.CompleteProbe(marker);
-            },
-            (this, marker));
+        using CancellationTokenRegistration registration = RegisterProbeCancellation(marker, cancellationToken);
 
         try
         {
@@ -222,6 +210,15 @@ public sealed partial class MainHandler
             throw;
         }
     }
+
+    private CancellationTokenRegistration RegisterProbeCancellation(string marker, CancellationToken cancellationToken)
+        => cancellationToken.Register(
+            static state =>
+            {
+                (MainHandler handler, string marker) = ((MainHandler Handler, string Marker))state!;
+                handler.CompleteProbe(marker);
+            },
+            (this, marker));
 
     private string AddProbeMarker(Action onProbeCompleted)
     {

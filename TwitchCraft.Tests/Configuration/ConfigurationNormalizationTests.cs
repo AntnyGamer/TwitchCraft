@@ -31,16 +31,17 @@ public sealed class ConfigurationNormalizationTests
 
         ConfigurationStore.NormalizeRuntime(config);
 
-        Assert.Equal(25570, config.Server.Port);
-        Assert.Equal(string.Empty, config.Server.Java.ExecutablePath);
-        Assert.Equal(string.Empty, config.Server.Java.HomeDirectory);
-        Assert.Equal(25575, config.Server.RCON.Port);
-        Assert.Equal(string.Empty, config.Server.RCON.Password);
-        Assert.Equal(string.Empty, config.Twitch.BotToken);
-        Assert.Equal(string.Empty, config.Twitch.StreamerName);
-        Assert.Equal(string.Empty, config.Identity.StreamerMinecraftName);
-        Assert.Equal("?", config.Settings.CommandPrefix);
-        Assert.Empty(config.Settings.CommandCustomizations);
+        Assert.Multiple(
+            () => Assert.Equal(25570, config.Server.Port),
+            () => Assert.Equal(string.Empty, config.Server.Java.ExecutablePath),
+            () => Assert.Equal(string.Empty, config.Server.Java.HomeDirectory),
+            () => Assert.Equal(25575, config.Server.RCON.Port),
+            () => Assert.Equal(string.Empty, config.Server.RCON.Password),
+            () => Assert.Equal(string.Empty, config.Twitch.BotToken),
+            () => Assert.Equal(string.Empty, config.Twitch.StreamerName),
+            () => Assert.Equal(string.Empty, config.Identity.StreamerMinecraftName),
+            () => Assert.Equal("?", config.Settings.CommandPrefix),
+            () => Assert.Empty(config.Settings.CommandCustomizations));
         CommandCustomization heal = new() { Enabled = false };
         config.Settings.CommandCustomizations.Add("heal", heal);
         Assert.Same(heal, config.Settings.CommandCustomizations["HEAL"]);
@@ -116,53 +117,55 @@ public sealed class ConfigurationNormalizationTests
 
         ConfigurationStore.NormalizeRuntime(config);
 
-        Assert.Equal("127.0.0.1", config.Server.BindIP);
-        Assert.Equal(25565, config.Server.Port);
-        Assert.Equal(1, config.Server.MaxPlayers);
-        Assert.Equal(4, config.Server.MemoryMinGB);
-        Assert.Equal(4, config.Server.MemoryMaxGB);
-        Assert.Equal("server.example", config.Server.RemoteHost);
-        Assert.Equal(25580, config.Server.RCON.Port);
-        Assert.Equal("secret", config.Server.RCON.Password);
-        Assert.Equal("Streamer", config.Twitch.StreamerName);
-        Assert.Equal("token-value", config.Twitch.BotToken);
-        Assert.Equal("refresh-value", config.Twitch.RefreshToken);
-        Assert.Equal("Player", config.Identity.StreamerMinecraftName);
-        Assert.Equal("Medium", config.Settings.Difficulty);
-        Assert.Equal(15, config.Settings.MinigameCooldown);
-        Assert.Equal(10.0, config.Settings.GlobalGameCommandCooldownSeconds);
-        Assert.Equal(50, config.Settings.FollowRewardAmount);
-        Assert.Equal(1.0, config.Settings.CommandCostMultiplier);
-        Assert.Equal("Normal", config.Settings.BotResponseVerbosity);
-        Assert.Equal("!", config.Settings.CommandPrefix);
-        Assert.Equal(string.Empty, config.Settings.SecondaryCommandPrefix);
-        Assert.Equal(1, config.Settings.PassiveTokensPerPayout);
-        Assert.Equal(30, config.Settings.PassiveTokenPayoutMinimumSeconds);
-        Assert.Equal(60, config.Settings.PassiveTokenPayoutMaximumSeconds);
-        Assert.Equal(0, config.Settings.MaximumTokenBalance);
-        Assert.Equal(0, config.Settings.ChannelCommandLimitPerMinute);
-        Assert.Equal(0, config.Settings.ViewerCommandLimitPerMinute);
-        Assert.Equal(10, config.Settings.PassiveActivityWindowMinutes);
-        Assert.Equal(24, config.Settings.AutomaticBackupIntervalHours);
-        Assert.Equal(3, config.Settings.AutomaticBackupRetentionCount);
-        Assert.Equal(250, config.Settings.MaxVisibleTwitchLogLines);
-        Assert.Equal(250, config.Settings.MaxVisibleMinecraftLogLines);
-        Assert.Equal(30, config.Settings.ViewerRosterRefreshIntervalSeconds);
-        Assert.Equal(75, config.Settings.MaxGameplayCommandQueue);
-        Assert.Equal(5, config.Settings.RCONTimeoutSeconds);
-        Assert.Equal(5, config.Settings.GracefulShutdownTimeoutSeconds);
-        Assert.Equal(0, config.Settings.SQLiteOptimizeIntervalHours);
-        Assert.Equal(12, config.Settings.ViewDistance);
-        Assert.Equal(10, config.Settings.SimulationDistance);
-        Assert.Equal(100, config.Settings.EntityBroadcastRangePercentage);
-        Assert.Equal(256, config.Settings.NetworkCompressionThreshold);
-        Assert.Equal(0, config.Settings.EmptyServerShutdownDelayMinutes);
-        Assert.Equal("white", config.Settings.MinecraftRelayTextColor);
+        Assert.Multiple(
+            () => Assert.Equal("127.0.0.1", config.Server.BindIP),
+            () => Assert.Equal(25565, config.Server.Port),
+            () => Assert.Equal(1, config.Server.MaxPlayers),
+            () => Assert.Equal(4, config.Server.MemoryMinGB),
+            () => Assert.Equal(4, config.Server.MemoryMaxGB),
+            () => Assert.Equal("server.example", config.Server.RemoteHost),
+            () => Assert.Equal(25580, config.Server.RCON.Port),
+            () => Assert.Equal("secret", config.Server.RCON.Password),
+            () => Assert.Equal("Streamer", config.Twitch.StreamerName),
+            () => Assert.Equal("token-value", config.Twitch.BotToken),
+            () => Assert.Equal("refresh-value", config.Twitch.RefreshToken),
+            () => Assert.Equal("Player", config.Identity.StreamerMinecraftName),
+            () => Assert.Equal("Medium", config.Settings.Difficulty),
+            () => Assert.Equal(15, config.Settings.MinigameCooldown),
+            () => Assert.Equal(10.0, config.Settings.GlobalGameCommandCooldownSeconds),
+            () => Assert.Equal(50, config.Settings.FollowRewardAmount),
+            () => Assert.Equal(1.0, config.Settings.CommandCostMultiplier),
+            () => Assert.Equal("Normal", config.Settings.BotResponseVerbosity),
+            () => Assert.Equal("!", config.Settings.CommandPrefix),
+            () => Assert.Equal(string.Empty, config.Settings.SecondaryCommandPrefix),
+            () => Assert.Equal(1, config.Settings.PassiveTokensPerPayout),
+            () => Assert.Equal(30, config.Settings.PassiveTokenPayoutMinimumSeconds),
+            () => Assert.Equal(60, config.Settings.PassiveTokenPayoutMaximumSeconds),
+            () => Assert.Equal(0, config.Settings.MaximumTokenBalance),
+            () => Assert.Equal(0, config.Settings.ChannelCommandLimitPerMinute),
+            () => Assert.Equal(0, config.Settings.ViewerCommandLimitPerMinute),
+            () => Assert.Equal(10, config.Settings.PassiveActivityWindowMinutes),
+            () => Assert.Equal(24, config.Settings.AutomaticBackupIntervalHours),
+            () => Assert.Equal(3, config.Settings.AutomaticBackupRetentionCount),
+            () => Assert.Equal(250, config.Settings.MaxVisibleTwitchLogLines),
+            () => Assert.Equal(250, config.Settings.MaxVisibleMinecraftLogLines),
+            () => Assert.Equal(30, config.Settings.ViewerRosterRefreshIntervalSeconds),
+            () => Assert.Equal(75, config.Settings.MaxGameplayCommandQueue),
+            () => Assert.Equal(5, config.Settings.RCONTimeoutSeconds),
+            () => Assert.Equal(5, config.Settings.GracefulShutdownTimeoutSeconds),
+            () => Assert.Equal(0, config.Settings.SQLiteOptimizeIntervalHours),
+            () => Assert.Equal(12, config.Settings.ViewDistance),
+            () => Assert.Equal(10, config.Settings.SimulationDistance),
+            () => Assert.Equal(100, config.Settings.EntityBroadcastRangePercentage),
+            () => Assert.Equal(256, config.Settings.NetworkCompressionThreshold),
+            () => Assert.Equal(0, config.Settings.EmptyServerShutdownDelayMinutes),
+            () => Assert.Equal("white", config.Settings.MinecraftRelayTextColor));
         CommandCustomization heal = Assert.Single(config.Settings.CommandCustomizations).Value;
-        Assert.False(heal.Enabled);
-        Assert.Equal(5, heal.CooldownSeconds);
-        Assert.Equal(2.5, heal.GlobalCooldownSeconds);
-        Assert.True(config.Settings.CommandCustomizations.ContainsKey("heal"));
+        Assert.Multiple(
+            () => Assert.False(heal.Enabled),
+            () => Assert.Equal(5, heal.CooldownSeconds),
+            () => Assert.Equal(2.5, heal.GlobalCooldownSeconds),
+            () => Assert.True(config.Settings.CommandCustomizations.ContainsKey("heal")));
     }
 
     [Fact]
@@ -193,14 +196,15 @@ public sealed class ConfigurationNormalizationTests
 
         ConfigurationStore.NormalizeRuntime(config);
 
-        Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout);
-        Assert.Equal(123_456, config.Settings.FollowRewardAmount);
-        Assert.Equal(987_654_321, config.Settings.MaximumTokenBalance);
-        Assert.Equal(777, config.Settings.ViewerCommandLimitPerMinute);
-        Assert.Equal(888, config.Settings.ChannelCommandLimitPerMinute);
-        Assert.Equal(0.0, config.Settings.CommandCostMultiplier);
-        Assert.Equal(20, config.Settings.AutomaticBackupRetentionCount);
-        Assert.Equal(60, config.Settings.GracefulShutdownTimeoutSeconds);
+        Assert.Multiple(
+            () => Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout),
+            () => Assert.Equal(123_456, config.Settings.FollowRewardAmount),
+            () => Assert.Equal(987_654_321, config.Settings.MaximumTokenBalance),
+            () => Assert.Equal(777, config.Settings.ViewerCommandLimitPerMinute),
+            () => Assert.Equal(888, config.Settings.ChannelCommandLimitPerMinute),
+            () => Assert.Equal(0.0, config.Settings.CommandCostMultiplier),
+            () => Assert.Equal(20, config.Settings.AutomaticBackupRetentionCount),
+            () => Assert.Equal(60, config.Settings.GracefulShutdownTimeoutSeconds));
     }
 
     [Theory]

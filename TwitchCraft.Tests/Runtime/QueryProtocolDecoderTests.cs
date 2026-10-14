@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Linq;
 using System.Text;
 using TwitchCraft_V1;
 using Xunit;
@@ -19,11 +20,11 @@ public sealed class QueryProtocolDecoderTests
             ("-2147483648", int.MinValue),
             ("2147483647", int.MaxValue)
         ];
-        foreach ((string text, int token) in tokens)
+        Assert.All(tokens, item =>
         {
-            byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(text + "\0"));
-            Assert.Equal(token, MinecraftQueryClient.ParseChallenge(packet, 1234));
-        }
+            byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(item.Text + "\0"));
+            Assert.Equal(item.Token, MinecraftQueryClient.ParseChallenge(packet, 1234));
+        });
     }
 
     [Fact]
@@ -38,12 +39,12 @@ public sealed class QueryProtocolDecoderTests
     [Fact]
     public void ParseChallenge_RejectsInvalidOrOutOfRangeToken()
     {
-        foreach (string token in new[] { "invalid", "", "2147483648", "-2147483649" })
+        Assert.All(new[] { "invalid", "", "2147483648", "-2147483649" }, token =>
         {
             byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(token + "\0"));
             Assert.Throws<InvalidOperationException>(() =>
                 MinecraftQueryClient.ParseChallenge(packet, 1234));
-        }
+        });
     }
 
     [Fact]
@@ -57,12 +58,12 @@ public sealed class QueryProtocolDecoderTests
     public void ParseChallenge_RejectsTruncatedHeaderOrMissingPayload()
     {
         byte[] header = [0x09, 0, 0, 0, 1];
-        for (int length = 0; length <= header.Length; length++)
+        Assert.All(Enumerable.Range(0, header.Length + 1), length =>
         {
             byte[] packet = header.AsSpan(0, length).ToArray();
             Assert.Throws<InvalidOperationException>(() =>
                 MinecraftQueryClient.ParseChallenge(packet, 1));
-        }
+        });
     }
 
     [Fact]
@@ -106,12 +107,12 @@ public sealed class QueryProtocolDecoderTests
             "hostname\0server\0\0player_\0\0",
             "hostname\0server\0\0player_\0\0Steve\0"
         ];
-        foreach (string payload in payloads)
+        Assert.All(payloads, payload =>
         {
             byte[] packet = BuildPacket(0x00, 1234, Encoding.ASCII.GetBytes(payload));
             Assert.Throws<InvalidOperationException>(() =>
                 MinecraftQueryClient.ParsePlayers(packet, 1234));
-        }
+        });
     }
 
     private static byte[] BuildPacket(byte type, int sessionID, byte[] payload)

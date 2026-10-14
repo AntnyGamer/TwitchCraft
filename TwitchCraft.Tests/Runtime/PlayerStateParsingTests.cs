@@ -6,24 +6,24 @@ namespace TwitchCraft.Tests.Runtime;
 
 public sealed class PlayerStateParsingTests
 {
-    [Theory]
-    [InlineData("[Server thread/INFO]: Set Steve's game mode to Survival Mode", "Steve", 0)]
-    [InlineData("[Server thread/INFO]: [System] [CHAT] Set Steve's game mode to Survival Mode", "Steve", 0)]
-    [InlineData("Set the game mode of Alex to Creative Mode", "Alex", 1)]
-    [InlineData("[Rcon]: Set Player_3's game mode to Spectator Mode", "Player_3", 3)]
-    public void TryParseGamemode_RecognizesSupportedServerFormats(
-        string line,
-        string expectedPlayer,
-        int expectedGameType)
+    [Fact]
+    public void TryParseGamemode_RecognizesSupportedServerFormats()
     {
-        bool parsed = MainHandler.TryParseGamemode(
-            line,
-            out string player,
-            out int gameType);
+        (string Line, string Player, int Mode)[] examples =
+        [
+            ("[Server thread/INFO]: Set Steve's game mode to Survival Mode", "Steve", 0),
+            ("[Server thread/INFO]: [System] [CHAT] Set Steve's game mode to Survival Mode", "Steve", 0),
+            ("Set the game mode of Alex to Creative Mode", "Alex", 1),
+            ("Set the game mode of Alex to Adventure Mode", "Alex", 2),
+            ("[Rcon]: Set Player_3's game mode to Spectator Mode", "Player_3", 3)
+        ];
 
-        Assert.True(parsed);
-        Assert.Equal(expectedPlayer, player);
-        Assert.Equal(expectedGameType, gameType);
+        Assert.All(examples, example =>
+        {
+            Assert.True(MainHandler.TryParseGamemode(example.Line, out string player, out int gameType));
+            Assert.Equal(example.Player, player);
+            Assert.Equal(example.Mode, gameType);
+        });
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class PlayerStateParsingTests
             "Set the game mode of Alex Creative Mode"
         ];
 
-        foreach (string line in lines)
+        Assert.All(lines, line =>
         {
             Assert.False(MainHandler.TryParseGamemode(
                 line,
@@ -46,7 +46,7 @@ public sealed class PlayerStateParsingTests
                 out int gameType));
             Assert.Equal(string.Empty, player);
             Assert.Equal(-1, gameType);
-        }
+        });
     }
 
     [Fact]

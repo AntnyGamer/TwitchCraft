@@ -54,11 +54,11 @@ public sealed class RollingLogPersistenceTests
         string[] expected = completeTail ? [retained, tail, pending] : [retained, pending];
         string[] lines = File.ReadAllLines(logPath);
         Assert.Equal(expected, lines);
-        foreach (string line in lines)
+        Assert.All(lines, line =>
         {
             using JsonDocument json = JsonDocument.Parse(line);
             Assert.NotNull(json.RootElement.GetProperty("event").GetString());
-        }
+        });
     }
 
     [Fact]
@@ -76,12 +76,12 @@ public sealed class RollingLogPersistenceTests
         string[] files = Directory.GetFiles(directory.Path, "TwitchCraft.log*");
         Assert.Equal(4, files.Length);
         Assert.DoesNotContain(logPath + ".old4", files);
-        for (int retained = 0; retained <= 3; retained++)
+        Assert.All(Enumerable.Range(0, 4), retained =>
         {
             string retainedPath = retained == 0 ? logPath : logPath + ".old" + retained;
             string expected = "{\"event\":" + (29 - retained) + ",\"value\":\"abcdefghij\"}";
             Assert.Equal(expected, Assert.Single(File.ReadAllLines(retainedPath)));
-        }
+        });
     }
 
     [Fact]

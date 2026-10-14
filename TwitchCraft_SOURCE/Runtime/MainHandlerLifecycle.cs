@@ -307,8 +307,9 @@ public sealed partial class MainHandler
             {
                 await MinigameManager.StopLoopsAsync(this, true).ConfigureAwait(false);
             }
-            catch
+            catch (Exception cleanupError)
             {
+                ErrorHandling.LogNonFatal("Failed to stop minigames after startup error", cleanupError);
             }
 
             var failedSessionCts = Interlocked.Exchange(ref _sessionCts, null);

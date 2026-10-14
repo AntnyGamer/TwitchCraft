@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft_V1.Setup;
@@ -101,8 +100,9 @@ public sealed partial class MainHandler
         {
             MinigameManager.StopLoops(this);
         }
-        catch
+        catch (Exception ex)
         {
+            ErrorHandling.LogNonFatal("Failed to stop minigames during cleanup", ex);
         }
 
         try

@@ -94,27 +94,23 @@ public static partial class MinigameManager
         }
     }
 
-    private static ChickenRunState GetChickenStateNoLock(MainHandler runtime)
+    private static TState GetStateNoLock<TState>(Dictionary<MainHandler, TState> states, MainHandler runtime)
+        where TState : class, new()
     {
-        if (!ChickenRunStates.TryGetValue(runtime, out ChickenRunState? state))
+        if (!states.TryGetValue(runtime, out TState? state))
         {
             state = new();
-            ChickenRunStates[runtime] = state;
+            states[runtime] = state;
         }
 
         return state;
     }
+
+    private static ChickenRunState GetChickenStateNoLock(MainHandler runtime)
+        => GetStateNoLock(ChickenRunStates, runtime);
 
     private static GuessNumberState GetGuessStateNoLock(MainHandler runtime)
-    {
-        if (!GuessNumberStates.TryGetValue(runtime, out GuessNumberState? state))
-        {
-            state = new();
-            GuessNumberStates[runtime] = state;
-        }
-
-        return state;
-    }
+        => GetStateNoLock(GuessNumberStates, runtime);
 
     private static WitherBattleState GetWitherState(MainHandler runtime)
     {
@@ -125,26 +121,10 @@ public static partial class MinigameManager
     }
 
     private static WitherBattleState GetWitherStateNoLock(MainHandler runtime)
-    {
-        if (!WitherBattleStates.TryGetValue(runtime, out WitherBattleState? state))
-        {
-            state = new();
-            WitherBattleStates[runtime] = state;
-        }
-
-        return state;
-    }
+        => GetStateNoLock(WitherBattleStates, runtime);
 
     private static ActiveState GetActiveStateNoLock(MainHandler runtime)
-    {
-        if (!ActiveMinigames.TryGetValue(runtime, out ActiveState? state))
-        {
-            state = new();
-            ActiveMinigames[runtime] = state;
-        }
-
-        return state;
-    }
+        => GetStateNoLock(ActiveMinigames, runtime);
 
     private static TBet? FindBet<TBet>(List<TBet> bets, string viewer) where TBet : class, IBet
     {

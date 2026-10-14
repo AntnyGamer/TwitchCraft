@@ -139,14 +139,15 @@ public sealed class WorldReplacementSafetyTests
         IOException exception = Assert.Throws<IOException>(() =>
             MinecraftWorldImporter.ReplaceWorld(plan, () => finishCalled = true));
 
-        Assert.IsType<InvalidDataException>(exception.InnerException);
-        Assert.False(finishCalled);
-        Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
-        Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(destination, "player-data.dat")));
-        Assert.False(File.Exists(System.IO.Path.Combine(destination, "region.dat")));
-        Assert.Equal("incomplete imported data", File.ReadAllText(System.IO.Path.Combine(source, "region.dat")));
-        Assert.False(Directory.Exists(plan.StagingWorldPath));
-        Assert.False(Directory.Exists(plan.BackupWorldPath));
+        Assert.Multiple(
+            () => Assert.IsType<InvalidDataException>(exception.InnerException),
+            () => Assert.False(finishCalled),
+            () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat"))),
+            () => Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(destination, "player-data.dat"))),
+            () => Assert.False(File.Exists(System.IO.Path.Combine(destination, "region.dat"))),
+            () => Assert.Equal("incomplete imported data", File.ReadAllText(System.IO.Path.Combine(source, "region.dat"))),
+            () => Assert.False(Directory.Exists(plan.StagingWorldPath)),
+            () => Assert.False(Directory.Exists(plan.BackupWorldPath)));
     }
 
     [Fact]
@@ -165,10 +166,11 @@ public sealed class WorldReplacementSafetyTests
         IOException exception = Assert.Throws<IOException>(() =>
             MinecraftWorldImporter.ReplaceWorld(plan));
 
-        Assert.Contains("before replacing", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
-        Assert.False(Directory.Exists(plan.StagingWorldPath));
-        Assert.Equal("blocked", File.ReadAllText(plan.BackupWorldPath));
+        Assert.Multiple(
+            () => Assert.Contains("before replacing", exception.Message, StringComparison.OrdinalIgnoreCase),
+            () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat"))),
+            () => Assert.False(Directory.Exists(plan.StagingWorldPath)),
+            () => Assert.Equal("blocked", File.ReadAllText(plan.BackupWorldPath)));
     }
 
     [Theory]
@@ -239,17 +241,18 @@ public sealed class WorldReplacementSafetyTests
             throw finishFailure;
         }));
 
-        Assert.Contains("previous world could not be restored automatically", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Backup folder: " + plan.BackupWorldPath, exception.Message, StringComparison.Ordinal);
-        Assert.IsType<IOException>(exception.InnerException);
-        Assert.NotSame(finishFailure, exception.InnerException);
-        Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "level.dat")));
-        Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "player-data.dat")));
-        Assert.False(File.Exists(System.IO.Path.Combine(plan.BackupWorldPath, "new.txt")));
-        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat")));
-        Assert.Equal("imported data", File.ReadAllText(System.IO.Path.Combine(source, "new.txt")));
-        Assert.False(Directory.Exists(plan.StagingWorldPath));
-        Assert.Equal("blocks automatic restoration", File.ReadAllText(destination));
+        Assert.Multiple(
+            () => Assert.Contains("previous world could not be restored automatically", exception.Message, StringComparison.OrdinalIgnoreCase),
+            () => Assert.Contains("Backup folder: " + plan.BackupWorldPath, exception.Message, StringComparison.Ordinal),
+            () => Assert.IsType<IOException>(exception.InnerException),
+            () => Assert.NotSame(finishFailure, exception.InnerException),
+            () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "level.dat"))),
+            () => Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "player-data.dat"))),
+            () => Assert.False(File.Exists(System.IO.Path.Combine(plan.BackupWorldPath, "new.txt"))),
+            () => Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat"))),
+            () => Assert.Equal("imported data", File.ReadAllText(System.IO.Path.Combine(source, "new.txt"))),
+            () => Assert.False(Directory.Exists(plan.StagingWorldPath)),
+            () => Assert.Equal("blocks automatic restoration", File.ReadAllText(destination)));
     }
 
     private static MinecraftWorldImportPlan CreatePlan(

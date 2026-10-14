@@ -103,6 +103,8 @@ public sealed class TwitchMessagingPolicyTests
     [InlineData("!heal", "!", "?", true, "!")]
     [InlineData("??heal", "?", "??", true, "??")]
     [InlineData("heal", "!", "?", false, "")]
+    [InlineData("?heal", "!!", "?", true, "?")]
+    [InlineData("", "!", "?", false, "")]
     public void TryMatchPrefix_UsesConfiguredPrefixesAndPrefersTheLongest(
         string payload,
         string primary,
