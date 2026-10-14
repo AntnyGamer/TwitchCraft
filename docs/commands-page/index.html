@@ -210,13 +210,13 @@ a:hover{color:var(--accent)}
       </section>
 
       <section class="targeting-guide" id="targeting" aria-labelledby="targeting-heading">
-        <h2 id="targeting-heading">Singleplayer and multiplayer targeting</h2>
+        <h2 id="targeting-heading">How to use commands</h2>
         <p class="targeting-lead">In singleplayer, player-targeting commands affect the streamer's Minecraft player. In multiplayer or Remote Control Mode, most of these commands let you choose who to target:</p>
         <div class="targeting-grid">
           <div class="targeting-card">
             <h3>No player specified</h3>
             <code>!heal</code>
-            <p>Targets the streamer's configured Minecraft player when online. Otherwise, it targets the only online player, if there is one; with multiple players online, a name is required.</p>
+            <p>Targets the streamer's configured Minecraft player when online. Otherwise, it targets the only online player, if there is one. With multiple players online, a name is required.</p>
           </div>
           <div class="targeting-card">
             <h3>Specific player</h3>
@@ -234,7 +234,7 @@ a:hover{color:var(--accent)}
             <p>Selects one random online player. The streamer can disable this option; unavailable targets can be rejected.</p>
           </div>
         </div>
-        <p class="targeting-note"><strong>Arguments:</strong> Some commands put other values before the target, for example <code>!effect 3 all</code> or <code>!addheart 2 Steve</code>. Follow the syntax shown on each command card. World, minigame, and token commands do not necessarily accept player targets.</p>
+        <p class="targeting-note"><strong>Arguments:</strong> Some commands put other values before the target, for example <code>!effect 3 all</code> or <code>!addheart 2 Steve</code>. Follow the syntax shown on each command card. World, minigame, and token commands do not always accept player targets.</p>
         <p class="targeting-note"><strong>Multiplayer costs:</strong> Gameplay command cards below preview single-target prices using the selected multiplier. For multiple targets, TwitchCraft first scales the unmultiplied base cost by <code>(player count + 1) ÷ 2</code> (rounded down), then applies the multiplier (rounded up). Spectators and other ineligible targets may be excluded. <a href="https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/MULTIPLAYER.md">Multiplayer setup guide ↗</a></p>
       </section>
 

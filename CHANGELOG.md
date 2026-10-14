@@ -2,21 +2,23 @@
 
 All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
-## [1.10.0] - Unreleased
+## [1.10.0] - 2026-10-14
 
-### Added
-- Added `!addheart` and `!removeheart` commands for timed Minecraft health adjustments.
-- Added a GitHub Pages command browser with detailed `!gambletokens` help.
-
-### Changed
-- Changed the default Twitch follower reward from 100 to 50 tokens.
-- Strengthened Twitch/Minecraft runtime separation and command-handling test coverage.
-- Updated NuGet packages and GitHub Actions dependencies.
-
-### Fixed
-- Fixed Chicken Run minimum-bet behavior and duplicate usernames in bot responses.
-- Fixed server-property and player-probe reset races.
-- Improved paid-command delivery, token/refund reliability, and test-fixture resource cleanup.
+- Added !addheart and !removeheart commands, allowing viewers to temporarily change players' maximum health
+- Added a searchable online command website with pricing, instructions, and gambling odds
+- !mlg command now sends you 50 blocks lower in overworld/end
+- Reduced default follower reward from 100 to 50 tokens
+- Improved live settings, multiplayer targeting, and Minecraft 26.3 compatibility
+- Fixed Chicken Run betting exploits and duplicate usernames in bot responses
+- Improved command execution, token refunds, and temporary heart-effect handling
+- Improved player detection, scoreboard handling, and RCON reliability
+- Expanded automatic backups to include statistics and improved data protection
+- Improved server startup, shutdown, and error handling
+- Updated NuGet packages and documentation
+- Increased and improved test infrastructure and tests, now 350 total
+  Numerous bug fixes, performance optimizations, and code simplifications
+- Minor UI and usability improvements
+- Minor security and stability improvements
 
 ## [1.9.0] - 2026-09-15
 
