@@ -98,7 +98,11 @@ public static partial class MinigameManager
         where TState : class, new()
     {
         if (!states.TryGetValue(runtime, out TState? state))
-            states[runtime] = state = new();
+        {
+            state = new();
+            states[runtime] = state;
+        }
+
         return state;
     }
 
