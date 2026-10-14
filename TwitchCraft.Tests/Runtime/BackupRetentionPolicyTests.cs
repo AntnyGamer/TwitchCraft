@@ -68,7 +68,8 @@ public sealed class BackupRetentionPolicyTests
 
         DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
 
-        Assert.Multiple(() => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000"))),
+        Assert.Multiple(
+            () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000"))),
             () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-120000"))),
             () => Assert.False(Directory.Exists(configOnly)),
             () => Assert.False(Directory.Exists(tokensOnly)),
