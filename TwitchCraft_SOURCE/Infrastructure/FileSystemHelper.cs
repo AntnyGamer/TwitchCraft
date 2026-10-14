@@ -45,7 +45,7 @@ internal static class FileSystemHelper
 
             return FileReplaceMode.Atomic;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
             ErrorHandling.LogNonFatal(logMessage, ex);
             if (!string.IsNullOrWhiteSpace(backupPath) && File.Exists(targetPath))
