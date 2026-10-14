@@ -65,12 +65,14 @@ public sealed class CategorizedSettingsPersistenceTests
         StartingProfile restored = Assert.IsType<StartingProfile>(
             JsonConvert.DeserializeObject<StartingProfile>(json, SerializerSettings));
 
-        Assert.Multiple(() => Assert.Equal("?", restored.CommandPrefix),
+        Assert.Multiple(
+            () => Assert.Equal("?", restored.CommandPrefix),
             () => Assert.Equal("Hard", restored.Difficulty),
             () => Assert.True(restored.MultiplayerPvPEnabled),
             () => Assert.Equal(5, restored.AutomaticBackupRetentionCount));
         CommandCustomization command = Assert.Single(restored.CommandCustomizations).Value;
-        Assert.Multiple(() => Assert.False(command.Enabled),
+        Assert.Multiple(
+            () => Assert.False(command.Enabled),
             () => Assert.Equal(12, command.CooldownSeconds),
             () => Assert.Equal(2.5, command.GlobalCooldownSeconds));
     }
