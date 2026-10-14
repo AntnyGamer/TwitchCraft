@@ -12,7 +12,7 @@ and notices below.
 MIT-licensed portions of Microsoft .NET 10 Runtime / WPF
 Copyright (c) .NET Foundation and Contributors
 
-Microsoft.Data.Sqlite 10.0.12
+Microsoft.Data.Sqlite 10.0.13
 Copyright (c) .NET Foundation and Contributors
 
 Newtonsoft.Json 13.0.4
