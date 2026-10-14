@@ -26,10 +26,10 @@
                     </Image.RenderTransform>
                 </Image>
 
-                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="635,88,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="635,176,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="635,264,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="635,352,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="0,88,44,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="0,176,44,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="0,264,44,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="0,352,44,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
 
                 <TextBlock FontFamily="Cascadia Mono" FontSize="30" Text="TwitchCraft" Foreground="#FFFF1B1B" Margin="0,16,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
                     <TextBlock.Effect>
@@ -73,13 +73,13 @@
 
                 <Button x:Name="CommandButton" KeyboardNavigation.TabIndex="7" ToolTipService.ShowOnDisabled="True" Width="75" Height="20" Content="Send" Click="SendCommand_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="13" Margin="207,418,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" BorderBrush="#595959" BorderThickness="1" />
 
-                <Button x:Name="Restart" KeyboardNavigation.TabIndex="9" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Restart" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Restart_Click" Margin="635,176,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <Button x:Name="Restart" KeyboardNavigation.TabIndex="9" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Restart" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Restart_Click" Margin="0,176,48,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
 
-                <Button x:Name="Pause" KeyboardNavigation.TabIndex="8" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Pause" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Pause_Click" Margin="635,88,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <Button x:Name="Pause" KeyboardNavigation.TabIndex="8" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Pause" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Pause_Click" Margin="0,88,48,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
 
-                <Button x:Name="Reset" KeyboardNavigation.TabIndex="10" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Reset" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Reset_Click" Margin="635,264,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <Button x:Name="Reset" KeyboardNavigation.TabIndex="10" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Reset" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Reset_Click" Margin="0,264,48,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
 
-                <Button x:Name="Shutdown" KeyboardNavigation.TabIndex="11" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Shutdown" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Shutdown_Click" Margin="635,352,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <Button x:Name="Shutdown" KeyboardNavigation.TabIndex="11" ToolTipService.ShowOnDisabled="True" Width="117" Height="51" Content="Shutdown" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Shutdown_Click" Margin="0,352,48,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
                 <Button x:Name="Gear" KeyboardNavigation.TabIndex="0" Style="{StaticResource IconButton}" Click="Settings_Click" ToolTip="Settings" AutomationProperties.Name="Settings" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,10,0,0">
                     <Image Width="34" Height="34" Source="/Assets/Gear.png" Stretch="Fill" />
                 </Button>
