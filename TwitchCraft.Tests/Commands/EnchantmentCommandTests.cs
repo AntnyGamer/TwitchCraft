@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using TwitchCraft_V1;
 using Xunit;
 
@@ -57,7 +56,7 @@ public sealed class EnchantmentCommandTests
             ["wind_burst"] = 3
         };
 
-        Assert.All(Enumerable.Range(0, 500), seed =>
+        for (int seed = 0; seed < 500; seed++)
         {
             Enchantments.Pick(
                 new Random(seed),
@@ -69,7 +68,7 @@ public sealed class EnchantmentCommandTests
             Assert.True(maximumLevels.TryGetValue(enchantID, out int maximum));
             Assert.NotEmpty(prettyName);
             Assert.InRange(level, 1, maximum);
-        });
+        }
     }
 
     [Fact]
@@ -78,14 +77,14 @@ public sealed class EnchantmentCommandTests
         HashSet<string> maceEnchantments = new(StringComparer.OrdinalIgnoreCase) { "breach", "density", "wind_burst" };
         bool foundMaceEnchant = false;
 
-        Assert.All(Enumerable.Range(0, 500), seed =>
+        for (int seed = 0; seed < 500; seed++)
         {
             Enchantments.Pick(new Random(seed), false, out string oldVersionEnchant, out _, out _);
             Assert.DoesNotContain(oldVersionEnchant, maceEnchantments);
 
             Enchantments.Pick(new Random(seed), true, out string newVersionEnchant, out _, out _);
             foundMaceEnchant |= maceEnchantments.Contains(newVersionEnchant);
-        });
+        }
 
         Assert.True(foundMaceEnchant);
     }
