@@ -22,8 +22,7 @@ public sealed class BackupRetentionPolicyTests
 
         DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
 
-        foreach (string name in unrelatedNames)
-            Assert.Equal(name, File.ReadAllText(Path.Combine(root.Path, name, "keep.txt")));
+        Assert.All(unrelatedNames, name => Assert.Equal(name, File.ReadAllText(Path.Combine(root.Path, name, "keep.txt"))));
     }
 
     [Fact]
