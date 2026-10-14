@@ -50,7 +50,8 @@ public sealed class EconomyBalanceTests
             int adjustedCount = store.AdjustBalances(liveRoster, 25);
 
             Assert.Equal(liveRoster.Count, adjustedCount);
-            Assert.All(liveRoster, viewer => Assert.Equal(25, store.GetBalance(viewer)));
+            foreach (string viewer in liveRoster)
+                Assert.Equal(25, store.GetBalance(viewer));
             Assert.Equal(5, store.AdjustBalance(" @RandomDudeReincarnatedX3 ", 5));
             Assert.Equal(30, store.GetBalance("randomdudereincarnatedx3"));
         }
@@ -62,8 +63,8 @@ public sealed class EconomyBalanceTests
         TokenStore reopened = new(databasePath);
         try
         {
-            Assert.All(liveRoster, viewer => Assert.Equal(
-                viewer == "randomdudereincarnatedx3" ? 30 : 25, reopened.GetBalance(viewer.ToUpperInvariant())));
+            foreach (string viewer in liveRoster)
+                Assert.Equal(viewer == "randomdudereincarnatedx3" ? 30 : 25, reopened.GetBalance(viewer.ToUpperInvariant()));
         }
         finally
         {
