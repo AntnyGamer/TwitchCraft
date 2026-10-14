@@ -23,11 +23,12 @@ public sealed class MinecraftVersionSupportTests
         int packFormatMinor)
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(requested, out var version));
-        Assert.Equal(ID, version.ID);
-        Assert.Equal(displayID, version.DisplayID);
-        Assert.Equal(requiredJDK, version.RequiredJDK);
-        Assert.Equal(packFormatMajor, version.DataPackFormatMajor);
-        Assert.Equal(packFormatMinor, version.DataPackFormatMinor);
+        Assert.Multiple(
+            () => Assert.Equal(ID, version.ID),
+            () => Assert.Equal(displayID, version.DisplayID),
+            () => Assert.Equal(requiredJDK, version.RequiredJDK),
+            () => Assert.Equal(packFormatMajor, version.DataPackFormatMajor),
+            () => Assert.Equal(packFormatMinor, version.DataPackFormatMinor));
     }
 
     [Theory]
@@ -43,11 +44,12 @@ public sealed class MinecraftVersionSupportTests
         bool supportsInfested)
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(ID, out var version));
-        Assert.Equal(singularFunctionDirectories, version.UsesSingularFunctionDirectories);
-        Assert.Equal(serverSettingGameRules, version.UsesServerSettingGameRules);
-        Assert.Equal(inlineTextComponents, version.UsesInlineTextComponents);
-        Assert.Equal(namespacedGameRules, version.UsesNamespacedGameRules);
-        Assert.Equal(supportsInfested, MinecraftVersionSupport.SupportsStatusEffect(ID, "infested"));
+        Assert.Multiple(
+            () => Assert.Equal(singularFunctionDirectories, version.UsesSingularFunctionDirectories),
+            () => Assert.Equal(serverSettingGameRules, version.UsesServerSettingGameRules),
+            () => Assert.Equal(inlineTextComponents, version.UsesInlineTextComponents),
+            () => Assert.Equal(namespacedGameRules, version.UsesNamespacedGameRules),
+            () => Assert.Equal(supportsInfested, MinecraftVersionSupport.SupportsStatusEffect(ID, "infested")));
     }
 
     [Theory]
