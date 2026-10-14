@@ -60,7 +60,7 @@ https://github.com/dotnet/wpf/blob/release/10.0/THIRD-PARTY-NOTICES.TXT
 ============================================================
 
 SQLitePCLRaw
-Copyright 2014-2025 SourceGear, LLC
+Copyright 2014-2026 SourceGear, LLC
 
 Licensed under the Apache License, Version 2.0.
 
