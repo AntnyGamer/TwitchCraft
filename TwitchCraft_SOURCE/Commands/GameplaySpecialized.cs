@@ -226,11 +226,9 @@ public static partial class CommandList
             for (int i = 0; i < playerNames.Count; i++)
             {
                 string playerName = playerNames[i];
-                string? selectedItemData;
-                if (selectedItemsByPlayer != null)
-                    selectedItemsByPlayer.TryGetValue(playerName, out selectedItemData);
-                else
-                    selectedItemData = await runtime.QueryItemAsync(playerName, ct).ConfigureAwait(false);
+                string? selectedItemData = selectedItemsByPlayer != null
+                    ? selectedItemsByPlayer.GetValueOrDefault(playerName)
+                    : await runtime.QueryItemAsync(playerName, ct).ConfigureAwait(false);
                 string singleSelector = MinecraftCommandBuilder.PlayerSelector(playerName);
                 Enchantments.Pick(
                     Random.Shared,
@@ -520,11 +518,9 @@ public static partial class CommandList
                 : null;
             foreach (string playerName in playerNames)
             {
-                string? selectedItemData;
-                if (selectedItemsByPlayer != null)
-                    selectedItemsByPlayer.TryGetValue(playerName, out selectedItemData);
-                else
-                    selectedItemData = await runtime.QueryItemAsync(playerName, ct).ConfigureAwait(false);
+                string? selectedItemData = selectedItemsByPlayer != null
+                    ? selectedItemsByPlayer.GetValueOrDefault(playerName)
+                    : await runtime.QueryItemAsync(playerName, ct).ConfigureAwait(false);
                 if (string.IsNullOrWhiteSpace(selectedItemData))
                     continue;
                 string singleSelector = MinecraftCommandBuilder.PlayerSelector(playerName);
