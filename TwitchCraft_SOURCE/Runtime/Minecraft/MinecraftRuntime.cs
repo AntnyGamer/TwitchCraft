@@ -314,8 +314,9 @@ internal sealed class MinecraftSession
                 process.WaitForExit(3000);
             }
         }
-        catch
+        catch (Exception ex)
         {
+            ErrorHandling.LogNonFatal("Failed to stop Minecraft server process", ex);
         }
 
         if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
@@ -342,8 +343,9 @@ internal sealed class MinecraftSession
                 await WaitForProcessExitAsync(process, TimeSpan.FromSeconds(3)).ConfigureAwait(false);
             }
         }
-        catch
+        catch (Exception ex)
         {
+            ErrorHandling.LogNonFatal("Failed to stop Minecraft server process", ex);
         }
 
         if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
