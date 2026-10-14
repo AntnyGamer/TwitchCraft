@@ -14,7 +14,7 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class MinigameTransactionTests
 {
     [Fact]
-    public async Task ReplyBetErrorAsync_ReportsEveryRejectedBetReason()
+    public async Task ReplyBetErrorAsync_ReportsRejectedReasonsWithoutSendingForSuccess()
     {
         List<string> messages = [];
         Func<string, CancellationToken, Task> capture = (message, _) =>
@@ -32,6 +32,15 @@ public sealed class MinigameTransactionTests
             Assert.True(await MinigameManager.ReplyBetErrorAsync(
                 result, "viewer", "chicken run", "betting is closed.", capture, CancellationToken.None), result.ToString());
 
+        bool handled = await MinigameManager.ReplyBetErrorAsync(
+            MinigameManager.BetUpdateResult.Updated,
+            "viewer",
+            "chicken run",
+            "betting is closed.",
+            capture,
+            CancellationToken.None);
+        Assert.False(handled);
+
         Assert.Equal(
             [
                 "viewer, you do not have enough tokens for that bet.",
@@ -39,27 +48,6 @@ public sealed class MinigameTransactionTests
                 "viewer, betting is closed."
             ],
             messages);
-    }
-
-    [Fact]
-    public async Task ReplyBetErrorAsync_DoesNotSendForSuccessfulUpdate()
-    {
-        bool sent = false;
-
-        bool handled = await MinigameManager.ReplyBetErrorAsync(
-            MinigameManager.BetUpdateResult.Updated,
-            "viewer",
-            "chicken run",
-            "betting is closed.",
-            (_, _) =>
-            {
-                sent = true;
-                return Task.CompletedTask;
-            },
-            CancellationToken.None);
-
-        Assert.False(handled);
-        Assert.False(sent);
     }
 
     [Theory]
