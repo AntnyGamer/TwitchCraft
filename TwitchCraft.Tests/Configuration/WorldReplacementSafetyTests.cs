@@ -139,8 +139,7 @@ public sealed class WorldReplacementSafetyTests
         IOException exception = Assert.Throws<IOException>(() =>
             MinecraftWorldImporter.ReplaceWorld(plan, () => finishCalled = true));
 
-        Assert.Multiple(
-            () => Assert.IsType<InvalidDataException>(exception.InnerException),
+        Assert.Multiple(() => Assert.IsType<InvalidDataException>(exception.InnerException),
             () => Assert.False(finishCalled),
             () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat"))),
             () => Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(destination, "player-data.dat"))),
@@ -166,8 +165,7 @@ public sealed class WorldReplacementSafetyTests
         IOException exception = Assert.Throws<IOException>(() =>
             MinecraftWorldImporter.ReplaceWorld(plan));
 
-        Assert.Multiple(
-            () => Assert.Contains("before replacing", exception.Message, StringComparison.OrdinalIgnoreCase),
+        Assert.Multiple(() => Assert.Contains("before replacing", exception.Message, StringComparison.OrdinalIgnoreCase),
             () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat"))),
             () => Assert.False(Directory.Exists(plan.StagingWorldPath)),
             () => Assert.Equal("blocked", File.ReadAllText(plan.BackupWorldPath)));
@@ -241,8 +239,7 @@ public sealed class WorldReplacementSafetyTests
             throw finishFailure;
         }));
 
-        Assert.Multiple(
-            () => Assert.Contains("previous world could not be restored automatically", exception.Message, StringComparison.OrdinalIgnoreCase),
+        Assert.Multiple(() => Assert.Contains("previous world could not be restored automatically", exception.Message, StringComparison.OrdinalIgnoreCase),
             () => Assert.Contains("Backup folder: " + plan.BackupWorldPath, exception.Message, StringComparison.Ordinal),
             () => Assert.IsType<IOException>(exception.InnerException),
             () => Assert.NotSame(finishFailure, exception.InnerException),
