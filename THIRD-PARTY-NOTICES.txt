@@ -2,9 +2,8 @@
               TWITCHCRAFT THIRD-PARTY NOTICES
 ============================================================
 
-TwitchCraft uses third-party software covered by the licenses and notices
-below. Development/test-only dependencies are identified separately and
-are not distributed with the TwitchCraft application.
+TwitchCraft includes third-party software distributed under the licenses
+and notices below.
 
 ============================================================
                   MIT-LICENSED COMPONENTS
@@ -13,14 +12,11 @@ are not distributed with the TwitchCraft application.
 MIT-licensed portions of Microsoft .NET 10 Runtime / WPF
 Copyright (c) .NET Foundation and Contributors
 
-Microsoft.Data.Sqlite 10.0.13 (including Microsoft.Data.Sqlite.Core 10.0.13)
+Microsoft.Data.Sqlite 10.0.13
 Copyright (c) .NET Foundation and Contributors
 
 Newtonsoft.Json 13.0.4
 Copyright (c) 2007 James Newton-King
-
-coverlet.MTP 10.1.0 (development/test-only)
-Copyright (c) 2018 Toni Solarin-Sodara
 
 The following MIT License applies to the components listed above:
 
@@ -63,9 +59,7 @@ SQLitePCLRaw
 Copyright 2014-2026 SourceGear, LLC
 
 Licensed under the Apache License, Version 2.0.
-
-This covers SQLitePCLRaw.bundle_e_sqlite3 and its transitive SQLitePCLRaw
-config, provider, and core packages, version 3.0.5.
+This covers the SQLitePCLRaw bundle, provider, and core packages.
 
 SQLitePCLRaw NOTICE information:
 
@@ -110,15 +104,6 @@ Apache v2.
 //
 // See the Apache 2 License for the specific language governing permissions and
 // limitations under the License.
-
-============================================================
-               XUNIT.V3 4.0.2 (TEST ONLY)
-============================================================
-
-xunit.v3 is used to build and run TwitchCraft's tests, not in the
-published TwitchCraft application.
-Copyright (c) .NET Foundation and Contributors
-Licensed under the Apache License, Version 2.0.
 
 ============================================================
                 APACHE LICENSE, VERSION 2.0
