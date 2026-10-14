@@ -68,16 +68,17 @@ public sealed class BackupRetentionPolicyTests
 
         DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
 
-        Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000")));
-        Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-120000")));
-        Assert.False(Directory.Exists(configOnly));
-        Assert.False(Directory.Exists(tokensOnly));
-        Assert.False(Directory.Exists(missingStatistics));
-        Assert.True(Directory.Exists(Path.Combine(root.Path, "20260830-120000")));
-        Assert.Equal("{}", File.ReadAllText(Path.Combine(root.Path, "20260830-120000", "config.json")));
-        Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "viewer_tokens.db")));
-        Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "statistics.db")));
-        Assert.True(Directory.Exists(Path.Combine(root.Path, "notes")));
+        Assert.Multiple(
+            () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000"))),
+            () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-120000"))),
+            () => Assert.False(Directory.Exists(configOnly)),
+            () => Assert.False(Directory.Exists(tokensOnly)),
+            () => Assert.False(Directory.Exists(missingStatistics)),
+            () => Assert.True(Directory.Exists(Path.Combine(root.Path, "20260830-120000"))),
+            () => Assert.Equal("{}", File.ReadAllText(Path.Combine(root.Path, "20260830-120000", "config.json"))),
+            () => Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "viewer_tokens.db"))),
+            () => Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "statistics.db"))),
+            () => Assert.True(Directory.Exists(Path.Combine(root.Path, "notes"))));
     }
 
     private static void CreateCompleteBackup(string root, string name)
