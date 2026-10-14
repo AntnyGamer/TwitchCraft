@@ -193,14 +193,15 @@ public sealed class ConfigurationNormalizationTests
 
         ConfigurationStore.NormalizeRuntime(config);
 
-        Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout);
-        Assert.Equal(123_456, config.Settings.FollowRewardAmount);
-        Assert.Equal(987_654_321, config.Settings.MaximumTokenBalance);
-        Assert.Equal(777, config.Settings.ViewerCommandLimitPerMinute);
-        Assert.Equal(888, config.Settings.ChannelCommandLimitPerMinute);
-        Assert.Equal(0.0, config.Settings.CommandCostMultiplier);
-        Assert.Equal(20, config.Settings.AutomaticBackupRetentionCount);
-        Assert.Equal(60, config.Settings.GracefulShutdownTimeoutSeconds);
+        Assert.Multiple(
+            () => Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout),
+            () => Assert.Equal(123_456, config.Settings.FollowRewardAmount),
+            () => Assert.Equal(987_654_321, config.Settings.MaximumTokenBalance),
+            () => Assert.Equal(777, config.Settings.ViewerCommandLimitPerMinute),
+            () => Assert.Equal(888, config.Settings.ChannelCommandLimitPerMinute),
+            () => Assert.Equal(0.0, config.Settings.CommandCostMultiplier),
+            () => Assert.Equal(20, config.Settings.AutomaticBackupRetentionCount),
+            () => Assert.Equal(60, config.Settings.GracefulShutdownTimeoutSeconds));
     }
 
     [Theory]
