@@ -23,7 +23,8 @@ public sealed class MinecraftVersionSupportTests
         int packFormatMinor)
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(requested, out var version));
-        Assert.Multiple(() => Assert.Equal(ID, version.ID),
+        Assert.Multiple(
+            () => Assert.Equal(ID, version.ID),
             () => Assert.Equal(displayID, version.DisplayID),
             () => Assert.Equal(requiredJDK, version.RequiredJDK),
             () => Assert.Equal(packFormatMajor, version.DataPackFormatMajor),
@@ -43,7 +44,8 @@ public sealed class MinecraftVersionSupportTests
         bool supportsInfested)
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(ID, out var version));
-        Assert.Multiple(() => Assert.Equal(singularFunctionDirectories, version.UsesSingularFunctionDirectories),
+        Assert.Multiple(
+            () => Assert.Equal(singularFunctionDirectories, version.UsesSingularFunctionDirectories),
             () => Assert.Equal(serverSettingGameRules, version.UsesServerSettingGameRules),
             () => Assert.Equal(inlineTextComponents, version.UsesInlineTextComponents),
             () => Assert.Equal(namespacedGameRules, version.UsesNamespacedGameRules),
