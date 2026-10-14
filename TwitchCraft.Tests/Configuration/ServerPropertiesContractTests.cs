@@ -104,8 +104,8 @@ public sealed class ServerPropertiesContractTests
         Assert.Contains("difficulty=hard", propertyLines);
         Assert.Contains("hardcore=false", propertyLines);
         Assert.DoesNotContain("server-port=12345", content, StringComparison.Ordinal);
-        foreach (string key in new[] { "allow-nether", "spawn-monsters", "enable-command-block" })
-            Assert.DoesNotContain("\n" + key + "=", "\n" + content, StringComparison.Ordinal);
+        Assert.All(new[] { "allow-nether", "spawn-monsters", "enable-command-block" }, key =>
+            Assert.DoesNotContain("\n" + key + "=", "\n" + content, StringComparison.Ordinal));
         Assert.Contains("# THESE SETTINGS CAN BE CHANGED DIRECTLY IN THIS FILE.", content, StringComparison.Ordinal);
         Assert.Contains("# TWITCHCRAFT WILL PRESERVE YOUR CHANGES.", content, StringComparison.Ordinal);
         Assert.Contains("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT.", content, StringComparison.Ordinal);
@@ -117,15 +117,14 @@ public sealed class ServerPropertiesContractTests
 
         Assert.True(editableHeader >= 0 && editableHeader < managedHeader && managedHeader < RCONPasswordHeader);
 
-        foreach (string key in new[] { "a-custom", "custom-setting", "escaped-value", "gamemode", "level-name", "z-custom" })
-            AssertPropertyInSection(content, key, editableHeader, managedHeader);
+        Assert.All(new[] { "a-custom", "custom-setting", "escaped-value", "gamemode", "level-name", "z-custom" }, key =>
+            AssertPropertyInSection(content, key, editableHeader, managedHeader));
 
-        foreach (string key in new[]
+        Assert.All(new[]
         {
             "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
             "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
-        })
-            AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader);
+        }, key => AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader));
 
         AssertPropertyInSection(content, "rcon.password", RCONPasswordHeader, content.Length);
 
