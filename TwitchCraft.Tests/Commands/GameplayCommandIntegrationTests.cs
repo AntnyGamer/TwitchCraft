@@ -84,8 +84,8 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, enchants.Count);
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
-            Assert.Single(enchants, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal));
+        Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
+            Assert.Single(enchants, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal)));
         Assert.All(enchants, enchant =>
         {
             Assert.Contains("minecraft:enchantments=", enchant, StringComparison.Ordinal);
@@ -113,8 +113,8 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, renames.Count);
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
-            Assert.Single(renames, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal));
+        Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
+            Assert.Single(renames, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal)));
         Assert.All(renames, rename =>
         {
             Assert.Contains("minecraft:damage=5", rename, StringComparison.Ordinal);
@@ -208,10 +208,10 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(150, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(2, commands.Count(command => command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal)));
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+        Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
             Assert.Single(commands, command =>
                 command.StartsWith("execute as @a[name=\"" + player + "\",", StringComparison.Ordinal) &&
-                command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal));
+                command.Contains(" twitchcraft_health 4 add_value", StringComparison.Ordinal)));
         Assert.Contains(commands, command => command.Contains(" modifier remove ffffffff-ffff-ffff-ffff-ffffffffffff", StringComparison.Ordinal));
         Assert.False(commands.Exists(command => command.Contains(" -2 add_value", StringComparison.Ordinal)));
     }
