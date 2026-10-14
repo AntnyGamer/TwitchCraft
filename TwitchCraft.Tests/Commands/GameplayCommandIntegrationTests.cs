@@ -281,11 +281,12 @@ public sealed class GameplayCommandIntegrationTests
         await scenario.DispatchAsync("!whitelistremove PlayerTwo", "streamer");
         List<string> allowed = await scenario.DrainCommandsAsync(allowedCursor);
 
-        Assert.Contains("ban PlayerTwo griefing hard", allowed);
-        Assert.Contains("kick PlayerTwo testing", allowed);
-        Assert.Contains("pardon PlayerTwo", allowed);
-        Assert.Contains("whitelist add PlayerTwo", allowed);
-        Assert.Contains("whitelist remove PlayerTwo", allowed);
+        Assert.Multiple(
+            () => Assert.Contains("ban PlayerTwo griefing hard", allowed),
+            () => Assert.Contains("kick PlayerTwo testing", allowed),
+            () => Assert.Contains("pardon PlayerTwo", allowed),
+            () => Assert.Contains("whitelist add PlayerTwo", allowed),
+            () => Assert.Contains("whitelist remove PlayerTwo", allowed));
 
         int rejectedCursor = scenario.CaptureCommandCursor();
         await scenario.DispatchAsync("!ban PlayerTwo", "viewer");
@@ -296,11 +297,12 @@ public sealed class GameplayCommandIntegrationTests
         await scenario.DispatchAsync("!whitelistadd bad-name", "streamer");
         List<string> rejected = await scenario.DrainCommandsAsync(rejectedCursor);
 
-        Assert.False(rejected.Exists(command => command.StartsWith("ban ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("kick ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("pardon ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("whitelist add ", StringComparison.Ordinal)));
-        Assert.False(rejected.Exists(command => command.StartsWith("whitelist remove ", StringComparison.Ordinal)));
+        Assert.Multiple(
+            () => Assert.False(rejected.Exists(command => command.StartsWith("ban ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("kick ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("pardon ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("whitelist add ", StringComparison.Ordinal))),
+            () => Assert.False(rejected.Exists(command => command.StartsWith("whitelist remove ", StringComparison.Ordinal))));
     }
 
     [Fact]
