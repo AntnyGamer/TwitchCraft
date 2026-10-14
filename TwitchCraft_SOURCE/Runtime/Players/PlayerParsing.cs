@@ -67,33 +67,12 @@ public sealed partial class MainHandler
 
     private static bool TryParseGamemodeName(ReadOnlySpan<char> text, out int gameType)
     {
-        gameType = -1;
-
-        if (text.Contains("survival", StringComparison.OrdinalIgnoreCase))
-        {
-            gameType = 0;
-            return true;
-        }
-
-        if (text.Contains("creative", StringComparison.OrdinalIgnoreCase))
-        {
-            gameType = 1;
-            return true;
-        }
-
-        if (text.Contains("adventure", StringComparison.OrdinalIgnoreCase))
-        {
-            gameType = 2;
-            return true;
-        }
-
-        if (text.Contains("spectator", StringComparison.OrdinalIgnoreCase))
-        {
-            gameType = 3;
-            return true;
-        }
-
-        return false;
+        gameType = text.Contains("survival", StringComparison.OrdinalIgnoreCase) ? 0
+            : text.Contains("creative", StringComparison.OrdinalIgnoreCase) ? 1
+            : text.Contains("adventure", StringComparison.OrdinalIgnoreCase) ? 2
+            : text.Contains("spectator", StringComparison.OrdinalIgnoreCase) ? 3
+            : -1;
+        return gameType >= 0;
     }
 
     private void HandleGamemode(string playerName, int gameType)
