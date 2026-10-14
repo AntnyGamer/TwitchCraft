@@ -49,17 +49,17 @@ public sealed class SetupInputValidatorTests
             ("1.21.8", "localhost", 25565, 25575, "secret", "token", "", "Twitch channel name")
         ];
 
-        foreach (var (version, host, port, rconPort, password, token, channel, expected) in invalid)
+        Assert.All(invalid, item =>
         {
             TwitchCraftConfig config = new()
             {
-                Server = { MinecraftVersion = version, RemoteHost = host, Port = port, RCON = { Port = rconPort, Password = password } },
-                Twitch = { BotToken = token, StreamerName = channel },
+                Server = { MinecraftVersion = item.Version, RemoteHost = item.Host, Port = item.Port, RCON = { Port = item.RconPort, Password = item.Password } },
+                Twitch = { BotToken = item.Token, StreamerName = item.Channel },
                 Settings = { RemoteControlEnabled = true }
             };
-            Assert.Contains(expected, Assert.Throws<InvalidOperationException>(
+            Assert.Contains(item.Reason, Assert.Throws<InvalidOperationException>(
                 () => SetupInputValidator.ValidateRuntimeConfig(config)).Message);
-        }
+        });
     }
 
 }
