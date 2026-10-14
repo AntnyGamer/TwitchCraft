@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Buffers.Binary;
+using System.Linq;
 using System.Text;
 using TwitchCraft_V1;
 using Xunit;
