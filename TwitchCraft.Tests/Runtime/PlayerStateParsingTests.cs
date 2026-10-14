@@ -18,12 +18,12 @@ public sealed class PlayerStateParsingTests
             ("[Rcon]: Set Player_3's game mode to Spectator Mode", "Player_3", 3)
         ];
 
-        foreach ((string line, string expectedPlayer, int expectedGameType) in examples)
+        Assert.All(examples, example =>
         {
-            Assert.True(MainHandler.TryParseGamemode(line, out string player, out int gameType));
-            Assert.Equal(expectedPlayer, player);
-            Assert.Equal(expectedGameType, gameType);
-        }
+            Assert.True(MainHandler.TryParseGamemode(example.Line, out string player, out int gameType));
+            Assert.Equal(example.Player, player);
+            Assert.Equal(example.Mode, gameType);
+        });
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class PlayerStateParsingTests
             "Set the game mode of Alex Creative Mode"
         ];
 
-        foreach (string line in lines)
+        Assert.All(lines, line =>
         {
             Assert.False(MainHandler.TryParseGamemode(
                 line,
@@ -46,7 +46,7 @@ public sealed class PlayerStateParsingTests
                 out int gameType));
             Assert.Equal(string.Empty, player);
             Assert.Equal(-1, gameType);
-        }
+        });
     }
 
     [Fact]
