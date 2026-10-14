@@ -102,6 +102,17 @@ a:hover{color:var(--accent)}
 .empty-icon{color:var(--accent);font-size:28px;font-weight:700}
 .empty-state h3{margin:5px 0}
 .empty-state p{color:var(--muted)}
+.targeting-guide{padding:32px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge);background:#1b1a22}
+.targeting-guide h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
+.targeting-lead,.targeting-note{margin:0;color:var(--muted);font-size:13px}
+.targeting-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:19px 0 15px}
+.targeting-card{min-width:0;padding:15px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
+.targeting-card h3{margin:0 0 8px;color:#dfc1ef;font-size:14px}
+.targeting-card code{display:block;padding:7px 9px;background:#16161c;border:1px solid #3b3946;border-radius:4px;color:#e8c9f2;font:12px/1.5 Consolas,monospace;overflow-wrap:anywhere}
+.targeting-card p{margin:10px 0 0;color:var(--muted);font-size:12px}
+.targeting-note{margin-top:9px}
+.targeting-note code{color:#e8c9f2}
+.targeting-note a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .how-it-works{border-top:1px solid var(--edge);padding:37px clamp(20px,5vw,65px)}
 .note-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;margin-top:20px}
 .note{border-top:1px solid var(--edge);padding-top:10px}
@@ -134,6 +145,8 @@ a:hover{color:var(--accent)}
 .footer p{margin:0;color:var(--muted);font-size:11px}
 .footer a{color:var(--muted);font-size:12px}
 .toast{position:fixed;right:16px;bottom:16px;z-index:20;padding:11px 15px;background:#34253e;border:1px solid #9b7bb1;border-radius:4px;color:#f1dffa;font-size:12px}
+@media(max-width:1000px){.targeting-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:570px){.targeting-grid{grid-template-columns:1fr}}
 @media(max-width:1000px){.command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary-item{padding-left:9px}}
 @media(max-width:760px){.hero{grid-template-columns:1fr;padding-top:28px;padding-bottom:28px}.hero-art{display:none}.summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.summary-item,.summary-item:first-child{padding:2px;border:0}.note-grid{grid-template-columns:1fr;gap:15px}}
 @media(max-width:570px){.top-links a:last-child{display:none}.brand-name{font-size:14px}.hero h1{font-size:31px}.hero-actions{flex-direction:column;align-items:flex-start}.search-box{flex-basis:100%}.search-box kbd{display:none}.toolbar-select{flex:1 1 135px;justify-content:space-between}.toolbar-select select{min-width:120px;max-width:160px}.command-grid{grid-template-columns:1fr}.summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -195,6 +208,35 @@ a:hover{color:var(--accent)}
         <div class="summary-item"><strong id="minigame-count">—</strong><span>Minigames</span></div>
         <div class="summary-item"><strong id="utility-count">—</strong><span>Utility</span></div>
         <div class="summary-item"><strong id="streamer-count">—</strong><span>Streamer commands</span></div>
+      </section>
+
+      <section class="targeting-guide" id="targeting" aria-labelledby="targeting-heading">
+        <h2 id="targeting-heading">Singleplayer and multiplayer targeting</h2>
+        <p class="targeting-lead">In singleplayer, gameplay commands affect the streamer's Minecraft player. In multiplayer or Remote Control Mode, most gameplay commands let you choose who to target:</p>
+        <div class="targeting-grid">
+          <div class="targeting-card">
+            <h3>No player specified</h3>
+            <code>!heal</code>
+            <p>Targets the streamer's configured Minecraft player. If they are offline and only one other player is online, that player is used. Otherwise, specify a player name.</p>
+          </div>
+          <div class="targeting-card">
+            <h3>Specific player</h3>
+            <code>!heal Steve</code>
+            <p>Targets that online Minecraft player only. Use their Minecraft username, not their Twitch username.</p>
+          </div>
+          <div class="targeting-card">
+            <h3>Everyone</h3>
+            <code>!heal all</code>
+            <p>Targets all eligible online players. The token cost increases with the number of players targeted. The streamer can disable this option.</p>
+          </div>
+          <div class="targeting-card">
+            <h3>Random player</h3>
+            <code>!heal random</code>
+            <p>Selects one random online player. The streamer can disable this option; unavailable targets can be rejected.</p>
+          </div>
+        </div>
+        <p class="targeting-note"><strong>Arguments:</strong> Some commands put other values before the target, for example <code>!effect 3 all</code> or <code>!addheart 2 Steve</code>. Follow the syntax shown on each command card. World, minigame, and token commands do not necessarily accept player targets.</p>
+        <p class="targeting-note"><strong>Multiplayer costs:</strong> One player pays the listed base price. For multiple players, the base cost is multiplied by <code>(player count + 1) ÷ 2</code> and rounded down, then the configured cost multiplier is applied and rounded up. Spectators and other ineligible targets may be excluded. <a href="https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/MULTIPLAYER.md">Multiplayer setup guide ↗</a></p>
       </section>
 
       <section class="browser" id="catalog" aria-labelledby="catalog-heading">
@@ -272,7 +314,7 @@ a:hover{color:var(--accent)}
         </div>
         <div class="note-grid">
           <div class="note"><span class="note-number">1.</span><h3>Replace placeholders</h3><p>Copied syntax is a template. Replace values in <code>&lt;angle brackets&gt;</code>; square brackets indicate optional arguments.</p></div>
-          <div class="note"><span class="note-number">2.</span><h3>Costs are defaults</h3><p>The price multiplier above is a preview, not a live connection to a streamer's settings. It affects gameplay command prices only. Multiplayer targeting scales the base cost by <code>(player count + 1) / 2</code> (rounded down), then applies the multiplier (rounded up).</p></div>
+          <div class="note"><span class="note-number">2.</span><h3>Costs are defaults</h3><p>The price multiplier above is a preview, not a live connection to a streamer's settings. It affects gameplay command prices only; actual prices can differ.</p></div>
           <div class="note"><span class="note-number">3.</span><h3>Some commands are conditional</h3><p>Chicken Run, Number Guess, and Wither Battle commands require an active round; <code>!gambletokens</code> works independently. Some admin commands require local multiplayer.</p></div>
         </div>
         <p class="reward-note"><strong>Token rewards:</strong> If Bit rewards are enabled, 1 Bit earns 1 token. New followers receive a one-time reward of 50 tokens by default, unless the streamer changes the amount. Streamer commands are for the broadcaster and bot, and moderators if enabled.</p>
