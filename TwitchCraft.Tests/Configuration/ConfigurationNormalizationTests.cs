@@ -31,8 +31,7 @@ public sealed class ConfigurationNormalizationTests
 
         ConfigurationStore.NormalizeRuntime(config);
 
-        Assert.Multiple(
-            () => Assert.Equal(25570, config.Server.Port),
+        Assert.Multiple(() => Assert.Equal(25570, config.Server.Port),
             () => Assert.Equal(string.Empty, config.Server.Java.ExecutablePath),
             () => Assert.Equal(string.Empty, config.Server.Java.HomeDirectory),
             () => Assert.Equal(25575, config.Server.RCON.Port),
@@ -117,8 +116,7 @@ public sealed class ConfigurationNormalizationTests
 
         ConfigurationStore.NormalizeRuntime(config);
 
-        Assert.Multiple(
-            () => Assert.Equal("127.0.0.1", config.Server.BindIP),
+        Assert.Multiple(() => Assert.Equal("127.0.0.1", config.Server.BindIP),
             () => Assert.Equal(25565, config.Server.Port),
             () => Assert.Equal(1, config.Server.MaxPlayers),
             () => Assert.Equal(4, config.Server.MemoryMinGB),
@@ -161,8 +159,7 @@ public sealed class ConfigurationNormalizationTests
             () => Assert.Equal(0, config.Settings.EmptyServerShutdownDelayMinutes),
             () => Assert.Equal("white", config.Settings.MinecraftRelayTextColor));
         CommandCustomization heal = Assert.Single(config.Settings.CommandCustomizations).Value;
-        Assert.Multiple(
-            () => Assert.False(heal.Enabled),
+        Assert.Multiple(() => Assert.False(heal.Enabled),
             () => Assert.Equal(5, heal.CooldownSeconds),
             () => Assert.Equal(2.5, heal.GlobalCooldownSeconds),
             () => Assert.True(config.Settings.CommandCustomizations.ContainsKey("heal")));
@@ -196,8 +193,7 @@ public sealed class ConfigurationNormalizationTests
 
         ConfigurationStore.NormalizeRuntime(config);
 
-        Assert.Multiple(
-            () => Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout),
+        Assert.Multiple(() => Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout),
             () => Assert.Equal(123_456, config.Settings.FollowRewardAmount),
             () => Assert.Equal(987_654_321, config.Settings.MaximumTokenBalance),
             () => Assert.Equal(777, config.Settings.ViewerCommandLimitPerMinute),
