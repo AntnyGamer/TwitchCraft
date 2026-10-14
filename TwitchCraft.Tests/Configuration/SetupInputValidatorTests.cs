@@ -35,24 +35,31 @@ public sealed class SetupInputValidatorTests
             version, bindIP, clientID, authorizedClientID, token, channel, botName));
     }
 
-    [Theory]
-    [InlineData("unsupported", "localhost", 25565, 25575, "secret", "token", "streamer", "Minecraft version")]
-    [InlineData("1.21.8", "bad host", 25565, 25575, "secret", "token", "streamer", "Remote controller host")]
-    [InlineData("1.21.8", "localhost", 0, 25575, "secret", "token", "streamer", "Minecraft server port")]
-    [InlineData("1.21.8", "localhost", 25565, 0, "secret", "token", "streamer", "RCON port")]
-    [InlineData("1.21.8", "localhost", 25565, 25575, "", "token", "streamer", "RCON password")]
-    [InlineData("1.21.8", "localhost", 25565, 25575, "secret", "", "streamer", "Twitch bot token")]
-    [InlineData("1.21.8", "localhost", 25565, 25575, "secret", "token", "", "Twitch channel name")]
-    public void ValidateRuntimeConfig_RejectsInvalidRemoteSettings(
-        string version, string host, int port, int rconPort, string password, string token, string channel, string expected)
+    [Fact]
+    public void ValidateRuntimeConfig_RejectsInvalidRemoteSettings()
     {
-        TwitchCraftConfig config = new()
+        (string Version, string Host, int Port, int RconPort, string Password, string Token, string Channel, string Reason)[] invalid =
+        [
+            ("unsupported", "localhost", 25565, 25575, "secret", "token", "streamer", "Minecraft version"),
+            ("1.21.8", "bad host", 25565, 25575, "secret", "token", "streamer", "Remote controller host"),
+            ("1.21.8", "localhost", 0, 25575, "secret", "token", "streamer", "Minecraft server port"),
+            ("1.21.8", "localhost", 25565, 0, "secret", "token", "streamer", "RCON port"),
+            ("1.21.8", "localhost", 25565, 25575, "", "token", "streamer", "RCON password"),
+            ("1.21.8", "localhost", 25565, 25575, "secret", "", "streamer", "Twitch bot token"),
+            ("1.21.8", "localhost", 25565, 25575, "secret", "token", "", "Twitch channel name")
+        ];
+
+        foreach (var (version, host, port, rconPort, password, token, channel, expected) in invalid)
         {
-            Server = { MinecraftVersion = version, RemoteHost = host, Port = port, RCON = { Port = rconPort, Password = password } },
-            Twitch = { BotToken = token, StreamerName = channel },
-            Settings = { RemoteControlEnabled = true }
-        };
-        Assert.Contains(expected, Assert.Throws<InvalidOperationException>(
-            () => SetupInputValidator.ValidateRuntimeConfig(config)).Message);
+            TwitchCraftConfig config = new()
+            {
+                Server = { MinecraftVersion = version, RemoteHost = host, Port = port, RCON = { Port = rconPort, Password = password } },
+                Twitch = { BotToken = token, StreamerName = channel },
+                Settings = { RemoteControlEnabled = true }
+            };
+            Assert.Contains(expected, Assert.Throws<InvalidOperationException>(
+                () => SetupInputValidator.ValidateRuntimeConfig(config)).Message);
+        }
     }
+
 }
