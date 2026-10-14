@@ -61,8 +61,6 @@ Copyright 2014-2026 SourceGear, LLC
 Licensed under the Apache License, Version 2.0.
 This covers the SQLitePCLRaw bundle, provider, and core packages.
 
-SQLitePCLRaw NOTICE information:
-
 ------------------------------------------------------------
                  Copyright on SQLitePCLRaw
 ------------------------------------------------------------
