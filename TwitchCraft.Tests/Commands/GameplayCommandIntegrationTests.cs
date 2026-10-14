@@ -86,12 +86,10 @@ public sealed class GameplayCommandIntegrationTests
         Assert.Equal(2, enchants.Count);
         Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
             Assert.Single(enchants, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal)));
-        Assert.All(enchants, enchant =>
-        {
-            Assert.Contains("minecraft:enchantments=", enchant, StringComparison.Ordinal);
-            Assert.Contains("minecraft:damage=5", enchant, StringComparison.Ordinal);
-            Assert.EndsWith(" 2", enchant, StringComparison.Ordinal);
-        });
+        Assert.All(enchants, enchant => Assert.Multiple(
+            () => Assert.Contains("minecraft:enchantments=", enchant, StringComparison.Ordinal),
+            () => Assert.Contains("minecraft:damage=5", enchant, StringComparison.Ordinal),
+            () => Assert.EndsWith(" 2", enchant, StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -115,13 +113,11 @@ public sealed class GameplayCommandIntegrationTests
         Assert.Equal(2, renames.Count);
         Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
             Assert.Single(renames, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal)));
-        Assert.All(renames, rename =>
-        {
-            Assert.Contains("minecraft:damage=5", rename, StringComparison.Ordinal);
-            Assert.Contains("minecraft:custom_name=", rename, StringComparison.Ordinal);
-            Assert.Contains("Diamond Sword", rename, StringComparison.Ordinal);
-            Assert.EndsWith(" 2", rename, StringComparison.Ordinal);
-        });
+        Assert.All(renames, rename => Assert.Multiple(
+            () => Assert.Contains("minecraft:damage=5", rename, StringComparison.Ordinal),
+            () => Assert.Contains("minecraft:custom_name=", rename, StringComparison.Ordinal),
+            () => Assert.Contains("Diamond Sword", rename, StringComparison.Ordinal),
+            () => Assert.EndsWith(" 2", rename, StringComparison.Ordinal)));
     }
 
     [Fact]
