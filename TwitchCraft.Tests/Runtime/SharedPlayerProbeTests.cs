@@ -125,8 +125,8 @@ public sealed class SharedPlayerProbeTests
         Assert.Equal(playerOneItem, batch["PLAYERONE"]);
         Assert.Equal(playerTwoItem, batch["PlayerTwo"]);
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
-        foreach (string player in new[] { "PlayerOne", "PlayerTwo" })
+        Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
             Assert.Single(commands, command => string.Equals(command,
-                "data get entity @a[name=\"" + player + "\",limit=1] SelectedItem", StringComparison.OrdinalIgnoreCase));
+                "data get entity @a[name=\"" + player + "\",limit=1] SelectedItem", StringComparison.OrdinalIgnoreCase)));
     }
 }
