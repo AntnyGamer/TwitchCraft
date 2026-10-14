@@ -13,15 +13,17 @@ public sealed class PaidDispatchAtomicityTests
     public async Task SuccessfulPaidCommand_ChargesDispatchesAndRecordsOnce()
     {
         TransactionHarness harness = new();
+        int statisticsAtDispatch = -1;
         harness.DispatchOverride = _ =>
         {
-            Assert.Equal(0, harness.StatisticsCalls);
+            statisticsAtDispatch = harness.StatisticsCalls;
             return Task.FromResult(true);
         };
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(() => Assert.True(succeeded),
+        Assert.Multiple(() => Assert.Equal(0, statisticsAtDispatch),
+            () => Assert.True(succeeded),
             () => Assert.Equal(75, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(0, harness.RefundCalls),
@@ -37,15 +39,17 @@ public sealed class PaidDispatchAtomicityTests
     public async Task FailedPaidCommand_RefundsOnceReportsFailureAndSkipsStatistics()
     {
         TransactionHarness harness = new();
+        int statisticsAtDispatch = -1;
         harness.DispatchOverride = _ =>
         {
-            Assert.Equal(0, harness.StatisticsCalls);
+            statisticsAtDispatch = harness.StatisticsCalls;
             return Task.FromResult(false);
         };
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(() => Assert.False(succeeded),
+        Assert.Multiple(() => Assert.Equal(0, statisticsAtDispatch),
+            () => Assert.False(succeeded),
             () => Assert.Equal(100, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(1, harness.RefundCalls),
