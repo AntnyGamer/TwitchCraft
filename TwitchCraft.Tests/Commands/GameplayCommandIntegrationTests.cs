@@ -82,9 +82,9 @@ public sealed class GameplayCommandIntegrationTests
                 command.StartsWith("item replace entity @a[name=\"", StringComparison.Ordinal) &&
                 command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal));
 
-        Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(2, enchants.Count);
         Assert.Multiple(
+            () => Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer")),
+            () => Assert.Equal(2, enchants.Count),
             () => Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
                 Assert.Single(enchants, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal))),
             () => Assert.All(enchants, enchant => Assert.Multiple(
@@ -110,9 +110,9 @@ public sealed class GameplayCommandIntegrationTests
                 command.StartsWith("item replace entity @a[name=\"", StringComparison.Ordinal) &&
                 command.Contains("weapon.mainhand with minecraft:diamond_sword[", StringComparison.Ordinal));
 
-        Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(2, renames.Count);
         Assert.Multiple(
+            () => Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer")),
+            () => Assert.Equal(2, renames.Count),
             () => Assert.All(new[] { "PlayerOne", "PlayerTwo" }, player =>
                 Assert.Single(renames, command => command.StartsWith("item replace entity @a[name=\"" + player + "\",", StringComparison.Ordinal))),
             () => Assert.All(renames, rename => Assert.Multiple(
