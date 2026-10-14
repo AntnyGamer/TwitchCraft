@@ -22,8 +22,7 @@ public sealed class PaidDispatchAtomicityTests
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(() => Assert.Equal(0, statisticsAtDispatch),
-            () => Assert.True(succeeded),
+        Assert.Multiple(() => Assert.Equal(0, statisticsAtDispatch), () => Assert.True(succeeded),
             () => Assert.Equal(75, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(0, harness.RefundCalls),
@@ -48,8 +47,7 @@ public sealed class PaidDispatchAtomicityTests
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
-        Assert.Multiple(() => Assert.Equal(0, statisticsAtDispatch),
-            () => Assert.False(succeeded),
+        Assert.Multiple(() => Assert.Equal(0, statisticsAtDispatch), () => Assert.False(succeeded),
             () => Assert.Equal(100, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(1, harness.RefundCalls),
