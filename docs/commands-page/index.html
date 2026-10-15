@@ -55,7 +55,7 @@ a:hover{color:var(--accent)}
 .summary-item strong{font-size:24px;line-height:1.3;font-weight:750}
 .summary-item span{font-size:12px;color:var(--muted)}
 .browser{padding:40px clamp(20px,5vw,65px) 56px}
-.section-intro h2,.how-it-works h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
+.section-intro h2,.how-it-works h2,.targeting-guide h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
 .section-intro p{margin:0;color:var(--muted);font-size:13px}
 .browser-panel{padding:16px;margin-top:21px;border:1px solid var(--edge);border-radius:6px;background:var(--panel)}
 .toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
@@ -103,7 +103,6 @@ a:hover{color:var(--accent)}
 .empty-state h3{margin:5px 0}
 .empty-state p{color:var(--muted)}
 .targeting-guide{padding:32px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge);background:#1b1a22}
-.targeting-guide h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
 .targeting-lead,.targeting-note{margin:0;color:var(--muted);font-size:13px}
 .targeting-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:19px 0 15px}
 .targeting-card{min-width:0;padding:15px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
@@ -486,15 +485,16 @@ a:hover{color:var(--accent)}
       if (fields.some(field => !field)) {
         throw new Error('Missing command details for ' + name);
       }
+      const lowerName = name.toLowerCase();
+      const lowerSyntax = syntax.toLowerCase();
       if (!/^![a-z0-9_-]+$/i.test(name) ||
-          (syntax.toLowerCase() !== name.toLowerCase() &&
-            !syntax.toLowerCase().startsWith(name.toLowerCase() + ' '))) {
+          (lowerSyntax !== lowerName && !lowerSyntax.startsWith(lowerName + ' '))) {
         throw new Error('Invalid command syntax for ' + name);
       }
-      if (seen.has(name.toLowerCase())) {
+      if (seen.has(lowerName)) {
         throw new Error('Duplicate command in documentation: ' + name);
       }
-      seen.add(name.toLowerCase());
+      seen.add(lowerName);
       parsed.push({
         name, syntax, cost, targeting, permission, description, section,
         searchText: [name, syntax, cost, targeting, permission, description, sectionLabels[section]]
@@ -711,7 +711,9 @@ a:hover{color:var(--accent)}
     else next.searchParams.delete('multiplier');
     if (sortSelect.value !== 'category') next.searchParams.set('sort', sortSelect.value);
     else next.searchParams.delete('sort');
-    window.history.replaceState(null, '', next.pathname + next.search + next.hash);
+    const address = next.pathname + next.search + next.hash;
+    if (address !== window.location.pathname + window.location.search + window.location.hash)
+      window.history.replaceState(null, '', address);
   }
 
   function render() {
