@@ -553,7 +553,7 @@ a:hover{color:var(--accent)}
     const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
     if (!definition) throw new Error('Multiplier presets were not found in Settings.xaml.cs');
     const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
-      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×') }));
+      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×').replace(/^1×$/, '1× (default)') }));
     if (!options.length || !options.some(item => item.value === '1')
         || options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
       throw new Error('Multiplier preset values are invalid');
@@ -569,13 +569,18 @@ a:hover{color:var(--accent)}
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const presets = parseMultiplierOptions(await response.text());
       const previousSelection = multiplierSelect.value;
-      const optionElements = presets.map(option => {
-        const element = document.createElement('option');
-        element.value = option.value;
-        element.textContent = option.label;
-        return element;
-      });
-      multiplierSelect.replaceChildren(...optionElements);
+      // Avoid resetting an open dropdown when the remote options are unchanged.
+      if (presets.length !== multiplierSelect.options.length ||
+          presets.some((option, i) => option.value !== multiplierSelect.options[i].value ||
+            option.label !== multiplierSelect.options[i].textContent)) {
+        const optionElements = presets.map(option => {
+          const element = document.createElement('option');
+          element.value = option.value;
+          element.textContent = option.label;
+          return element;
+        });
+        multiplierSelect.replaceChildren(...optionElements);
+      }
       const values = presets.map(option => option.value);
       // Apply new presets from the URL, but never override a manual choice
       // made while the remote preset list was loading.
