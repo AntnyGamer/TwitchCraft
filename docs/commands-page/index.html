@@ -393,6 +393,7 @@ a:hover{color:var(--accent)}
   let category = validCategories.has(initialCategory) ? initialCategory : 'all';
   let toastTimer = 0;
   const copyResetTimers = new WeakMap();
+  const copyRequests = new WeakMap();
   searchInput.value = (params.get('q') || '').slice(0, 150);
   freeOnlyInput.checked = params.get('free') === '1';
   sortSelect.value = validSorts.has(params.get('sort')) ? params.get('sort') : 'category';
@@ -794,7 +795,10 @@ a:hover{color:var(--accent)}
       }
       const button = event.target.closest('.copy-button');
       if (!button) return;
-      const success = await copyToClipboard(button.dataset.syntax);
+      const request = copyToClipboard(button.dataset.syntax);
+      copyRequests.set(button, request);
+      const success = await request;
+      if (copyRequests.get(button) !== request) return;
       if (!success) {
         window.clearTimeout(copyResetTimers.get(button));
         button.querySelector('span').textContent = 'Copy syntax';
