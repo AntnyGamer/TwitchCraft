@@ -412,8 +412,7 @@ a:hover{color:var(--accent)}
   // Markdown table cells may include backtick code spans and escaped pipes.
   // Avoid splitting on pipes that are part of commands such as <user|all|random>.
   function splitRow(line) {
-    const trimmed = line.trim();
-    let raw = trimmed.slice(1);
+    let raw = line.trim().slice(1);
     if (raw.endsWith('|')) raw = raw.slice(0, -1);
     const cells = [];
     let cell = '';
@@ -423,7 +422,7 @@ a:hover{color:var(--accent)}
       if (character === '\\' && i + 1 < raw.length && raw[i + 1] === '|') {
         cell += '|';
         i++;
-      } else if (character.charCodeAt(0) === 96) {
+      } else if (character === '`') {
         inCode = !inCode;
         cell += character;
       } else if (character === '|' && !inCode) {
@@ -439,7 +438,7 @@ a:hover{color:var(--accent)}
 
   function plainText(value) {
     return value
-      .replace(/\x60/g, '')
+      .replace(/`/g, '')
       .replace(/\\([\\*_])/g, '$1')
       .trim();
   }
