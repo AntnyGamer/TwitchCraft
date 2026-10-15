@@ -392,6 +392,7 @@ a:hover{color:var(--accent)}
   const counts = { all: 0, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
   let category = validCategories.has(initialCategory) ? initialCategory : 'all';
   let toastTimer = 0;
+  const copyResetTimers = new WeakMap();
   searchInput.value = (params.get('q') || '').slice(0, 150);
   freeOnlyInput.checked = params.get('free') === '1';
   sortSelect.value = validSorts.has(params.get('sort')) ? params.get('sort') : 'category';
@@ -569,13 +570,13 @@ a:hover{color:var(--accent)}
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const presets = parseMultiplierOptions(await response.text());
       const previousSelection = multiplierSelect.value;
-      multiplierSelect.replaceChildren();
-      for (const option of presets) {
+      const optionElements = presets.map(option => {
         const element = document.createElement('option');
         element.value = option.value;
         element.textContent = option.label;
-        multiplierSelect.appendChild(element);
-      }
+        return element;
+      });
+      multiplierSelect.replaceChildren(...optionElements);
       const values = presets.map(option => option.value);
       // Apply new presets from the URL, but never override a manual choice
       // made while the remote preset list was loading.
@@ -798,10 +799,11 @@ a:hover{color:var(--accent)}
       label.textContent = 'Copied!';
       button.classList.add('copied');
       showToast('Copied ' + button.dataset.command + ' syntax. Replace placeholders before sending.');
-      window.setTimeout(() => {
+      window.clearTimeout(copyResetTimers.get(button));
+      copyResetTimers.set(button, window.setTimeout(() => {
         label.textContent = 'Copy syntax';
         button.classList.remove('copied');
-      }, 1400);
+      }, 1400));
     });
     clearButton.addEventListener('click', clearFilters);
     document.getElementById('empty-reset').addEventListener('click', clearFilters);
