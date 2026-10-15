@@ -796,6 +796,9 @@ a:hover{color:var(--accent)}
       if (!button) return;
       const success = await copyToClipboard(button.dataset.syntax);
       if (!success) {
+        window.clearTimeout(copyResetTimers.get(button));
+        button.querySelector('span').textContent = 'Copy syntax';
+        button.classList.remove('copied');
         showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
         return;
       }
