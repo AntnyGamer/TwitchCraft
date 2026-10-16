@@ -239,10 +239,8 @@ a:hover{color:var(--accent)}
 
       <section class="browser" id="catalog" aria-labelledby="catalog-heading">
         <div class="section-intro">
-          <div>
-            <h2 id="catalog-heading">Command list</h2>
-            <p>Search or filter the commands below. Prices are based on TwitchCraft's default settings.</p>
-          </div>
+          <h2 id="catalog-heading">Command list</h2>
+          <p>Search or filter the commands below. Prices are based on TwitchCraft's default settings.</p>
         </div>
         <div class="browser-panel">
           <div class="toolbar">
@@ -479,22 +477,16 @@ a:hover{color:var(--accent)}
       if (!section) continue;
 
       const fields = splitRow(line).map(plainText);
-      if (fields.length !== 6) {
-        throw new Error('Unexpected command table format for ' + fields[0]);
-      }
+      if (fields.length !== 6) throw new Error('Unexpected command table format for ' + fields[0]);
       const [name, syntax, cost, targeting, permission, description] = fields;
-      if (fields.some(field => !field)) {
-        throw new Error('Missing command details for ' + name);
-      }
+      if (fields.some(field => !field)) throw new Error('Missing command details for ' + name);
       const lowerName = name.toLowerCase();
       const lowerSyntax = syntax.toLowerCase();
       if (!/^![a-z0-9_-]+$/i.test(name) ||
           (lowerSyntax !== lowerName && !lowerSyntax.startsWith(lowerName + ' '))) {
         throw new Error('Invalid command syntax for ' + name);
       }
-      if (seen.has(lowerName)) {
-        throw new Error('Duplicate command in documentation: ' + name);
-      }
+      if (seen.has(lowerName)) throw new Error('Duplicate command in documentation: ' + name);
       seen.add(lowerName);
       parsed.push({
         name, syntax, cost, targeting, permission, description, section,
@@ -574,13 +566,8 @@ a:hover{color:var(--accent)}
       if (presets.length !== multiplierSelect.options.length ||
           presets.some((option, i) => option.value !== multiplierSelect.options[i].value ||
             option.label !== multiplierSelect.options[i].textContent)) {
-        const optionElements = presets.map(option => {
-          const element = document.createElement('option');
-          element.value = option.value;
-          element.textContent = option.label;
-          return element;
-        });
-        multiplierSelect.replaceChildren(...optionElements);
+        multiplierSelect.replaceChildren(
+          ...presets.map(({ label, value }) => new Option(label, value)));
       }
       const values = presets.map(option => option.value);
       // Apply new presets from the URL, but never override a manual choice
@@ -603,9 +590,7 @@ a:hover{color:var(--accent)}
     const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
     const baseCost = numeric ? Number(source) : perUnit ? Number(perUnit[1]) : null;
 
-    if (free || baseCost === 0) {
-      return { label: free ? source : 'Free (0 tokens)', free: true };
-    }
+    if (free || baseCost === 0) return { label: free ? source : 'Free (0 tokens)', free: true };
     // Only gameplay charges are affected by the bot's multiplier.
     if (item.section !== 'gameplay') {
       return { label: numeric ? source + ' tokens' : source, free: false };
@@ -661,10 +646,9 @@ a:hover{color:var(--accent)}
   function createCommandCard(item, showCategory) {
     const card = make('article', 'command-card');
     const top = make('div', 'card-top');
-    const name = make('h4', 'command-name', item.name);
     const priceInfo = displayCost(item);
     const price = make('span', priceInfo.free ? 'cost is-free' : 'cost', 'Cost: ' + priceInfo.label);
-    top.append(name, price);
+    top.append(make('h4', 'command-name', item.name), price);
 
     const description = make('p', 'card-description', item.description);
     const syntax = make('code', 'syntax', item.syntax);
