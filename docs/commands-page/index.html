@@ -55,7 +55,7 @@ a:hover{color:var(--accent)}
 .summary-item strong{font-size:24px;line-height:1.3;font-weight:750}
 .summary-item span{font-size:12px;color:var(--muted)}
 .browser{padding:40px clamp(20px,5vw,65px) 56px}
-.section-intro h2,.how-it-works h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
+.section-intro h2,.how-it-works h2,.targeting-guide h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
 .section-intro p{margin:0;color:var(--muted);font-size:13px}
 .browser-panel{padding:16px;margin-top:21px;border:1px solid var(--edge);border-radius:6px;background:var(--panel)}
 .toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
@@ -103,7 +103,6 @@ a:hover{color:var(--accent)}
 .empty-state h3{margin:5px 0}
 .empty-state p{color:var(--muted)}
 .targeting-guide{padding:32px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge);background:#1b1a22}
-.targeting-guide h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
 .targeting-lead,.targeting-note{margin:0;color:var(--muted);font-size:13px}
 .targeting-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:19px 0 15px}
 .targeting-card{min-width:0;padding:15px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
@@ -174,7 +173,7 @@ a:hover{color:var(--accent)}
           <div class="hero-actions">
             <a class="primary-link" href="#catalog">Browse commands ↓</a>
             <a class="secondary-link" href="#targeting">Multiplayer targeting ↓</a>
-            <a class="secondary-link" href="../COMMANDS.md">Technical documentation ↗</a>
+            <a class="secondary-link" href="https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/COMMANDS.md">Technical documentation ↗</a>
           </div>
         </div>
         <div class="hero-art" aria-label="Illustration of example commands in Twitch chat">
@@ -354,7 +353,7 @@ a:hover{color:var(--accent)}
     <footer class="footer">
       <div class="footer-brand"><img class="footer-logo" src="./server-icon.png" width="30" height="30" alt=""><span>TWITCHCRAFT</span></div>
       <p>Independent community project. Not affiliated with Mojang, Microsoft, or Twitch.</p>
-      <a href="../COMMANDS.md">Command documentation ↗</a>
+      <a href="https://github.com/AntnyGamer/TwitchCraft/blob/main/docs/COMMANDS.md">Command documentation ↗</a>
     </footer>
   </div>
   <div id="copy-status" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
@@ -393,6 +392,8 @@ a:hover{color:var(--accent)}
   const counts = { all: 0, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
   let category = validCategories.has(initialCategory) ? initialCategory : 'all';
   let toastTimer = 0;
+  const copyResetTimers = new WeakMap();
+  const copyRequests = new WeakMap();
   searchInput.value = (params.get('q') || '').slice(0, 150);
   freeOnlyInput.checked = params.get('free') === '1';
   sortSelect.value = validSorts.has(params.get('sort')) ? params.get('sort') : 'category';
@@ -412,8 +413,7 @@ a:hover{color:var(--accent)}
   // Markdown table cells may include backtick code spans and escaped pipes.
   // Avoid splitting on pipes that are part of commands such as <user|all|random>.
   function splitRow(line) {
-    const trimmed = line.trim();
-    let raw = trimmed.slice(1);
+    let raw = line.trim().slice(1);
     if (raw.endsWith('|')) raw = raw.slice(0, -1);
     const cells = [];
     let cell = '';
@@ -423,7 +423,7 @@ a:hover{color:var(--accent)}
       if (character === '\\' && i + 1 < raw.length && raw[i + 1] === '|') {
         cell += '|';
         i++;
-      } else if (character.charCodeAt(0) === 96) {
+      } else if (character === '`') {
         inCode = !inCode;
         cell += character;
       } else if (character === '|' && !inCode) {
@@ -439,7 +439,7 @@ a:hover{color:var(--accent)}
 
   function plainText(value) {
     return value
-      .replace(/\x60/g, '')
+      .replace(/`/g, '')
       .replace(/\\([\\*_])/g, '$1')
       .trim();
   }
@@ -486,15 +486,16 @@ a:hover{color:var(--accent)}
       if (fields.some(field => !field)) {
         throw new Error('Missing command details for ' + name);
       }
+      const lowerName = name.toLowerCase();
+      const lowerSyntax = syntax.toLowerCase();
       if (!/^![a-z0-9_-]+$/i.test(name) ||
-          (syntax.toLowerCase() !== name.toLowerCase() &&
-            !syntax.toLowerCase().startsWith(name.toLowerCase() + ' '))) {
+          (lowerSyntax !== lowerName && !lowerSyntax.startsWith(lowerName + ' '))) {
         throw new Error('Invalid command syntax for ' + name);
       }
-      if (seen.has(name.toLowerCase())) {
+      if (seen.has(lowerName)) {
         throw new Error('Duplicate command in documentation: ' + name);
       }
-      seen.add(name.toLowerCase());
+      seen.add(lowerName);
       parsed.push({
         name, syntax, cost, targeting, permission, description, section,
         searchText: [name, syntax, cost, targeting, permission, description, sectionLabels[section]]
@@ -553,7 +554,7 @@ a:hover{color:var(--accent)}
     const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
     if (!definition) throw new Error('Multiplier presets were not found in Settings.xaml.cs');
     const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
-      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×') }));
+      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×').replace(/^1×$/, '1× (default)') }));
     if (!options.length || !options.some(item => item.value === '1')
         || options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
       throw new Error('Multiplier preset values are invalid');
@@ -569,12 +570,17 @@ a:hover{color:var(--accent)}
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const presets = parseMultiplierOptions(await response.text());
       const previousSelection = multiplierSelect.value;
-      multiplierSelect.replaceChildren();
-      for (const option of presets) {
-        const element = document.createElement('option');
-        element.value = option.value;
-        element.textContent = option.label;
-        multiplierSelect.appendChild(element);
+      // Avoid resetting an open dropdown when the remote options are unchanged.
+      if (presets.length !== multiplierSelect.options.length ||
+          presets.some((option, i) => option.value !== multiplierSelect.options[i].value ||
+            option.label !== multiplierSelect.options[i].textContent)) {
+        const optionElements = presets.map(option => {
+          const element = document.createElement('option');
+          element.value = option.value;
+          element.textContent = option.label;
+          return element;
+        });
+        multiplierSelect.replaceChildren(...optionElements);
       }
       const values = presets.map(option => option.value);
       // Apply new presets from the URL, but never override a manual choice
@@ -711,7 +717,9 @@ a:hover{color:var(--accent)}
     else next.searchParams.delete('multiplier');
     if (sortSelect.value !== 'category') next.searchParams.set('sort', sortSelect.value);
     else next.searchParams.delete('sort');
-    window.history.replaceState(null, '', next.pathname + next.search + next.hash);
+    const address = next.pathname + next.search + next.hash;
+    if (address !== window.location.pathname + window.location.search + window.location.hash)
+      window.history.replaceState(null, '', address);
   }
 
   function render() {
@@ -787,8 +795,14 @@ a:hover{color:var(--accent)}
       }
       const button = event.target.closest('.copy-button');
       if (!button) return;
-      const success = await copyToClipboard(button.dataset.syntax);
+      const request = copyToClipboard(button.dataset.syntax);
+      copyRequests.set(button, request);
+      const success = await request;
+      if (copyRequests.get(button) !== request) return;
       if (!success) {
+        window.clearTimeout(copyResetTimers.get(button));
+        button.querySelector('span').textContent = 'Copy syntax';
+        button.classList.remove('copied');
         showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
         return;
       }
@@ -796,10 +810,11 @@ a:hover{color:var(--accent)}
       label.textContent = 'Copied!';
       button.classList.add('copied');
       showToast('Copied ' + button.dataset.command + ' syntax. Replace placeholders before sending.');
-      window.setTimeout(() => {
+      window.clearTimeout(copyResetTimers.get(button));
+      copyResetTimers.set(button, window.setTimeout(() => {
         label.textContent = 'Copy syntax';
         button.classList.remove('copied');
-      }, 1400);
+      }, 1400));
     });
     clearButton.addEventListener('click', clearFilters);
     document.getElementById('empty-reset').addEventListener('click', clearFilters);
