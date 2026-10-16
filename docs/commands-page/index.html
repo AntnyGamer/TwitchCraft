@@ -646,14 +646,14 @@ a:hover{color:var(--accent)}
     const mode = sortSelect.value;
     if (mode === 'category' || mode === 'name-asc') return items;
     if (mode === 'name-desc') return items.reverse();
-    const prices = new Map(items.map(item => [item, sortablePrice(item)]));
+    const prices = new Map();
+    for (const item of items) prices.set(item, sortablePrice(item));
     return items.sort((a, b) => {
       const aPrice = prices.get(a), bPrice = prices.get(b);
       if (aPrice === null && bPrice !== null) return 1;
       if (bPrice === null && aPrice !== null) return -1;
-      if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
+      if (aPrice !== null && bPrice !== null && aPrice !== bPrice)
         return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
-      }
       return a.name.localeCompare(b.name);
     });
   }
