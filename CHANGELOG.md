@@ -4,9 +4,9 @@ All notable changes to this project are documented here. Release entries are lis
 
 ## [1.10.0.1] - 2026-10-17
 
-- Replaced the deleted Twitch developer application's public Client ID so new users can authorize TwitchCraft again
-- Avoided a redundant process-path property lookup when locating the TwitchCraft executable
-- Updated version metadata, README guides, and release documentation
+- HOTFIX: Replaced the removed Twitch developer application's public Client ID so users can use TwitchCraft again
+- One minor performance optimization
+- Updated RELEASING.md
 
 ## [1.10.0] - 2026-10-14
 
