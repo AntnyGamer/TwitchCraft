@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
+## [1.10.0.1] - 2026-10-17
+
+- HOTFIX: Replaced the removed Twitch developer application's public Client ID so users can use TwitchCraft again
+- One minor performance optimization
+- Updated RELEASING.md
+
 ## [1.10.0] - 2026-10-14
 
 - Added !addheart and !removeheart commands, allowing viewers to temporarily change players' maximum health
