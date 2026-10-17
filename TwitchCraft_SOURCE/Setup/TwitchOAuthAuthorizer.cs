@@ -31,7 +31,7 @@ internal static class TwitchOAuthAuthorizer
     internal const string RequiredScopes = "chat:read chat:edit moderator:read:chatters moderator:read:followers";
     // DO NOT CHANGE THIS UNLESS YOU ARE PLANNING ON MAKING YOUR OWN APPLICATION
     // This desktop flow intentionally has no Client Secret, so the Twitch application MUST use Client Type: Public
-    internal const string ApplicationClientID = "291b194ilywj9gxpo919c2p9q08tdx";
+    internal const string ApplicationClientID = "yrk6lg8m6fe9qd4pv5h2ex3aerrid3";
     internal static bool IsOAuthConfigured => ApplicationClientID.Length > 0;
     private static readonly Uri DeviceUri = new("https://id.twitch.tv/oauth2/device");
     private static readonly Uri TokenUri = new("https://id.twitch.tv/oauth2/token");
