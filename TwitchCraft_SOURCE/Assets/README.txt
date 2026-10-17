@@ -300,4 +300,4 @@
 
 
 TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
-README — October 14th, 2026 (for TwitchCraft v1.10.0)
+README — October 17th, 2026 (for TwitchCraft v1.10.0.1)
