@@ -83,7 +83,7 @@ internal static class TwitchOAuthAuthorizer
             return Fail("Could not open the Twitch authorization page. " + ex.Message);
         }
 
-        TimeSpan pollDelay = TimeSpan.FromSeconds(Math.Max(device.IntervalSeconds, 1));
+        TimeSpan pollDelay = TimeSpan.FromSeconds(device.IntervalSeconds);
         TimeSpan allowedWait = TimeSpan.FromSeconds(device.ExpiresInSeconds);
         if (allowedWait > MaximumAuthorizationWait)
             allowedWait = MaximumAuthorizationWait;
