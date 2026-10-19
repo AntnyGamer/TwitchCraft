@@ -165,7 +165,9 @@ public partial class Settings : UserControl
         string current = textBox.Text ?? string.Empty;
         int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
         int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
-        return string.Concat(current.AsSpan(0, start), insertedText.AsSpan(), current.AsSpan(start + length));
+        ReadOnlySpan<char> textBeforeSelection = current.AsSpan(0, start);
+        ReadOnlySpan<char> textAfterSelection = current.AsSpan(start + length);
+        return string.Concat(textBeforeSelection, insertedText.AsSpan(), textAfterSelection);
     }
 
     private static bool IsValidRAMText(string candidate)
