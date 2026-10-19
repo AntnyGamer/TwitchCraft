@@ -55,21 +55,16 @@ public partial class Settings
         AddOptions(RelayTextColorDropdown, RelayTextColorOptions);
     }
 
-    private static void AddPrefixOptions(ComboBox dropdown)
+    private static void AddStringOptions(ComboBox dropdown, ReadOnlySpan<string> options)
     {
         if (dropdown.Items.Count == 0)
-        {
-            dropdown.Items.Add("!");
-            dropdown.Items.Add("?");
-            dropdown.Items.Add(".");
-            dropdown.Items.Add("#");
-            dropdown.Items.Add("$");
-            dropdown.Items.Add("%");
-            dropdown.Items.Add("&");
-            dropdown.Items.Add("+");
-            dropdown.Items.Add("-");
-            dropdown.Items.Add("~");
-        }
+            foreach (string option in options)
+                dropdown.Items.Add(option);
+    }
+
+    private static void AddPrefixOptions(ComboBox dropdown)
+    {
+        AddStringOptions(dropdown, ["!", "?", ".", "#", "$", "%", "&", "+", "-", "~"]);
 
         dropdown.Loaded -= Prefix_Loaded;
         dropdown.Loaded += Prefix_Loaded;
