@@ -899,24 +899,11 @@ public partial class Settings : UserControl
 
     private void AddEconomyOptions()
     {
-        if (ResponseVerbosityDropdown.Items.Count == 0)
-        {
-            ResponseVerbosityDropdown.Items.Add(BotResponseVerbositySettings.Normal);
-            ResponseVerbosityDropdown.Items.Add(BotResponseVerbositySettings.Reduced);
-            ResponseVerbosityDropdown.Items.Add(BotResponseVerbositySettings.EssentialOnly);
-        }
+        AddStringOptions(ResponseVerbosityDropdown,
+            [BotResponseVerbositySettings.Normal, BotResponseVerbositySettings.Reduced, BotResponseVerbositySettings.EssentialOnly]);
 
         AddOptions(CommandCostMultiplierDropdown, CommandCostMultiplierOptions);
-
-        if (FollowRewardAmountDropdown.Items.Count == 0)
-        {
-            FollowRewardAmountDropdown.Items.Add("25");
-            FollowRewardAmountDropdown.Items.Add("50");
-            FollowRewardAmountDropdown.Items.Add("100");
-            FollowRewardAmountDropdown.Items.Add("200");
-            FollowRewardAmountDropdown.Items.Add("500");
-            FollowRewardAmountDropdown.Items.Add("1000");
-        }
+        AddStringOptions(FollowRewardAmountDropdown, ["25", "50", "100", "200", "500", "1000"]);
     }
 
     private void SetCostMultiplier(double multiplier)
