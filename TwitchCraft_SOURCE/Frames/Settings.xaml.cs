@@ -171,12 +171,7 @@ public partial class Settings : UserControl
     }
 
     private static bool IsValidRAMText(string candidate)
-    {
-        if (!IsAsciiDigitsOnly(candidate))
-            return false;
-
-        return int.TryParse(candidate, out int value) && value <= MaxRAMGB;
-    }
+        => IsAsciiDigitsOnly(candidate) && int.TryParse(candidate, out int value) && value <= MaxRAMGB;
 
     private void SetupNumericBox(ComboBox dropdown)
     {
@@ -921,9 +916,7 @@ public partial class Settings : UserControl
             amount.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
     private void UpdateFollowReward(bool enabled)
-    {
-        FollowRewardAmountDropdown?.IsEnabled = enabled;
-    }
+        => FollowRewardAmountDropdown?.IsEnabled = enabled;
 
     private void SetGlobalCooldown(double seconds)
         => SetDoubleValue(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, seconds);
