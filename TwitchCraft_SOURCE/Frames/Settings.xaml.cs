@@ -902,7 +902,11 @@ public partial class Settings : UserControl
     private void AddEconomyOptions()
     {
         AddStringOptions(ResponseVerbosityDropdown,
-            [BotResponseVerbositySettings.Normal, BotResponseVerbositySettings.Reduced, BotResponseVerbositySettings.EssentialOnly]);
+            [
+                BotResponseVerbositySettings.Normal,
+                BotResponseVerbositySettings.Reduced,
+                BotResponseVerbositySettings.EssentialOnly
+            ]);
 
         AddOptions(CommandCostMultiplierDropdown, CommandCostMultiplierOptions);
         AddStringOptions(FollowRewardAmountDropdown, ["25", "50", "100", "200", "500", "1000"]);
