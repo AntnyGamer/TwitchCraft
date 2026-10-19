@@ -107,7 +107,7 @@ public partial class Settings : UserControl
         AddPrefixOptions(CommandPrefixTextBox);
         AddPrefixOptions(SecondaryCommandPrefixTextBox);
 
-        ComboBox[] numericDropdowns =
+        ReadOnlySpan<ComboBox> numericDropdowns =
         [
             ViewerCommandLimitDropdown, ChannelCommandLimitDropdown, GlobalCooldownSecondsDropdown,
             PassivePayoutAmountDropdown, PassivePayoutMinimumDropdown, PassivePayoutMaximumDropdown,
