@@ -68,7 +68,6 @@ public partial class Settings : UserControl
     private SettingsCategory _currentCategory = SettingsCategory.Commands;
     private bool _updatingCustomValueControls;
     private readonly SemaphoreSlim _settingsSaveGate = new(1, 1);
-    private readonly (Grid Page, Button Button)[] _categoryControls;
     private CancellationTokenSource? _RAMSaveDebounceCts;
     private CancellationTokenSource? _tokenAuthorizationCts;
     private bool _hasSavedTwitchAuthorization;
@@ -92,17 +91,6 @@ public partial class Settings : UserControl
     public Settings()
     {
         InitializeComponent();
-        _categoryControls =
-        [
-            (CommandsSettingsPage, CommandsCategoryButton),
-            (CustomCommandsSettingsPage, CustomCommandsCategoryButton),
-            (GameplaySettingsPage, GameplayCategoryButton),
-            (EconomySettingsPage, EconomyCategoryButton),
-            (ChatDisplaySettingsPage, ChatDisplayCategoryButton),
-            (PerformanceSettingsPage, PerformanceCategoryButton),
-            (ServerSettingsPage, ServerCategoryButton),
-            (DangerousSettingsPage, DangerousCategoryButton)
-        ];
         AddMinigameOptions();
         AddOptions(GlobalCooldownSecondsDropdown, GlobalCooldownOptions);
         AddEconomyOptions();
@@ -172,7 +160,7 @@ public partial class Settings : UserControl
         string current = textBox.Text ?? string.Empty;
         int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
         int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
-        return current.Remove(start, length).Insert(start, insertedText);
+        return string.Concat(current.AsSpan(0, start), insertedText.AsSpan(), current.AsSpan(start + length));
     }
 
     private static bool IsValidRAMText(string candidate)
@@ -373,16 +361,34 @@ public partial class Settings : UserControl
     private void ShowPage(Grid page, Button selectedButton, SettingsCategory category)
     {
         _currentCategory = category;
-        foreach (var (categoryPage, _) in _categoryControls)
-            categoryPage.Visibility = Visibility.Collapsed;
+        CommandsSettingsPage.Visibility = Visibility.Collapsed;
+        CustomCommandsSettingsPage.Visibility = Visibility.Collapsed;
+        GameplaySettingsPage.Visibility = Visibility.Collapsed;
+        EconomySettingsPage.Visibility = Visibility.Collapsed;
+        ChatDisplaySettingsPage.Visibility = Visibility.Collapsed;
+        PerformanceSettingsPage.Visibility = Visibility.Collapsed;
+        ServerSettingsPage.Visibility = Visibility.Collapsed;
+        DangerousSettingsPage.Visibility = Visibility.Collapsed;
         page.Visibility = Visibility.Visible;
 
-        foreach (var (_, categoryButton) in _categoryControls)
-            categoryButton.FontWeight = FontWeights.Normal;
+        CommandsCategoryButton.FontWeight = FontWeights.Normal;
+        CustomCommandsCategoryButton.FontWeight = FontWeights.Normal;
+        GameplayCategoryButton.FontWeight = FontWeights.Normal;
+        EconomyCategoryButton.FontWeight = FontWeights.Normal;
+        ChatDisplayCategoryButton.FontWeight = FontWeights.Normal;
+        PerformanceCategoryButton.FontWeight = FontWeights.Normal;
+        ServerCategoryButton.FontWeight = FontWeights.Normal;
+        DangerousCategoryButton.FontWeight = FontWeights.Normal;
         selectedButton.FontWeight = FontWeights.Bold;
 
-        foreach (var (_, categoryButton) in _categoryControls)
-            categoryButton.Opacity = 0.78;
+        CommandsCategoryButton.Opacity = 0.78;
+        CustomCommandsCategoryButton.Opacity = 0.78;
+        GameplayCategoryButton.Opacity = 0.78;
+        EconomyCategoryButton.Opacity = 0.78;
+        ChatDisplayCategoryButton.Opacity = 0.78;
+        PerformanceCategoryButton.Opacity = 0.78;
+        ServerCategoryButton.Opacity = 0.78;
+        DangerousCategoryButton.Opacity = 0.78;
         selectedButton.Opacity = 1;
     }
 
