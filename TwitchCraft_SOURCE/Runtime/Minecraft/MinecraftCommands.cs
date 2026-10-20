@@ -379,7 +379,11 @@ public sealed partial class MainHandler
             ServerCommandNewLineBytes.CopyTo(rented.AsSpan(written));
             return WriteBytesNoLockAsync(process.StandardInput.BaseStream, rented, written + ServerCommandNewLineBytes.Length, cancellationToken);
         }
-        catch { ArrayPool<byte>.Shared.Return(rented); throw; }
+        catch
+        {
+            ArrayPool<byte>.Shared.Return(rented);
+            throw;
+        }
     }
 
     internal static List<string> SnapshotCommands(IEnumerable<string> commands)
@@ -419,7 +423,11 @@ public sealed partial class MainHandler
 
             return WriteBytesNoLockAsync(process.StandardInput.BaseStream, rented, written, cancellationToken);
         }
-        catch { ArrayPool<byte>.Shared.Return(rented); throw; }
+        catch
+        {
+            ArrayPool<byte>.Shared.Return(rented);
+            throw;
+        }
     }
 
     private async Task<bool> WriteBytesNoLockAsync(Stream baseStream, byte[] rented, int written, CancellationToken cancellationToken)

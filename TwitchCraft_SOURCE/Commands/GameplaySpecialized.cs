@@ -385,8 +385,14 @@ public static partial class CommandList
         async Task ResetHeartEffectsAsync(string? player, bool force, CancellationToken ct)
         {
             await heartGate.WaitAsync(ct).ConfigureAwait(false);
-            try { await ResetHeartEffectsCoreAsync(player, force, ct).ConfigureAwait(false); }
-            finally { heartGate.Release(); }
+            try
+            {
+                await ResetHeartEffectsCoreAsync(player, force, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                heartGate.Release();
+            }
         }
 
         async Task ResetHeartEffectsCoreAsync(string? player, bool force, CancellationToken ct)
@@ -396,13 +402,18 @@ public static partial class CommandList
 
             List<(string Player, string ID)>? pending = null;
             foreach (var entry in activeHeartEffects)
+            {
                 for (int i = 0; i < entry.Value.Count; i++)
                 {
                     (int delta, string ID, bool expired) = entry.Value[i];
-                    if (force && !expired) entry.Value[i] = (delta, ID, expired = true);
-                    if (expired && (force && runtime.RemoteControlEnabled || runtime.IsPlayerOnline(entry.Key))) (pending ??= []).Add((entry.Key, ID));
+                    if (force && !expired)
+                        entry.Value[i] = (delta, ID, expired = true);
+                    if (expired && (force && runtime.RemoteControlEnabled || runtime.IsPlayerOnline(entry.Key)))
+                        (pending ??= []).Add((entry.Key, ID));
                 }
-            if (pending == null) return;
+            }
+            if (pending == null)
+                return;
 
             string? selectorPlayer = null, selector = null;
             foreach ((string pendingPlayer, string ID) in pending)
@@ -421,7 +432,8 @@ public static partial class CommandList
             string? verifiedPlayer = null;
             foreach ((string pendingPlayer, _) in pending)
             {
-                if (string.Equals(verifiedPlayer, pendingPlayer, StringComparison.OrdinalIgnoreCase)) continue;
+                if (string.Equals(verifiedPlayer, pendingPlayer, StringComparison.OrdinalIgnoreCase))
+                    continue;
                 verifiedPlayer = pendingPlayer;
                 if (await runtime.QueryHeartModifiersAsync(pendingPlayer, ct).ConfigureAwait(false) is { } current)
                     SyncHeartEffects(pendingPlayer, MainHandler.ParseHeartModifierIDs(current, runtime.UsesNamespacedAttributeModifierIDs), false);
@@ -432,19 +444,34 @@ public static partial class CommandList
         {
             if (!activeHeartEffects.TryGetValue(player, out List<(int Delta, string ID, bool Expired)>? effects))
             {
-                if (!recover || current.Count == 0) return;
+                if (!recover || current.Count == 0)
+                    return;
                 activeHeartEffects[player] = effects = [];
             }
             for (int i = effects.Count - 1; i >= 0; i--)
-                if (!current.Contains(effects[i].ID)) effects.RemoveAt(i);
-            if (recover) foreach (string ID in current)
             {
-                bool exists = false;
-                for (int i = 0; i < effects.Count; i++)
-                    if (effects[i].ID == ID) { exists = true; break; }
-                if (!exists) effects.Add((0, ID, true));
+                if (!current.Contains(effects[i].ID))
+                    effects.RemoveAt(i);
             }
-            if (effects.Count == 0) activeHeartEffects.Remove(player);
+            if (recover)
+            {
+                foreach (string ID in current)
+                {
+                    bool exists = false;
+                    for (int i = 0; i < effects.Count; i++)
+                    {
+                        if (effects[i].ID == ID)
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists)
+                        effects.Add((0, ID, true));
+                }
+            }
+            if (effects.Count == 0)
+                activeHeartEffects.Remove(player);
         }
 
         async Task ResetHeartAsync(string ID, CancellationToken ct)
@@ -454,15 +481,26 @@ public static partial class CommandList
                 await Task.Delay(TimeSpan.FromMinutes(10), ct).ConfigureAwait(false);
                 await heartGate.WaitAsync(ct).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
             try
             {
                 foreach (List<(int Delta, string ID, bool Expired)> effects in activeHeartEffects.Values)
+                {
                     for (int i = 0; i < effects.Count; i++)
-                        if (effects[i].ID == ID) effects[i] = (effects[i].Delta, ID, true);
+                    {
+                        if (effects[i].ID == ID)
+                            effects[i] = (effects[i].Delta, ID, true);
+                    }
+                }
                 await ResetHeartEffectsCoreAsync(null, false, CancellationToken.None).ConfigureAwait(false);
             }
-            finally { heartGate.Release(); }
+            finally
+            {
+                heartGate.Release();
+            }
         }
 
         async Task TimedScaleAsync(

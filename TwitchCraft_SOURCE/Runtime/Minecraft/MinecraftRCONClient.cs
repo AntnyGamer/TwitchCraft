@@ -342,10 +342,17 @@ internal static class MinecraftRCONClient
 
     private static string DecodePayload(ReadOnlySpan<byte> payload, Decoder? decoder)
     {
-        if (decoder == null) return RCONEncoding.GetString(payload);
+        if (decoder == null)
+            return RCONEncoding.GetString(payload);
         char[] chars = ArrayPool<char>.Shared.Rent(payload.Length);
-        try { return new string(chars, 0, decoder.GetChars(payload, chars.AsSpan(), flush: false)); }
-        finally { ArrayPool<char>.Shared.Return(chars); }
+        try
+        {
+            return new string(chars, 0, decoder.GetChars(payload, chars.AsSpan(), flush: false));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(chars);
+        }
     }
 
     private static int NextRequestID()

@@ -329,8 +329,14 @@ public partial class Settings
         (int Value, string Label)[] options,
         Func<StartingProfile, int> getValue)
     {
-        try { SetIntValue(dropdown, options, getValue(ConfigurationStore.Load().Settings)); }
-        catch { ReloadSettings(); }
+        try
+        {
+            SetIntValue(dropdown, options, getValue(ConfigurationStore.Load().Settings));
+        }
+        catch
+        {
+            ReloadSettings();
+        }
     }
 
     private void RestorePayoutRange()
@@ -341,7 +347,10 @@ public partial class Settings
             SetIntValue(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMinimumSeconds);
             SetIntValue(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, settings.PassiveTokenPayoutMaximumSeconds);
         }
-        catch { ReloadSettings(); }
+        catch
+        {
+            ReloadSettings();
+        }
     }
 
     private async void RelayColor_Changed(object sender, SelectionChangedEventArgs e)
