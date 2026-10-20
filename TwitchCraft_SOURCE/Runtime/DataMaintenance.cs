@@ -162,9 +162,15 @@ internal sealed class DataMaintenance(
         List<(DirectoryInfo Directory, DateTime Timestamp)> backups = [];
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
-            bool pendingBackup = directory.Name.Length == 41 && directory.Name.StartsWith(".pending-", StringComparison.Ordinal) && Guid.TryParseExact(directory.Name.AsSpan(9), "N", out _);
-            if (pendingBackup && directory.LastWriteTimeUtc <= DateTime.UtcNow.AddHours(-1)) FileSystemHelper.DeleteDirectorySafe(directory.FullName);
-            if (pendingBackup) continue;
+            bool pendingBackup = directory.Name.Length == 41 &&
+                directory.Name.StartsWith(".pending-", StringComparison.Ordinal) &&
+                Guid.TryParseExact(directory.Name.AsSpan(9), "N", out _);
+            if (pendingBackup)
+            {
+                if (directory.LastWriteTimeUtc <= DateTime.UtcNow.AddHours(-1))
+                    FileSystemHelper.DeleteDirectorySafe(directory.FullName);
+                continue;
+            }
             if (!TryGetBackupTime(directory, requireCompleteBackup: false, out DateTime timestamp))
                 continue;
 
