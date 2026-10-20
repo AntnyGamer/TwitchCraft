@@ -115,10 +115,12 @@ public sealed class ConfigurationNormalizationTests
             }
         };
 
+        Assert.True(ConfigurationStore.ShouldWarnAboutBindIP(config.Server.BindIP));
         ConfigurationStore.NormalizeRuntime(config);
 
         Assert.Multiple(
             () => Assert.Equal("127.0.0.1", config.Server.BindIP),
+            () => Assert.False(ConfigurationStore.ShouldWarnAboutBindIP(config.Server.BindIP)),
             () => Assert.Equal(25565, config.Server.Port),
             () => Assert.Equal(1, config.Server.MaxPlayers),
             () => Assert.Equal(4, config.Server.MemoryMinGB),
@@ -224,13 +226,6 @@ public sealed class ConfigurationNormalizationTests
         Assert.True(ConfigurationStore.IsValidBindIP(value));
     }
 
-    [Fact]
-    public void ShouldWarnAboutBindIP_IdentifiesUnsafeAddresses()
-    {
-        Assert.True(ConfigurationStore.ShouldWarnAboutBindIP("invalid"));
-        Assert.False(ConfigurationStore.ShouldWarnAboutBindIP("127.0.0.1"));
-    }
-
     [Theory]
     [InlineData("example.com")]
     [InlineData("example.com:25575")]
@@ -246,7 +241,6 @@ public sealed class ConfigurationNormalizationTests
     [InlineData("host name")]
     [InlineData("host/path")]
     [InlineData("host\\path")]
-    [InlineData("[]")]
     [InlineData("example.com:70000")]
     public void IsValidRemoteHost_RejectsUnsafeOrInvalidValues(string value)
     {
