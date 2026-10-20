@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 using System.Linq;
 using System.Text;
 using Xunit;
-using static TwitchCraft_V1.MinecraftQueryClient;
+using TwitchCraft_V1;
 
 namespace TwitchCraft.Tests.Runtime;
 
@@ -24,7 +24,7 @@ public sealed class QueryProtocolDecoderTests
         Assert.All(tokens, item =>
         {
             byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(item.Text + "\0"));
-            Assert.Equal(item.Token, ParseChallenge(packet, 1234));
+            Assert.Equal(item.Token, MinecraftQueryClient.ParseChallenge(packet, 1234));
         });
     }
 
@@ -78,7 +78,7 @@ public sealed class QueryProtocolDecoderTests
             "hostname\0server\0\0player_\0\0Steve\0Alex\0Steve\0bad-name\0\0");
         byte[] packet = BuildPacket(0x00, 1234, payload);
 
-        Assert.Equal(["Alex", "Steve"], ParsePlayers(packet, 1234));
+        Assert.Equal(["Alex", "Steve"], MinecraftQueryClient.ParsePlayers(packet, 1234));
         AssertInvalidPlayers(BuildPacket(0x09, 1234, payload), 1234);
         AssertInvalidPlayers(packet, 4321);
     }
@@ -89,7 +89,7 @@ public sealed class QueryProtocolDecoderTests
         byte[] payload = Encoding.ASCII.GetBytes("hostname\0server\0\0player_\0\0\0");
         byte[] packet = BuildPacket(0x00, 1234, payload);
 
-        Assert.Empty(ParsePlayers(packet, 1234));
+        Assert.Empty(MinecraftQueryClient.ParsePlayers(packet, 1234));
     }
 
     [Fact]
@@ -109,10 +109,10 @@ public sealed class QueryProtocolDecoderTests
     }
 
     private static void AssertInvalidChallenge(byte[] packet, int sessionID)
-        => Assert.Throws<InvalidOperationException>(() => ParseChallenge(packet, sessionID));
+        => Assert.Throws<InvalidOperationException>(() => MinecraftQueryClient.ParseChallenge(packet, sessionID));
 
     private static void AssertInvalidPlayers(byte[] packet, int sessionID)
-        => Assert.Throws<InvalidOperationException>(() => ParsePlayers(packet, sessionID));
+        => Assert.Throws<InvalidOperationException>(() => MinecraftQueryClient.ParsePlayers(packet, sessionID));
 
     private static byte[] BuildPacket(byte type, int sessionID, byte[] payload)
     {
