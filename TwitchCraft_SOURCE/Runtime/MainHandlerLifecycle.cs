@@ -218,7 +218,7 @@ public sealed partial class MainHandler
                     string worldDir = ServerPropertyEditor.GetWorldDirectory(config);
                     if (Directory.Exists(worldDir))
                     {
-                        string retiredWorldDir = worldDir + ".reset-" + Guid.NewGuid().ToString("N");
+                        string retiredWorldDir = $"{worldDir}.reset-{Guid.NewGuid():N}";
                         Directory.Move(worldDir, retiredWorldDir);
                         FileSystemHelper.DeleteDirectorySafe(retiredWorldDir);
                     }
