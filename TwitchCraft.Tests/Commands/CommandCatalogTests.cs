@@ -21,28 +21,14 @@ public sealed class CommandCatalogTests
 
         ChatCommandRegistry registry = ChatCommandRegistry.CreateDefault(runtime);
         IReadOnlyList<string> commandNames = registry.CommandNames;
-        string[] newCommands =
-        [
-            "addheart",
-            "removeheart",
-            "turnaround",
-            "chargedcreeper",
-            "kick",
-            "whitelistadd",
-            "whitelistremove",
-            "tokenleaderboard",
-            "followreward",
-            "commandstats",
-            "tokenrank",
-            "tiny",
-            "giant"
-        ];
-
         Assert.NotEmpty(commandNames);
         Assert.Equal(
             commandNames.OrderBy(static name => name, StringComparer.OrdinalIgnoreCase),
             commandNames);
-        Assert.All(newCommands, command => Assert.True(registry.TryResolve(command, out _), command));
+        Assert.All(
+            ["addheart", "removeheart", "turnaround", "chargedcreeper", "johnny", "switchmilk", "swarm", "fireworks",
+             "kick", "whitelistadd", "whitelistremove", "tokenleaderboard", "followreward", "commandstats", "tokenrank", "tiny", "giant"],
+            command => Assert.True(registry.TryResolve(command, out _), command));
 
         ChatCommandStatisticFlags dangerous = ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Dangerous;
         Assert.All(["addheart", "loot"], command =>
