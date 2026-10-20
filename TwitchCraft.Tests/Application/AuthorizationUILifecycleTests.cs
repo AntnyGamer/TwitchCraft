@@ -49,6 +49,6 @@ public sealed class AuthorizationUILifecycleTests
         Assert.Null(authorizeButton.ToolTip);
         Assert.Contains(
             Assert.IsType<string>(authorizeButton.Content),
-            ["Authorize Twitch", "Reauthorize Twitch"]);
+            new[] { "Authorize Twitch", "Reauthorize Twitch" });
     }
 }
