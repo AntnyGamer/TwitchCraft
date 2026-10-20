@@ -82,8 +82,7 @@ internal class CommandStatisticsBucket
 
         foreach (KeyValuePair<string, long> pair in source)
         {
-            if (pair.Value <= 0)
-                continue;
+            if (pair.Value <= 0) continue;
             string command = StatisticNameHelper.CleanCommandName(pair.Key);
             if (command.Length == 0)
                 continue;
