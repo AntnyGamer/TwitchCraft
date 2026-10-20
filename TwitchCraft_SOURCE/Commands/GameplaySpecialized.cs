@@ -14,16 +14,14 @@ public static partial class CommandList
 
         Task ChargedCreeperAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string[] commands = GameplayCommands.BuildChargedCreeper(
-                target.Selector,
-                Random.Shared,
-                runtime.UsesInlineTextComponentSyntax,
-                runtime.UsesModernEntityAttributeNbt);
+            string selector = target.Selector;
+            bool inlineSyntax = runtime.UsesInlineTextComponentSyntax;
+            bool modernEntityNbt = runtime.UsesModernEntityAttributeNbt;
             return SendPricedReplyAsync(
                 target,
                 sender,
                 45,
-                _ => commands,
+                _ => GameplayCommands.BuildChargedCreeper(selector, Random.Shared, inlineSyntax, modernEntityNbt),
                 sender + " summoned a charged creeper on you.",
                 "GOT A CHARGED CREEPER SPAWNED ON THEM!",
                 sender + ", you summoned a charged creeper on " + TargetName(target) + ".",
