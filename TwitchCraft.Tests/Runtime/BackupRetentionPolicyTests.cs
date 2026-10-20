@@ -76,8 +76,8 @@ public sealed class BackupRetentionPolicyTests
             () => Assert.False(Directory.Exists(missingStatistics)),
             () => Assert.True(Directory.Exists(Path.Combine(root.Path, "20260830-120000"))),
             () => Assert.Equal("{}", File.ReadAllText(Path.Combine(root.Path, "20260830-120000", "config.json"))),
-            () => Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "viewer_tokens.db"))),
-            () => Assert.Equal(new byte[] { 1 }, File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "statistics.db"))),
+            () => Assert.Equal([1], File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "viewer_tokens.db"))),
+            () => Assert.Equal([1], File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "statistics.db"))),
             () => Assert.True(Directory.Exists(Path.Combine(root.Path, "notes"))));
     }
 
