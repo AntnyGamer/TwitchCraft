@@ -173,8 +173,8 @@ public sealed class GameplayCommandIntegrationTests
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
         int cursor = scenario.CaptureCommandCursor();
-        await scenario.DispatchAsync("!johnny"); // No tokens
-        await scenario.DispatchAsync("!chargedcreeper");
+        await scenario.DispatchAsync("!johnny");
+        await scenario.DispatchAsync("!chargedcreeper"); // Both unfunded
         scenario.Runtime.Tokens.Award("viewer", 200);
 
         await scenario.DispatchAsync("!johnny");
