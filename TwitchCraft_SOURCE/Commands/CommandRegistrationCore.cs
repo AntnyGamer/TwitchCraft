@@ -247,8 +247,7 @@ public static partial class CommandList
         {
             if (args is not null && startIndex >= 0 && startIndex < args.Count)
             {
-                string first = (args[startIndex] ?? string.Empty).Trim();
-                if (first.Equals("random", StringComparison.OrdinalIgnoreCase))
+                if (args[startIndex].AsSpan().Trim().Equals("random", StringComparison.OrdinalIgnoreCase))
                 {
                     if (!runtime.Commands.AllowRandomPlayerTarget)
                     {
