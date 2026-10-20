@@ -32,6 +32,8 @@ public sealed class IRCFrameParserTests
         Assert.Equal("PING", message.Command);
         Assert.Equal(string.Empty, message.SenderLogin);
         Assert.Equal("tmi.twitch.tv", message.Trailing);
+        Assert.Equal("PING", IRCMessage.StripIRCTags("@a=b PING"));
+        Assert.Equal("PING", IRCMessage.StripIRCTags("PING"));
     }
 
     [Fact]
