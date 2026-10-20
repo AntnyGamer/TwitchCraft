@@ -132,7 +132,7 @@ public sealed class TwitchMessagingPolicyTests
         Assert.Equal(
             "@ann announcement ready.",
             MainHandler.FormatReply("announcement ready.", "ann", mentionViewer: true));
-        Assert.Equal("unchanged", MainHandler.FormatReply("unchanged", "viewer", false));
+        Assert.Equal("hi", MainHandler.FormatReply("hi", "viewer", false));
         Assert.Equal("@viewer hi", MainHandler.FormatReply("@viewer hi", "viewer", true));
     }
 
