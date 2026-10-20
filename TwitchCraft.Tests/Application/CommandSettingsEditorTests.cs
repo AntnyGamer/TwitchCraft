@@ -68,6 +68,8 @@ public sealed class CommandSettingsEditorTests
             Settings settings = new();
             settings.Resources["CommandSettingsPrefix"] = "!";
             ((Button)settings.FindName("CustomCommandsCategoryButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal(Visibility.Visible, ((Grid)settings.FindName("CustomCommandsSettingsPage")).Visibility);
+            Assert.Equal(Visibility.Collapsed, ((Grid)settings.FindName("CommandsSettingsPage")).Visibility);
             ListBox list = (ListBox)settings.FindName("CommandCustomizationList");
             int saves = 0;
             Settings.CommandSettingsRow[] rows = Enumerable.Range(0, 200)
