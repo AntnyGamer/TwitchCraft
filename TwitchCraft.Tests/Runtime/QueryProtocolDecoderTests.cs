@@ -41,7 +41,7 @@ public sealed class QueryProtocolDecoderTests
     [Fact]
     public void ParseChallenge_RejectsInvalidOrOutOfRangeToken()
     {
-        Assert.All(new[] { "invalid", "", "2147483648", "-2147483649" }, token =>
+        Assert.All(["invalid", "", "2147483648", "-2147483649"], token =>
         {
             byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(token + "\0"));
             Assert.Throws<InvalidOperationException>(() =>
