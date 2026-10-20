@@ -44,7 +44,7 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(96, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Single(commands, command =>
-            string.Equals(command, "effect give @a[gamemode=!spectator] minecraft:instant_health 1 1", StringComparison.Ordinal);
+            string.Equals(command, "effect give @a[gamemode=!spectator] minecraft:instant_health 1 1", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -142,12 +142,12 @@ public sealed class GameplayCommandIntegrationTests
         string tagged = "@a[tag=" + tag + "]";
         Assert.Single(commands, command => command ==
             "execute as @a[name=\"PlayerTwo\",gamemode=!spectator] if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + tag);
-        Assert.Contains(commands, command => string.Equals(command, "execute as " + tagged + " run clear @s minecraft:milk_bucket 1", StringComparison.Ordinal);
-        Assert.Contains(commands, command => command.StartsWith("execute as " + tagged + " run give @s minecraft:", StringComparison.Ordinal);
+        Assert.Contains(commands, command => string.Equals(command, "execute as " + tagged + " run clear @s minecraft:milk_bucket 1", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.StartsWith("execute as " + tagged + " run give @s minecraft:", StringComparison.Ordinal));
         Assert.True(commands.Exists(command =>
             command.StartsWith("execute if entity " + tagged + " run tellraw ", StringComparison.Ordinal) &&
             command.Contains("GOT MILK SWITCHED!", StringComparison.Ordinal)));
-        Assert.Contains(commands, command => string.Equals(command, "execute if entity " + tagged + " run tag " + tagged + " remove " + tag, StringComparison.Ordinal);
+        Assert.Contains(commands, command => string.Equals(command, "execute if entity " + tagged + " run tag " + tagged + " remove " + tag, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public sealed class GameplayCommandIntegrationTests
         Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(20, commands.Count(command => command.Contains("run summon minecraft:cat ", StringComparison.Ordinal)));
         Assert.Single(commands, command =>
-            command.StartsWith("title @a[gamemode=!spectator] times ", StringComparison.Ordinal);
+            command.StartsWith("title @a[gamemode=!spectator] times ", StringComparison.Ordinal));
         Assert.Contains(commands, command => command.Contains("Scaredy Cat!", StringComparison.Ordinal));
         Assert.Contains(commands, command => command.Contains("Stop being scared!", StringComparison.Ordinal));
     }
@@ -334,7 +334,7 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(50, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(5, commands.Count(command => command.Contains("dimension minecraft:the_nether", StringComparison.Ordinal)));
-        Assert.Contains(commands, command => command.Contains("if dimension minecraft:the_nether run fill", StringComparison.Ordinal);
+        Assert.Contains(commands, command => command.Contains("if dimension minecraft:the_nether run fill", StringComparison.Ordinal));
         Assert.True(commands.Exists(command => command.Contains("if dimension minecraft:the_nether run tp @s ~ ~50 ~", StringComparison.Ordinal)));
         Assert.True(commands.Exists(command => command.Contains("unless dimension minecraft:the_nether run tp @s ~ ~150 ~", StringComparison.Ordinal)));
         Assert.DoesNotContain(commands, command => command.Contains("unless dimension minecraft:the_nether run tp @s ~ ~200 ~", StringComparison.Ordinal));
@@ -387,10 +387,10 @@ public sealed class GameplayCommandIntegrationTests
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.InRange(lootCommands, 3, 4);
         Assert.Single(commands, command =>
-            command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:", StringComparison.Ordinal);
+            command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:", StringComparison.Ordinal));
         Assert.Single(commands, command =>
             string.Equals(command, "weather rain", StringComparison.Ordinal) ||
-            string.Equals(command, "weather thunder", StringComparison.Ordinal);
+            string.Equals(command, "weather thunder", StringComparison.Ordinal));
         Assert.Contains(commands, command => command.Contains("Wow, you suck!", StringComparison.Ordinal));
     }
 
