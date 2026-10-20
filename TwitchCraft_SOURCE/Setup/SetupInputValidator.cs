@@ -69,9 +69,9 @@ internal static class SetupInputValidator
         if (!MinecraftVersionSupport.TryGetVersion(config.Server.MinecraftVersion, out _))
             throw new InvalidOperationException("Minecraft version '" + (config.Server.MinecraftVersion ?? string.Empty).Trim() + "' is not supported by this TwitchCraft build.");
 
-        bool remoteController = config.Settings.RemoteControlEnabled;
+        bool remoteControl = config.Settings.RemoteControlEnabled;
 
-        if (remoteController)
+        if (remoteControl)
         {
             if (!ConfigurationStore.IsValidRemoteHost(config.Server.RemoteHost))
                 throw new InvalidOperationException("Remote controller host is missing or invalid.");
@@ -111,7 +111,7 @@ internal static class SetupInputValidator
         if (config.Server.RCON.Port is < 1 or > 65535)
             throw new InvalidOperationException("RCON port must be between 1 and 65535.");
 
-        if (!remoteController && config.Server.Port == config.Server.RCON.Port)
+        if (!remoteControl && config.Server.Port == config.Server.RCON.Port)
             throw new InvalidOperationException("Minecraft server port and RCON port cannot be the same.");
 
         if (!ConfigurationStore.TryNormalizeRCONPassword(config.Server.RCON.Password, out string normalizedRCONPassword))
