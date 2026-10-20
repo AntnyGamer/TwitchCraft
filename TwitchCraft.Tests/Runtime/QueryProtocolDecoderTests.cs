@@ -12,8 +12,7 @@ public sealed class QueryProtocolDecoderTests
     [Fact]
     public void ParseChallenge_ReturnsValidatedNumericToken()
     {
-        (string Text, int Token)[] tokens =
-        [
+        (string Text, int Token)[] tokens = [
             ("5678", 5678),
             ("0", 0),
             (" 8 ", 8),
@@ -34,8 +33,7 @@ public sealed class QueryProtocolDecoderTests
     {
         byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes("5678\0"));
 
-        Assert.Throws<InvalidOperationException>(() =>
-            MinecraftQueryClient.ParseChallenge(packet, 4321));
+        AssertInvalidChallenge(packet, 4321);
     }
 
     [Fact]
@@ -44,16 +42,14 @@ public sealed class QueryProtocolDecoderTests
         Assert.All(["invalid", "", "2147483648", "-2147483649"], token =>
         {
             byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(token + "\0"));
-            Assert.Throws<InvalidOperationException>(() =>
-                MinecraftQueryClient.ParseChallenge(packet, 1234));
+            AssertInvalidChallenge(packet, 1234);
         });
     }
 
     [Fact]
     public void ParseChallenge_RejectsUnexpectedPacketType()
     {
-        Assert.Throws<InvalidOperationException>(() =>
-            MinecraftQueryClient.ParseChallenge(BuildPacket(0x00, 1234, [0]), 1234));
+        AssertInvalidChallenge(BuildPacket(0x00, 1234, [0]), 1234);
     }
 
     [Fact]
@@ -63,8 +59,7 @@ public sealed class QueryProtocolDecoderTests
         Assert.All(Enumerable.Range(0, header.Length + 1), length =>
         {
             byte[] packet = header.AsSpan(0, length).ToArray();
-            Assert.Throws<InvalidOperationException>(() =>
-                MinecraftQueryClient.ParseChallenge(packet, 1));
+            AssertInvalidChallenge(packet, 1);
         });
     }
 
@@ -73,8 +68,7 @@ public sealed class QueryProtocolDecoderTests
     {
         byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes("5678"));
 
-        Assert.Throws<InvalidOperationException>(() =>
-            MinecraftQueryClient.ParseChallenge(packet, 1234));
+        AssertInvalidChallenge(packet, 1234);
     }
 
     [Fact]
@@ -85,10 +79,8 @@ public sealed class QueryProtocolDecoderTests
         byte[] packet = BuildPacket(0x00, 1234, payload);
 
         Assert.Equal(["Alex", "Steve"], MinecraftQueryClient.ParsePlayers(packet, 1234));
-        Assert.Throws<InvalidOperationException>(() =>
-            MinecraftQueryClient.ParsePlayers(BuildPacket(0x09, 1234, payload), 1234));
-        Assert.Throws<InvalidOperationException>(() =>
-            MinecraftQueryClient.ParsePlayers(packet, 4321));
+        AssertInvalidPlayers(BuildPacket(0x09, 1234, payload), 1234);
+        AssertInvalidPlayers(packet, 4321);
     }
 
     [Fact]
@@ -103,8 +95,7 @@ public sealed class QueryProtocolDecoderTests
     [Fact]
     public void ParsePlayers_RejectsMissingOrTruncatedPlayerList()
     {
-        string[] payloads =
-        [
+        string[] payloads = [
             "hostname\0server\0\0",
             "hostname\0server\0\0player_\0\0",
             "hostname\0server\0\0player_\0\0Steve\0",
@@ -113,10 +104,15 @@ public sealed class QueryProtocolDecoderTests
         Assert.All(payloads, payload =>
         {
             byte[] packet = BuildPacket(0x00, 1234, Encoding.ASCII.GetBytes(payload));
-            Assert.Throws<InvalidOperationException>(() =>
-                MinecraftQueryClient.ParsePlayers(packet, 1234));
+            AssertInvalidPlayers(packet, 1234);
         });
     }
+
+    private static void AssertInvalidChallenge(byte[] packet, int sessionID)
+        => Assert.Throws<InvalidOperationException>(() => MinecraftQueryClient.ParseChallenge(packet, sessionID));
+
+    private static void AssertInvalidPlayers(byte[] packet, int sessionID)
+        => Assert.Throws<InvalidOperationException>(() => MinecraftQueryClient.ParsePlayers(packet, sessionID));
 
     private static byte[] BuildPacket(byte type, int sessionID, byte[] payload)
     {

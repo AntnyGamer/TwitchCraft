@@ -285,12 +285,12 @@ public sealed partial class ConfigurationStore
 
         if (ConfigMatches(json))
         {
-            TwitchCraft_V1.FileSystemHelper.DeleteFileSafe(tempPath);
+            FileSystemHelper.DeleteFileSafe(tempPath);
             return;
         }
 
         File.WriteAllText(tempPath, json, UTF8NoBOM);
-        TwitchCraft_V1.FileSystemHelper.ReplaceFile(tempPath, ConfigPath, null, "Atomic config save failed; falling back to copy");
+        FileSystemHelper.ReplaceFile(tempPath, ConfigPath, null, "Atomic config save failed; falling back to copy");
     }
 
     private static string SerializeConfig(TwitchCraftConfig config)
@@ -329,7 +329,7 @@ public sealed partial class ConfigurationStore
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to read config file", ex);
+            ErrorHandling.LogNonFatal("Failed to read config file", ex);
             return false;
         }
     }
@@ -342,7 +342,7 @@ public sealed partial class ConfigurationStore
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to compare existing config file", ex);
+            ErrorHandling.LogNonFatal("Failed to compare existing config file", ex);
             return false;
         }
     }
@@ -355,14 +355,14 @@ public sealed partial class ConfigurationStore
             {
                 if (!File.Exists(ConfigPath))
                     return false;
-                TwitchCraft_V1.FileSystemHelper.EnsureParentDir(destinationPath);
+                FileSystemHelper.EnsureParentDir(destinationPath);
                 File.Copy(ConfigPath, destinationPath, overwrite: true);
                 return true;
             }
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to back up config", ex);
+            ErrorHandling.LogNonFatal("Failed to back up config", ex);
             return false;
         }
     }

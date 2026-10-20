@@ -17,7 +17,7 @@ public sealed class WorldReplacementSafetyTests
         Assert.False(MinecraftWorldImporter.IsWorldFolder(null!));
         Assert.False(MinecraftWorldImporter.IsWorldFolder(""));
         Assert.False(MinecraftWorldImporter.IsWorldFolder(directory.Path));
-        File.WriteAllText(System.IO.Path.Combine(directory.Path, "level.dat"), "world");
+        File.WriteAllText(Path.Combine(directory.Path, "level.dat"), "world");
         Assert.True(MinecraftWorldImporter.IsWorldFolder(directory.Path));
     }
 
@@ -25,7 +25,7 @@ public sealed class WorldReplacementSafetyTests
     public void CreateImportPlan_UsesTheServerWorldAndUniqueSiblingPaths()
     {
         using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
+        string source = Path.Combine(directory.Path, "source");
         TwitchCraftConfig config = new()
         {
             Server = new ServerConfig { ServerDirectory = directory.Path }
@@ -36,14 +36,10 @@ public sealed class WorldReplacementSafetyTests
 
         Assert.Equal(source, plan.SourceWorldPath);
         Assert.Equal("world", plan.LevelName);
-        Assert.Equal(System.IO.Path.Combine(directory.Path, "world"), plan.DestinationWorldPath);
-        Assert.StartsWith(
-            System.IO.Path.Combine(directory.Path, "world.importing-"),
-            plan.StagingWorldPath,
+        Assert.Equal(Path.Combine(directory.Path, "world"), plan.DestinationWorldPath);
+        Assert.StartsWith(Path.Combine(directory.Path, "world.importing-"), plan.StagingWorldPath,
             StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(
-            System.IO.Path.Combine(directory.Path, "world.backup-"),
-            plan.BackupWorldPath,
+        Assert.StartsWith(Path.Combine(directory.Path, "world.backup-"), plan.BackupWorldPath,
             StringComparison.OrdinalIgnoreCase);
         Assert.NotEqual(plan.StagingWorldPath, plan.BackupWorldPath);
         Assert.Equal(plan.DestinationWorldPath, nextPlan.DestinationWorldPath);
@@ -55,16 +51,16 @@ public sealed class WorldReplacementSafetyTests
     public void ReplaceWorld_WhenNoPreviousWorldExists_InstallsTheImportedWorld()
     {
         using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
+        string source = Path.Combine(directory.Path, "source");
+        string destination = Path.Combine(directory.Path, "world");
         Directory.CreateDirectory(source);
-        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
+        File.WriteAllText(Path.Combine(source, "level.dat"), "new");
 
         MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
 
         MinecraftWorldImporter.ReplaceWorld(plan);
 
-        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(destination, "level.dat")));
         Assert.True(Directory.Exists(source));
         Assert.False(Directory.Exists(plan.StagingWorldPath));
         Assert.False(Directory.Exists(plan.BackupWorldPath));
@@ -74,20 +70,20 @@ public sealed class WorldReplacementSafetyTests
     public void ReplaceWorld_OptionalDatapackFailureCommitsWorldAndWarns()
     {
         using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
+        string source = Path.Combine(directory.Path, "source");
+        string destination = Path.Combine(directory.Path, "world");
         Directory.CreateDirectory(source);
         Directory.CreateDirectory(destination);
-        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
-        File.WriteAllText(System.IO.Path.Combine(source, "new.txt"), "new data");
-        File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
-        File.WriteAllText(System.IO.Path.Combine(destination, "old.txt"), "old data");
+        File.WriteAllText(Path.Combine(source, "level.dat"), "new");
+        File.WriteAllText(Path.Combine(source, "new.txt"), "new data");
+        File.WriteAllText(Path.Combine(destination, "level.dat"), "old");
+        File.WriteAllText(Path.Combine(destination, "old.txt"), "old data");
         MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
         List<(string Context, Exception Exception)> warnings = [];
 
         MinecraftWorldImporter.ReplaceWorld(plan, () =>
         {
-            string blockedDatapacksPath = System.IO.Path.Combine(destination, "datapacks");
+            string blockedDatapacksPath = Path.Combine(destination, "datapacks");
             File.WriteAllText(blockedDatapacksPath, "blocked");
             bool installed = DatapackInstaller.SyncLocateDatapack(
                 directory.Path,
@@ -98,10 +94,10 @@ public sealed class WorldReplacementSafetyTests
             File.Delete(blockedDatapacksPath);
         });
 
-        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
-        Assert.Equal("new data", File.ReadAllText(System.IO.Path.Combine(destination, "new.txt")));
-        Assert.False(File.Exists(System.IO.Path.Combine(destination, "old.txt")));
-        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat")));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(destination, "level.dat")));
+        Assert.Equal("new data", File.ReadAllText(Path.Combine(destination, "new.txt")));
+        Assert.False(File.Exists(Path.Combine(destination, "old.txt")));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(source, "level.dat")));
         Assert.False(Directory.Exists(plan.StagingWorldPath));
         Assert.False(Directory.Exists(plan.BackupWorldPath));
         Assert.IsType<IOException>(Assert.Single(warnings).Exception);
@@ -111,14 +107,11 @@ public sealed class WorldReplacementSafetyTests
     public void SourceIsCurrentWorld_DistinguishesEquivalentAndDifferentPaths()
     {
         using TemporaryDirectory directory = new();
-        string destination = System.IO.Path.Combine(directory.Path, "world");
-        string equivalentSource = System.IO.Path.Combine(
-            directory.Path.ToUpperInvariant(),
-            ".",
-            "world");
+        string destination = Path.Combine(directory.Path, "world");
+        string equivalentSource = Path.Combine(directory.Path.ToUpperInvariant(), ".", "world");
 
         Assert.True(CreatePlan(directory.Path, equivalentSource, destination).SourceIsCurrentWorld);
-        string source = System.IO.Path.Combine(directory.Path, "source");
+        string source = Path.Combine(directory.Path, "source");
         Assert.False(CreatePlan(directory.Path, source, destination).SourceIsCurrentWorld);
     }
 
@@ -126,13 +119,13 @@ public sealed class WorldReplacementSafetyTests
     public void ReplaceWorld_IncompleteStagePreservesExistingProgress()
     {
         using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
+        string source = Path.Combine(directory.Path, "source");
+        string destination = Path.Combine(directory.Path, "world");
         Directory.CreateDirectory(source);
         Directory.CreateDirectory(destination);
-        File.WriteAllText(System.IO.Path.Combine(source, "region.dat"), "incomplete imported data");
-        File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
-        File.WriteAllText(System.IO.Path.Combine(destination, "player-data.dat"), "saved progress");
+        File.WriteAllText(Path.Combine(source, "region.dat"), "incomplete imported data");
+        File.WriteAllText(Path.Combine(destination, "level.dat"), "old");
+        File.WriteAllText(Path.Combine(destination, "player-data.dat"), "saved progress");
         MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
         bool finishCalled = false;
 
@@ -142,10 +135,10 @@ public sealed class WorldReplacementSafetyTests
         Assert.Multiple(
             () => Assert.IsType<InvalidDataException>(exception.InnerException),
             () => Assert.False(finishCalled),
-            () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat"))),
-            () => Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(destination, "player-data.dat"))),
-            () => Assert.False(File.Exists(System.IO.Path.Combine(destination, "region.dat"))),
-            () => Assert.Equal("incomplete imported data", File.ReadAllText(System.IO.Path.Combine(source, "region.dat"))),
+            () => Assert.Equal("old", File.ReadAllText(Path.Combine(destination, "level.dat"))),
+            () => Assert.Equal("saved progress", File.ReadAllText(Path.Combine(destination, "player-data.dat"))),
+            () => Assert.False(File.Exists(Path.Combine(destination, "region.dat"))),
+            () => Assert.Equal("incomplete imported data", File.ReadAllText(Path.Combine(source, "region.dat"))),
             () => Assert.False(Directory.Exists(plan.StagingWorldPath)),
             () => Assert.False(Directory.Exists(plan.BackupWorldPath)));
     }
@@ -154,21 +147,20 @@ public sealed class WorldReplacementSafetyTests
     public void ReplaceWorld_WhenBackupPathIsBlocked_PreservesExistingWorld()
     {
         using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
+        string source = Path.Combine(directory.Path, "source");
+        string destination = Path.Combine(directory.Path, "world");
         MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
         Directory.CreateDirectory(source);
         Directory.CreateDirectory(destination);
-        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
-        File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
+        File.WriteAllText(Path.Combine(source, "level.dat"), "new");
+        File.WriteAllText(Path.Combine(destination, "level.dat"), "old");
         File.WriteAllText(plan.BackupWorldPath, "blocked");
 
-        IOException exception = Assert.Throws<IOException>(() =>
-            MinecraftWorldImporter.ReplaceWorld(plan));
+        IOException exception = Assert.Throws<IOException>(() => MinecraftWorldImporter.ReplaceWorld(plan));
 
         Assert.Multiple(
             () => Assert.Contains("before replacing", exception.Message, StringComparison.OrdinalIgnoreCase),
-            () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat"))),
+            () => Assert.Equal("old", File.ReadAllText(Path.Combine(destination, "level.dat"))),
             () => Assert.False(Directory.Exists(plan.StagingWorldPath)),
             () => Assert.Equal("blocked", File.ReadAllText(plan.BackupWorldPath)));
     }
@@ -179,36 +171,36 @@ public sealed class WorldReplacementSafetyTests
     public void ReplaceWorld_WhenFinishingFails_RollsBackInstalledWorld(bool hasPreviousWorld)
     {
         using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
+        string source = Path.Combine(directory.Path, "source");
+        string destination = Path.Combine(directory.Path, "world");
         Directory.CreateDirectory(source);
-        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
+        File.WriteAllText(Path.Combine(source, "level.dat"), "new");
         if (hasPreviousWorld)
         {
             Directory.CreateDirectory(destination);
-            File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
-            File.WriteAllText(System.IO.Path.Combine(destination, "player-data.dat"), "saved progress");
+            File.WriteAllText(Path.Combine(destination, "level.dat"), "old");
+            File.WriteAllText(Path.Combine(destination, "player-data.dat"), "saved progress");
         }
         MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
         IOException failure = new("Finish import failed after installation");
 
         IOException exception = Assert.Throws<IOException>(() => MinecraftWorldImporter.ReplaceWorld(plan, () =>
         {
-            Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
+            Assert.Equal("new", File.ReadAllText(Path.Combine(destination, "level.dat")));
             Assert.Equal(hasPreviousWorld, Directory.Exists(plan.BackupWorldPath));
-            File.WriteAllText(System.IO.Path.Combine(destination, "partial-datapack.txt"), "incomplete");
+            File.WriteAllText(Path.Combine(destination, "partial-datapack.txt"), "incomplete");
             throw failure;
         }));
 
         Assert.Same(failure, exception.InnerException);
-        Assert.Equal(hasPreviousWorld, Directory.Exists(destination));
+        Assert.Equal(hasPreviousWorld, plan.DestinationExists);
         if (hasPreviousWorld)
         {
-            Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
-            Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(destination, "player-data.dat")));
+            Assert.Equal("old", File.ReadAllText(Path.Combine(destination, "level.dat")));
+            Assert.Equal("saved progress", File.ReadAllText(Path.Combine(destination, "player-data.dat")));
         }
-        Assert.False(File.Exists(System.IO.Path.Combine(destination, "partial-datapack.txt")));
-        Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat")));
+        Assert.False(File.Exists(Path.Combine(destination, "partial-datapack.txt")));
+        Assert.Equal("new", File.ReadAllText(Path.Combine(source, "level.dat")));
         Assert.False(Directory.Exists(plan.StagingWorldPath));
         Assert.False(Directory.Exists(plan.BackupWorldPath));
     }
@@ -217,25 +209,23 @@ public sealed class WorldReplacementSafetyTests
     public void ReplaceWorld_FailedRestorePreservesBackupForRecovery()
     {
         using TemporaryDirectory directory = new();
-        string source = System.IO.Path.Combine(directory.Path, "source");
-        string destination = System.IO.Path.Combine(directory.Path, "world");
+        string source = Path.Combine(directory.Path, "source");
+        string destination = Path.Combine(directory.Path, "world");
         Directory.CreateDirectory(source);
         Directory.CreateDirectory(destination);
-        File.WriteAllText(System.IO.Path.Combine(source, "level.dat"), "new");
-        File.WriteAllText(System.IO.Path.Combine(source, "new.txt"), "imported data");
-        File.WriteAllText(System.IO.Path.Combine(destination, "level.dat"), "old");
-        File.WriteAllText(System.IO.Path.Combine(destination, "player-data.dat"), "saved progress");
+        File.WriteAllText(Path.Combine(source, "level.dat"), "new");
+        File.WriteAllText(Path.Combine(source, "new.txt"), "imported data");
+        File.WriteAllText(Path.Combine(destination, "level.dat"), "old");
+        File.WriteAllText(Path.Combine(destination, "player-data.dat"), "saved progress");
         MinecraftWorldImportPlan plan = CreatePlan(directory.Path, source, destination);
         IOException finishFailure = new("Finish import failed after installation");
 
         IOException exception = Assert.Throws<IOException>(() => MinecraftWorldImporter.ReplaceWorld(plan, () =>
         {
-            Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(destination, "level.dat")));
+            Assert.Equal("new", File.ReadAllText(Path.Combine(destination, "level.dat")));
             Assert.True(Directory.Exists(plan.BackupWorldPath));
-            Assert.StartsWith(
-                System.IO.Path.GetFullPath(directory.Path) + System.IO.Path.DirectorySeparatorChar,
-                System.IO.Path.GetFullPath(destination),
-                StringComparison.OrdinalIgnoreCase);
+            Assert.StartsWith(Path.GetFullPath(directory.Path) + Path.DirectorySeparatorChar,
+                Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase);
             Directory.Delete(destination, recursive: true);
             File.WriteAllText(destination, "blocks automatic restoration");
             throw finishFailure;
@@ -246,11 +236,11 @@ public sealed class WorldReplacementSafetyTests
             () => Assert.Contains("Backup folder: " + plan.BackupWorldPath, exception.Message, StringComparison.Ordinal),
             () => Assert.IsType<IOException>(exception.InnerException),
             () => Assert.NotSame(finishFailure, exception.InnerException),
-            () => Assert.Equal("old", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "level.dat"))),
-            () => Assert.Equal("saved progress", File.ReadAllText(System.IO.Path.Combine(plan.BackupWorldPath, "player-data.dat"))),
-            () => Assert.False(File.Exists(System.IO.Path.Combine(plan.BackupWorldPath, "new.txt"))),
-            () => Assert.Equal("new", File.ReadAllText(System.IO.Path.Combine(source, "level.dat"))),
-            () => Assert.Equal("imported data", File.ReadAllText(System.IO.Path.Combine(source, "new.txt"))),
+            () => Assert.Equal("old", File.ReadAllText(Path.Combine(plan.BackupWorldPath, "level.dat"))),
+            () => Assert.Equal("saved progress", File.ReadAllText(Path.Combine(plan.BackupWorldPath, "player-data.dat"))),
+            () => Assert.False(File.Exists(Path.Combine(plan.BackupWorldPath, "new.txt"))),
+            () => Assert.Equal("new", File.ReadAllText(Path.Combine(source, "level.dat"))),
+            () => Assert.Equal("imported data", File.ReadAllText(Path.Combine(source, "new.txt"))),
             () => Assert.False(Directory.Exists(plan.StagingWorldPath)),
             () => Assert.Equal("blocks automatic restoration", File.ReadAllText(destination)));
     }
@@ -263,8 +253,8 @@ public sealed class WorldReplacementSafetyTests
         {
             SourceWorldPath = source,
             DestinationWorldPath = destination,
-            StagingWorldPath = System.IO.Path.Combine(serverDirectory, "world.importing-test"),
-            BackupWorldPath = System.IO.Path.Combine(serverDirectory, "world.backup-test"),
+            StagingWorldPath = Path.Combine(serverDirectory, "world.importing-test"),
+            BackupWorldPath = Path.Combine(serverDirectory, "world.backup-test"),
             ServerDirectory = serverDirectory,
             LevelName = "world"
         };

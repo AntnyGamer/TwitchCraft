@@ -115,10 +115,12 @@ public sealed class ConfigurationNormalizationTests
             }
         };
 
+        Assert.True(ConfigurationStore.ShouldWarnAboutBindIP(config.Server.BindIP));
         ConfigurationStore.NormalizeRuntime(config);
 
         Assert.Multiple(
             () => Assert.Equal("127.0.0.1", config.Server.BindIP),
+            () => Assert.False(ConfigurationStore.ShouldWarnAboutBindIP(config.Server.BindIP)),
             () => Assert.Equal(25565, config.Server.Port),
             () => Assert.Equal(1, config.Server.MaxPlayers),
             () => Assert.Equal(4, config.Server.MemoryMinGB),
@@ -182,9 +184,12 @@ public sealed class ConfigurationNormalizationTests
     }
 
     [Fact]
-    public void NormalizeRuntime_PreservesValidCustomSettings()
+    public void NormalizeRuntime_NormalizesServerAndPreservesCustomSettings()
     {
         TwitchCraftConfig config = new();
+        config.Server.RemoteHost = "[::1]:1234";
+        config.Server.MemoryMinGB = 999;
+        config.Server.MemoryMaxGB = 999;
         config.Settings.PassiveTokensPerPayout = 654_321;
         config.Settings.FollowRewardAmount = 123_456;
         config.Settings.MaximumTokenBalance = 987_654_321;
@@ -197,6 +202,10 @@ public sealed class ConfigurationNormalizationTests
         ConfigurationStore.NormalizeRuntime(config);
 
         Assert.Multiple(
+            () => Assert.Equal("::1", config.Server.RemoteHost),
+            () => Assert.Equal(1234, config.Server.RCON.Port),
+            () => Assert.Equal(256, config.Server.MemoryMinGB),
+            () => Assert.Equal(256, config.Server.MemoryMaxGB),
             () => Assert.Equal(654_321, config.Settings.PassiveTokensPerPayout),
             () => Assert.Equal(123_456, config.Settings.FollowRewardAmount),
             () => Assert.Equal(987_654_321, config.Settings.MaximumTokenBalance),

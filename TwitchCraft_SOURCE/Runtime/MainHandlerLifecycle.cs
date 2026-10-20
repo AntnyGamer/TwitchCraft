@@ -218,7 +218,7 @@ public sealed partial class MainHandler
                     string worldDir = ServerPropertyEditor.GetWorldDirectory(config);
                     if (Directory.Exists(worldDir))
                     {
-                        string retiredWorldDir = worldDir + ".reset-" + Guid.NewGuid().ToString("N");
+                        string retiredWorldDir = $"{worldDir}.reset-{Guid.NewGuid():N}";
                         Directory.Move(worldDir, retiredWorldDir);
                         FileSystemHelper.DeleteDirectorySafe(retiredWorldDir);
                     }
@@ -340,7 +340,15 @@ public sealed partial class MainHandler
     {
         Interlocked.Increment(ref _lifecycleStopGeneration);
         if (_runtimeState == RuntimeState.Starting)
-            try { _sessionCts?.Cancel(); } catch (ObjectDisposedException) { }
+        {
+            try
+            {
+                _sessionCts?.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
         await _lifecycleGate.WaitAsync().ConfigureAwait(false);
         CancellationTokenSource? sessionCts = null;
         try

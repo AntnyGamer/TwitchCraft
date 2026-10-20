@@ -95,14 +95,14 @@ internal static class DatapackInstaller
 
     private static void ReportWarning(string context, Exception exception)
     {
-        TwitchCraft_V1.ErrorHandling.LogNonFatal(context, exception);
+        ErrorHandling.LogNonFatal(context, exception);
         try
         {
-            TwitchCraft_V1.ErrorHandling.ShowDatapackWarning(exception.Message);
+            ErrorHandling.ShowDatapackWarning(exception.Message);
         }
         catch (Exception popupException)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to show the locateplayers datapack warning", popupException);
+            ErrorHandling.LogNonFatal("Failed to show the locateplayers datapack warning", popupException);
         }
     }
 

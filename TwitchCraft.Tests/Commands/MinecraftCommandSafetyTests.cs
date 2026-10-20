@@ -17,9 +17,7 @@ public sealed class MinecraftCommandSafetyTests
     [Fact]
     public void EscapeSnbt_EscapesSingleQuotesAndControlCharacters()
     {
-        string result = MinecraftCommandBuilder.EscapeSnbt("it's\na\\b");
-
-        Assert.Equal("it\\'s\\na\\\\b", result);
+        Assert.Equal("it\\'s\\na\\\\b", MinecraftCommandBuilder.EscapeSnbt("it's\na\\b"));
     }
 
     [Theory]

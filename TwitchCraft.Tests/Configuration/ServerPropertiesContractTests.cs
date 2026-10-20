@@ -87,8 +87,7 @@ public sealed class ServerPropertiesContractTests
         Assert.Equal(firstWrite, content);
         string[] propertyLines = File.ReadAllLines(propertiesPath);
 
-        Assert.All(new[]
-        {
+        Assert.All([
             "a-custom=first", @"custom-setting=keep\=this",
             @"escaped-value=hello\=world\\path", "z-custom=last",
             "view-distance=6", "simulation-distance=8",
@@ -98,12 +97,12 @@ public sealed class ServerPropertiesContractTests
             "level-name=Streamer World", "server-port=25570",
             "rcon.port=25580", @"rcon.password=secret\:password",
             "max-players=7", "online-mode=false"
-        }, property => Assert.Contains(property, propertyLines));
+        ], property => Assert.Contains(property, propertyLines));
         Assert.DoesNotContain("\npvp=", "\n" + content, StringComparison.Ordinal);
         Assert.Contains("difficulty=hard", propertyLines);
         Assert.Contains("hardcore=false", propertyLines);
         Assert.DoesNotContain("server-port=12345", content, StringComparison.Ordinal);
-        Assert.All(new[] { "allow-nether", "spawn-monsters", "enable-command-block" }, key =>
+        Assert.All(["allow-nether", "spawn-monsters", "enable-command-block"], key =>
             Assert.DoesNotContain("\n" + key + "=", "\n" + content, StringComparison.Ordinal));
         Assert.Contains("# THESE SETTINGS CAN BE CHANGED DIRECTLY IN THIS FILE.", content, StringComparison.Ordinal);
         Assert.Contains("# TWITCHCRAFT WILL PRESERVE YOUR CHANGES.", content, StringComparison.Ordinal);
@@ -116,14 +115,13 @@ public sealed class ServerPropertiesContractTests
 
         Assert.True(editableHeader >= 0 && editableHeader < managedHeader && managedHeader < RCONPasswordHeader);
 
-        Assert.All(new[] { "a-custom", "custom-setting", "escaped-value", "gamemode", "level-name", "z-custom" }, key =>
+        Assert.All(["a-custom", "custom-setting", "escaped-value", "gamemode", "level-name", "z-custom"], key =>
             AssertPropertyInSection(content, key, editableHeader, managedHeader));
 
-        Assert.All(new[]
-        {
+        Assert.All([
             "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
             "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
-        }, key => AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader));
+        ], key => AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader));
 
         AssertPropertyInSection(content, "rcon.password", RCONPasswordHeader, content.Length);
 

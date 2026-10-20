@@ -36,7 +36,7 @@ public sealed class TimedScaleLifecycleTests
         Assert.Equal(
             ["execute as @a[name=\"PlayerOne\",limit=1] run attribute @s minecraft:generic.scale base set 0.5"],
             initialCommands);
-        _ = Assert.Single(trackedTasks);
+        Assert.Single(trackedTasks);
         Assert.Equal(1, delays.Reader.Count);
 
         Assert.True(delays.Reader.TryRead(out TaskCompletionSource? warningDelay));

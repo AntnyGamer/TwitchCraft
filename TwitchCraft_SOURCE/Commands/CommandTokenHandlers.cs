@@ -94,25 +94,25 @@ public static partial class CommandList
             AdjustTokensAsync(args, sender, "removetokens", isGive: false, ct);
         async Task AdjustTokensAsync(string[]? args, string sender, string commandName, bool isGive, CancellationToken ct)
         {
-            string verb = isGive ? "gave" : "removed";
-            string action = isGive ? "give" : "remove";
-            string direction = isGive ? "to" : "from";
-            string usage = "Usage: !" + commandName + " [username|all|random] amount";
-            string who = NormalizeUser(sender);
             if (!await requireAllowed(sender, commandName, ct).ConfigureAwait(false))
                 return;
+            string usage = "Usage: !" + commandName + " [username|all|random] amount";
             if (args is null || args.Length < 1)
             {
                 await sayToChannel(usage, ct).ConfigureAwait(false);
                 return;
             }
-            string targetToken = args.Length == 1 ? who : (args[0] ?? string.Empty).Trim().TrimStart('@');
             string amountToken = args.Length == 1 ? args[0] ?? string.Empty : args[1] ?? string.Empty;
             if (!int.TryParse(amountToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount) || amount <= 0)
             {
                 await sayToChannel("Invalid amount. " + usage, ct).ConfigureAwait(false);
                 return;
             }
+            string who = NormalizeUser(sender);
+            string targetToken = args.Length == 1 ? who : (args[0] ?? string.Empty).Trim().TrimStart('@');
+            string verb = isGive ? "gave" : "removed";
+            string action = isGive ? "give" : "remove";
+            string direction = isGive ? "to" : "from";
             if (string.IsNullOrWhiteSpace(targetToken))
                 targetToken = who;
             int delta = isGive ? amount : -amount;
@@ -253,12 +253,12 @@ public static partial class CommandList
                 await sayToChannel("Usage: !tradetokens username amount", ct).ConfigureAwait(false);
                 return;
             }
-            string rawToUser = (args[0] ?? string.Empty).Trim().Trim('@');
             if (!int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount) || amount < 2)
             {
                 await sayToChannel("Invalid amount. Usage: !tradetokens username amount", ct).ConfigureAwait(false);
                 return;
             }
+            string rawToUser = (args[0] ?? string.Empty).Trim().Trim('@');
             string fromUser = NormalizeUser(sender);
             if (!CommandUserHelper.TryNormalizeTwitchUser(rawToUser, out string toUser))
             {

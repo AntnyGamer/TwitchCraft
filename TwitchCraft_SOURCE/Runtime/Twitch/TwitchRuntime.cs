@@ -26,12 +26,8 @@ public sealed partial class MainHandler
         try
         {
             long sendDelay = 0;
-            if (rateLimited)
-            {
-                long now = Environment.TickCount64;
-                if (_twitchSession.ChatSendTimes.Count >= 100)
-                    sendDelay = Math.Max(0, _twitchSession.ChatSendTimes.Peek() + 30_000 - now);
-            }
+            if (rateLimited && _twitchSession.ChatSendTimes.Count >= 100)
+                sendDelay = Math.Max(0, _twitchSession.ChatSendTimes.Peek() + 30_000 - Environment.TickCount64);
 
             if (sendDelay > 0)
                 await Task.Delay(TimeSpan.FromMilliseconds(sendDelay), cancellationToken).ConfigureAwait(false);

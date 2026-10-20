@@ -112,12 +112,12 @@ public sealed partial class MainHandler
                 string clientID = (currentTwitch.ClientID ?? string.Empty).Trim();
                 string streamerName = (currentTwitch.StreamerName ?? string.Empty).Trim();
                 string botToken = NormalizeToken(currentTwitch.BotToken);
-                string bearerHeader = TwitchTokenHelper.BuildBearerHeader(botToken);
                 if (clientID.Length == 0 || streamerName.Length == 0 || botToken.Length == 0)
                 {
                     ClearRoster();
                     return;
                 }
+                string bearerHeader = TwitchTokenHelper.BuildBearerHeader(botToken);
 
                 try
                 {

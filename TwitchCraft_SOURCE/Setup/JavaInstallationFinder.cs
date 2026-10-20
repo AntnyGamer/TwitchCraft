@@ -213,7 +213,7 @@ internal static partial class JavaInstallationFinder
             if (!match.Success)
                 return false;
 
-            ReadOnlySpan<char> version = match.Groups[1].Value.AsSpan().Trim();
+            ReadOnlySpan<char> version = match.Groups[1].ValueSpan.Trim();
             version = version.StartsWith("1.", StringComparison.Ordinal) ? version[2..] : version;
             int dot = version.IndexOf('.');
             return int.TryParse(dot >= 0 ? version[..dot] : version, out major) && major > 0;

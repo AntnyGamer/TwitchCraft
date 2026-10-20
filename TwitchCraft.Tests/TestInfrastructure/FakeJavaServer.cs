@@ -158,7 +158,7 @@ internal static class FakeJavaServer
 
         int processID = int.Parse(
             await File.ReadAllTextAsync(processIDPath),
-            System.Globalization.CultureInfo.InvariantCulture);
+            CultureInfo.InvariantCulture);
         try
         {
             using Process process = Process.GetProcessById(processID);

@@ -92,8 +92,8 @@ internal static class MinecraftVersionSupport
 
     public static bool SupportsStatusEffect(string versionID, string? effectID)
     {
-        string normalizedEffectID = effectID?.Trim() ?? string.Empty;
-        if (normalizedEffectID.Length == 0)
+        ReadOnlySpan<char> normalizedEffectID = effectID.AsSpan().Trim();
+        if (normalizedEffectID.IsEmpty)
             return false;
 
         MinecraftVersionInfo version = GetVersion(versionID);

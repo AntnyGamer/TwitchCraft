@@ -34,7 +34,17 @@ internal static partial class StatisticsStore
             EnsureSchemaNoLock(connection);
             return _connection = connection;
         }
-        catch { try { connection.Dispose(); } catch { } throw; }
+        catch
+        {
+            try
+            {
+                connection.Dispose();
+            }
+            catch
+            {
+            }
+            throw;
+        }
     }
 
     private static void EnsureSchemaNoLock(SqliteConnection connection)

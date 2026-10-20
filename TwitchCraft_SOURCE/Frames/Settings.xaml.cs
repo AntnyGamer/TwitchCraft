@@ -929,10 +929,8 @@ public partial class Settings : UserControl
         minRAM = 0;
         maxRAM = 0;
 
-        string minText = (MinRAMTextBox.Text ?? string.Empty).Trim();
-        string maxText = (MaxRAMTextBox.Text ?? string.Empty).Trim();
-
-        if (!int.TryParse(minText, out int parsedMin) || !int.TryParse(maxText, out int parsedMax))
+        if (!int.TryParse(MinRAMTextBox.Text.AsSpan().Trim(), out int parsedMin) ||
+            !int.TryParse(MaxRAMTextBox.Text.AsSpan().Trim(), out int parsedMax))
         {
             return false;
         }

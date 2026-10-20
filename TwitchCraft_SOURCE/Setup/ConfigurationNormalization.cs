@@ -241,7 +241,7 @@ public sealed partial class ConfigurationStore
         config.Server.JarPath = CleanText(config.Server.JarPath);
         config.Twitch.StreamerName = CleanText(config.Twitch.StreamerName);
         config.Twitch.BotName = CleanText(config.Twitch.BotName);
-        config.Twitch.BotToken = TwitchCraft_V1.TwitchTokenHelper.NormalizeAccessToken(config.Twitch.BotToken);
+        config.Twitch.BotToken = TwitchTokenHelper.NormalizeAccessToken(config.Twitch.BotToken);
         config.Twitch.RefreshToken = CleanText(config.Twitch.RefreshToken);
         config.Twitch.ClientID = CleanText(config.Twitch.ClientID);
         config.Identity.StreamerMinecraftName = CleanText(config.Identity.StreamerMinecraftName);
@@ -281,7 +281,7 @@ public sealed partial class ConfigurationStore
 
     internal static string NormalizeDifficulty(string? difficulty)
     {
-        string value = (difficulty ?? string.Empty).Trim();
+        ReadOnlySpan<char> value = difficulty.AsSpan().Trim();
         return value.Equals("easy", StringComparison.OrdinalIgnoreCase) ? "Easy"
             : value.Equals("hard", StringComparison.OrdinalIgnoreCase) ? "Hard"
             : "Medium";
@@ -289,7 +289,7 @@ public sealed partial class ConfigurationStore
 
     internal static string NormalizeVerbosity(string? verbosity)
     {
-        string value = (verbosity ?? string.Empty).Trim();
+        ReadOnlySpan<char> value = verbosity.AsSpan().Trim();
         return value.Equals(BotResponseVerbositySettings.Reduced, StringComparison.OrdinalIgnoreCase)
             ? BotResponseVerbositySettings.Reduced
             : value.Equals(BotResponseVerbositySettings.EssentialOnly, StringComparison.OrdinalIgnoreCase)

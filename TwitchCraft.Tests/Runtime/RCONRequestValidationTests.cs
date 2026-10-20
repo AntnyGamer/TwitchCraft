@@ -26,7 +26,7 @@ public sealed class RCONRequestValidationTests
             var responses = await MinecraftRCONClient.ExecuteQueriesAsync(
                 "127.0.0.1", RCON.Port, password, ["first", "broken", "last"], cancellationToken);
 
-            Assert.Equal(new string?[] { "reply:first", null, "reply:last" }, responses);
+            Assert.Equal(["reply:first", null, "reply:last"], responses);
             Assert.Equal("reply:after", await MinecraftRCONClient.ExecuteQueryAsync(
                 "127.0.0.1", RCON.Port, password, "after", cancellationToken));
             Assert.Equal(["first", "broken", "last", "after"], RCON.Commands);

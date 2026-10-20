@@ -241,7 +241,7 @@ internal static class TwitchOAuthAuthorizer
         }
 
         string clientID = GetString(root, "client_id");
-        login = TwitchCraft_V1.CommandUserHelper.NormalizeUser(GetString(root, "login"));
+        login = CommandUserHelper.NormalizeUser(GetString(root, "login"));
         string userID = GetString(root, "user_id");
         if (!string.Equals(clientID, expectedClientID, StringComparison.Ordinal))
         {
