@@ -547,8 +547,7 @@ public partial class Settings : UserControl
         string selected = (MinigameCooldownDropdown.SelectedItem as string
             ?? MinigameCooldownDropdown.Text
             ?? string.Empty).Trim();
-        int space = selected.IndexOf(' ');
-        if (!int.TryParse(selected.AsSpan(0, space < 0 ? selected.Length : space), out int minutes) || minutes < 2 || minutes > 30)
+        if (!int.TryParse(selected.Split(' ')[0], out int minutes) || minutes < 2 || minutes > 30)
         {
             return;
         }
