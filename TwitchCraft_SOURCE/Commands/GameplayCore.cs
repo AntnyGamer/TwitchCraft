@@ -66,10 +66,10 @@ public static partial class CommandList
         async Task ModerateAsync(string[]? args, string sender, bool ban, CancellationToken ct)
         {
             string commandName = ban ? "ban" : "kick";
-            string past = ban ? "banned" : "kicked";
             if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
                 !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
+            string past = ban ? "banned" : "kicked";
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
                 await SayAsync(sender + ", please provide a valid Minecraft username to " + commandName + ".", ct).ConfigureAwait(false);
@@ -117,10 +117,10 @@ public static partial class CommandList
         async Task WhitelistAsync(string[]? args, string sender, bool add, CancellationToken ct)
         {
             string commandName = add ? "whitelistadd" : "whitelistremove";
-            string action = add ? "add" : "remove";
             if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
                 !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
+            string action = add ? "add" : "remove";
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
                 await SayAsync(sender + ", please provide a valid Minecraft username to " + action + " to the whitelist.", ct).ConfigureAwait(false);
