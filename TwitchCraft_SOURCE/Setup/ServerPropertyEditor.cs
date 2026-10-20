@@ -138,7 +138,7 @@ public sealed class ServerPropertyEditor
             }
             catch (Exception ex)
             {
-                TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to delete unused TwitchCraft-managed server jar", ex);
+                ErrorHandling.LogNonFatal("Failed to delete unused TwitchCraft-managed server jar", ex);
             }
         }
     }
@@ -333,7 +333,7 @@ public sealed class ServerPropertyEditor
         string tempPath = propsPath + ".tmp";
         string backupPath = propsPath + ".bak";
         File.WriteAllText(tempPath, content, UTF8NoBOM);
-        TwitchCraft_V1.FileSystemHelper.ReplaceFile(tempPath, propsPath, backupPath, "Atomic server.properties save failed; falling back to copy");
+        FileSystemHelper.ReplaceFile(tempPath, propsPath, backupPath, "Atomic server.properties save failed; falling back to copy");
         return content;
     }
 

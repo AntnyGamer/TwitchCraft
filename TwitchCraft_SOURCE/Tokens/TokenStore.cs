@@ -252,7 +252,7 @@ internal sealed partial class TokenStore(string path)
             }
             catch (Exception ex)
             {
-                TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to save Twitch follow reward", ex);
+                ErrorHandling.LogNonFatal("Failed to save Twitch follow reward", ex);
                 return FollowRewardResult.Failed;
             }
         }
@@ -403,7 +403,7 @@ internal sealed partial class TokenStore(string path)
             }
             catch (Exception ex)
             {
-                TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to close viewer token database", ex);
+                ErrorHandling.LogNonFatal("Failed to close viewer token database", ex);
             }
             finally
             {
@@ -429,7 +429,7 @@ internal sealed partial class TokenStore(string path)
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to export readable viewer token JSON", ex);
+            ErrorHandling.LogNonFatal("Failed to export readable viewer token JSON", ex);
             return false;
         }
     }
@@ -457,7 +457,7 @@ internal sealed partial class TokenStore(string path)
     private static int ClampDelta(long delta)
         => delta > int.MaxValue ? int.MaxValue : delta < int.MinValue ? int.MinValue : (int)delta;
 
-    private static string Normalize(string? user) => TwitchCraft_V1.CommandUserHelper.NormalizeUser(user);
+    private static string Normalize(string? user) => CommandUserHelper.NormalizeUser(user);
 
     private static string[] BuildParamNames(int count)
     {

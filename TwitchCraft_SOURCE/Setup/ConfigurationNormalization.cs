@@ -241,7 +241,7 @@ public sealed partial class ConfigurationStore
         config.Server.JarPath = CleanText(config.Server.JarPath);
         config.Twitch.StreamerName = CleanText(config.Twitch.StreamerName);
         config.Twitch.BotName = CleanText(config.Twitch.BotName);
-        config.Twitch.BotToken = TwitchCraft_V1.TwitchTokenHelper.NormalizeAccessToken(config.Twitch.BotToken);
+        config.Twitch.BotToken = TwitchTokenHelper.NormalizeAccessToken(config.Twitch.BotToken);
         config.Twitch.RefreshToken = CleanText(config.Twitch.RefreshToken);
         config.Twitch.ClientID = CleanText(config.Twitch.ClientID);
         config.Identity.StreamerMinecraftName = CleanText(config.Identity.StreamerMinecraftName);

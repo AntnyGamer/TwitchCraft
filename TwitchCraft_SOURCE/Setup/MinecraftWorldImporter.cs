@@ -51,8 +51,8 @@ internal static class MinecraftWorldImporter
         ArgumentNullException.ThrowIfNull(plan);
 
         Directory.CreateDirectory(plan.ServerDirectory);
-        TwitchCraft_V1.FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
-        TwitchCraft_V1.FileSystemHelper.DeleteDirectorySafe(plan.BackupWorldPath);
+        FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
+        FileSystemHelper.DeleteDirectorySafe(plan.BackupWorldPath);
 
         string sourcePrefix = Path.GetFullPath(plan.SourceWorldPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
         if (Path.GetFullPath(plan.StagingWorldPath).StartsWith(sourcePrefix, StringComparison.OrdinalIgnoreCase))
@@ -62,7 +62,7 @@ internal static class MinecraftWorldImporter
         bool destinationExisted = Directory.Exists(plan.DestinationWorldPath);
         try
         {
-            TwitchCraft_V1.FileSystemHelper.CopyDirectory(plan.SourceWorldPath, plan.StagingWorldPath);
+            FileSystemHelper.CopyDirectory(plan.SourceWorldPath, plan.StagingWorldPath);
             if (!IsWorldFolder(plan.StagingWorldPath)) throw new InvalidDataException("The staged world is incomplete.");
             if (destinationExisted)
             {
@@ -72,14 +72,14 @@ internal static class MinecraftWorldImporter
 
             Directory.Move(plan.StagingWorldPath, plan.DestinationWorldPath);
             finishImport?.Invoke();
-            TwitchCraft_V1.FileSystemHelper.DeleteDirectorySafe(plan.BackupWorldPath);
+            FileSystemHelper.DeleteDirectorySafe(plan.BackupWorldPath);
         }
         catch (Exception ex)
         {
             try
             {
                 if (!destinationExisted || backupCreated)
-                    TwitchCraft_V1.FileSystemHelper.DeleteDirectorySafe(plan.DestinationWorldPath);
+                    FileSystemHelper.DeleteDirectorySafe(plan.DestinationWorldPath);
 
                 if (backupCreated && Directory.Exists(plan.BackupWorldPath))
                 {
@@ -88,13 +88,13 @@ internal static class MinecraftWorldImporter
             }
             catch (Exception restoreEx)
             {
-                TwitchCraft_V1.FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
+                FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
                 throw new IOException(
                     "World import failed, and the previous world could not be restored automatically. Backup folder: " + plan.BackupWorldPath,
                     restoreEx);
             }
 
-            TwitchCraft_V1.FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
+            FileSystemHelper.DeleteDirectorySafe(plan.StagingWorldPath);
             throw new IOException(
                 backupCreated
                     ? "World import failed. The previous world was restored from backup."
