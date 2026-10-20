@@ -99,10 +99,7 @@ public static partial class MinigameManager
             ResetStatesNoLock(runtime);
         }
 
-        if (loop != null)
-        {
-            try { loop.Cts.Cancel(); } catch { }
-        }
+        try { loop?.Cts.Cancel(); } catch { }
 
         RefundChickenBets(runtime);
         RefundWitherBets(runtime);
