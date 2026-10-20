@@ -92,7 +92,7 @@ internal static class MinecraftVersionSupport
 
     public static bool SupportsStatusEffect(string versionID, string? effectID)
     {
-        string normalizedEffectID = effectID?.Trim() ?? string.Empty;
+        var normalizedEffectID = effectID.AsSpan().Trim();
         if (normalizedEffectID.Length == 0)
             return false;
 
