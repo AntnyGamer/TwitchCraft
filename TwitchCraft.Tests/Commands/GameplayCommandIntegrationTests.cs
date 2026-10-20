@@ -142,12 +142,12 @@ public sealed class GameplayCommandIntegrationTests
         string tagged = "@a[tag=" + tag + "]";
         Assert.Single(commands, command => command ==
             "execute as @a[name=\"PlayerTwo\",gamemode=!spectator] if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + tag);
-        Assert.Contains(commands, command => command == "execute as " + tagged + " run clear @s minecraft:milk_bucket 1");
-        Assert.Contains(commands, command => command.StartsWith("execute as " + tagged + " run give @s minecraft:", StringComparison.Ordinal));
-        Assert.Contains(commands, command =>
+        Assert.Single(commands, command => command == "execute as " + tagged + " run clear @s minecraft:milk_bucket 1");
+        Assert.Single(commands, command => command.StartsWith("execute as " + tagged + " run give @s minecraft:", StringComparison.Ordinal));
+        Assert.Single(commands, command =>
             command.StartsWith("execute if entity " + tagged + " run tellraw ", StringComparison.Ordinal) &&
             command.Contains("GOT MILK SWITCHED!", StringComparison.Ordinal));
-        Assert.Contains(commands, command => command == "execute if entity " + tagged + " run tag " + tagged + " remove " + tag);
+        Assert.Single(commands, command => command == "execute if entity " + tagged + " run tag " + tagged + " remove " + tag);
     }
 
     [Fact]
