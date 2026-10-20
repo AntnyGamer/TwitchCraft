@@ -1,6 +1,6 @@
-using static TwitchCraft_V1.MinecraftCommandBuilder;
 using TwitchCraft_V1;
 using Xunit;
+using static TwitchCraft_V1.MinecraftCommandBuilder;
 
 namespace TwitchCraft.Tests.Commands;
 
