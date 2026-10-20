@@ -115,7 +115,7 @@ public sealed class TwitchMessagingPolicyTests
     }
 
     [Fact]
-    public void FormatReply_ReplacesLeadingUsernameOrAddsMention()
+    public void FormatReply_HandlesUsernamesAndMentions()
     {
         Assert.Equal(
             "@viewer, you need more tokens.",
