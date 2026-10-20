@@ -38,7 +38,7 @@ internal static class SetupInputValidator
         if (!ConfigurationStore.IsValidBindIP(bindIP))
             return "Enter a valid Minecraft Bind IP before starting.";
 
-        var normalizedClientID = clientID.AsSpan().Trim();
+        ReadOnlySpan<char> normalizedClientID = clientID.AsSpan().Trim();
         if (normalizedClientID.Length == 0)
             return "This TwitchCraft build is missing its Twitch Client ID.";
         if (string.IsNullOrWhiteSpace(botToken) ||
