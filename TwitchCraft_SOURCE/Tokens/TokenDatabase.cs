@@ -41,7 +41,7 @@ internal sealed partial class TokenStore
             }
             catch (Exception ex)
             {
-                TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to load token leaderboard", ex);
+                ErrorHandling.LogNonFatal("Failed to load token leaderboard", ex);
                 return false;
             }
         }
@@ -84,7 +84,7 @@ internal sealed partial class TokenStore
             }
             catch (Exception ex)
             {
-                TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to load token rank", ex);
+                ErrorHandling.LogNonFatal("Failed to load token rank", ex);
                 return false;
             }
         }
@@ -121,7 +121,7 @@ internal sealed partial class TokenStore
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to load viewer token balance", ex);
+            ErrorHandling.LogNonFatal("Failed to load viewer token balance", ex);
             return false;
         }
     }
@@ -155,7 +155,7 @@ internal sealed partial class TokenStore
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to load viewer token balances", ex);
+            ErrorHandling.LogNonFatal("Failed to load viewer token balances", ex);
             return false;
         }
     }
@@ -208,7 +208,7 @@ internal sealed partial class TokenStore
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to save viewer token balance", ex);
+            ErrorHandling.LogNonFatal("Failed to save viewer token balance", ex);
             return false;
         }
     }
@@ -234,7 +234,7 @@ internal sealed partial class TokenStore
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to save viewer token balance", ex);
+            ErrorHandling.LogNonFatal("Failed to save viewer token balance", ex);
             return false;
         }
     }
@@ -433,7 +433,7 @@ internal sealed partial class TokenStore
         }
         catch (Exception ex)
         {
-            TwitchCraft_V1.ErrorHandling.LogNonFatal("Failed to initialize viewer token database", ex);
+            ErrorHandling.LogNonFatal("Failed to initialize viewer token database", ex);
             throw;
         }
     }
