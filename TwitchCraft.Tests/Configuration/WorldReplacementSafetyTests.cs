@@ -37,13 +37,9 @@ public sealed class WorldReplacementSafetyTests
         Assert.Equal(source, plan.SourceWorldPath);
         Assert.Equal("world", plan.LevelName);
         Assert.Equal(Path.Combine(directory.Path, "world"), plan.DestinationWorldPath);
-        Assert.StartsWith(
-            Path.Combine(directory.Path, "world.importing-"),
-            plan.StagingWorldPath,
+        Assert.StartsWith(Path.Combine(directory.Path, "world.importing-"), plan.StagingWorldPath,
             StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(
-            Path.Combine(directory.Path, "world.backup-"),
-            plan.BackupWorldPath,
+        Assert.StartsWith(Path.Combine(directory.Path, "world.backup-"), plan.BackupWorldPath,
             StringComparison.OrdinalIgnoreCase);
         Assert.NotEqual(plan.StagingWorldPath, plan.BackupWorldPath);
         Assert.Equal(plan.DestinationWorldPath, nextPlan.DestinationWorldPath);
@@ -112,10 +108,7 @@ public sealed class WorldReplacementSafetyTests
     {
         using TemporaryDirectory directory = new();
         string destination = Path.Combine(directory.Path, "world");
-        string equivalentSource = Path.Combine(
-            directory.Path.ToUpperInvariant(),
-            ".",
-            "world");
+        string equivalentSource = Path.Combine(directory.Path.ToUpperInvariant(), ".", "world");
 
         Assert.True(CreatePlan(directory.Path, equivalentSource, destination).SourceIsCurrentWorld);
         string source = Path.Combine(directory.Path, "source");
@@ -163,8 +156,7 @@ public sealed class WorldReplacementSafetyTests
         File.WriteAllText(Path.Combine(destination, "level.dat"), "old");
         File.WriteAllText(plan.BackupWorldPath, "blocked");
 
-        IOException exception = Assert.Throws<IOException>(() =>
-            MinecraftWorldImporter.ReplaceWorld(plan));
+        IOException exception = Assert.Throws<IOException>(() => MinecraftWorldImporter.ReplaceWorld(plan));
 
         Assert.Multiple(
             () => Assert.Contains("before replacing", exception.Message, StringComparison.OrdinalIgnoreCase),
@@ -232,10 +224,8 @@ public sealed class WorldReplacementSafetyTests
         {
             Assert.Equal("new", File.ReadAllText(Path.Combine(destination, "level.dat")));
             Assert.True(Directory.Exists(plan.BackupWorldPath));
-            Assert.StartsWith(
-                Path.GetFullPath(directory.Path) + Path.DirectorySeparatorChar,
-                Path.GetFullPath(destination),
-                StringComparison.OrdinalIgnoreCase);
+            Assert.StartsWith(Path.GetFullPath(directory.Path) + Path.DirectorySeparatorChar,
+                Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase);
             Directory.Delete(destination, recursive: true);
             File.WriteAllText(destination, "blocks automatic restoration");
             throw finishFailure;
