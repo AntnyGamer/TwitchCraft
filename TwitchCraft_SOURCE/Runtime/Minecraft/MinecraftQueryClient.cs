@@ -73,10 +73,11 @@ internal static class MinecraftQueryClient
         if (playerSection < 0)
             throw new InvalidOperationException("Minecraft query stats did not include a player section.");
 
-        List<string> players = [];
         int start = 5 + playerSection + PlayerSectionMarker.Length;
         if (start >= buffer.Length || buffer[^1] != 0 || buffer[^2] != 0)
             throw new InvalidOperationException("Minecraft query player section was truncated.");
+
+        List<string> players = [];
         for (int i = start; i < buffer.Length; i++)
         {
             if (buffer[i] != 0)
