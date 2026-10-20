@@ -451,7 +451,7 @@ internal static class GameplayCommands
             2 => (0, 15),
             _ => (0, -15)
         };
-        string newEntityTag = entityTag + "_new_" + Guid.NewGuid().ToString("N");
+        string newEntityTag = $"{entityTag}_new_{Guid.NewGuid():N}";
         string entitySelector = "@e[tag=" + newEntityTag + ",sort=nearest,limit=1,distance=..150]";
         string followRangeData = usesModernEntityAttributeNbt
             ? "attributes:[{id:'minecraft:follow_range',base:80.0}]"
