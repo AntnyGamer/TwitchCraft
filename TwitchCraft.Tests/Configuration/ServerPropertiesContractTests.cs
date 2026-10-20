@@ -102,7 +102,7 @@ public sealed class ServerPropertiesContractTests
         Assert.Contains("difficulty=hard", propertyLines);
         Assert.Contains("hardcore=false", propertyLines);
         Assert.DoesNotContain("server-port=12345", content, StringComparison.Ordinal);
-        Assert.All([ "allow-nether", "spawn-monsters", "enable-command-block" ], key =>
+        Assert.All(["allow-nether", "spawn-monsters", "enable-command-block"], key =>
             Assert.DoesNotContain("\n" + key + "=", "\n" + content, StringComparison.Ordinal));
         Assert.Contains("# THESE SETTINGS CAN BE CHANGED DIRECTLY IN THIS FILE.", content, StringComparison.Ordinal);
         Assert.Contains("# TWITCHCRAFT WILL PRESERVE YOUR CHANGES.", content, StringComparison.Ordinal);
@@ -115,7 +115,7 @@ public sealed class ServerPropertiesContractTests
 
         Assert.True(editableHeader >= 0 && editableHeader < managedHeader && managedHeader < RCONPasswordHeader);
 
-        Assert.All([ "a-custom", "custom-setting", "escaped-value", "gamemode", "level-name", "z-custom" ], key =>
+        Assert.All(["a-custom", "custom-setting", "escaped-value", "gamemode", "level-name", "z-custom"], key =>
             AssertPropertyInSection(content, key, editableHeader, managedHeader));
 
         Assert.All([
