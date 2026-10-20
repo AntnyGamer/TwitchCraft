@@ -332,7 +332,7 @@ public static partial class CommandList
                         if (invalid) { await SayAsync(sender + ", that would put " + player + " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false); return; }
                     }
 
-                    string ID = runtime.UsesNamespacedAttributeModifierIDs ? "twitchcraft:heart_" + Guid.NewGuid().ToString("N") : Guid.NewGuid().ToString();
+                    string ID = runtime.UsesNamespacedAttributeModifierIDs ? $"twitchcraft:heart_{Guid.NewGuid():N}" : Guid.NewGuid().ToString();
                     string[] commands = new string[players.Count];
                     for (int i = 0; i < players.Count; i++)
                         commands[i] = MinecraftCommandBuilder.AddMaxHealthModifier(MinecraftCommandBuilder.SinglePlayerSelector(players[i]), ID, delta, runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs);
