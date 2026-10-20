@@ -96,9 +96,6 @@ public static partial class CommandList
         {
             if (!await requireAllowed(sender, commandName, ct).ConfigureAwait(false))
                 return;
-            string verb = isGive ? "gave" : "removed";
-            string action = isGive ? "give" : "remove";
-            string direction = isGive ? "to" : "from";
             string usage = "Usage: !" + commandName + " [username|all|random] amount";
             string who = NormalizeUser(sender);
             if (args is null || args.Length < 1)
@@ -113,6 +110,9 @@ public static partial class CommandList
                 await sayToChannel("Invalid amount. " + usage, ct).ConfigureAwait(false);
                 return;
             }
+            string verb = isGive ? "gave" : "removed";
+            string action = isGive ? "give" : "remove";
+            string direction = isGive ? "to" : "from";
             if (string.IsNullOrWhiteSpace(targetToken))
                 targetToken = who;
             int delta = isGive ? amount : -amount;
