@@ -43,6 +43,9 @@ public sealed class SetupInputValidatorTests
             ("unsupported", "localhost", 25565, 25575, "secret", "token", "streamer", "Minecraft version"),
             ("1.21.8", "bad host", 25565, 25575, "secret", "token", "streamer", "Remote controller host"),
             ("1.21.8", "[]", 25565, 25575, "secret", "token", "streamer", "Remote controller host"),
+            ("1.21.8", ".", 25565, 25575, "secret", "token", "streamer", "Remote controller host"),
+            ("1.21.8", "bad..host", 25565, 25575, "secret", "token", "streamer", "Remote controller host"),
+            ("1.21.8", "[::1]junk", 25565, 25575, "secret", "token", "streamer", "Remote controller host"),
             ("1.21.8", "localhost", 0, 25575, "secret", "token", "streamer", "Minecraft server port"),
             ("1.21.8", "localhost", 25565, 0, "secret", "token", "streamer", "RCON port"),
             ("1.21.8", "localhost", 25565, 25575, "", "token", "streamer", "RCON password"),
@@ -62,5 +65,4 @@ public sealed class SetupInputValidatorTests
                 () => SetupInputValidator.ValidateRuntimeConfig(config)).Message);
         });
     }
-
 }
