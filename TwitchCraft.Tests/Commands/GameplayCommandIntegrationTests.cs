@@ -181,11 +181,11 @@ public sealed class GameplayCommandIntegrationTests
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
 
         Assert.Equal(115, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(1, commands.Count(command => command.Contains("summon minecraft:vindicator", StringComparison.Ordinal) &&
-            command.Contains("tc_johnny", StringComparison.Ordinal)));
-        Assert.Equal(1, commands.Count(command => command.Contains("summon minecraft:creeper", StringComparison.Ordinal) &&
+        Assert.Single(commands, command => command.Contains("summon minecraft:vindicator", StringComparison.Ordinal) &&
+            command.Contains("tc_johnny_new_", StringComparison.Ordinal));
+        Assert.Single(commands, command => command.Contains("summon minecraft:creeper", StringComparison.Ordinal) &&
             command.Contains("powered:1b", StringComparison.Ordinal) &&
-            command.Contains("tc_charged_creeper", StringComparison.Ordinal)));
+            command.Contains("tc_charged_creeper_new_", StringComparison.Ordinal));
         Assert.True(commands.Exists(command => command.Contains("Johnny is coming!", StringComparison.Ordinal)));
         Assert.True(commands.Exists(command => command.Contains("A charged creeper is coming!", StringComparison.Ordinal)));
     }
