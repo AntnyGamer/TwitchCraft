@@ -13,17 +13,17 @@ public sealed class PaidDispatchAtomicityTests
     public async Task SuccessfulPaidCommand_ChargesDispatchesAndRecordsOnce()
     {
         TransactionHarness harness = new();
-        int statisticsAtDispatch = -1;
+        (int Balance, int Statistics) stateAtDispatch = default;
         harness.DispatchOverride = _ =>
         {
-            statisticsAtDispatch = harness.StatisticsCalls;
+            stateAtDispatch = (harness.Balance, harness.StatisticsCalls);
             return Task.FromResult(true);
         };
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
         Assert.Multiple(
-            () => Assert.Equal(0, statisticsAtDispatch), () => Assert.True(succeeded),
+            () => Assert.Equal((75, 0), stateAtDispatch), () => Assert.True(succeeded),
             () => Assert.Equal(75, harness.Balance),
             () => Assert.Equal(1, harness.SpendCalls),
             () => Assert.Equal(0, harness.RefundCalls),
