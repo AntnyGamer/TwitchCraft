@@ -87,15 +87,18 @@ public sealed class ServerPropertiesContractTests
         Assert.Equal(firstWrite, content);
         string[] propertyLines = File.ReadAllLines(propertiesPath);
 
-        string[] expectedProperties =
-        [
-            "a-custom=first", @"custom-setting=keep\=this", @"escaped-value=hello\=world\\path", "z-custom=last",
-            "view-distance=6", "simulation-distance=8", "entity-broadcast-range-percentage=75",
-            "network-compression-threshold=128", "white-list=true", "enforce-whitelist=true",
-            "level-name=Streamer World", "server-port=25570", "rcon.port=25580",
-            @"rcon.password=secret\:password", "max-players=7", "online-mode=false"
-        ];
-        Assert.All(expectedProperties, property => Assert.Contains(property, propertyLines));
+        Assert.All(new[]
+        {
+            "a-custom=first", @"custom-setting=keep\=this",
+            @"escaped-value=hello\=world\\path", "z-custom=last",
+            "view-distance=6", "simulation-distance=8",
+            "entity-broadcast-range-percentage=75",
+            "network-compression-threshold=128",
+            "white-list=true", "enforce-whitelist=true",
+            "level-name=Streamer World", "server-port=25570",
+            "rcon.port=25580", @"rcon.password=secret\:password",
+            "max-players=7", "online-mode=false"
+        }, property => Assert.Contains(property, propertyLines));
         Assert.DoesNotContain("\npvp=", "\n" + content, StringComparison.Ordinal);
         Assert.Contains("difficulty=hard", propertyLines);
         Assert.Contains("hardcore=false", propertyLines);
