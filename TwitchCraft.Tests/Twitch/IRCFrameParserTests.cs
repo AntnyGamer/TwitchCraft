@@ -25,7 +25,7 @@ public sealed class IRCFrameParserTests
     }
 
     [Fact]
-    public void TryParse_HandlesPingWithoutSender()
+    public void IRCMessage_ParsesPingAndStripsTags()
     {
         IRCMessage message = new();
         Assert.True(message.TryParse("PING :tmi.twitch.tv"));
