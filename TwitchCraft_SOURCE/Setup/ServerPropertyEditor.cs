@@ -93,7 +93,7 @@ public sealed class ServerPropertyEditor
         if (value.Length == 0)
             return DefaultLevelName;
 
-        if ((value is "." or "..") || Path.IsPathRooted(value) || value.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
+        if (value == "." || value == ".." || Path.IsPathRooted(value) || value.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
             value.AsSpan().IndexOfAny('/', '\\', ':') >= 0)
         {
             return DefaultLevelName;
