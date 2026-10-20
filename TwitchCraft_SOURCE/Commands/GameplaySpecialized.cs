@@ -34,7 +34,6 @@ public static partial class CommandList
 
         async Task FireworksAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string fireworkCommand = "execute at " + target.Selector + " run summon firework_rocket ~ ~1 ~ {LifeTime:20}";
             if (!runtime.Commands.TryStartFireworks())
             {
                 await SayAsync(sender + ", fireworks are already running. Try again in a moment.", ct).ConfigureAwait(false);
@@ -44,6 +43,7 @@ public static partial class CommandList
             bool repeatStarted = false;
             try
             {
+                string fireworkCommand = "execute at " + target.Selector + " run summon firework_rocket ~ ~1 ~ {LifeTime:20}";
                 if (!await SendPricedAsync(target, sender, 10, fireworkCommand, ct, sender + " sent you some fireworks.", "GOT FIREWORKS!").ConfigureAwait(false))
                     return;
                 await ConfirmAsync(sender + ", you sent " + TargetName(target) + " some fireworks.", ct).ConfigureAwait(false);
