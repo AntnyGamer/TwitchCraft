@@ -201,7 +201,7 @@ public sealed class WorldReplacementSafetyTests
         }));
 
         Assert.Same(failure, exception.InnerException);
-        Assert.Equal(hasPreviousWorld, Directory.Exists(destination));
+        Assert.Equal(hasPreviousWorld, plan.DestinationExists);
         if (hasPreviousWorld)
         {
             Assert.Equal("old", File.ReadAllText(Path.Combine(destination, "level.dat")));
