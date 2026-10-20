@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using TwitchCraft_V1;
 using Xunit;
 
@@ -35,9 +34,7 @@ public sealed class ServerCommandTransportTests
     [Fact]
     public void SnapshotCommands_NormalizesAndRejectsUnsafeEntries()
     {
-        List<string> result = MainHandler.SnapshotCommands(
-            [" say hi ", null!, "", "list", " \t ", "\uFEFF", "stop\nnow", "stop\rnow", "\uFEFFsave-all"]);
-
-        Assert.Equal(["say hi", "list", "save-all"], result);
+        Assert.Equal(["say hi", "list", "save-all"], MainHandler.SnapshotCommands(
+            [" say hi ", null!, "", "list", " \t ", "\uFEFF", "stop\nnow", "stop\rnow", "\uFEFFsave-all"]));
     }
 }
