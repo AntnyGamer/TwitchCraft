@@ -69,12 +69,12 @@ public static partial class CommandList
             if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
                 !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
                 return;
-            string past = ban ? "banned" : "kicked";
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
                 await SayAsync(sender + ", please provide a valid Minecraft username to " + commandName + ".", ct).ConfigureAwait(false);
                 return;
             }
+            string past = ban ? "banned" : "kicked";
             if (string.Equals(playerName, runtime.Commands.DefaultMinecraftPlayerName, StringComparison.OrdinalIgnoreCase))
             {
                 await SayAsync(sender + ", the streamer account cannot be " + past + ".", ct).ConfigureAwait(false);
