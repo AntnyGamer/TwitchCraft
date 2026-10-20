@@ -16,10 +16,10 @@ internal static class AppHelpers
 
     public static string? GetExecutablePath()
     {
-        string? executablePath = Environment.ProcessPath;
-        if (!string.IsNullOrWhiteSpace(executablePath))
+        string? path = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(path))
         {
-            return executablePath;
+            return path;
         }
 
         try
