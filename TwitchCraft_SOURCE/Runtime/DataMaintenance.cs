@@ -170,8 +170,14 @@ internal sealed class DataMaintenance(
 
             if (!IsBackupComplete(directory.FullName))
             {
-                try { directory.Delete(recursive: true); }
-                catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to remove an incomplete automatic backup", ex); }
+                try
+                {
+                    directory.Delete(recursive: true);
+                }
+                catch (Exception ex)
+                {
+                    ErrorHandling.LogNonFatal("Failed to remove an incomplete automatic backup", ex);
+                }
                 continue;
             }
 
@@ -186,8 +192,14 @@ internal sealed class DataMaintenance(
         int keepCount = Math.Clamp(retentionCount, 1, 20);
         for (int i = keepCount; i < backups.Count; i++)
         {
-            try { backups[i].Directory.Delete(recursive: true); }
-            catch (Exception ex) { ErrorHandling.LogNonFatal("Failed to prune an old automatic backup", ex); }
+            try
+            {
+                backups[i].Directory.Delete(recursive: true);
+            }
+            catch (Exception ex)
+            {
+                ErrorHandling.LogNonFatal("Failed to prune an old automatic backup", ex);
+            }
         }
     }
 

@@ -23,8 +23,16 @@ public static partial class MinigameManager
             MinigameLoops[runtime] = loop;
         }
 
-        try { RefundChickenBets(runtime); RefundWitherBets(runtime); }
-        catch { CleanupLoop(loop); throw; }
+        try
+        {
+            RefundChickenBets(runtime);
+            RefundWitherBets(runtime);
+        }
+        catch
+        {
+            CleanupLoop(loop);
+            throw;
+        }
         Task loopTask = Task.Run(() => RunLoopAsync(loop.Runtime, loop, loop.Cts.Token), CancellationToken.None);
         lock (MinigameGate)
         {

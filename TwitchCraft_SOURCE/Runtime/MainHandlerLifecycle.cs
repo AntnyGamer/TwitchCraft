@@ -340,7 +340,15 @@ public sealed partial class MainHandler
     {
         Interlocked.Increment(ref _lifecycleStopGeneration);
         if (_runtimeState == RuntimeState.Starting)
-            try { _sessionCts?.Cancel(); } catch (ObjectDisposedException) { }
+        {
+            try
+            {
+                _sessionCts?.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
         await _lifecycleGate.WaitAsync().ConfigureAwait(false);
         CancellationTokenSource? sessionCts = null;
         try
