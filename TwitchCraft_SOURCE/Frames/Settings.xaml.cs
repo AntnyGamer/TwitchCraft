@@ -163,7 +163,7 @@ public partial class Settings : UserControl
         string current = textBox.Text ?? string.Empty;
         int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
         int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
-        ArgumentNullException.ThrowIfNull(insertedText);
+        ArgumentNullException.ThrowIfNull(insertedText, "value");
         if (length == 0 && insertedText.Length == 0) return current;
         ReadOnlySpan<char> textBeforeSelection = current.AsSpan(0, start);
         ReadOnlySpan<char> textAfterSelection = current.AsSpan(start + length);
