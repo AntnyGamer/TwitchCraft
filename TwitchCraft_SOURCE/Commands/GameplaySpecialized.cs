@@ -21,7 +21,8 @@ public static partial class CommandList
                 target,
                 sender,
                 45,
-                _ => GameplayCommands.BuildChargedCreeper(selector, Random.Shared, inlineSyntax, modernEntityNbt),
+                _ => GameplayCommands.BuildChargedCreeper(
+                    selector, Random.Shared, inlineSyntax, modernEntityNbt),
                 sender + " summoned a charged creeper on you.",
                 "GOT A CHARGED CREEPER SPAWNED ON THEM!",
                 sender + ", you summoned a charged creeper on " + TargetName(target) + ".",
