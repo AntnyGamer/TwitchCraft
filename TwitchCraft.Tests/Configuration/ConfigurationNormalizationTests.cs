@@ -182,7 +182,7 @@ public sealed class ConfigurationNormalizationTests
     }
 
     [Fact]
-    public void NormalizeRuntime_PreservesValidCustomSettings()
+    public void NormalizeRuntime_NormalizesServerAndPreservesCustomSettings()
     {
         TwitchCraftConfig config = new();
         config.Server.RemoteHost = "[::1]:1234";
@@ -246,6 +246,7 @@ public sealed class ConfigurationNormalizationTests
     [InlineData("host name")]
     [InlineData("host/path")]
     [InlineData("host\\path")]
+    [InlineData("[]")]
     [InlineData("example.com:70000")]
     public void IsValidRemoteHost_RejectsUnsafeOrInvalidValues(string value)
     {
