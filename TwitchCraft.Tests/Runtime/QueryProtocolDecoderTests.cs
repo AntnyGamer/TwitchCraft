@@ -15,6 +15,8 @@ public sealed class QueryProtocolDecoderTests
         (string Text, int Token)[] tokens =
         [
             ("5678", 5678),
+            ("0", 0),
+            (" 8 ", 8),
             ("-42", -42),
             ("+7", 7),
             ("-2147483648", int.MinValue),
@@ -105,7 +107,8 @@ public sealed class QueryProtocolDecoderTests
         [
             "hostname\0server\0\0",
             "hostname\0server\0\0player_\0\0",
-            "hostname\0server\0\0player_\0\0Steve\0"
+            "hostname\0server\0\0player_\0\0Steve\0",
+            "hostname\0server\0\0player_\0\0Steve"
         ];
         Assert.All(payloads, payload =>
         {
