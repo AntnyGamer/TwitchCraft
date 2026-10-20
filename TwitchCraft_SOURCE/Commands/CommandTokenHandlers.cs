@@ -94,13 +94,13 @@ public static partial class CommandList
             AdjustTokensAsync(args, sender, "removetokens", isGive: false, ct);
         async Task AdjustTokensAsync(string[]? args, string sender, string commandName, bool isGive, CancellationToken ct)
         {
+            if (!await requireAllowed(sender, commandName, ct).ConfigureAwait(false))
+                return;
             string verb = isGive ? "gave" : "removed";
             string action = isGive ? "give" : "remove";
             string direction = isGive ? "to" : "from";
             string usage = "Usage: !" + commandName + " [username|all|random] amount";
             string who = NormalizeUser(sender);
-            if (!await requireAllowed(sender, commandName, ct).ConfigureAwait(false))
-                return;
             if (args is null || args.Length < 1)
             {
                 await sayToChannel(usage, ct).ConfigureAwait(false);
