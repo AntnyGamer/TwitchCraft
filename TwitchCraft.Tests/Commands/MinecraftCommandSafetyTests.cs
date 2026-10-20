@@ -1,3 +1,4 @@
+using System;
 using TwitchCraft_V1;
 using Xunit;
 using static TwitchCraft_V1.MinecraftCommandBuilder;
