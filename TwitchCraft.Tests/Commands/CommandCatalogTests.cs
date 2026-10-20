@@ -25,10 +25,14 @@ public sealed class CommandCatalogTests
         Assert.Equal(
             commandNames.OrderBy(static name => name, StringComparer.OrdinalIgnoreCase),
             commandNames);
-        Assert.All(
-            ["addheart", "removeheart", "turnaround", "chargedcreeper", "johnny", "switchmilk", "swarm", "fireworks",
-             "kick", "whitelistadd", "whitelistremove", "tokenleaderboard", "followreward", "commandstats", "tokenrank", "tiny", "giant"],
-            command => Assert.True(registry.TryResolve(command, out _), command));
+        string[] newCommands =
+        [
+            "addheart", "removeheart", "turnaround", "chargedcreeper",
+            "johnny", "switchmilk", "swarm", "fireworks",
+            "kick", "whitelistadd", "whitelistremove", "tokenleaderboard",
+            "followreward", "commandstats", "tokenrank", "tiny", "giant"
+        ];
+        Assert.All(newCommands, command => Assert.True(registry.TryResolve(command, out _), command));
 
         ChatCommandStatisticFlags dangerous = ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Dangerous;
         Assert.All(["addheart", "loot"], command =>
