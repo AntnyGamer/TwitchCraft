@@ -2,8 +2,8 @@ using System;
 using System.Buffers.Binary;
 using System.Linq;
 using System.Text;
-using Xunit;
 using TwitchCraft_V1;
+using Xunit;
 
 namespace TwitchCraft.Tests.Runtime;
 
