@@ -45,12 +45,11 @@ public sealed class CommandCatalogTests
         Assert.All(newCommands, command => Assert.True(registry.TryResolve(command, out _), command));
 
         ChatCommandStatisticFlags dangerous = ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Dangerous;
-        Assert.Equal(ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Nice, registry.GetStatisticFlags("addheart"));
-        Assert.Equal(dangerous, registry.GetStatisticFlags("removeheart"));
-        Assert.Equal(dangerous, registry.GetStatisticFlags("turnaround"));
-        Assert.Equal(dangerous, registry.GetStatisticFlags("chargedcreeper"));
-        Assert.Equal(dangerous, registry.GetStatisticFlags("tiny"));
-        Assert.Equal(dangerous, registry.GetStatisticFlags("giant"));
+        Assert.All(["addheart", "loot"], command =>
+            Assert.Equal(ChatCommandStatisticFlags.GameAffecting | ChatCommandStatisticFlags.Nice, registry.GetStatisticFlags(command)));
+        Assert.All(["removeheart", "turnaround", "chargedcreeper", "johnny", "switchmilk", "swarm", "tiny", "giant"], command =>
+            Assert.Equal(dangerous, registry.GetStatisticFlags(command)));
+        Assert.Equal(ChatCommandStatisticFlags.GameAffecting, registry.GetStatisticFlags("fireworks"));
         Assert.All(
             new[] { "kick", "whitelistadd", "whitelistremove", "tokenleaderboard", "followreward", "commandstats", "tokenrank" },
             command => Assert.Equal(ChatCommandStatisticFlags.None, registry.GetStatisticFlags(command)));
