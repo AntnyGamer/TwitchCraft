@@ -16,7 +16,7 @@ internal static class FileSystemHelper
     {
         string directory = Path.GetDirectoryName(path) ?? Environment.CurrentDirectory;
         string fileName = Path.GetFileName(path);
-        return Path.Combine(directory, fileName + "." + Guid.NewGuid().ToString("N") + ".tmp");
+        return Path.Combine(directory, $"{fileName}.{Guid.NewGuid():N}.tmp");
     }
 
     public static void EnsureParentDir(string path)
