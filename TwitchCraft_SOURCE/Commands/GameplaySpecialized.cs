@@ -281,9 +281,7 @@ public static partial class CommandList
                 string result = hadItem
                     ? "you enchanted " + playerName + "'s held " + item + " with " + enchant + " " + FormatLevel(enchantLevel) + "."
                     : "you rolled " + enchant + " " + FormatLevel(enchantLevel) + " for " + playerName + ", but they were not holding an item.";
-                await ConfirmAsync(
-                    sender + ", " + result,
-                    ct).ConfigureAwait(false);
+                await ConfirmAsync(sender + ", " + result, ct).ConfigureAwait(false);
             }
             else if (targetsEveryone)
             {
