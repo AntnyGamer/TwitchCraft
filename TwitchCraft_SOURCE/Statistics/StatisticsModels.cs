@@ -82,11 +82,11 @@ internal class CommandStatisticsBucket
 
         foreach (KeyValuePair<string, long> pair in source)
         {
-            string command = StatisticNameHelper.CleanCommandName(pair.Key);
-            if (command.Length == 0 || pair.Value <= 0)
-            {
+            if (pair.Value <= 0)
                 continue;
-            }
+            string command = StatisticNameHelper.CleanCommandName(pair.Key);
+            if (command.Length == 0)
+                continue;
 
             normalized[command] = normalized.TryGetValue(command, out long current)
                 ? current + pair.Value
