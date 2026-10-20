@@ -40,7 +40,7 @@ public partial class Settings
         if (TryGetOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
             return value >= minimum && value <= maximum;
 
-        var text = dropdown.Text.AsSpan().Trim();
+        ReadOnlySpan<char> text = dropdown.Text.AsSpan().Trim();
         foreach ((int option, string label) in options)
             if (text.Equals(label, StringComparison.OrdinalIgnoreCase))
             {
@@ -54,7 +54,7 @@ public partial class Settings
 
     private static bool TryReadInt(ComboBox dropdown, int minimum, int maximum, out int value)
     {
-        var text = (dropdown.SelectedItem as string ?? dropdown.Text).AsSpan().Trim();
+        ReadOnlySpan<char> text = (dropdown.SelectedItem as string ?? dropdown.Text).AsSpan().Trim();
         return int.TryParse(
             text,
             NumberStyles.Integer | NumberStyles.AllowThousands,
@@ -72,7 +72,7 @@ public partial class Settings
         if (TryGetOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
             return value >= minimum && value <= maximum;
 
-        var text = dropdown.Text.AsSpan().Trim();
+        ReadOnlySpan<char> text = dropdown.Text.AsSpan().Trim();
         foreach ((double option, string label) in options)
             if (text.Equals(label, StringComparison.OrdinalIgnoreCase))
             {
