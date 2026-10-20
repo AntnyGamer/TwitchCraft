@@ -153,7 +153,7 @@ internal sealed class RollingJsonLogWriter : IDisposable
 
             foreach (string path in Directory.EnumerateFiles(searchDirectory, fileName + ".old*"))
             {
-                string suffix = Path.GetFileName(path)[(fileName.Length + 4)..];
+                var suffix = Path.GetFileName(path).AsSpan(fileName.Length + 4);
                 if (int.TryParse(suffix, NumberStyles.None, CultureInfo.InvariantCulture, out int index) &&
                     index > _maxRetainedFiles)
                 {
