@@ -489,7 +489,7 @@ public static partial class CommandList
             }
 
             int cost = runtime.Commands.ScaleCost(baseCost, playerNames.Count);
-            bool sent = false;
+            bool sent;
             try
             {
                 sent = await runtime.ApplyTimedScaleAsync(
@@ -499,14 +499,17 @@ public static partial class CommandList
                     (commands, token) => TrySendPricedAsync(sender, cost, () => commands, token),
                     ct).ConfigureAwait(false);
             }
-            finally
+            catch
             {
-                if (!sent)
-                    runtime.Commands.ClearTimedCommandCooldown(commandName, reservation);
+                runtime.Commands.ClearTimedCommandCooldown(commandName, reservation);
+                throw;
             }
 
             if (!sent)
+            {
+                runtime.Commands.ClearTimedCommandCooldown(commandName, reservation);
                 return;
+            }
 
             await runtime.SendTellrawAsync(
                 target.Selector,

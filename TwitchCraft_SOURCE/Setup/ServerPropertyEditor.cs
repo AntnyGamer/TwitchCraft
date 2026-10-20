@@ -258,7 +258,7 @@ public sealed class ServerPropertyEditor
 
     private static string ToDifficulty(string? difficulty)
     {
-        var value = difficulty.AsSpan().Trim();
+        ReadOnlySpan<char> value = difficulty.AsSpan().Trim();
         return value.Equals("Easy", StringComparison.OrdinalIgnoreCase) ? "easy"
             : value.Equals("Hard", StringComparison.OrdinalIgnoreCase) ? "hard"
             : "normal";
