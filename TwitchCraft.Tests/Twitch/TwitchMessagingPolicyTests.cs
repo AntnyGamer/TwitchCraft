@@ -59,9 +59,7 @@ public sealed class TwitchMessagingPolicyTests
         int currentDelay,
         int expected)
     {
-        Assert.Equal(
-            expected,
-            MainHandler.GetReconnectDelayMs(currentDelay));
+        Assert.Equal(expected, MainHandler.GetReconnectDelayMs(currentDelay));
     }
 
     [Theory]
@@ -117,7 +115,7 @@ public sealed class TwitchMessagingPolicyTests
     }
 
     [Fact]
-    public void FormatReply_ReplacesLeadingUsernameOrAddsMention()
+    public void FormatReply_HandlesUsernamesAndMentions()
     {
         Assert.Equal(
             "@viewer, you need more tokens.",
@@ -134,6 +132,8 @@ public sealed class TwitchMessagingPolicyTests
         Assert.Equal(
             "@ann announcement ready.",
             MainHandler.FormatReply("announcement ready.", "ann", mentionViewer: true));
+        Assert.Equal("hi", MainHandler.FormatReply("hi", "viewer", false));
+        Assert.Equal("@viewer hi", MainHandler.FormatReply("@viewer hi", "viewer", true));
     }
 
     [Fact]
@@ -187,5 +187,6 @@ public sealed class TwitchMessagingPolicyTests
         Assert.Equal(
             "Use ?heal or ?tokens. Great! You are ready!",
             MainHandler.ApplyPrefix("Use !heal or !tokens. Great! You are ready!", "?"));
+        Assert.Equal("!heal", MainHandler.ApplyPrefix("!heal", "!"));
     }
 }

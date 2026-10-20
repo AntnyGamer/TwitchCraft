@@ -81,25 +81,24 @@ public sealed class ServerPropertiesContractTests
         };
 
         ServerPropertyEditor.WriteInitialFiles(config);
+        string firstWrite = File.ReadAllText(propertiesPath);
+        ServerPropertyEditor.WriteInitialFiles(config);
         string content = File.ReadAllText(propertiesPath);
+        Assert.Equal(firstWrite, content);
         string[] propertyLines = File.ReadAllLines(propertiesPath);
 
-        Assert.Contains("a-custom=first", propertyLines);
-        Assert.Contains(@"custom-setting=keep\=this", propertyLines);
-        Assert.Contains(@"escaped-value=hello\=world\\path", propertyLines);
-        Assert.Contains("z-custom=last", propertyLines);
-        Assert.Contains("view-distance=6", propertyLines);
-        Assert.Contains("simulation-distance=8", propertyLines);
-        Assert.Contains("entity-broadcast-range-percentage=75", propertyLines);
-        Assert.Contains("network-compression-threshold=128", propertyLines);
-        Assert.Contains("white-list=true", propertyLines);
-        Assert.Contains("enforce-whitelist=true", propertyLines);
-        Assert.Contains("level-name=Streamer World", propertyLines);
-        Assert.Contains("server-port=25570", propertyLines);
-        Assert.Contains("rcon.port=25580", propertyLines);
-        Assert.Contains(@"rcon.password=secret\:password", propertyLines);
-        Assert.Contains("max-players=7", propertyLines);
-        Assert.Contains("online-mode=false", propertyLines);
+        Assert.All(new[]
+        {
+            "a-custom=first", @"custom-setting=keep\=this",
+            @"escaped-value=hello\=world\\path", "z-custom=last",
+            "view-distance=6", "simulation-distance=8",
+            "entity-broadcast-range-percentage=75",
+            "network-compression-threshold=128",
+            "white-list=true", "enforce-whitelist=true",
+            "level-name=Streamer World", "server-port=25570",
+            "rcon.port=25580", @"rcon.password=secret\:password",
+            "max-players=7", "online-mode=false"
+        }, property => Assert.Contains(property, propertyLines));
         Assert.DoesNotContain("\npvp=", "\n" + content, StringComparison.Ordinal);
         Assert.Contains("difficulty=hard", propertyLines);
         Assert.Contains("hardcore=false", propertyLines);

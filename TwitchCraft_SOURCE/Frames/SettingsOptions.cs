@@ -34,11 +34,6 @@ public partial class Settings
         (60, "60"), (120, "120"), (300, "300")
     ];
 
-    private static readonly string[] CommonCommandPrefixes =
-    [
-        "!", "?", ".", "#", "$", "%", "&", "+", "-", "~"
-    ];
-
     private static readonly (string Value, string Label)[] RelayTextColorOptions =
     [
         ("black", "Black"), ("dark_blue", "Dark Blue"), ("dark_green", "Dark Green"),
@@ -60,11 +55,16 @@ public partial class Settings
         AddOptions(RelayTextColorDropdown, RelayTextColorOptions);
     }
 
-    private static void AddPrefixOptions(ComboBox dropdown)
+    private static void AddStringOptions(ComboBox dropdown, ReadOnlySpan<string> options)
     {
         if (dropdown.Items.Count == 0)
-            foreach (string prefix in CommonCommandPrefixes)
-                dropdown.Items.Add(prefix);
+            foreach (string option in options)
+                dropdown.Items.Add(option);
+    }
+
+    private static void AddPrefixOptions(ComboBox dropdown)
+    {
+        AddStringOptions(dropdown, ["!", "?", ".", "#", "$", "%", "&", "+", "-", "~"]);
 
         dropdown.Loaded -= Prefix_Loaded;
         dropdown.Loaded += Prefix_Loaded;

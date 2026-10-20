@@ -14,16 +14,15 @@ public static partial class CommandList
 
         Task ChargedCreeperAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string[] commands = GameplayCommands.BuildChargedCreeper(
-                target.Selector,
-                Random.Shared,
-                runtime.UsesInlineTextComponentSyntax,
-                runtime.UsesModernEntityAttributeNbt);
+            string selector = target.Selector;
+            bool inlineSyntax = runtime.UsesInlineTextComponentSyntax;
+            bool modernEntityNbt = runtime.UsesModernEntityAttributeNbt;
             return SendPricedReplyAsync(
                 target,
                 sender,
                 45,
-                _ => commands,
+                _ => GameplayCommands.BuildChargedCreeper(
+                    selector, Random.Shared, inlineSyntax, modernEntityNbt),
                 sender + " summoned a charged creeper on you.",
                 "GOT A CHARGED CREEPER SPAWNED ON THEM!",
                 sender + ", you summoned a charged creeper on " + TargetName(target) + ".",
@@ -35,7 +34,6 @@ public static partial class CommandList
 
         async Task FireworksAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string fireworkCommand = "execute at " + target.Selector + " run summon firework_rocket ~ ~1 ~ {LifeTime:20}";
             if (!runtime.Commands.TryStartFireworks())
             {
                 await SayAsync(sender + ", fireworks are already running. Try again in a moment.", ct).ConfigureAwait(false);
@@ -45,6 +43,7 @@ public static partial class CommandList
             bool repeatStarted = false;
             try
             {
+                string fireworkCommand = "execute at " + target.Selector + " run summon firework_rocket ~ ~1 ~ {LifeTime:20}";
                 if (!await SendPricedAsync(target, sender, 10, fireworkCommand, ct, sender + " sent you some fireworks.", "GOT FIREWORKS!").ConfigureAwait(false))
                     return;
                 await ConfirmAsync(sender + ", you sent " + TargetName(target) + " some fireworks.", ct).ConfigureAwait(false);
@@ -102,12 +101,15 @@ public static partial class CommandList
         }
         Task JohnnyAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string[] commands = GameplayCommands.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
+            string selector = target.Selector;
+            bool inlineSyntax = runtime.UsesInlineTextComponentSyntax;
+            bool modernEntityNbt = runtime.UsesModernEntityAttributeNbt;
             return SendPricedReplyAsync(
                 target,
                 sender,
                 40,
-                _ => commands,
+                _ => GameplayCommands.BuildJohnny(
+                    selector, Random.Shared, inlineSyntax, modernEntityNbt),
                 sender + " sent Johnny after you.",
                 "JOHNNY IS COMING!",
                 sender + ", you spawned Johnny for " + TargetName(target) + ".",
@@ -147,9 +149,7 @@ public static partial class CommandList
                     MinecraftCommandBuilder.Lightning(target.Selector),
                     () => runtime.Commands.ClearTimedCommandCooldown("lightning", reservation),
                     ct).ConfigureAwait(false))
-            {
                 return;
-            }
             await runtime.SendTellrawAsync(target.Selector, sender + " struck you with lightning!", "yellow", true, ct).ConfigureAwait(false);
             await NotifyOthersAsync(target, "GOT STRUCK BY LIGHTNING!", "yellow", true, ct).ConfigureAwait(false);
             await ConfirmAsync(sender + ", you struck " + TargetName(target) + " with lightning.", ct).ConfigureAwait(false);
@@ -491,9 +491,7 @@ public static partial class CommandList
         async Task<List<string>> GetPlayersAsync(ResolvedTarget target, CancellationToken ct)
         {
             if (IsEveryone(target) || target.PlayerCount > 1)
-            {
                 return target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false);
-            }
 
             string playerName = GetPlayerName(target);
             return playerName.Length > 0 ? [playerName] : [];
@@ -592,15 +590,15 @@ public static partial class CommandList
         }
         Task SwitchMilkAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
+            string playerName = GetPlayerName(target);
+            if (target.PlayerCount == 1 && !IsEveryone(target) && playerName.Length == 0)
+                return SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct);
             (string itemID, string itemName) = Random.Shared.Next(100) switch
             {
                 < 50 => ("minecraft:bucket", "an empty bucket"),
                 < 75 => ("minecraft:water_bucket", "a water bucket"),
                 _ => ("minecraft:lava_bucket", "a lava bucket")
             };
-            string playerName = GetPlayerName(target);
-            if (target.PlayerCount == 1 && !IsEveryone(target) && playerName.Length == 0)
-                return SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct);
             string switchMilkTag = runtime.Commands.NextSwitchMilkTag();
             string taggedMilkSelector = "@a[tag=" + switchMilkTag + "]";
             List<string> switchMilkCommands = new(7)

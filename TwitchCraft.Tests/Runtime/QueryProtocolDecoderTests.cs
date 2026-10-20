@@ -15,6 +15,8 @@ public sealed class QueryProtocolDecoderTests
         (string Text, int Token)[] tokens =
         [
             ("5678", 5678),
+            ("0", 0),
+            (" 8 ", 8),
             ("-42", -42),
             ("+7", 7),
             ("-2147483648", int.MinValue),
@@ -39,7 +41,7 @@ public sealed class QueryProtocolDecoderTests
     [Fact]
     public void ParseChallenge_RejectsInvalidOrOutOfRangeToken()
     {
-        Assert.All(new[] { "invalid", "", "2147483648", "-2147483649" }, token =>
+        Assert.All(["invalid", "", "2147483648", "-2147483649"], token =>
         {
             byte[] packet = BuildPacket(0x09, 1234, Encoding.ASCII.GetBytes(token + "\0"));
             Assert.Throws<InvalidOperationException>(() =>
@@ -105,7 +107,8 @@ public sealed class QueryProtocolDecoderTests
         [
             "hostname\0server\0\0",
             "hostname\0server\0\0player_\0\0",
-            "hostname\0server\0\0player_\0\0Steve\0"
+            "hostname\0server\0\0player_\0\0Steve\0",
+            "hostname\0server\0\0player_\0\0Steve"
         ];
         Assert.All(payloads, payload =>
         {

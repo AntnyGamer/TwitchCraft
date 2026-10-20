@@ -43,8 +43,8 @@ public sealed class GameplayCommandIntegrationTests
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
 
         Assert.Equal(96, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(1, commands.Count(command =>
-            string.Equals(command, "effect give @a[gamemode=!spectator] minecraft:instant_health 1 1", StringComparison.Ordinal)));
+        Assert.Single(commands, command =>
+            command == "effect give @a[gamemode=!spectator] minecraft:instant_health 1 1");
     }
 
     [Fact]
@@ -142,12 +142,12 @@ public sealed class GameplayCommandIntegrationTests
         string tagged = "@a[tag=" + tag + "]";
         Assert.Single(commands, command => command ==
             "execute as @a[name=\"PlayerTwo\",gamemode=!spectator] if data entity @s Inventory[{id:\"minecraft:milk_bucket\"}] run tag @s add " + tag);
-        Assert.True(commands.Exists(command => string.Equals(command, "execute as " + tagged + " run clear @s minecraft:milk_bucket 1", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.StartsWith("execute as " + tagged + " run give @s minecraft:", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command =>
+        Assert.Single(commands, command => command == "execute as " + tagged + " run clear @s minecraft:milk_bucket 1");
+        Assert.Single(commands, command => command.StartsWith("execute as " + tagged + " run give @s minecraft:", StringComparison.Ordinal));
+        Assert.Single(commands, command =>
             command.StartsWith("execute if entity " + tagged + " run tellraw ", StringComparison.Ordinal) &&
-            command.Contains("GOT MILK SWITCHED!", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => string.Equals(command, "execute if entity " + tagged + " run tag " + tagged + " remove " + tag, StringComparison.Ordinal)));
+            command.Contains("GOT MILK SWITCHED!", StringComparison.Ordinal));
+        Assert.Single(commands, command => command == "execute if entity " + tagged + " run tag " + tagged + " remove " + tag);
     }
 
     [Fact]
@@ -162,18 +162,20 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(20, commands.Count(command => command.Contains("run summon minecraft:cat ", StringComparison.Ordinal)));
-        Assert.Equal(1, commands.Count(command =>
-            command.StartsWith("title @a[gamemode=!spectator] times ", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("Scaredy Cat!", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("Stop being scared!", StringComparison.Ordinal)));
+        Assert.Single(commands, command =>
+            command.StartsWith("title @a[gamemode=!spectator] times ", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("Scaredy Cat!", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("Stop being scared!", StringComparison.Ordinal));
     }
 
     [Fact]
     public async Task PursuerCommands_SpawnDistinctThreatsAndChargeIndependently()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
-        scenario.Runtime.Tokens.Award("viewer", 200);
         int cursor = scenario.CaptureCommandCursor();
+        await scenario.DispatchAsync("!johnny");
+        await scenario.DispatchAsync("!chargedcreeper"); // Both unfunded
+        scenario.Runtime.Tokens.Award("viewer", 200);
 
         await scenario.DispatchAsync("!johnny");
         Assert.Equal(160, scenario.Runtime.Tokens.GetBalance("viewer"));
@@ -181,13 +183,13 @@ public sealed class GameplayCommandIntegrationTests
         List<string> commands = await scenario.DrainCommandsAsync(cursor);
 
         Assert.Equal(115, scenario.Runtime.Tokens.GetBalance("viewer"));
-        Assert.Equal(1, commands.Count(command => command.Contains("summon minecraft:vindicator", StringComparison.Ordinal) &&
-            command.Contains("tc_johnny", StringComparison.Ordinal)));
-        Assert.Equal(1, commands.Count(command => command.Contains("summon minecraft:creeper", StringComparison.Ordinal) &&
+        Assert.Single(commands, command => command.Contains("summon minecraft:vindicator", StringComparison.Ordinal) &&
+            command.Contains("tc_johnny_new_", StringComparison.Ordinal));
+        Assert.Single(commands, command => command.Contains("summon minecraft:creeper", StringComparison.Ordinal) &&
             command.Contains("powered:1b", StringComparison.Ordinal) &&
-            command.Contains("tc_charged_creeper", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("Johnny is coming!", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("A charged creeper is coming!", StringComparison.Ordinal)));
+            command.Contains("tc_charged_creeper_new_", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("Johnny is coming!", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("A charged creeper is coming!", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -333,11 +335,11 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(50, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.Equal(5, commands.Count(command => command.Contains("dimension minecraft:the_nether", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("if dimension minecraft:the_nether run fill", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("if dimension minecraft:the_nether run tp @s ~ ~50 ~", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("unless dimension minecraft:the_nether run tp @s ~ ~150 ~", StringComparison.Ordinal)));
+        Assert.Contains(commands, command => command.Contains("if dimension minecraft:the_nether run fill", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("if dimension minecraft:the_nether run tp @s ~ ~50 ~", StringComparison.Ordinal));
+        Assert.Contains(commands, command => command.Contains("unless dimension minecraft:the_nether run tp @s ~ ~150 ~", StringComparison.Ordinal));
         Assert.DoesNotContain(commands, command => command.Contains("unless dimension minecraft:the_nether run tp @s ~ ~200 ~", StringComparison.Ordinal));
-        Assert.True(commands.Exists(command => command.Contains("unless dimension minecraft:the_nether run give @s minecraft:water_bucket 1", StringComparison.Ordinal)));
+        Assert.Contains(commands, command => command.Contains("unless dimension minecraft:the_nether run give @s minecraft:water_bucket 1", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -385,12 +387,12 @@ public sealed class GameplayCommandIntegrationTests
 
         Assert.Equal(70, scenario.Runtime.Tokens.GetBalance("viewer"));
         Assert.InRange(lootCommands, 3, 4);
-        Assert.Equal(1, commands.Count(command =>
-            command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:", StringComparison.Ordinal)));
-        Assert.Equal(1, commands.Count(command =>
-            string.Equals(command, "weather rain", StringComparison.Ordinal) ||
-            string.Equals(command, "weather thunder", StringComparison.Ordinal)));
-        Assert.True(commands.Exists(command => command.Contains("Wow, you suck!", StringComparison.Ordinal)));
+        Assert.Single(commands, command =>
+            command.StartsWith("execute at @a[gamemode=!spectator] run summon minecraft:", StringComparison.Ordinal));
+        Assert.Single(commands, command =>
+            command == "weather rain" ||
+            command == "weather thunder");
+        Assert.Contains(commands, command => command.Contains("Wow, you suck!", StringComparison.Ordinal));
     }
 
     private static Task<MinecraftRuntimeScenario> StartAsync(
