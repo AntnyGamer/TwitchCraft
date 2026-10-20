@@ -97,19 +97,19 @@ public static partial class CommandList
             if (!await requireAllowed(sender, commandName, ct).ConfigureAwait(false))
                 return;
             string usage = "Usage: !" + commandName + " [username|all|random] amount";
-            string who = NormalizeUser(sender);
             if (args is null || args.Length < 1)
             {
                 await sayToChannel(usage, ct).ConfigureAwait(false);
                 return;
             }
-            string targetToken = args.Length == 1 ? who : (args[0] ?? string.Empty).Trim().TrimStart('@');
             string amountToken = args.Length == 1 ? args[0] ?? string.Empty : args[1] ?? string.Empty;
             if (!int.TryParse(amountToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount) || amount <= 0)
             {
                 await sayToChannel("Invalid amount. " + usage, ct).ConfigureAwait(false);
                 return;
             }
+            string who = NormalizeUser(sender);
+            string targetToken = args.Length == 1 ? who : (args[0] ?? string.Empty).Trim().TrimStart('@');
             string verb = isGive ? "gave" : "removed";
             string action = isGive ? "give" : "remove";
             string direction = isGive ? "to" : "from";
