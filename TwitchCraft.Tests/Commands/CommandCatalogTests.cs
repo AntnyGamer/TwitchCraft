@@ -41,7 +41,7 @@ public sealed class CommandCatalogTests
             Assert.Equal(dangerous, registry.GetStatisticFlags(command)));
         Assert.Equal(ChatCommandStatisticFlags.GameAffecting, registry.GetStatisticFlags("fireworks"));
         Assert.All(
-            new[] { "kick", "whitelistadd", "whitelistremove", "tokenleaderboard", "followreward", "commandstats", "tokenrank" },
+            ["kick", "whitelistadd", "whitelistremove", "tokenleaderboard", "followreward", "commandstats", "tokenrank"],
             command => Assert.Equal(ChatCommandStatisticFlags.None, registry.GetStatisticFlags(command)));
     }
 
@@ -67,7 +67,7 @@ public sealed class CommandCatalogTests
 
         List<string> viewers = runtime.GetViewerRosterSnapshot();
         Assert.Equal(4, viewers.Count);
-        Assert.All(new[] { "viewer_one", "randomdudereincarnatedx3", "twitchcraft", "viewer_two" },
+        Assert.All(["viewer_one", "randomdudereincarnatedx3", "twitchcraft", "viewer_two"],
             name => Assert.Contains(viewers, actual => string.Equals(name, actual, StringComparison.OrdinalIgnoreCase)));
         Assert.All(viewers, viewer => Assert.Equal(25, runtime.Tokens.GetBalance(viewer)));
     }
