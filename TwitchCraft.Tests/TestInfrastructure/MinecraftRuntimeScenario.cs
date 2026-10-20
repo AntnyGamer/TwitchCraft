@@ -71,7 +71,7 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
                 () => runtime.HasOnlinePlayerSnapshot,
                 "Responsive fake server did not publish its initial player snapshot.",
                 cts.Token);
-            _ = await runtime.GetPlayersAsync(cts.Token);
+            await runtime.GetPlayersAsync(cts.Token);
             return scenario;
         }
         catch
