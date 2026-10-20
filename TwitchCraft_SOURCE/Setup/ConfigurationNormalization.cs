@@ -281,7 +281,7 @@ public sealed partial class ConfigurationStore
 
     internal static string NormalizeDifficulty(string? difficulty)
     {
-        string value = (difficulty ?? string.Empty).Trim();
+        var value = difficulty.AsSpan().Trim();
         return value.Equals("easy", StringComparison.OrdinalIgnoreCase) ? "Easy"
             : value.Equals("hard", StringComparison.OrdinalIgnoreCase) ? "Hard"
             : "Medium";
@@ -289,7 +289,7 @@ public sealed partial class ConfigurationStore
 
     internal static string NormalizeVerbosity(string? verbosity)
     {
-        string value = (verbosity ?? string.Empty).Trim();
+        var value = verbosity.AsSpan().Trim();
         return value.Equals(BotResponseVerbositySettings.Reduced, StringComparison.OrdinalIgnoreCase)
             ? BotResponseVerbositySettings.Reduced
             : value.Equals(BotResponseVerbositySettings.EssentialOnly, StringComparison.OrdinalIgnoreCase)
