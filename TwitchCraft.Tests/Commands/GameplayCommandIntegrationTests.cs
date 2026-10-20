@@ -172,8 +172,9 @@ public sealed class GameplayCommandIntegrationTests
     public async Task PursuerCommands_SpawnDistinctThreatsAndChargeIndependently()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();
-        scenario.Runtime.Tokens.Award("viewer", 200);
         int cursor = scenario.CaptureCommandCursor();
+        await scenario.DispatchAsync("!johnny"); // No tokens
+        scenario.Runtime.Tokens.Award("viewer", 200);
 
         await scenario.DispatchAsync("!johnny");
         Assert.Equal(160, scenario.Runtime.Tokens.GetBalance("viewer"));
