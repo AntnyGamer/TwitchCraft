@@ -101,12 +101,15 @@ public static partial class CommandList
         }
         Task JohnnyAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
-            string[] commands = GameplayCommands.BuildJohnny(target.Selector, Random.Shared, runtime.UsesInlineTextComponentSyntax, runtime.UsesModernEntityAttributeNbt);
+            string selector = target.Selector;
+            bool inlineSyntax = runtime.UsesInlineTextComponentSyntax;
+            bool modernEntityNbt = runtime.UsesModernEntityAttributeNbt;
             return SendPricedReplyAsync(
                 target,
                 sender,
                 40,
-                _ => commands,
+                _ => GameplayCommands.BuildJohnny(
+                    selector, Random.Shared, inlineSyntax, modernEntityNbt),
                 sender + " sent Johnny after you.",
                 "JOHNNY IS COMING!",
                 sender + ", you spawned Johnny for " + TargetName(target) + ".",
@@ -146,9 +149,7 @@ public static partial class CommandList
                     MinecraftCommandBuilder.Lightning(target.Selector),
                     () => runtime.Commands.ClearTimedCommandCooldown("lightning", reservation),
                     ct).ConfigureAwait(false))
-            {
                 return;
-            }
             await runtime.SendTellrawAsync(target.Selector, sender + " struck you with lightning!", "yellow", true, ct).ConfigureAwait(false);
             await NotifyOthersAsync(target, "GOT STRUCK BY LIGHTNING!", "yellow", true, ct).ConfigureAwait(false);
             await ConfirmAsync(sender + ", you struck " + TargetName(target) + " with lightning.", ct).ConfigureAwait(false);
@@ -490,9 +491,7 @@ public static partial class CommandList
         async Task<List<string>> GetPlayersAsync(ResolvedTarget target, CancellationToken ct)
         {
             if (IsEveryone(target) || target.PlayerCount > 1)
-            {
                 return target.TargetablePlayers ?? await runtime.GetPlayersAsync(ct).ConfigureAwait(false);
-            }
 
             string playerName = GetPlayerName(target);
             return playerName.Length > 0 ? [playerName] : [];
