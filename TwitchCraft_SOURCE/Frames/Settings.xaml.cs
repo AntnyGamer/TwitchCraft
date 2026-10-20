@@ -155,9 +155,7 @@ public partial class Settings : UserControl
         if (sender is not TextBox textBox ||
             args.DataObject.GetData(typeof(string)) is not string pastedText ||
             !IsValidRAMText(BuildTextCandidate(textBox, pastedText)))
-        {
             args.CancelCommand();
-        }
     }
 
     private static string BuildTextCandidate(TextBox textBox, string insertedText)
@@ -165,6 +163,8 @@ public partial class Settings : UserControl
         string current = textBox.Text ?? string.Empty;
         int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
         int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
+        ArgumentNullException.ThrowIfNull(insertedText);
+        if (length == 0 && insertedText.Length == 0) return current;
         ReadOnlySpan<char> textBeforeSelection = current.AsSpan(0, start);
         ReadOnlySpan<char> textAfterSelection = current.AsSpan(start + length);
         return string.Concat(textBeforeSelection, insertedText.AsSpan(), textAfterSelection);
