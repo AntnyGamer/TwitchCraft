@@ -590,15 +590,15 @@ public static partial class CommandList
         }
         Task SwitchMilkAsync(ResolvedTarget target, string sender, CancellationToken ct)
         {
+            string playerName = GetPlayerName(target);
+            if (target.PlayerCount == 1 && !IsEveryone(target) && playerName.Length == 0)
+                return SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct);
             (string itemID, string itemName) = Random.Shared.Next(100) switch
             {
                 < 50 => ("minecraft:bucket", "an empty bucket"),
                 < 75 => ("minecraft:water_bucket", "a water bucket"),
                 _ => ("minecraft:lava_bucket", "a lava bucket")
             };
-            string playerName = GetPlayerName(target);
-            if (target.PlayerCount == 1 && !IsEveryone(target) && playerName.Length == 0)
-                return SayAsync(sender + ", that player could not be resolved for !switchmilk.", ct);
             string switchMilkTag = runtime.Commands.NextSwitchMilkTag();
             string taggedMilkSelector = "@a[tag=" + switchMilkTag + "]";
             List<string> switchMilkCommands = new(7)
