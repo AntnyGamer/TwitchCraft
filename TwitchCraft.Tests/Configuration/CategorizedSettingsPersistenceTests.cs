@@ -25,8 +25,8 @@ public sealed class CategorizedSettingsPersistenceTests
             ["Commands", "Custom Commands", "Economy", "Gameplay", "Chat and Display", "Performance", "Minecraft Server"],
             root.Properties().Select(property => property.Name));
         Assert.All(
-            new[] { nameof(StartingProfile.CommandPrefix), nameof(StartingProfile.MultiplayerEnabled),
-                nameof(StartingProfile.RemoteControlEnabled), nameof(StartingProfile.RequireOnlineMode) },
+            [ nameof(StartingProfile.CommandPrefix), nameof(StartingProfile.MultiplayerEnabled),
+                nameof(StartingProfile.RemoteControlEnabled), nameof(StartingProfile.RequireOnlineMode) ],
             name => Assert.Null(root.SelectToken(name)));
         Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveRewardsRequireActivity)]);
         Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveActivityWindowMinutes)]);
