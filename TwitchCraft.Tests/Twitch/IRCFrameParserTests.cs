@@ -11,9 +11,7 @@ public sealed class IRCFrameParserTests
         const string line = "@badges=;color=#fff;mod=1;bits=250;id=abc-123 :SomeUser!someuser@host PRIVMSG #channel :!Heal Player";
 
         IRCMessage message = new();
-        bool result = message.TryParse(line);
-
-        Assert.True(result);
+        Assert.True(message.TryParse(line));
         Assert.Equal("PRIVMSG", message.Command);
         Assert.Equal("someuser", message.SenderLogin);
         Assert.Equal("!Heal Player", message.Trailing);
@@ -30,9 +28,7 @@ public sealed class IRCFrameParserTests
     public void TryParse_HandlesPingWithoutSender()
     {
         IRCMessage message = new();
-        bool result = message.TryParse("PING :tmi.twitch.tv");
-
-        Assert.True(result);
+        Assert.True(message.TryParse("PING :tmi.twitch.tv"));
         Assert.Equal("PING", message.Command);
         Assert.Equal(string.Empty, message.SenderLogin);
         Assert.Equal("tmi.twitch.tv", message.Trailing);
