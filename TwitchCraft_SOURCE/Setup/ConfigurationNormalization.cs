@@ -20,11 +20,7 @@ public sealed partial class ConfigurationStore
         return text.Length > 0 && IPAddress.TryParse(text, out _);
     }
 
-    public static bool IsValidRemoteHost(string? value)
-    {
-        string host = CleanText(value);
-        return TryNormalizeRemoteHost(host, out _);
-    }
+    public static bool IsValidRemoteHost(string? value) => TryNormalizeRemoteHost(CleanText(value), out _);
 
     private static bool TryNormalizeRemoteHost(string host, out string normalizedHost)
     {
