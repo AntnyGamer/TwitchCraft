@@ -5,7 +5,7 @@ namespace TwitchCraft_V1;
 internal static class MinecraftNameHelper
 {
     internal static bool IsValidPlayerName(string? value)
-        => IsValidNameSegment(value.AsSpan().Trim());
+        => !string.IsNullOrEmpty(value) && IsValidNameSegment(value.AsSpan().Trim());
 
     internal static bool TryNormalizePlayerName(string? value, out string normalized)
     {
