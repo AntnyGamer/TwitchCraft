@@ -61,6 +61,7 @@ public sealed class MinecraftVersionSupportTests
     [InlineData("1.20.4")]
     public void GetVersion_RejectsVersionsBefore1205(string ID)
     {
+        Assert.False(MinecraftVersionSupport.TryGetVersion(ID, out _));
         Assert.Throws<System.NotSupportedException>(() => MinecraftVersionSupport.GetVersion(ID));
     }
 
