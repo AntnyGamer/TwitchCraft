@@ -481,6 +481,7 @@ public sealed class CommandService
             || (config.Settings.ModeratorsCanUseStreamerCommands && _currentCommandExecution.Value?.Moderator == true);
     }
 
+    // Keep null for no match; callers rely on null checks, not whitespace guards.
     private static string? FindOnlinePlayer(List<string> online, string playerName)
     {
         int index = online.BinarySearch(playerName, StringComparer.OrdinalIgnoreCase);
