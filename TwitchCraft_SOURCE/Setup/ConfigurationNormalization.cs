@@ -191,9 +191,9 @@ public sealed partial class ConfigurationStore
         NormalizePayout(config.Settings);
         if (config.Settings.MaximumTokenBalance < 0)
             config.Settings.MaximumTokenBalance = 0;
-        if (config.Settings.ChannelCommandLimitPerMinute < 0 || config.Settings.ChannelCommandLimitPerMinute > 1000)
+        if (config.Settings.ChannelCommandLimitPerMinute is < 0 or > 1000)
             config.Settings.ChannelCommandLimitPerMinute = 0;
-        if (config.Settings.ViewerCommandLimitPerMinute < 0 || config.Settings.ViewerCommandLimitPerMinute > 1000)
+        if (config.Settings.ViewerCommandLimitPerMinute is < 0 or > 1000)
             config.Settings.ViewerCommandLimitPerMinute = 0;
         config.Settings.PassiveActivityWindowMinutes = NormalizeChoice(
             config.Settings.PassiveActivityWindowMinutes, 10, 1, 2, 5, 10, 15, 30, 60, 120);
