@@ -37,8 +37,9 @@ public sealed partial class MainHandler
         int possessiveIndex = message.IndexOf(possessiveMarker, StringComparison.OrdinalIgnoreCase);
         if (possessiveIndex > setPrefix.Length)
         {
-            ReadOnlySpan<char> modeText = message.AsSpan(possessiveIndex + possessiveMarker.Length);
-            if (MinecraftNameHelper.TryNormalizePlayerName(message.AsSpan(setPrefix.Length, possessiveIndex - setPrefix.Length), out string candidate) && TryParseGamemodeName(modeText, out gameType))
+            if (MinecraftNameHelper.TryNormalizePlayerName(
+                    message.AsSpan(setPrefix.Length, possessiveIndex - setPrefix.Length), out string candidate) &&
+                TryParseGamemodeName(message.AsSpan(possessiveIndex + possessiveMarker.Length), out gameType))
             {
                 playerName = candidate;
                 return true;
@@ -51,8 +52,9 @@ public sealed partial class MainHandler
             int toIndex = message.IndexOf(" to ", ofPrefix.Length, StringComparison.OrdinalIgnoreCase);
             if (toIndex > ofPrefix.Length)
             {
-                ReadOnlySpan<char> modeText = message.AsSpan(toIndex + 4);
-                if (MinecraftNameHelper.TryNormalizePlayerName(message.AsSpan(ofPrefix.Length, toIndex - ofPrefix.Length), out string candidate) && TryParseGamemodeName(modeText, out gameType))
+                if (MinecraftNameHelper.TryNormalizePlayerName(
+                        message.AsSpan(ofPrefix.Length, toIndex - ofPrefix.Length), out string candidate) &&
+                    TryParseGamemodeName(message.AsSpan(toIndex + 4), out gameType))
                 {
                     playerName = candidate;
                     return true;
