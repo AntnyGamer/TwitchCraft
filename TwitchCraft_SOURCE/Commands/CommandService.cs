@@ -481,11 +481,10 @@ public sealed class CommandService
             || (config.Settings.ModeratorsCanUseStreamerCommands && _currentCommandExecution.Value?.Moderator == true);
     }
 
-    // No match: null, not whitespace.
     private static string? FindOnlinePlayer(List<string> online, string playerName)
     {
         int index = online.BinarySearch(playerName, StringComparer.OrdinalIgnoreCase);
-        return index >= 0 ? online[index] : null;
+        return index >= 0 ? online[index] : null; // Keep null for no match.
     }
 
     private static ResolvedTarget MakePlayerTarget(string playerName) => new()
