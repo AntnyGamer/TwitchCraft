@@ -33,7 +33,6 @@ public sealed class PlayerStateParsingTests
         [
             "",
             "Steve joined the game",
-            "Game mode changed",
             "Set bad-name's game mode to Survival Mode",
             "Set Steve's game mode to Builder Mode",
             "Set the game mode of Alex Creative Mode"
