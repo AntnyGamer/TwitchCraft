@@ -13,7 +13,7 @@ public sealed class ConfigurationNormalizationTests
     {
         const string json = """
             {
-              "Server": { "Java": null, "RCON": null, "Port": 25570 },
+              "Server": { "Java": null, "RCON": null, "Port": 25570, "MemoryMinGB": 0, "MemoryMaxGB": 0 },
               "Twitch": null,
               "Identity": null,
               "Settings": {
@@ -33,6 +33,8 @@ public sealed class ConfigurationNormalizationTests
 
         Assert.Multiple(
             () => Assert.Equal(25570, config.Server.Port),
+            () => Assert.Equal(8, config.Server.MemoryMinGB),
+            () => Assert.Equal(8, config.Server.MemoryMaxGB),
             () => Assert.Equal(string.Empty, config.Server.Java.ExecutablePath),
             () => Assert.Equal(string.Empty, config.Server.Java.HomeDirectory),
             () => Assert.Equal(25575, config.Server.RCON.Port),
