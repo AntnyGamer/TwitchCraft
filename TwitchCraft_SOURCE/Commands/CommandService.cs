@@ -44,9 +44,7 @@ public sealed class CommandService
         string configured = config?.Identity.StreamerMinecraftName.Trim() ?? string.Empty;
         string streamer = config?.Twitch.StreamerName.Trim() ?? string.Empty;
         _defaultMinecraftPlayer = configured.Length > 0 ? configured : streamer;
-        _defaultMinecraftPlayerName = MinecraftNameHelper.TryNormalizePlayerName(_defaultMinecraftPlayer, out string normalized)
-            ? normalized
-            : string.Empty;
+        MinecraftNameHelper.TryNormalizePlayerName(_defaultMinecraftPlayer, out _defaultMinecraftPlayerName);
     }
 
     internal string DefaultMinecraftPlayer => _defaultMinecraftPlayer;
