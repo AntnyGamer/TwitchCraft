@@ -251,11 +251,10 @@ public sealed partial class MainHandler
             RecordPlayerJoin(currentPlayers[currentIndex]);
     }
 
-    private static List<string> ParsePlayers(ReadOnlySpan<char> remainder)
+    private static void ParsePlayers(ReadOnlySpan<char> remainder, List<string> players)
     {
-        List<string> players = [];
         if (remainder.IsEmpty)
-            return players;
+            return;
 
         int start = 0;
         for (int i = 0; i <= remainder.Length; i++)
@@ -270,7 +269,6 @@ public sealed partial class MainHandler
         }
 
         SortedListHelper.SortAndDeduplicate(players, PlayerNameComparer);
-        return players;
     }
 
     private static bool TryParseList(string response, out List<string> players)
@@ -289,7 +287,7 @@ public sealed partial class MainHandler
             int colon = text[marker..].IndexOf(':');
             if (colon >= 0)
             {
-                players = ParsePlayers(text[(marker + colon + 1)..]);
+                ParsePlayers(text[(marker + colon + 1)..], players);
                 return true;
             }
 
