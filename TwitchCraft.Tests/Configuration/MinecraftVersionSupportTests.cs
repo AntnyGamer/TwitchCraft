@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
 using Xunit;
@@ -29,7 +30,7 @@ public sealed class MinecraftVersionSupportTests
             () => Assert.Equal(requiredJDK, version.RequiredJDK),
             () => Assert.Equal(packFormatMajor, version.DataPackFormatMajor),
             () => Assert.Equal(packFormatMinor, version.DataPackFormatMinor));
-        Assert.NotEmpty(version.GetPackFormatJson());
+        Assert.Contains(packFormatMajor.ToString(CultureInfo.InvariantCulture), version.GetPackFormatJson());
     }
 
     [Theory]
