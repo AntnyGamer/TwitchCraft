@@ -51,6 +51,7 @@ public sealed class MinecraftVersionSupportTests
             () => Assert.Equal(inlineTextComponents, version.UsesInlineTextComponents),
             () => Assert.Equal(namespacedGameRules, version.UsesNamespacedGameRules),
             () => Assert.Equal(supportsInfested, MinecraftVersionSupport.SupportsStatusEffect(ID, "infested")));
+        Assert.False(MinecraftVersionSupport.SupportsStatusEffect(ID, ""));
     }
 
     [Theory]
