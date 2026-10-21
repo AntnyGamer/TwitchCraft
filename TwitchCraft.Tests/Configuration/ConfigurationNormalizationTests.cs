@@ -228,7 +228,7 @@ public sealed class ConfigurationNormalizationTests
 
     [Theory]
     [InlineData("example.com")]
-    [InlineData("example.com:25575")]
+    [InlineData("a:1")]
     [InlineData("[2001:db8::1]:25575")]
     [InlineData("127.0.0.1")]
     public void IsValidRemoteHost_AcceptsHostsAndOptionalPorts(string value)
@@ -238,10 +238,11 @@ public sealed class ConfigurationNormalizationTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("host name")]
+    [InlineData("bad host")]
     [InlineData("host/path")]
     [InlineData("host\\path")]
-    [InlineData("example.com:70000")]
+    [InlineData("a:65536")]
+    [InlineData("@")]
     public void IsValidRemoteHost_RejectsUnsafeOrInvalidValues(string value)
     {
         Assert.False(ConfigurationStore.IsValidRemoteHost(value));
