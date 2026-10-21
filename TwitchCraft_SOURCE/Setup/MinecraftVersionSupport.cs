@@ -72,6 +72,12 @@ internal static class MinecraftVersionSupport
     public static bool TryGetVersion(string? versionID, out MinecraftVersionInfo version)
     {
         string normalized = versionID?.Trim() ?? string.Empty;
+        if (normalized.Length == 0)
+        {
+            version = null!;
+            return false;
+        }
+
         return VersionMap.TryGetValue(normalized, out version!);
     }
 
