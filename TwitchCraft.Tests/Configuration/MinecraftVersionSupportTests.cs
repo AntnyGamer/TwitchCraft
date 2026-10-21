@@ -29,6 +29,7 @@ public sealed class MinecraftVersionSupportTests
             () => Assert.Equal(requiredJDK, version.RequiredJDK),
             () => Assert.Equal(packFormatMajor, version.DataPackFormatMajor),
             () => Assert.Equal(packFormatMinor, version.DataPackFormatMinor));
+        Assert.NotEmpty(version.GetPackFormatJson());
     }
 
     [Theory]
@@ -59,7 +60,7 @@ public sealed class MinecraftVersionSupportTests
     [InlineData("1.20.2")]
     [InlineData("1.20.3")]
     [InlineData("1.20.4")]
-    public void GetVersion_RejectsVersionsBefore1205(string ID)
+    public void VersionLookups_RejectBefore1205(string ID)
     {
         Assert.False(MinecraftVersionSupport.TryGetVersion(ID, out _));
         Assert.Throws<System.NotSupportedException>(() => MinecraftVersionSupport.GetVersion(ID));
