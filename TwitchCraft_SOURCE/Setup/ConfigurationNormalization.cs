@@ -154,16 +154,9 @@ public sealed partial class ConfigurationStore
 
         if (config.Server.MemoryMinGB <= 0)
             config.Server.MemoryMinGB = DefaultMemoryGB;
-        else if (config.Server.MemoryMinGB > 256)
-            config.Server.MemoryMinGB = 256;
 
         if (config.Server.MemoryMaxGB <= 0)
             config.Server.MemoryMaxGB = DefaultMemoryGB;
-        else if (config.Server.MemoryMaxGB > 256)
-            config.Server.MemoryMaxGB = 256;
-
-        if (config.Server.MemoryMinGB > config.Server.MemoryMaxGB)
-            config.Server.MemoryMinGB = config.Server.MemoryMaxGB;
 
         if (!IsValidPort(config.Server.RCON.Port))
             config.Server.RCON.Port = DefaultRCONPort;
