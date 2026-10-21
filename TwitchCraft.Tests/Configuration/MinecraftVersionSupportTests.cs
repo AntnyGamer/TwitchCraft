@@ -60,7 +60,7 @@ public sealed class MinecraftVersionSupportTests
     [InlineData("1.20.2")]
     [InlineData("1.20.3")]
     [InlineData("1.20.4")]
-    public void VersionLookups_RejectBefore1205(string ID)
+    public void VersionLookups_RejectVersionsBefore1205(string ID)
     {
         Assert.False(MinecraftVersionSupport.TryGetVersion(ID, out _));
         Assert.Throws<System.NotSupportedException>(() => MinecraftVersionSupport.GetVersion(ID));
