@@ -163,18 +163,16 @@ public sealed partial class ConfigurationStore
             config.Settings.MinigameCooldown = DefaultMinigameCooldown;
 
         if (double.IsNaN(config.Settings.GlobalGameCommandCooldownSeconds) ||
-            config.Settings.GlobalGameCommandCooldownSeconds < 0.1 ||
-            config.Settings.GlobalGameCommandCooldownSeconds > 120.0)
+            config.Settings.GlobalGameCommandCooldownSeconds is < 0.1 or > 120.0)
         {
             config.Settings.GlobalGameCommandCooldownSeconds = DefaultGlobalGameCommandCooldownSeconds;
         }
 
-        if (config.Settings.FollowRewardAmount < 1 || config.Settings.FollowRewardAmount > 1_000_000)
+        if (config.Settings.FollowRewardAmount is < 1 or > 1_000_000)
             config.Settings.FollowRewardAmount = StartingProfile.DefaultFollowRewardAmount;
 
         if (!double.IsFinite(config.Settings.CommandCostMultiplier) ||
-            config.Settings.CommandCostMultiplier < 0.0 ||
-            config.Settings.CommandCostMultiplier > 5.0)
+            config.Settings.CommandCostMultiplier is < 0.0 or > 5.0)
         {
             config.Settings.CommandCostMultiplier = DefaultCommandCostMultiplier;
         }
@@ -186,7 +184,7 @@ public sealed partial class ConfigurationStore
         if (string.Equals(config.Settings.CommandPrefix, config.Settings.SecondaryCommandPrefix, StringComparison.Ordinal))
             config.Settings.SecondaryCommandPrefix = string.Empty;
 
-        if (config.Settings.PassiveTokensPerPayout < 1 || config.Settings.PassiveTokensPerPayout > 1_000_000)
+        if (config.Settings.PassiveTokensPerPayout is < 1 or > 1_000_000)
             config.Settings.PassiveTokensPerPayout = DefaultPassiveTokensPerPayout;
         NormalizePayout(config.Settings);
         if (config.Settings.MaximumTokenBalance < 0)
@@ -348,7 +346,7 @@ public sealed partial class ConfigurationStore
                     cooldown = null;
 
                 double? globalCooldown = value.GlobalCooldownSeconds;
-                if (globalCooldown.HasValue && (!double.IsFinite(globalCooldown.Value) || globalCooldown.Value < 0.0 || globalCooldown.Value > 86400.0))
+                if (globalCooldown.HasValue && (!double.IsFinite(globalCooldown.Value) || globalCooldown.Value is < 0.0 or > 86400.0))
                     globalCooldown = null;
 
                 if (!value.Enabled || cooldown.HasValue || globalCooldown.HasValue)
