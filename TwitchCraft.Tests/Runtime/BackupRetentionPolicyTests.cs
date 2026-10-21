@@ -11,8 +11,8 @@ public sealed class BackupRetentionPolicyTests
     public void PruneBackups_PreservesUnrelatedTimestampLikeDirectories()
     {
         using TemporaryDirectory root = new();
-        CreateCompleteBackup(root.Path, "20260830-231500");
-        string[] unrelatedNames = ["2026-08-30-231500", "20260830-231500-nothex", "20260230-120000"];
+        CreateCompleteBackup(root.Path, "20260830-231500-a1b2c3");
+        string[] unrelatedNames = ["20260830-231500", "2026-08-30-231500", "20260830-231500-nothex", "20260230-120000"];
         foreach (string name in unrelatedNames)
         {
             string unrelated = Path.Combine(root.Path, name);
@@ -31,10 +31,10 @@ public sealed class BackupRetentionPolicyTests
         using TemporaryDirectory root = new();
         string[] names =
         [
-            "20260826-120000",
-            "20260827-120000",
-            "20260828-120000",
-            "20260829-120000",
+            "20260826-120000-a1b2c3",
+            "20260827-120000-a1b2c3",
+            "20260828-120000-a1b2c3",
+            "20260829-120000-a1b2c3",
             "20260830-120000-a1b2c3"
         ];
         foreach (string name in names)
@@ -51,17 +51,17 @@ public sealed class BackupRetentionPolicyTests
     public void PruneBackups_RemovesOldAndIncompleteButKeepsUnrelated()
     {
         using TemporaryDirectory root = new();
-        CreateCompleteBackup(root.Path, "20260828-120000");
-        CreateCompleteBackup(root.Path, "20260830-120000");
-        Directory.CreateDirectory(Path.Combine(root.Path, "20260829-120000"));
+        CreateCompleteBackup(root.Path, "20260828-120000-a1b2c3");
+        CreateCompleteBackup(root.Path, "20260830-120000-a1b2c3");
+        Directory.CreateDirectory(Path.Combine(root.Path, "20260829-120000-a1b2c3"));
         Directory.CreateDirectory(Path.Combine(root.Path, "notes"));
-        string configOnly = Path.Combine(root.Path, "20260831-120000");
+        string configOnly = Path.Combine(root.Path, "20260831-120000-a1b2c3");
         Directory.CreateDirectory(configOnly);
         File.WriteAllText(Path.Combine(configOnly, "config.json"), "{}");
-        string tokensOnly = Path.Combine(root.Path, "20260901-120000");
+        string tokensOnly = Path.Combine(root.Path, "20260901-120000-a1b2c3");
         Directory.CreateDirectory(tokensOnly);
         File.WriteAllBytes(Path.Combine(tokensOnly, "viewer_tokens.db"), [2]);
-        string missingStatistics = Path.Combine(root.Path, "20260902-120000");
+        string missingStatistics = Path.Combine(root.Path, "20260902-120000-a1b2c3");
         Directory.CreateDirectory(missingStatistics);
         File.WriteAllText(Path.Combine(missingStatistics, "config.json"), "{}");
         File.WriteAllBytes(Path.Combine(missingStatistics, "viewer_tokens.db"), [2]);
@@ -69,15 +69,15 @@ public sealed class BackupRetentionPolicyTests
         DataMaintenance.PruneBackups(root.Path, retentionCount: 1);
 
         Assert.Multiple(
-            () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000"))),
-            () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-120000"))),
+            () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260828-120000-a1b2c3"))),
+            () => Assert.False(Directory.Exists(Path.Combine(root.Path, "20260829-120000-a1b2c3"))),
             () => Assert.False(Directory.Exists(configOnly)),
             () => Assert.False(Directory.Exists(tokensOnly)),
             () => Assert.False(Directory.Exists(missingStatistics)),
-            () => Assert.True(Directory.Exists(Path.Combine(root.Path, "20260830-120000"))),
-            () => Assert.Equal("{}", File.ReadAllText(Path.Combine(root.Path, "20260830-120000", "config.json"))),
-            () => Assert.Equal([1], File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "viewer_tokens.db"))),
-            () => Assert.Equal([1], File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000", "statistics.db"))),
+            () => Assert.True(Directory.Exists(Path.Combine(root.Path, "20260830-120000-a1b2c3"))),
+            () => Assert.Equal("{}", File.ReadAllText(Path.Combine(root.Path, "20260830-120000-a1b2c3", "config.json"))),
+            () => Assert.Equal([1], File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000-a1b2c3", "viewer_tokens.db"))),
+            () => Assert.Equal([1], File.ReadAllBytes(Path.Combine(root.Path, "20260830-120000-a1b2c3", "statistics.db"))),
             () => Assert.True(Directory.Exists(Path.Combine(root.Path, "notes"))));
     }
 
