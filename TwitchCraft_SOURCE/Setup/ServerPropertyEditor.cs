@@ -47,7 +47,7 @@ public sealed class ServerPropertyEditor
     public static string GetLevelName(TwitchCraftConfig config)
     {
         string propsPath = GetPropertiesPath(config);
-        if (string.IsNullOrWhiteSpace(propsPath) || !File.Exists(propsPath))
+        if (!File.Exists(propsPath))
             return DefaultLevelName;
 
         string? levelName = null;
@@ -61,7 +61,7 @@ public sealed class ServerPropertyEditor
                 levelName = UnescapeValue(line[(equals + 1)..]);
         }
 
-        return levelName == null ? DefaultLevelName : NormalizeLevelName(levelName);
+        return NormalizeLevelName(levelName);
     }
 
     public static string GetWorldDirectory(TwitchCraftConfig config)
