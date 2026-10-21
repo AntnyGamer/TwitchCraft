@@ -29,17 +29,17 @@ public sealed partial class MainHandler
         gameType = -1;
 
         string message = AfterLastColon(line, line.Length);
-        if (message.Length == 0 || !message.Contains("game mode", StringComparison.OrdinalIgnoreCase))
+        const string setPrefix = "Set ";
+        if (!message.StartsWith(setPrefix, StringComparison.OrdinalIgnoreCase))
             return false;
 
-        const string setPrefix = "Set ";
         const string possessiveMarker = "'s game mode to ";
         int possessiveIndex = message.IndexOf(possessiveMarker, StringComparison.OrdinalIgnoreCase);
-        if (message.StartsWith(setPrefix, StringComparison.OrdinalIgnoreCase) && possessiveIndex > setPrefix.Length)
+        if (possessiveIndex > setPrefix.Length)
         {
-            string candidate = message[setPrefix.Length..possessiveIndex].Trim();
-            ReadOnlySpan<char> modeText = message.AsSpan(possessiveIndex + possessiveMarker.Length).Trim();
-            if (MinecraftNameHelper.IsValidPlayerName(candidate) && TryParseGamemodeName(modeText, out gameType))
+            if (MinecraftNameHelper.TryNormalizePlayerName(
+                    message.AsSpan(setPrefix.Length, possessiveIndex - setPrefix.Length), out string candidate) &&
+                TryParseGamemodeName(message.AsSpan(possessiveIndex + possessiveMarker.Length), out gameType))
             {
                 playerName = candidate;
                 return true;
@@ -52,9 +52,9 @@ public sealed partial class MainHandler
             int toIndex = message.IndexOf(" to ", ofPrefix.Length, StringComparison.OrdinalIgnoreCase);
             if (toIndex > ofPrefix.Length)
             {
-                string candidate = message[ofPrefix.Length..toIndex].Trim();
-                ReadOnlySpan<char> modeText = message.AsSpan(toIndex + 4).Trim();
-                if (MinecraftNameHelper.IsValidPlayerName(candidate) && TryParseGamemodeName(modeText, out gameType))
+                if (MinecraftNameHelper.TryNormalizePlayerName(
+                        message.AsSpan(ofPrefix.Length, toIndex - ofPrefix.Length), out string candidate) &&
+                    TryParseGamemodeName(message.AsSpan(toIndex + 4), out gameType))
                 {
                     playerName = candidate;
                     return true;

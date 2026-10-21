@@ -91,7 +91,7 @@ On the Start screen, make sure:
    * `"Port"`
    * `"RCON"`
 3. Make sure minimum RAM is not higher than maximum RAM
-4. Make sure RAM is between 1 GB and 256 GB
+4. Make sure RAM is between 1 GB and 128 GB
 5. Make sure the Minecraft server port is between 1 and 65535
 6. Make sure the Minecraft server port and RCON port are different
 7. Close any other program already using the same server port

@@ -151,15 +151,15 @@ public sealed partial class MainHandler
                     List<string> viewers = [];
                     string? cursor = null;
                     HashSet<string>? cursors = null;
+                    string baseUrl = "https://api.twitch.tv/helix/chat/chatters?broadcaster_id=" + broadcasterID
+                        + "&moderator_id=" + moderatorID
+                        + "&first=1000";
 
                     do
                     {
-                        string url = "https://api.twitch.tv/helix/chat/chatters?broadcaster_id=" + broadcasterID
-                            + "&moderator_id=" + moderatorID
-                            + "&first=1000";
-
-                        if (cursor is { Length: > 0 })
-                            url += "&after=" + Uri.EscapeDataString(cursor);
+                        string url = cursor is { Length: > 0 }
+                            ? baseUrl + "&after=" + Uri.EscapeDataString(cursor)
+                            : baseUrl;
 
                         using HttpRequestMessage request = new(HttpMethod.Get, url);
                         request.Headers.TryAddWithoutValidation("Authorization", bearerHeader);

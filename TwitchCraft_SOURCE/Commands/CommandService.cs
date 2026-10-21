@@ -596,7 +596,7 @@ public sealed class CommandService
         }
 
         string? exactPlayer = FindOnlinePlayer(online, player);
-        if (string.IsNullOrWhiteSpace(exactPlayer))
+        if (exactPlayer is null)
         {
             await replyAsync(requester + ", player '" + player + "' is not online. You were not charged.", cancellationToken).ConfigureAwait(false);
             return null;

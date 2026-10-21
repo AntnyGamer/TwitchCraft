@@ -444,7 +444,7 @@ a:hover{color:var(--accent)}
 
   function parseCommands(markdown) {
     // Accept backticked or plain Markdown command names.
-    const commandRow = /^ {0,3}\|\s*`?!/i;
+    const commandRow = /^ {0,3}\|\s*`?!/;
     let section = null;
     let codeFence = '';
     const seen = new Set();
@@ -462,11 +462,11 @@ a:hover{color:var(--accent)}
       if (codeFence) continue;
       if (/^ {0,3}#{2,3} /.test(line)) {
         const title = line.replace(/^ {0,3}#{2,3} /, '').trim().toLowerCase();
-        section = title === 'game commands' || title === 'gameplay commands'
+        section = title === 'gameplay commands'
           ? 'gameplay'
           : title === 'minigame commands'
             ? 'minigame'
-            : title === 'utility commands' || title === 'utility and economy'
+            : title === 'utility and economy'
               ? 'utility'
               : title === 'streamer commands'
                 ? 'streamer'
