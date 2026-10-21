@@ -216,8 +216,8 @@ internal sealed class DataMaintenance(
     {
         timestampUtc = DateTime.MinValue;
         string name = directory.Name;
-        if ((name.Length != 15 &&
-             (name.Length != 22 || name[15] != '-' || !int.TryParse(name.AsSpan(16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _))) ||
+        if (name.Length != 22 || name[15] != '-' ||
+            !int.TryParse(name.AsSpan(16), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _) ||
             !DateTime.TryParseExact(
                 name.AsSpan(0, 15),
                 "yyyyMMdd-HHmmss",
