@@ -484,7 +484,7 @@ public sealed class CommandService
     private static string? FindOnlinePlayer(List<string> online, string playerName)
     {
         int index = online.BinarySearch(playerName, StringComparer.OrdinalIgnoreCase);
-        return index >= 0 ? online[index] : null;
+        return index >= 0 ? online[index] : null; // Keep null
     }
 
     private static ResolvedTarget MakePlayerTarget(string playerName) => new()
@@ -528,7 +528,7 @@ public sealed class CommandService
             if (defaultPlayer.Length > 0)
             {
                 string? exactDefault = FindOnlinePlayer(online, defaultPlayer);
-                if (!string.IsNullOrWhiteSpace(exactDefault))
+                if (exactDefault is not null)
                 {
                     return MakePlayerTarget(exactDefault);
                 }
@@ -585,7 +585,7 @@ public sealed class CommandService
             if (defaultPlayer.Length > 0 && int.TryParse(player, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
             {
                 string? exactDefault = FindOnlinePlayer(online, defaultPlayer);
-                if (!string.IsNullOrWhiteSpace(exactDefault))
+                if (exactDefault is not null)
                 {
                     return MakePlayerTarget(exactDefault);
                 }

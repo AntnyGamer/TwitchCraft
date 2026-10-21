@@ -13,7 +13,7 @@ public sealed class ConfigurationNormalizationTests
     {
         const string json = """
             {
-              "Server": { "Java": null, "RCON": null, "Port": 25570 },
+              "Server": { "Java": null, "RCON": null, "Port": 25570, "MemoryMinGB": 0, "MemoryMaxGB": 0 },
               "Twitch": null,
               "Identity": null,
               "Settings": {
@@ -33,6 +33,8 @@ public sealed class ConfigurationNormalizationTests
 
         Assert.Multiple(
             () => Assert.Equal(25570, config.Server.Port),
+            () => Assert.Equal(8, config.Server.MemoryMinGB),
+            () => Assert.Equal(8, config.Server.MemoryMaxGB),
             () => Assert.Equal(string.Empty, config.Server.Java.ExecutablePath),
             () => Assert.Equal(string.Empty, config.Server.Java.HomeDirectory),
             () => Assert.Equal(25575, config.Server.RCON.Port),
@@ -228,7 +230,7 @@ public sealed class ConfigurationNormalizationTests
 
     [Theory]
     [InlineData("example.com")]
-    [InlineData("example.com:25575")]
+    [InlineData("host:1")]
     [InlineData("[2001:db8::1]:25575")]
     [InlineData("127.0.0.1")]
     public void IsValidRemoteHost_AcceptsHostsAndOptionalPorts(string value)
@@ -238,10 +240,10 @@ public sealed class ConfigurationNormalizationTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("host name")]
+    [InlineData("bad@host")]
     [InlineData("host/path")]
     [InlineData("host\\path")]
-    [InlineData("example.com:70000")]
+    [InlineData("host:65536")]
     public void IsValidRemoteHost_RejectsUnsafeOrInvalidValues(string value)
     {
         Assert.False(ConfigurationStore.IsValidRemoteHost(value));

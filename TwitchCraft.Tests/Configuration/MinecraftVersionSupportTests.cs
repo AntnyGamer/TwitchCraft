@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using TwitchCraft_V1;
 using TwitchCraft_V1.Setup;
 using Xunit;
@@ -29,6 +30,7 @@ public sealed class MinecraftVersionSupportTests
             () => Assert.Equal(requiredJDK, version.RequiredJDK),
             () => Assert.Equal(packFormatMajor, version.DataPackFormatMajor),
             () => Assert.Equal(packFormatMinor, version.DataPackFormatMinor));
+        Assert.Contains(packFormatMajor.ToString(CultureInfo.InvariantCulture), version.GetPackFormatJson());
     }
 
     [Theory]
@@ -50,6 +52,7 @@ public sealed class MinecraftVersionSupportTests
             () => Assert.Equal(inlineTextComponents, version.UsesInlineTextComponents),
             () => Assert.Equal(namespacedGameRules, version.UsesNamespacedGameRules),
             () => Assert.Equal(supportsInfested, MinecraftVersionSupport.SupportsStatusEffect(ID, "infested")));
+        Assert.False(MinecraftVersionSupport.SupportsStatusEffect(ID, ""));
     }
 
     [Theory]
@@ -59,9 +62,10 @@ public sealed class MinecraftVersionSupportTests
     [InlineData("1.20.2")]
     [InlineData("1.20.3")]
     [InlineData("1.20.4")]
-    public void TryGetVersion_RejectsVersionsBefore1205(string ID)
+    public void VersionLookups_RejectVersionsBefore1205(string ID)
     {
         Assert.False(MinecraftVersionSupport.TryGetVersion(ID, out _));
+        Assert.Throws<System.NotSupportedException>(() => MinecraftVersionSupport.GetVersion(ID));
     }
 
     [Fact]

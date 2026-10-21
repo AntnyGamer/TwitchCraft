@@ -20,16 +20,12 @@ public sealed partial class ConfigurationStore
         return text.Length > 0 && IPAddress.TryParse(text, out _);
     }
 
-    public static bool IsValidRemoteHost(string? value)
-    {
-        string host = CleanText(value);
-        return TryNormalizeRemoteHost(host, out _);
-    }
+    public static bool IsValidRemoteHost(string? value) => TryNormalizeRemoteHost(CleanText(value), out _);
 
     private static bool TryNormalizeRemoteHost(string host, out string normalizedHost)
     {
         normalizedHost = string.Empty;
-        if (host.Length == 0 || host.Length > 300)
+        if (host.Length is 0 or > 300)
             return false;
 
         for (int i = 0; i < host.Length; i++)
@@ -45,7 +41,7 @@ public sealed partial class ConfigurationStore
         if (hostOnly.EndsWith('.'))
             hostOnly = hostOnly[..^1];
 
-        if (hostOnly.Length == 0 || hostOnly.Length > 253)
+        if (hostOnly.Length is 0 or > 253)
             return false;
 
         if (IPAddress.TryParse(hostOnly, out _))
@@ -63,7 +59,7 @@ public sealed partial class ConfigurationStore
             char c = hostOnly[i];
             if (c == '.')
             {
-                if (labelLength == 0 || labelLength > 63)
+                if (labelLength is 0 or > 63)
                     return false;
 
                 labelLength = 0;
@@ -76,7 +72,7 @@ public sealed partial class ConfigurationStore
             labelLength++;
         }
 
-        if (labelLength == 0 || labelLength > 63)
+        if (labelLength is 0 or > 63)
             return false;
 
         normalizedHost = hostOnly;
@@ -163,22 +159,20 @@ public sealed partial class ConfigurationStore
 
         NormalizeEndpoint(config.Server);
 
-        if (config.Settings.MinigameCooldown < 2 || config.Settings.MinigameCooldown > 30)
+        if (config.Settings.MinigameCooldown is < 2 or > 30)
             config.Settings.MinigameCooldown = DefaultMinigameCooldown;
 
         if (double.IsNaN(config.Settings.GlobalGameCommandCooldownSeconds) ||
-            config.Settings.GlobalGameCommandCooldownSeconds < 0.1 ||
-            config.Settings.GlobalGameCommandCooldownSeconds > 120.0)
+            config.Settings.GlobalGameCommandCooldownSeconds is < 0.1 or > 120.0)
         {
             config.Settings.GlobalGameCommandCooldownSeconds = DefaultGlobalGameCommandCooldownSeconds;
         }
 
-        if (config.Settings.FollowRewardAmount < 1 || config.Settings.FollowRewardAmount > 1_000_000)
+        if (config.Settings.FollowRewardAmount is < 1 or > 1_000_000)
             config.Settings.FollowRewardAmount = StartingProfile.DefaultFollowRewardAmount;
 
         if (!double.IsFinite(config.Settings.CommandCostMultiplier) ||
-            config.Settings.CommandCostMultiplier < 0.0 ||
-            config.Settings.CommandCostMultiplier > 5.0)
+            config.Settings.CommandCostMultiplier is < 0.0 or > 5.0)
         {
             config.Settings.CommandCostMultiplier = DefaultCommandCostMultiplier;
         }
@@ -190,14 +184,14 @@ public sealed partial class ConfigurationStore
         if (string.Equals(config.Settings.CommandPrefix, config.Settings.SecondaryCommandPrefix, StringComparison.Ordinal))
             config.Settings.SecondaryCommandPrefix = string.Empty;
 
-        if (config.Settings.PassiveTokensPerPayout < 1 || config.Settings.PassiveTokensPerPayout > 1_000_000)
+        if (config.Settings.PassiveTokensPerPayout is < 1 or > 1_000_000)
             config.Settings.PassiveTokensPerPayout = DefaultPassiveTokensPerPayout;
         NormalizePayout(config.Settings);
         if (config.Settings.MaximumTokenBalance < 0)
             config.Settings.MaximumTokenBalance = 0;
-        if (config.Settings.ChannelCommandLimitPerMinute < 0 || config.Settings.ChannelCommandLimitPerMinute > 1000)
+        if (config.Settings.ChannelCommandLimitPerMinute is < 0 or > 1000)
             config.Settings.ChannelCommandLimitPerMinute = 0;
-        if (config.Settings.ViewerCommandLimitPerMinute < 0 || config.Settings.ViewerCommandLimitPerMinute > 1000)
+        if (config.Settings.ViewerCommandLimitPerMinute is < 0 or > 1000)
             config.Settings.ViewerCommandLimitPerMinute = 0;
         config.Settings.PassiveActivityWindowMinutes = NormalizeChoice(
             config.Settings.PassiveActivityWindowMinutes, 10, 1, 2, 5, 10, 15, 30, 60, 120);
@@ -352,7 +346,7 @@ public sealed partial class ConfigurationStore
                     cooldown = null;
 
                 double? globalCooldown = value.GlobalCooldownSeconds;
-                if (globalCooldown.HasValue && (!double.IsFinite(globalCooldown.Value) || globalCooldown.Value < 0.0 || globalCooldown.Value > 86400.0))
+                if (globalCooldown.HasValue && (!double.IsFinite(globalCooldown.Value) || globalCooldown.Value is < 0.0 or > 86400.0))
                     globalCooldown = null;
 
                 if (!value.Enabled || cooldown.HasValue || globalCooldown.HasValue)

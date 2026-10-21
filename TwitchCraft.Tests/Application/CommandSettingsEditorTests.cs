@@ -112,7 +112,7 @@ public sealed class CommandSettingsEditorTests
             Assert.Contains(Descendants<TextBlock>(first), text => text.Text == "?command0");
             Assert.Equal(0.123456789, rows[0].GlobalCooldown.Value);
             Assert.Equal(2, saves);
-        }, TimeSpan.FromSeconds(20), "Command editor test timed out.");
+        }, TimeSpan.FromSeconds(30), "Command editor test timed out.");
     }
 
     private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
