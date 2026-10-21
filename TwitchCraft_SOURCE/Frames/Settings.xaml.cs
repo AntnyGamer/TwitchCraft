@@ -29,7 +29,7 @@ public partial class Settings : UserControl
         Dangerous
     }
 
-    private const int MaxRAMGB = 256;
+    private const int MaxRAMGB = 128;
     private const double DefaultGlobalCooldownSeconds = 10.0;
     private static readonly (double Seconds, string Label)[] GlobalCooldownOptions =
     [
