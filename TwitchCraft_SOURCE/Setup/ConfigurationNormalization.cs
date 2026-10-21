@@ -25,7 +25,7 @@ public sealed partial class ConfigurationStore
     private static bool TryNormalizeRemoteHost(string host, out string normalizedHost)
     {
         normalizedHost = string.Empty;
-        if (host.Length == 0 || host.Length > 300)
+        if (host.Length is 0 or > 300)
             return false;
 
         for (int i = 0; i < host.Length; i++)
@@ -41,7 +41,7 @@ public sealed partial class ConfigurationStore
         if (hostOnly.EndsWith('.'))
             hostOnly = hostOnly[..^1];
 
-        if (hostOnly.Length == 0 || hostOnly.Length > 253)
+        if (hostOnly.Length is 0 or > 253)
             return false;
 
         if (IPAddress.TryParse(hostOnly, out _))
@@ -59,7 +59,7 @@ public sealed partial class ConfigurationStore
             char c = hostOnly[i];
             if (c == '.')
             {
-                if (labelLength == 0 || labelLength > 63)
+                if (labelLength is 0 or > 63)
                     return false;
 
                 labelLength = 0;
@@ -72,7 +72,7 @@ public sealed partial class ConfigurationStore
             labelLength++;
         }
 
-        if (labelLength == 0 || labelLength > 63)
+        if (labelLength is 0 or > 63)
             return false;
 
         normalizedHost = hostOnly;
@@ -159,7 +159,7 @@ public sealed partial class ConfigurationStore
 
         NormalizeEndpoint(config.Server);
 
-        if (config.Settings.MinigameCooldown < 2 || config.Settings.MinigameCooldown > 30)
+        if (config.Settings.MinigameCooldown is < 2 or > 30)
             config.Settings.MinigameCooldown = DefaultMinigameCooldown;
 
         if (double.IsNaN(config.Settings.GlobalGameCommandCooldownSeconds) ||
