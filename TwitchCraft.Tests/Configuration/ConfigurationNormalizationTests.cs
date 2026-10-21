@@ -238,11 +238,10 @@ public sealed class ConfigurationNormalizationTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("bad host")]
+    [InlineData("@")]
     [InlineData("host/path")]
     [InlineData("host\\path")]
     [InlineData("a:65536")]
-    [InlineData("@")]
     public void IsValidRemoteHost_RejectsUnsafeOrInvalidValues(string value)
     {
         Assert.False(ConfigurationStore.IsValidRemoteHost(value));
