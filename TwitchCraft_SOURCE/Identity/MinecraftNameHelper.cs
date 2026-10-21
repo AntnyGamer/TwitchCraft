@@ -40,9 +40,7 @@ internal static class MinecraftNameHelper
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
-            bool okay = char.IsAsciiLetterOrDigit(c) || c == '_';
-
-            if (!okay)
+            if (!char.IsAsciiLetterOrDigit(c) && c != '_')
                 return false;
         }
 
