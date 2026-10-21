@@ -444,7 +444,7 @@ a:hover{color:var(--accent)}
 
   function parseCommands(markdown) {
     // Accept backticked or plain Markdown command names.
-    const commandRow = /^ {0,3}\|\s*`?!/i;
+    const commandRow = /^ {0,3}\|\s*`?!/;
     let section = null;
     let codeFence = '';
     const seen = new Set();
