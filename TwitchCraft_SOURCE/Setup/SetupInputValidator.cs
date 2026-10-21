@@ -98,8 +98,8 @@ internal static class SetupInputValidator
             if (!File.Exists(jarPath))
                 throw new InvalidOperationException("Minecraft server jar path does not exist: " + jarPath);
 
-            if (config.Server.MemoryMinGB <= 0 || config.Server.MemoryMaxGB <= 0 || config.Server.MemoryMinGB > config.Server.MemoryMaxGB || config.Server.MemoryMaxGB > 256)
-                throw new InvalidOperationException("Minecraft server RAM must be between 1 and 256 GB, and minimum RAM less than or equal to maximum RAM.");
+            if (config.Server.MemoryMinGB <= 0 || config.Server.MemoryMaxGB <= 0 || config.Server.MemoryMinGB > config.Server.MemoryMaxGB || config.Server.MemoryMaxGB > 128)
+                throw new InvalidOperationException("Minecraft server RAM must be between 1 and 128 GB, and minimum RAM less than or equal to maximum RAM.");
 
             if (!ConfigurationStore.IsValidBindIP(config.Server.BindIP))
                 throw new InvalidOperationException("Minecraft server address is invalid.");
