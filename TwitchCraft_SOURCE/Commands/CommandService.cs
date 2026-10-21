@@ -528,7 +528,7 @@ public sealed class CommandService
             if (defaultPlayer.Length > 0)
             {
                 string? exactDefault = FindOnlinePlayer(online, defaultPlayer);
-                if (!string.IsNullOrWhiteSpace(exactDefault))
+                if (exactDefault is not null)
                 {
                     return MakePlayerTarget(exactDefault);
                 }
@@ -585,7 +585,7 @@ public sealed class CommandService
             if (defaultPlayer.Length > 0 && int.TryParse(player, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
             {
                 string? exactDefault = FindOnlinePlayer(online, defaultPlayer);
-                if (!string.IsNullOrWhiteSpace(exactDefault))
+                if (exactDefault is not null)
                 {
                     return MakePlayerTarget(exactDefault);
                 }
