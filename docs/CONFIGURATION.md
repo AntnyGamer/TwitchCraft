@@ -70,9 +70,9 @@ The Minecraft Server category includes a **Whitelist** toggle. It keeps both `wh
 
 Properties inside each category are also written in the same top-to-bottom order as their controls in the UI.
 
-Transient start-mode choices such as local multiplayer, remote-control mode, and online-mode selection are reset for each new launch and are not written as permanent Settings entries. Java memory and the RCON password remain under `Server` even though the UI exposes them under **Dangerous**.
+Local multiplayer, Remote Control Mode, and Online Mode are startup choices that reset each time TwitchCraft opens. They are not saved as permanent Settings entries. Java memory and the RCON password remain under `Server` even though the UI exposes them under **Dangerous**.
 
-Most economy and command-rate dropdowns retain convenient presets while allowing custom numeric entry; the activity eligibility window is preset-only. Passive payout timing uses a minimum and maximum of 10–900 seconds; TwitchCraft selects a new inclusive random delay for every payout. Equal minimum and maximum values create a fixed interval. Zero means unlimited for maximum balance and command-rate limits.
+Most economy and command-rate dropdowns retain convenient presets while allowing custom numeric entry; the **Activity eligibility window** setting only offers preset options. Passive payout timing uses a minimum and maximum of 10–900 seconds; TwitchCraft selects a new inclusive random delay for every payout. Equal minimum and maximum values create a fixed interval. Zero means unlimited for maximum balance and command-rate limits.
 
 ## Server properties
 
