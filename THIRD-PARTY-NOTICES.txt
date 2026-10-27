@@ -12,7 +12,7 @@ and notices below.
 MIT-licensed portions of Microsoft .NET 10 Runtime / WPF
 Copyright (c) .NET Foundation and Contributors
 
-Microsoft.Data.Sqlite 10.0.13
+Microsoft.Data.Sqlite 10.0.14
 Copyright (c) .NET Foundation and Contributors
 
 Newtonsoft.Json 13.0.4
@@ -285,7 +285,7 @@ Apache v2.
    END OF TERMS AND CONDITIONS
 
 ============================================================
-                SQLITE 3.54.0 (NATIVE ENGINE)
+                SQLITE 3.54.1 (NATIVE ENGINE)
 ============================================================
 
 SQLite is public-domain software.
