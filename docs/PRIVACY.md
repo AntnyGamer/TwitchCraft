@@ -56,11 +56,11 @@ This directory can include:
 
 Authorization tokens, RCON passwords, databases, backups, and configuration files should be treated as private.
 
-## Retention
+## How long data is kept
 
 Local data remains on the computer until TwitchCraft replaces it through normal operation or the user deletes it.
 
-Viewer token balances, follow-reward records, and statistics are intentionally persistent so they survive restarts. Automatic backup retention is configurable and defaults to three complete backup sets. Diagnostic logs rotate automatically instead of growing without limit.
+Viewer token balances, follow-reward records, and statistics are saved across restarts. You can choose how many complete automatic backup sets to keep (three by default). Diagnostic logs rotate automatically instead of growing without limit.
 
 Changing or reauthorizing the Twitch bot account does not automatically delete viewer token balances or statistics.
 
