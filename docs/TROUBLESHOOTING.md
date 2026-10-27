@@ -115,7 +115,7 @@ On the Start screen, make sure:
 3. If Minecraft players stop updating, restart the Minecraft server and TwitchCraft
 4. Make sure the Minecraft server port and connection settings in TwitchCraft are correct
 5. Do not change Minecraft connection or RCON settings while the server is already running
-6. Wait a few seconds after a player joins or leaves because TwitchCraft refreshes player snapshots in the background
+6. Wait a few seconds after a player joins or leaves because TwitchCraft updates the Minecraft player list in the background
 
 ## MULTIPLAYER NOT WORKING FOR OTHERS
 
@@ -211,4 +211,4 @@ On the Start screen, make sure:
 7. Open **Settings --> Dangerous** and lower the minimum and maximum RAM if Minecraft is using more memory than your PC can comfortably handle
 8. If you are still experiencing lag or low FPS, consider using a more powerful PC or reducing background usage
 
-If this guide does not resolve the issue, contact the TwitchCraft creator with the copied diagnostics, the smallest relevant sanitized excerpt from `TwitchCraft.log`, and a description of the problem.
+If this guide does not resolve the issue, contact the TwitchCraft creator with the copied diagnostics, the smallest relevant excerpt from `TwitchCraft.log` with sensitive information removed, and a description of the problem.

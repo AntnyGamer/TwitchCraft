@@ -23,7 +23,7 @@ Pop-Location
 
 The root solution is the canonical validation entry point. Its Release build compiles TwitchCraft and `TwitchCraft.Tests`; the build and all tests must pass before review.
 
-CI also collects a Cobertura coverage report and publishes it as the `code-coverage` workflow artifact. To reproduce that collection locally:
+CI also collects a Cobertura coverage report and publishes it as the `code-coverage` workflow artifact. To generate the same coverage report locally:
 
 ```powershell
 Push-Location TwitchCraft.Tests
