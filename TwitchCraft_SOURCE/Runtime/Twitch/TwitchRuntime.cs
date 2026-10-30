@@ -309,7 +309,7 @@ public sealed partial class MainHandler
                     if (!hasChatMessage || IsIgnoredUser(sender, botName, separateBotAccount))
                         continue;
 
-                    RecordChatActivity(sender, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                    RecordChatActivity(sender);
 
                     if (message.Bits > 0)
                     {
