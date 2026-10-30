@@ -131,6 +131,45 @@ public sealed class MinigameBetDurabilityTests
     }
 
     [Fact]
+    public void AllLosingBets_FailedLedgerClearCanRetryWithoutRefundingOnRestart()
+    {
+        using TemporaryDirectory directory = new();
+        string path = Path.Combine(directory.Path, "viewer_tokens.db");
+        TokenService tokens = new(path, static () => 0);
+        try
+        {
+            tokens.Load(0);
+            tokens.Award(["alice", "bob"], 100);
+            Assert.True(tokens.TrySpendForMinigameBet("alice", 25));
+            Assert.True(tokens.TrySpendForMinigameBet("bob", 30));
+
+            using SqliteConnection connection = new($"Data Source={path}");
+            connection.Open();
+            using SqliteCommand sql = connection.CreateCommand();
+            sql.CommandText = "CREATE TRIGGER fail_clear_losers BEFORE DELETE ON PendingMinigameBets BEGIN SELECT RAISE(ABORT, 'test'); END;";
+            sql.ExecuteNonQuery();
+            Assert.False(tokens.TryCompleteMinigameBets([]));
+            Assert.Equal(75, tokens.GetBalance("alice"));
+            Assert.Equal(70, tokens.GetBalance("bob"));
+
+            sql.CommandText = "DROP TRIGGER fail_clear_losers;";
+            sql.ExecuteNonQuery();
+            Assert.True(tokens.TryCompleteMinigameBets([]));
+            Assert.False(tokens.TryCompleteMinigameBets([]));
+        }
+        finally { tokens.Close(); }
+
+        TokenService reopened = new(path, static () => 0);
+        try
+        {
+            reopened.Load(0);
+            Assert.Equal(75, reopened.GetBalance("alice"));
+            Assert.Equal(70, reopened.GetBalance("bob"));
+        }
+        finally { reopened.Close(); }
+    }
+
+    [Fact]
     public void ConcurrentSession_CannotRecoverAnActiveSessionsBets()
     {
         using TemporaryDirectory directory = new();

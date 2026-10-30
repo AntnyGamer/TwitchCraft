@@ -152,8 +152,14 @@ internal static class FakeJavaServer
 
     internal static async Task StopRuntimeAndProcessAsync(MainHandler runtime, string jarPath)
     {
-        await runtime.StopProcessSafeAsync(waitBriefly: false);
-        runtime.Tokens.Close();
+        try
+        {
+            await runtime.StopProcessSafeAsync(waitBriefly: false);
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
 
         string processIDPath = jarPath + ".pid";
         if (!File.Exists(processIDPath))

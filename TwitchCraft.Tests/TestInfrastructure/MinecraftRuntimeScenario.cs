@@ -111,18 +111,21 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         if (!await Runtime.SendServerCommandAsync(barrier, Token))
             throw new InvalidOperationException("Could not send the test command barrier.");
 
+        List<string> lines = [];
+        int barrierIndex = -1;
         await FakeJavaServer.WaitUntilAsync(
             () =>
             {
-                List<string> lines = FakeJavaServer.ReadAllLinesShared(JarPath + ".stdin");
-                return lines.Count > cursor && lines.FindIndex(cursor, line => string.Equals(line, barrier, StringComparison.Ordinal)) >= 0;
+                lines = FakeJavaServer.ReadAllLinesShared(JarPath + ".stdin");
+                if (lines.Count <= cursor)
+                    return false;
+                barrierIndex = lines.FindIndex(cursor, line => string.Equals(line, barrier, StringComparison.Ordinal));
+                return barrierIndex >= 0;
             },
             "Fake Minecraft process did not receive the test command barrier.",
             Token);
 
-        List<string> all = FakeJavaServer.ReadAllLinesShared(JarPath + ".stdin");
-        int barrierIndex = all.FindIndex(cursor, line => string.Equals(line, barrier, StringComparison.Ordinal));
-        return barrierIndex <= cursor ? [] : all.GetRange(cursor, barrierIndex - cursor);
+        return barrierIndex <= cursor ? [] : lines.GetRange(cursor, barrierIndex - cursor);
     }
 
     public async ValueTask DisposeAsync()
