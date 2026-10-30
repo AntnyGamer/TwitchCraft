@@ -49,7 +49,7 @@ internal sealed partial class TokenStore
                 stake.ExecuteNonQuery();
                 transaction.Commit();
 
-                SetCacheNoLock(name, balance - amount);
+                SetCacheNoLock(name, remaining);
                 return true;
             }
             catch (Exception ex)
