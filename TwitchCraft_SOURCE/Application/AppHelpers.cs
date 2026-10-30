@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Win32;
 
 namespace TwitchCraft_V1;
@@ -38,6 +39,13 @@ internal static class AppHelpers
         {
             parent.Shell.Navigate(parent.Shell.PreviousPage);
         }
+    }
+
+    public static void NavigateBackOnEscape(DependencyObject source, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape) return;
+        e.Handled = true;
+        NavigateBack(source);
     }
 
     public static void OpenTarget(string target, string? workingDirectory = null)
