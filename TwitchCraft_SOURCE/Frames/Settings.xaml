@@ -106,22 +106,11 @@
         <ListBoxItem x:Key="CommandCustomizationFooter" x:Shared="False" Style="{StaticResource CommandCustomizationListItem}" Height="18" IsEnabled="False" />
     </UserControl.Resources>
     <Grid ClipToBounds="True">
-        <Rectangle IsHitTestVisible="False">
-            <Rectangle.Fill>
-                <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
-                    <GradientStop Color="#00000000" Offset="0" />
-                    <GradientStop Color="#DD000000" Offset="1" />
-                </LinearGradientBrush>
-            </Rectangle.Fill>
-        </Rectangle>
+        <Rectangle IsHitTestVisible="False" Fill="{StaticResource PageFadeBrush}" />
         <Viewbox Stretch="Uniform" StretchDirection="Both">
             <Grid Width="800" Height="450">
                 <Button Content="Back" KeyboardNavigation.TabIndex="0" Width="100" Height="30" Click="Back_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <TextBlock Text="SETTINGS" FontFamily="Cascadia Mono" FontSize="36" FontWeight="Bold" Margin="0,22,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <TextBlock.Effect>
-                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" />
-                    </TextBlock.Effect>
-                </TextBlock>
+                <TextBlock Text="SETTINGS" FontFamily="Cascadia Mono" FontSize="36" FontWeight="Bold" Margin="0,22,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Effect="{StaticResource PageTitleShadow}" />
                 <Border Width="728" Height="348" Margin="0,88,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" BorderBrush="Black" BorderThickness="2" CornerRadius="5">
                     <Border.Background>
                         <SolidColorBrush Color="#FF656565" Opacity="0.5" />
