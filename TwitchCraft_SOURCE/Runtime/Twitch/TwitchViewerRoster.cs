@@ -402,9 +402,12 @@ public sealed partial class MainHandler
                 if (!SortedListHelper.Contains(viewers, viewer, StringComparer.OrdinalIgnoreCase))
                     _viewerRewardSchedule.Remove(viewer);
 
-            long activityCutoff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 120 * 60L;
-            foreach ((string viewer, long lastActive) in _viewerLastChatActivity)
-                if (lastActive < activityCutoff) _viewerLastChatActivity.Remove(viewer);
+            if (_viewerLastChatActivity.Count > 0)
+            {
+                long activityCutoff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 120 * 60L;
+                foreach ((string viewer, long lastActive) in _viewerLastChatActivity)
+                    if (lastActive < activityCutoff) _viewerLastChatActivity.Remove(viewer);
+            }
         }
 
         if (viewerList != null)
