@@ -117,13 +117,7 @@ public partial class Statistics : UserControl
     private void Back_Click(object sender, RoutedEventArgs e) => AppHelpers.NavigateBack(this);
 
     private void Back_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Escape)
-        {
-            e.Handled = true;
-            AppHelpers.NavigateBack(this);
-        }
-    }
+        => AppHelpers.NavigateBackOnEscape(this, e);
 
     private static string FormatName(string value) => string.IsNullOrWhiteSpace(value) ? "None yet" : value;
 
