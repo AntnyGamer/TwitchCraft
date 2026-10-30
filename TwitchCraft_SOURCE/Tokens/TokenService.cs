@@ -64,6 +64,12 @@ public sealed class TokenService
             : _store.AdjustBalances(users, amount, MaximumBalance);
     }
 
+    internal bool TryAward(IEnumerable<string> users, int amount)
+    {
+        _ = _store.AdjustBalances(users, amount, MaximumBalance, out bool succeeded);
+        return succeeded;
+    }
+
     internal FollowRewardResult TryRewardFollower(
         string userID,
         string userLogin,
