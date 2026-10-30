@@ -179,6 +179,7 @@ public sealed class MinigameTransactionTests
                 checks.Add(() => Assert.Equal(500, balance));
                 checks.Add(() => Assert.Equal(500L, persistedBalance));
                 checks.Add(() => Assert.Equal(0L, pendingBets));
+                await MinigameManager.StopLoopsAsync(runtime);
             }
 
             Assert.Multiple([.. checks]);
