@@ -14,8 +14,13 @@ public sealed partial class MainHandler
         if (_minecraftSession.ServerReady || string.IsNullOrEmpty(line))
             return;
 
-        if (!line.Contains("Done (", StringComparison.OrdinalIgnoreCase) &&
-            !line.Contains("For help, type \"help\"", StringComparison.OrdinalIgnoreCase))
+        // The Done message precedes the RCON listener startup on vanilla servers.
+        // For a locally owned RCON session, wait until the listener is actually running.
+        bool requiresRCON = _activeConfig?.Settings.RemoteControlEnabled == true;
+        if (requiresRCON
+            ? !line.Contains("RCON running on", StringComparison.OrdinalIgnoreCase)
+            : !line.Contains("Done (", StringComparison.OrdinalIgnoreCase) &&
+              !line.Contains("For help, type \"help\"", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
