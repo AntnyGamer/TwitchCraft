@@ -227,9 +227,7 @@ public sealed partial class MainHandler
                 {
                     consecutiveFailures++;
                     if (consecutiveFailures >= 3)
-                    {
                         ClearRoster();
-                    }
 
                     _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Viewer roster refresh failed", ex));
                 }
