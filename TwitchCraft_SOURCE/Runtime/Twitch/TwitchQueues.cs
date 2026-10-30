@@ -159,9 +159,7 @@ public sealed partial class MainHandler
     {
         if (separateBotAccount &&
             string.Equals(sender, botName, StringComparison.OrdinalIgnoreCase))
-        {
             return true;
-        }
 
         return string.Equals(sender, "nightbot", StringComparison.OrdinalIgnoreCase)
             || string.Equals(sender, "streamlabs", StringComparison.OrdinalIgnoreCase)
