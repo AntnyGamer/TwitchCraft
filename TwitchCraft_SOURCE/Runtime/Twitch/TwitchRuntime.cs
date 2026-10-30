@@ -25,21 +25,24 @@ public sealed partial class MainHandler
         if (rateLimited) await _twitchSession.ChatRateGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            long sendDelay = 0;
             if (rateLimited)
             {
-                long now = Environment.TickCount64;
-                while (_twitchSession.ChatSendTimes.TryPeek(out long sentAt) && now - sentAt >= 30_000)
-                    _twitchSession.ChatSendTimes.Dequeue();
+                while (true)
+                {
+                    long now = Environment.TickCount64;
+                    while (_twitchSession.ChatSendTimes.TryPeek(out long sentAt) && now - sentAt >= 30_000)
+                        _twitchSession.ChatSendTimes.Dequeue();
 
-                if (_twitchSession.ChatSendTimes.Count >= (_twitchSession.ChatPrivileged ? 100 : 20))
-                    sendDelay = Math.Max(0, _twitchSession.ChatSendTimes.Peek() + 30_000 - now);
-                if (!_twitchSession.ChatPrivileged && _twitchSession.LastChatSentMilliseconds != 0)
-                    sendDelay = Math.Max(sendDelay, _twitchSession.LastChatSentMilliseconds + 1000 - now);
+                    bool privileged = _twitchSession.ChatPrivileged;
+                    long delay = _twitchSession.ChatSendTimes.Count >= (privileged ? 100 : 20)
+                        ? _twitchSession.ChatSendTimes.Peek() + 30_000 - now : 0;
+                    if (!privileged && _twitchSession.LastChatSentMilliseconds != 0)
+                        delay = Math.Max(delay, _twitchSession.LastChatSentMilliseconds + 1000 - now);
+                    if (delay <= 0)
+                        break;
+                    await Task.Delay(TimeSpan.FromMilliseconds(delay), cancellationToken).ConfigureAwait(false);
+                }
             }
-
-            if (sendDelay > 0)
-                await Task.Delay(TimeSpan.FromMilliseconds(sendDelay), cancellationToken).ConfigureAwait(false);
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(TwitchSession.OperationTimeout);
             CancellationToken writeToken = timeoutCts.Token;
