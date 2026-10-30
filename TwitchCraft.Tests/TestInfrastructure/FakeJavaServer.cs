@@ -66,11 +66,14 @@ internal static class FakeJavaServer
         string? attributes = null)
     {
         File.WriteAllText(jarPath + ".players", string.Join(",", players));
-        File.WriteAllText(jarPath + ".spectators", string.Join(",", spectators ?? []));
-        File.WriteAllText(jarPath + ".health", maxHealth.ToString(CultureInfo.InvariantCulture));
-        File.WriteAllText(jarPath + ".item", selectedItem ?? "{id:'minecraft:air',count:1}");
-        File.WriteAllText(jarPath + ".attributes", attributes ?? "[]");
-        File.WriteAllText(jarPath + ".drop-responses", "0");
+        if (spectators is { Count: > 0 })
+            File.WriteAllText(jarPath + ".spectators", string.Join(",", spectators));
+        if (maxHealth != 20)
+            File.WriteAllText(jarPath + ".health", maxHealth.ToString(CultureInfo.InvariantCulture));
+        if (selectedItem != null)
+            File.WriteAllText(jarPath + ".item", selectedItem);
+        if (attributes != null)
+            File.WriteAllText(jarPath + ".attributes", attributes);
     }
 
     internal static string GetExecutable() => Executable.Value;
