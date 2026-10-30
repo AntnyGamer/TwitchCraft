@@ -131,7 +131,7 @@ public sealed class MinigameTransactionTests
         Dictionary<string, ChatCommandHandler> handlers = new(StringComparer.OrdinalIgnoreCase);
         List<string> errors = [];
         List<string> successes = [];
-        List<Action> checks = [];
+        List<(string Expected, string[] Errors, string[] Successes, int Balance, long Persisted, long Pending)> results = [];
 
         runtime.Tokens.Award("viewer", 500);
         MinigameManager.AddHandlers(
@@ -169,20 +169,22 @@ public sealed class MinigameTransactionTests
 
                 await handlers[command]([.. arguments], "viewer", TestContext.Current.CancellationToken);
 
-                string[] actualErrors = [.. errors];
-                string[] actualSuccesses = [.. successes];
-                int balance = runtime.Tokens.GetBalance("viewer");
-                long persistedBalance = Convert.ToInt64(balanceQuery.ExecuteScalar());
-                long pendingBets = Convert.ToInt64(pendingQuery.ExecuteScalar());
-                checks.Add(() => Assert.Equal([expected], actualErrors));
-                checks.Add(() => Assert.Empty(actualSuccesses));
-                checks.Add(() => Assert.Equal(500, balance));
-                checks.Add(() => Assert.Equal(500L, persistedBalance));
-                checks.Add(() => Assert.Equal(0L, pendingBets));
+                results.Add((
+                    expected,
+                    [.. errors],
+                    [.. successes],
+                    runtime.Tokens.GetBalance("viewer"),
+                    Convert.ToInt64(balanceQuery.ExecuteScalar()),
+                    Convert.ToInt64(pendingQuery.ExecuteScalar())));
                 await MinigameManager.StopLoopsAsync(runtime);
             }
 
-            Assert.Multiple([.. checks]);
+            Assert.All(results, result => Assert.Multiple(
+                () => Assert.Equal([result.Expected], result.Errors),
+                () => Assert.Empty(result.Successes),
+                () => Assert.Equal(500, result.Balance),
+                () => Assert.Equal(500L, result.Persisted),
+                () => Assert.Equal(0L, result.Pending)));
         }
         finally
         {
@@ -200,5 +202,4 @@ public sealed class MinigameTransactionTests
             reopened.CloseConnection();
         }
     }
-
 }
