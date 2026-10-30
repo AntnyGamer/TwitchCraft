@@ -24,8 +24,8 @@ public sealed class SharedPlayerProbeTests
         Task<string?> canceledTask = scenario.Runtime.QueryItemAsync("PlayerOne", firstCaller.Token);
 
         await FakeJavaServer.WaitUntilAsync(
-            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
-                .Any(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)),
+            () => FakeJavaServer.AnyLineShared(scenario.JarPath + ".stdin",
+                static command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)),
             "Shared item query was not sent.",
             scenario.Token);
 
@@ -110,8 +110,8 @@ public sealed class SharedPlayerProbeTests
             ["PlayerTwo", "playerone", "PlayerOne"],
             scenario.Token);
         await FakeJavaServer.WaitUntilAsync(
-            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin")
-                .Any(command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)),
+            () => FakeJavaServer.AnyLineShared(scenario.JarPath + ".stdin",
+                static command => command.EndsWith(" SelectedItem", StringComparison.Ordinal)),
             "Batch item query was not sent.",
             scenario.Token);
         Task<string?> singleTask = scenario.Runtime.QueryItemAsync("PLAYERONE", scenario.Token);

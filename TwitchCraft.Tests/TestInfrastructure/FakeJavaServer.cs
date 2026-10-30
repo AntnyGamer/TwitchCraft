@@ -192,6 +192,19 @@ internal static class FakeJavaServer
         }
     }
 
+    internal static bool AnyLineShared(string path, Func<string, bool> matches)
+    {
+        if (!File.Exists(path))
+            return false;
+
+        using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using StreamReader reader = new(stream);
+        while (reader.ReadLine() is string line)
+            if (matches(line))
+                return true;
+        return false;
+    }
+
     internal static List<string> ReadAllLinesShared(string path)
     {
         if (!File.Exists(path))

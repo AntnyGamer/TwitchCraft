@@ -368,11 +368,7 @@ public sealed class CommandRuntimeIntegrationTests
         await FakeJavaServer.WaitForReadyAsync(runtime, cancellationToken);
         string restore = "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + runtime.MobLootGameRuleName + " true";
         await FakeJavaServer.WaitUntilAsync(
-            () =>
-            {
-                List<string> commands = FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin");
-                return commands.Contains(restore);
-            },
+            () => FakeJavaServer.AnyLineShared(config.Server.JarPath + ".stdin", line => line == restore),
             "Startup maintenance commands did not complete within 10 seconds.",
             cancellationToken);
         return FakeJavaServer.ReadAllLinesShared(config.Server.JarPath + ".stdin").Count;
