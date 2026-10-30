@@ -53,9 +53,7 @@ internal static class AppHelpers
         };
 
         if (!string.IsNullOrWhiteSpace(workingDirectory))
-        {
             processStartInfo.WorkingDirectory = workingDirectory;
-        }
 
         Process.Start(processStartInfo)?.Dispose();
     }
@@ -80,8 +78,7 @@ internal static class AppHelpers
             FolderName = initialPath
         };
 
-        bool? result = dialog.ShowDialog();
-        if (result != true)
+        if (dialog.ShowDialog() != true)
             return null;
 
         string selectedPath = dialog.FolderName ?? string.Empty;
