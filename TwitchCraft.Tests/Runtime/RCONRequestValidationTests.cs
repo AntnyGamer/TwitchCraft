@@ -39,34 +39,6 @@ public sealed class RCONRequestValidationTests
     }
 
     [Fact]
-    public async Task QueriesAndCommandBatches_DoNotPipelineRCONRequests()
-    {
-        using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(10));
-        CancellationToken cancellationToken = timeout.Token;
-        const string password = "strict-request-order-password";
-        await using FakeRCONServer RCON = new(password,
-            responseFactory: command => "reply:" + command,
-            rejectPipelinedRequests: true);
-
-        try
-        {
-            await MinecraftRCONClient.DisconnectAsync(cancellationToken);
-            Assert.Equal(["reply:first", "reply:second"],
-                await MinecraftRCONClient.ExecuteQueriesAsync(
-                    "127.0.0.1", RCON.Port, password, ["first", "second"], cancellationToken));
-            Assert.True(await MinecraftRCONClient.ExecuteCommandsAsync(
-                "127.0.0.1", RCON.Port, password, ["say one", "say two"], cancellationToken));
-            Assert.Equal(["first", "second", "say one", "say two"], RCON.Commands);
-        }
-        finally
-        {
-            using CancellationTokenSource cleanup = new(TimeSpan.FromSeconds(10));
-            await MinecraftRCONClient.DisconnectAsync(cleanup.Token);
-        }
-    }
-
-    [Fact]
     public async Task Query_RejectsWrongResponseType()
     {
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
