@@ -36,11 +36,7 @@ internal sealed class TemporaryDirectory : IDisposable
             {
                 lastException = ex;
                 if (attempt == 1)
-                {
                     Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                }
                 if (attempt < MaxAttempts)
                     Thread.Sleep(50 * attempt);
             }
