@@ -151,16 +151,4 @@ public static partial class MinigameManager
         return cloned;
     }
 
-    private static List<KeyValuePair<string, int>> BuildRefunds<TBet>(List<TBet> bets) where TBet : IBet
-    {
-        List<KeyValuePair<string, int>> refunds = new(bets.Count);
-        for (int i = 0; i < bets.Count; i++)
-        {
-            TBet bet = bets[i];
-            if (!string.IsNullOrWhiteSpace(bet.Viewer) && bet.TokenAmount > 0)
-                refunds.Add(new(bet.Viewer, bet.TokenAmount));
-        }
-
-        return refunds;
-    }
 }
