@@ -17,6 +17,7 @@ internal sealed class FakeRCONServer : IAsyncDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _serverTask;
     private readonly string _password;
+    private readonly bool _rejectPipelinedRequests;
     private readonly string? _malformedResponseCommand;
     private readonly string? _wrongTypeResponseCommand;
     private readonly Func<string, string>? _responseFactory;
@@ -27,9 +28,11 @@ internal sealed class FakeRCONServer : IAsyncDisposable
         string password,
         string? malformedResponseCommand = null,
         string? wrongTypeResponseCommand = null,
-        Func<string, string>? responseFactory = null)
+        Func<string, string>? responseFactory = null,
+        bool rejectPipelinedRequests = false)
     {
         _password = password;
+        _rejectPipelinedRequests = rejectPipelinedRequests;
         _malformedResponseCommand = malformedResponseCommand;
         _wrongTypeResponseCommand = wrongTypeResponseCommand;
         _responseFactory = responseFactory;
@@ -126,6 +129,14 @@ internal sealed class FakeRCONServer : IAsyncDisposable
 
             if (!authenticated)
                 continue;
+
+            if (_rejectPipelinedRequests)
+            {
+                // A compliant client waits for each response before issuing another request.
+                await Task.Delay(30, cancellationToken).ConfigureAwait(false);
+                if (stream.DataAvailable)
+                    return;
+            }
 
             if (packet.Type == 100)
             {
