@@ -117,13 +117,13 @@ public sealed partial class ConfigurationStore
     internal static TwitchCraftConfig Clone(TwitchCraftConfig source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        TwitchCraftConfig copy = source.Copy();
-        copy.Server = source.Server.Copy();
-        copy.Server.Java = source.Server.Java.Copy();
-        copy.Server.RCON = source.Server.RCON.Copy();
-        copy.Twitch = source.Twitch.Copy();
-        copy.Identity = source.Identity.Copy();
-        copy.Settings = source.Settings.Copy();
+        TwitchCraftConfig copy = source.ShallowCopy();
+        copy.Server = source.Server.ShallowCopy();
+        copy.Server.Java = source.Server.Java.ShallowCopy();
+        copy.Server.RCON = source.Server.RCON.ShallowCopy();
+        copy.Twitch = source.Twitch.ShallowCopy();
+        copy.Identity = source.Identity.ShallowCopy();
+        copy.Settings = source.Settings.ShallowCopy();
         copy.Settings.CommandCustomizations = CloneCommands(source.Settings.CommandCustomizations);
         return copy;
     }
@@ -134,7 +134,7 @@ public sealed partial class ConfigurationStore
         Dictionary<string, CommandCustomization> result = new(source?.Count ?? 0, StringComparer.OrdinalIgnoreCase);
         if (source != null)
             foreach ((string name, CommandCustomization value) in source)
-                result[name] = value.Copy();
+                result[name] = value.ShallowCopy();
         return result;
     }
 
