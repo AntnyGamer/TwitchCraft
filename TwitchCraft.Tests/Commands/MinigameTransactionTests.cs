@@ -114,6 +114,7 @@ public sealed class MinigameTransactionTests
             ("chickenbet", "10", "abc", "viewer, please enter a valid second value."),
             ("chickenbet", "10", "0", "viewer, please enter a valid second value."),
             ("chickenbet", "100", "10", "viewer, Chicken Run betting is not open right now."),
+            ("chickenbet", "201", "10", "viewer, the max Chicken Run bet is 200 tokens."),
             ("guess", null, null, "viewer, usage: !guess <number>"),
             ("guess", "abc", null, "viewer, please enter a valid number between 1 and 100."),
             ("guess", "0", null, "viewer, please enter a valid number between 1 and 100."),
@@ -149,6 +150,13 @@ public sealed class MinigameTransactionTests
 
         try
         {
+            using SqliteConnection observer = new($"Data Source={databasePath}");
+            observer.Open();
+            using SqliteCommand balanceQuery = observer.CreateCommand();
+            balanceQuery.CommandText = "SELECT Balance FROM TokenBalances WHERE Username = 'viewer';";
+            using SqliteCommand pendingQuery = observer.CreateCommand();
+            pendingQuery.CommandText = "SELECT COUNT(*) FROM PendingMinigameBets;";
+
             foreach ((string command, string? first, string? second, string expected) in cases)
             {
                 errors.Clear();
@@ -164,9 +172,13 @@ public sealed class MinigameTransactionTests
                 string[] actualErrors = [.. errors];
                 string[] actualSuccesses = [.. successes];
                 int balance = runtime.Tokens.GetBalance("viewer");
+                long persistedBalance = Convert.ToInt64(balanceQuery.ExecuteScalar());
+                long pendingBets = Convert.ToInt64(pendingQuery.ExecuteScalar());
                 checks.Add(() => Assert.Equal([expected], actualErrors));
                 checks.Add(() => Assert.Empty(actualSuccesses));
                 checks.Add(() => Assert.Equal(500, balance));
+                checks.Add(() => Assert.Equal(500L, persistedBalance));
+                checks.Add(() => Assert.Equal(0L, pendingBets));
             }
 
             Assert.Multiple([.. checks]);
