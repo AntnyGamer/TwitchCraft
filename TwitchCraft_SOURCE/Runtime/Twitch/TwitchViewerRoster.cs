@@ -417,8 +417,6 @@ public sealed partial class MainHandler
     public List<string> GetViewerRosterSnapshot()
     {
         lock (_viewerGate)
-        {
             return [.. _knownViewers];
-        }
     }
 }
