@@ -197,37 +197,21 @@ internal static class MinecraftRCONClient
 
     private static async Task<bool> WriteCommandsAsync(IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
-        NetworkStream stream = _stream ?? throw new IOException("RCON is not connected.");
-        byte[] packetLengthBuffer = _packetLengthBuffer ?? throw new IOException("RCON is not connected.");
-        HashSet<int> pendingIDs = new(commands.Count);
         bool confirmedAny = false;
-
         try
         {
+            // Vanilla Minecraft can disconnect when multiple RCON requests arrive in one TCP read.
+            // Wait for each response before sending the next command.
             foreach (string command in commands)
             {
-                if (!string.IsNullOrWhiteSpace(command))
-                {
-                    int requestID = NextRequestID();
-                    pendingIDs.Add(requestID);
-                    await WritePacketAsync(stream, requestID, CommandPacketType, command, cancellationToken).ConfigureAwait(false);
-                }
-            }
-
-            if (pendingIDs.Count == 0)
-                return false;
-
-            while (pendingIDs.Count > 0)
-            {
-                RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decodePayload: false).ConfigureAwait(false);
-                if (!pendingIDs.Remove(packet.ID))
+                if (string.IsNullOrWhiteSpace(command))
                     continue;
-                if (packet.Type != ResponseValuePacketType)
-                    throw new InvalidDataException("RCON returned an unexpected command response packet.");
+
+                await WriteCommandAsync(command, cancellationToken).ConfigureAwait(false);
                 confirmedAny = true;
             }
 
-            return true;
+            return confirmedAny;
         }
         catch (Exception ex) when (confirmedAny && ex is OperationCanceledException or IOException or ObjectDisposedException or InvalidDataException)
         {
@@ -242,20 +226,36 @@ internal static class MinecraftRCONClient
         int commandID = NextRequestID();
         int sentinelID = NextRequestID();
         await WritePacketAsync(stream, commandID, CommandPacketType, command, cancellationToken).ConfigureAwait(false);
-        await WritePacketAsync(stream, sentinelID, CommandPacketType, string.Empty, cancellationToken).ConfigureAwait(false);
 
         StringBuilder response = new();
         Decoder decoder = RCONEncoding.GetDecoder();
+        bool sentinelSent = false;
         while (true)
         {
             RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decoder: decoder).ConfigureAwait(false);
-            if (packet.Type != ResponseValuePacketType && (packet.ID == commandID || packet.ID == sentinelID))
-                throw new InvalidDataException("RCON returned an unexpected query response packet.");
-            if (packet.ID == sentinelID)
-                return response.ToString();
+            if (packet.ID == commandID)
+            {
+                if (packet.Type != ResponseValuePacketType)
+                    throw new InvalidDataException("RCON returned an unexpected query response packet.");
 
-            if (packet.ID == commandID && packet.Payload.Length > 0)
-                AppendResponse(response, packet.Payload);
+                if (packet.Payload.Length > 0)
+                    AppendResponse(response, packet.Payload);
+
+                if (!sentinelSent)
+                {
+                    // Wait for the first response before sending the delimiter. Vanilla Minecraft
+                    // can close the connection if it reads two requests in a single TCP read.
+                    // An unknown packet type is answered without executing an empty command.
+                    await WritePacketAsync(stream, sentinelID, 100, string.Empty, cancellationToken).ConfigureAwait(false);
+                    sentinelSent = true;
+                }
+            }
+            else if (packet.ID == sentinelID)
+            {
+                if (!sentinelSent || packet.Type != ResponseValuePacketType)
+                    throw new InvalidDataException("RCON returned an unexpected query delimiter packet.");
+                return response.ToString();
+            }
         }
     }
 
