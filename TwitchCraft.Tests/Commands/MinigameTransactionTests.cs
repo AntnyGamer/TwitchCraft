@@ -61,10 +61,10 @@ public sealed class MinigameTransactionTests
         MainHandler runtime = new(new AppShellViewModel(), path);
         Type manager = typeof(MinigameManager);
         BindingFlags flags = BindingFlags.Static | BindingFlags.NonPublic;
-        MethodInfo start = Assert.IsType<MethodInfo>(manager.GetMethod("TryStart", flags));
-        MethodInfo getState = Assert.IsType<MethodInfo>(manager.GetMethod("GetChickenStateNoLock", flags));
-        MethodInfo settle = Assert.IsType<MethodInfo>(manager.GetMethod("SettleBets", flags));
-        MethodInfo refund = Assert.IsType<MethodInfo>(manager.GetMethod("RefundBets", flags));
+        MethodInfo start = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("TryStart", flags));
+        MethodInfo getState = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("GetChickenStateNoLock", flags));
+        MethodInfo settle = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("SettleBets", flags));
+        MethodInfo refund = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("RefundBets", flags));
 
         runtime.Tokens.Load(0);
         try
