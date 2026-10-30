@@ -3,11 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="TwitchCraft.xaml">
     <Application.Resources>
-        <LinearGradientBrush x:Key="PageFadeBrush" StartPoint="0,3" EndPoint="0,0">
-            <GradientStop Color="#00000000" Offset="0" />
-            <GradientStop Color="#DD000000" Offset="1" />
-        </LinearGradientBrush>
-        <DropShadowEffect x:Key="PageTitleShadow" Color="Black" BlurRadius="6" ShadowDepth="0" Opacity="1" />
         <Style x:Key="KeyboardFocusVisual">
             <Setter Property="Control.Template">
                 <Setter.Value>
