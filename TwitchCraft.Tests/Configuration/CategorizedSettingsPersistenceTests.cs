@@ -15,35 +15,51 @@ public sealed class CategorizedSettingsPersistenceTests
     };
 
     [Fact]
-    public void Serialize_DefaultProfileUsesOnlyTheSevenSettingsCategories()
-    {
-        StartingProfile profile = new();
-
-        JObject root = JObject.Parse(JsonConvert.SerializeObject(profile, SerializerSettings));
-
-        Assert.Equal(
-            ["Commands", "Custom Commands", "Economy", "Gameplay", "Chat and Display", "Performance", "Minecraft Server"],
-            root.Properties().Select(property => property.Name));
-        Assert.All(
-            [nameof(StartingProfile.CommandPrefix), nameof(StartingProfile.MultiplayerEnabled),
-                nameof(StartingProfile.RemoteControlEnabled), nameof(StartingProfile.RequireOnlineMode)],
-            name => Assert.Null(root.SelectToken(name)));
-        Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveRewardsRequireActivity)]);
-        Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveActivityWindowMinutes)]);
-    }
-
-    [Theory]
-    [InlineData(nameof(StartingProfile.CommandPrefix), "Commands")]
-    [InlineData(nameof(StartingProfile.FollowRewardAmount), "Economy")]
-    [InlineData(nameof(StartingProfile.AutomaticBackupRetentionCount), "Performance")]
-    public void Serialize_MapsASettingToItsExpectedCategory(string propertyName, string categoryName)
+    public void Serialize_DefaultProfileHasCompleteAndUnambiguousCategoryMapping()
     {
         JObject root = JObject.Parse(JsonConvert.SerializeObject(new StartingProfile(), SerializerSettings));
+        string[] serialized = root.Properties()
+            .SelectMany(category => Assert.IsType<JObject>(category.Value).Properties())
+            .Select(property => property.Name)
+            .ToArray();
+        string[] intentionallyUnpersisted =
+        [
+            nameof(StartingProfile.MultiplayerEnabled),
+            nameof(StartingProfile.RemoteControlEnabled),
+            nameof(StartingProfile.RequireOnlineMode)
+        ];
+        string[] expected = typeof(StartingProfile).GetProperties()
+            .Where(property => property.CanRead && property.CanWrite)
+            .Select(property => property.Name)
+            .Except(intentionallyUnpersisted, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        string[] actual = serialized.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
+        (string Property, string Category)[] placements =
+        [
+            (nameof(StartingProfile.CommandPrefix), "Commands"),
+            (nameof(StartingProfile.FollowRewardAmount), "Economy"),
+            (nameof(StartingProfile.AutomaticBackupRetentionCount), "Performance")
+        ];
 
-        Assert.NotNull(root[categoryName]?[propertyName]);
-        Assert.Single(
-            root.Properties(),
-            category => category.Value.Type == JTokenType.Object && category.Value[propertyName] != null);
+        Assert.Multiple(
+            () => Assert.Equal(
+                ["Commands", "Custom Commands", "Economy", "Gameplay", "Chat and Display", "Performance", "Minecraft Server"],
+                root.Properties().Select(property => property.Name)),
+            () => Assert.All(
+                [nameof(StartingProfile.CommandPrefix), .. intentionallyUnpersisted],
+                name => Assert.Null(root.SelectToken(name))),
+            () => Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveRewardsRequireActivity)]),
+            () => Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveActivityWindowMinutes)]),
+            () => Assert.All(placements, item =>
+            {
+                Assert.NotNull(root[item.Category]?[item.Property]);
+                Assert.Single(root.Properties(),
+                    category => category.Value.Type == JTokenType.Object &&
+                        category.Value[item.Property] != null);
+            }),
+            () => Assert.Equal(serialized.Length, serialized.Distinct(StringComparer.OrdinalIgnoreCase).Count()),
+            () => Assert.Equal(expected, actual));
     }
 
     [Fact]
@@ -141,33 +157,5 @@ public sealed class CategorizedSettingsPersistenceTests
         Assert.Equal(["alpha", "Zulu"], commands.Properties().Select(property => property.Name));
     }
 
-    [Fact]
-    public void Serialize_IncludesEveryPersistedSettingExactlyOnce()
-    {
-        JObject root = JObject.Parse(JsonConvert.SerializeObject(new StartingProfile(), SerializerSettings));
-        string[] serialized = root.Properties()
-            .SelectMany(category => Assert.IsType<JObject>(category.Value).Properties())
-            .Select(property => property.Name)
-            .ToArray();
 
-        Assert.Equal(serialized.Length, serialized.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-
-        string[] intentionallyUnpersisted =
-        [
-            nameof(StartingProfile.MultiplayerEnabled),
-            nameof(StartingProfile.RemoteControlEnabled),
-            nameof(StartingProfile.RequireOnlineMode)
-        ];
-        string[] expected = typeof(StartingProfile).GetProperties()
-            .Where(property => property.CanRead && property.CanWrite)
-            .Select(property => property.Name)
-            .Except(intentionallyUnpersisted, StringComparer.OrdinalIgnoreCase)
-            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        string[] actual = serialized
-            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        Assert.Equal(expected, actual);
-    }
 }
