@@ -59,7 +59,7 @@ public static partial class MinigameManager
                     ChickenRunBet? existing = FindBet(state.Bets, sender);
                     int updatedTokenAmount = (existing?.TokenAmount ?? 0) + tokenAmount;
                     if (updatedTokenAmount > MaxBetPerPlayer) updateResult = BetUpdateResult.OverMax;
-                    else if (!runtime.Tokens.TrySpend(sender, tokenAmount)) updateResult = BetUpdateResult.NotEnoughTokens;
+                    else if (!runtime.Tokens.TrySpendForMinigameBet(sender, tokenAmount)) updateResult = BetUpdateResult.NotEnoughTokens;
                     else
                     {
                         if (existing == null)
@@ -202,7 +202,7 @@ public static partial class MinigameManager
                     WitherBattleBet? existing = FindBet(state.Bets, sender);
                     int updatedTokenAmount = (existing?.TokenAmount ?? 0) + tokenAmount;
                     if (updatedTokenAmount > MaxBetPerPlayer) updateResult = BetUpdateResult.OverMax;
-                    else if (!runtime.Tokens.TrySpend(sender, tokenAmount)) updateResult = BetUpdateResult.NotEnoughTokens;
+                    else if (!runtime.Tokens.TrySpendForMinigameBet(sender, tokenAmount)) updateResult = BetUpdateResult.NotEnoughTokens;
                     else
                     {
                         if (existing == null)
