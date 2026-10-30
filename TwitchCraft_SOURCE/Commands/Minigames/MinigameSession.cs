@@ -44,8 +44,8 @@ public static partial class MinigameManager
         {
             ActiveState state = GetActiveStateNoLock(runtime);
             if (!string.IsNullOrWhiteSpace(state.Kind) ||
-                ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) && chicken.Bets.Count > 0 ||
-                WitherBattleStates.TryGetValue(runtime, out WitherBattleState? wither) && wither.Bets.Count > 0)
+                ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) && (chicken.Bets.Count > 0 || chicken.PendingSettlement != null) ||
+                WitherBattleStates.TryGetValue(runtime, out WitherBattleState? wither) && (wither.Bets.Count > 0 || wither.PendingSettlement != null))
                 return false;
 
             ResetStatesNoLock(runtime);
@@ -177,10 +177,14 @@ public static partial class MinigameManager
     {
         lock (state.SettlementGate)
         {
+            List<KeyValuePair<string, int>>? pending;
             lock (MinigameGate)
-                if (state.Bets.Count == 0) return;
-            if (runtime.Tokens.TryCompleteMinigameBets([], refund: true))
-                lock (MinigameGate) state.Bets.Clear();
+            {
+                if (state.Bets.Count == 0 && state.PendingSettlement == null) return;
+                pending = state.PendingSettlement;
+            }
+            if (runtime.Tokens.TryCompleteMinigameBets(pending ?? [], refund: pending == null))
+                lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
         }
     }
 
@@ -219,9 +223,10 @@ public static partial class MinigameManager
                     !ActiveMinigames.TryGetValue(runtime, out ActiveState? activeState) ||
                     !string.Equals(activeState.Kind, kind, StringComparison.Ordinal) || activeState.RunID != runID)
                     return false;
+                state.PendingSettlement = payouts;
             }
             if (!runtime.Tokens.TryCompleteMinigameBets(payouts)) return false;
-            lock (MinigameGate) state.Bets.Clear();
+            lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
             return true;
         }
     }
