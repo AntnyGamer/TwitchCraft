@@ -81,6 +81,9 @@ jobs:
                   for (int i = 0; i < 1000; i++) message.TryParse(line);
                   Measure("IRCParse", 250000, () => message.TryParse(line));
 
+                  var activity = new MainHandler(new AppShellViewModel(), Path.Combine(Path.GetTempPath(), "TC_activity_" + Guid.NewGuid().ToString("N") + ".db"));
+                  Measure("DisabledChatActivity", 2000000, () => activity.RecordChatActivity("viewer"));
+
                   var dir = Path.Combine(Path.GetTempPath(), "TC_perf_" + Guid.NewGuid().ToString("N"));
                   Directory.CreateDirectory(dir);
                   var db = Path.Combine(dir, "viewer_tokens.db");
@@ -110,7 +113,10 @@ jobs:
           foreach ($folder in @('baseline', 'candidate')) {
             New-Item -ItemType Directory -Path "$folder/PerfCompare" -Force | Out-Null
             Set-Content -Path "$folder/PerfCompare/PerfCompare.csproj" -Value $project
-            Set-Content -Path "$folder/PerfCompare/Program.cs" -Value $program
+            $versionProgram = if ($folder -eq 'baseline') {
+              $program.Replace('activity.RecordChatActivity("viewer")', 'activity.RecordChatActivity("viewer", DateTimeOffset.UtcNow.ToUnixTimeSeconds())')
+            } else { $program }
+            Set-Content -Path "$folder/PerfCompare/Program.cs" -Value $versionProgram
             dotnet restore "$folder/PerfCompare/PerfCompare.csproj"
             if ($LASTEXITCODE -ne 0) { throw "restore $folder failed" }
             dotnet build "$folder/PerfCompare/PerfCompare.csproj" -c Release --no-restore
