@@ -19,7 +19,6 @@ internal sealed class TemporaryDirectory : IDisposable
 
     public void Dispose()
     {
-        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         const int MaxAttempts = 10;
         Exception? lastException = null;
         for (int attempt = 1; attempt <= MaxAttempts; attempt++)
@@ -38,6 +37,7 @@ internal sealed class TemporaryDirectory : IDisposable
                 lastException = ex;
                 if (attempt == 1)
                 {
+                    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
                 }
