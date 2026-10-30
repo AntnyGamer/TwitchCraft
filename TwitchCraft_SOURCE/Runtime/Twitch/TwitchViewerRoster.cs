@@ -57,16 +57,19 @@ public sealed partial class MainHandler
                                 _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
                             }
                             else if (nextAt <= now)
+                            {
+                                _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
                                 (rewarded ??= []).Add(viewer);
+                            }
                         }
                     }
 
-                    if (rewarded is { Count: > 0 } && Tokens.TryAward(rewarded, PassiveTokensPerPayout))
+                    if (rewarded is { Count: > 0 } && !Tokens.TryAward(rewarded, PassiveTokensPerPayout))
                     {
                         lock (_viewerGate)
                             foreach (string viewer in rewarded)
                                 if (_viewerRewardSchedule.ContainsKey(viewer))
-                                    _viewerRewardSchedule[viewer] = now + GetPassivePayoutDelay();
+                                    _viewerRewardSchedule[viewer] = now;
                     }
                 }
             }
