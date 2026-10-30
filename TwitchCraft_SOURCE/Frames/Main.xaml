@@ -1,4 +1,4 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:TwitchCraft_V1" x:Class="TwitchCraft_V1.Frames.Main" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraft_V1.Frames.Main" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
 
     <Grid ClipToBounds="True">
         <Rectangle IsHitTestVisible="False">
@@ -31,7 +31,11 @@
                 <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="0,264,44,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
                 <Rectangle Width="121" Height="57" Fill="#FFA4A4A4" Margin="0,352,44,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
 
-                <TextBlock FontFamily="Cascadia Mono" FontSize="30" Text="TwitchCraft" Foreground="#FFFF1B1B" Margin="0,16,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Effect="{x:Static local:App.PageTitleShadow}" />
+                <TextBlock FontFamily="Cascadia Mono" FontSize="30" Text="TwitchCraft" Foreground="#FFFF1B1B" Margin="0,16,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" Opacity="1" />
+                    </TextBlock.Effect>
+                </TextBlock>
 
                 <TextBlock Text="Created by AntnyGamer" FontFamily="Arial Rounded MT Bold" FontSize="14" Foreground="#C6C6C6" Margin="623,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
