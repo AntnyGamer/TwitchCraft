@@ -1,11 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Data.Sqlite;
 
 namespace TwitchCraft_V1;
 
 internal sealed partial class TokenStore
 {
+    private FileStream? _minigameSessionLock;
+
+    internal void AcquireMinigameSession()
+    {
+        lock (_gate)
+            _minigameSessionLock ??= new FileStream(_dbPath + ".minigame.lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+    }
+
     internal bool TrySpendForMinigameBet(string user, int amount)
     {
         string name = Normalize(user);
