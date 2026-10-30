@@ -8,7 +8,6 @@ internal sealed class IRCMessage
     public string ID { get; private set; } = string.Empty;
 
     public bool IsModerator { get; private set; }
-    public bool IsPrivileged { get; private set; }
 
     public string Command { get; private set; } = string.Empty;
 
@@ -92,7 +91,6 @@ internal sealed class IRCMessage
         Bits = 0;
         ID = string.Empty;
         IsModerator = false;
-        IsPrivileged = false;
         Command = string.Empty;
         SenderLogin = string.Empty;
         Trailing = string.Empty;
@@ -127,18 +125,12 @@ internal sealed class IRCMessage
                     else if (keyLength == 3 && TagKeyEquals(line, start, "mod"))
                     {
                         if (valueLength == 1 && line[valueStart] == '1')
-                            message.IsModerator = message.IsPrivileged = true;
+                            message.IsModerator = true;
                     }
                     else if (keyLength == 6 && TagKeyEquals(line, start, "badges"))
                     {
-                        if (valueLength > 0)
-                        {
-                            if (line.IndexOf("moderator/", valueStart, valueLength, StringComparison.OrdinalIgnoreCase) >= 0)
-                                message.IsModerator = message.IsPrivileged = true;
-                            if (line.IndexOf("vip/", valueStart, valueLength, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                line.IndexOf("broadcaster/", valueStart, valueLength, StringComparison.OrdinalIgnoreCase) >= 0)
-                                message.IsPrivileged = true;
-                        }
+                        if (valueLength > 0 && line.IndexOf("moderator/", valueStart, valueLength, StringComparison.OrdinalIgnoreCase) >= 0)
+                            message.IsModerator = true;
                     }
                 }
             }
