@@ -5,7 +5,7 @@ namespace TwitchCraft_V1.Setup;
 
 public sealed class TwitchCraftConfig
 {
-    internal TwitchCraftConfig Copy() => (TwitchCraftConfig)MemberwiseClone();
+    internal TwitchCraftConfig ShallowCopy() => (TwitchCraftConfig)MemberwiseClone();
     public ServerConfig Server { get; set; } = new();
     public TwitchConfig Twitch { get; set; } = new();
     public IdentityConfig Identity { get; set; } = new();
@@ -14,7 +14,7 @@ public sealed class TwitchCraftConfig
 
 public sealed class ServerConfig
 {
-    internal ServerConfig Copy() => (ServerConfig)MemberwiseClone();
+    internal ServerConfig ShallowCopy() => (ServerConfig)MemberwiseClone();
     public JavaConfig Java { get; set; } = new();
     public RCONConfig RCON { get; set; } = new();
     public string MinecraftVersion { get; set; } = string.Empty;
@@ -31,21 +31,21 @@ public sealed class ServerConfig
 
 public sealed class JavaConfig
 {
-    internal JavaConfig Copy() => (JavaConfig)MemberwiseClone();
+    internal JavaConfig ShallowCopy() => (JavaConfig)MemberwiseClone();
     public string ExecutablePath { get; set; } = string.Empty;
     public string HomeDirectory { get; set; } = string.Empty;
 }
 
 public sealed class RCONConfig
 {
-    internal RCONConfig Copy() => (RCONConfig)MemberwiseClone();
+    internal RCONConfig ShallowCopy() => (RCONConfig)MemberwiseClone();
     public int Port { get; set; } = 25575;
     public string Password { get; set; } = string.Empty;
 }
 
 public sealed class TwitchConfig
 {
-    internal TwitchConfig Copy() => (TwitchConfig)MemberwiseClone();
+    internal TwitchConfig ShallowCopy() => (TwitchConfig)MemberwiseClone();
     public string ClientID { get; set; } = string.Empty;
     public string BotToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
@@ -55,13 +55,13 @@ public sealed class TwitchConfig
 
 public sealed class IdentityConfig
 {
-    internal IdentityConfig Copy() => (IdentityConfig)MemberwiseClone();
+    internal IdentityConfig ShallowCopy() => (IdentityConfig)MemberwiseClone();
     public string StreamerMinecraftName { get; set; } = string.Empty;
 }
 
 public sealed class StartingProfile
 {
-    internal StartingProfile Copy() => (StartingProfile)MemberwiseClone();
+    internal StartingProfile ShallowCopy() => (StartingProfile)MemberwiseClone();
     internal const int DefaultAutomaticBackupRetentionCount = 3;
     internal const int DefaultFollowRewardAmount = 50;
 
@@ -128,7 +128,7 @@ public sealed class StartingProfile
 
 public sealed class CommandCustomization
 {
-    internal CommandCustomization Copy() => (CommandCustomization)MemberwiseClone();
+    internal CommandCustomization ShallowCopy() => (CommandCustomization)MemberwiseClone();
     public bool Enabled { get; set; } = true;
     public int? CooldownSeconds { get; set; }
     public double? GlobalCooldownSeconds { get; set; }
