@@ -82,9 +82,7 @@ internal static class AppHelpers
 
         bool? result = dialog.ShowDialog();
         if (result != true)
-        {
             return null;
-        }
 
         string selectedPath = dialog.FolderName ?? string.Empty;
         return string.IsNullOrWhiteSpace(selectedPath) ? null : selectedPath;
