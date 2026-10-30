@@ -8,6 +8,11 @@ namespace TwitchCraft_V1;
 internal sealed partial class TokenStore
 {
     private FileStream? _databaseSessionLock;
+    private const string AddStakeSql = """
+        INSERT INTO PendingMinigameBets (Username, Amount) VALUES ($username, $amount)
+        ON CONFLICT(Username) DO UPDATE SET Amount = Amount + excluded.Amount;
+        """;
+
 
     internal void AcquireDatabaseSessionLock()
     {
@@ -34,23 +39,14 @@ internal sealed partial class TokenStore
                 SqliteConnection connection = GetConnectionNoLock();
                 using SqliteTransaction transaction = connection.BeginTransaction();
                 int remaining = balance - amount;
-                using SqliteCommand balanceCommand = remaining == 0
-                    ? CreateDeleteCommand(connection, transaction)
-                    : CreateUpsertCommand(connection, transaction);
-                balanceCommand.Parameters[0].Value = name;
+                using SqliteCommand stake = connection.CreateCommand();
+                stake.Transaction = transaction;
+                stake.CommandText = remaining == 0 ? DeleteBalanceSql + AddStakeSql : UpsertBalanceSql + AddStakeSql;
+                stake.Parameters.AddWithValue("$username", name);
                 if (remaining > 0)
-                    balanceCommand.Parameters[1].Value = remaining;
-                balanceCommand.ExecuteNonQuery();
-
-                using SqliteCommand pending = connection.CreateCommand();
-                pending.Transaction = transaction;
-                pending.CommandText = """
-                    INSERT INTO PendingMinigameBets (Username, Amount) VALUES ($user, $amount)
-                    ON CONFLICT(Username) DO UPDATE SET Amount = Amount + excluded.Amount;
-                    """;
-                pending.Parameters.AddWithValue("$user", name);
-                pending.Parameters.AddWithValue("$amount", amount);
-                pending.ExecuteNonQuery();
+                    stake.Parameters.AddWithValue("$balance", remaining);
+                stake.Parameters.AddWithValue("$amount", amount);
+                stake.ExecuteNonQuery();
                 transaction.Commit();
 
                 SetCacheNoLock(name, balance - amount);
