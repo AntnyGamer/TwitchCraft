@@ -129,7 +129,7 @@
                             <Button x:Name="ChatDisplayCategoryButton" KeyboardNavigation.TabIndex="5" Content="Chat and Display" Style="{StaticResource CategoryButton}" Click="ChatDisplay_Click" />
                             <Button x:Name="PerformanceCategoryButton" KeyboardNavigation.TabIndex="6" Content="Performance" Style="{StaticResource CategoryButton}" Click="Performance_Click" />
                             <Button x:Name="ServerCategoryButton" KeyboardNavigation.TabIndex="7" Content="Minecraft Server" Style="{StaticResource CategoryButton}" Click="Server_Click" />
-                            <Button x:Name="DangerousCategoryButton" KeyboardNavigation.TabIndex="8" Content="Dangerous" Style="{StaticResource CategoryButton}" Background="#FFE7C5C5" Click="Dangerous_Click" />
+                            <Button x:Name="DangerousCategoryButton" KeyboardNavigation.TabIndex="8" Content="Dangerous" Style="{StaticResource CategoryButton}" Background="#FFF2E6E6" Click="Dangerous_Click" />
                             <Button Content="Reset Category" KeyboardNavigation.TabIndex="9" Width="134" Height="28" Margin="0,2,0,0" Click="ResetCategory_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" />
                             <Button Content="Reset All Defaults" KeyboardNavigation.TabIndex="10" Width="134" Height="28" Margin="0,2,0,0" Click="ResetDefaults_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" />
                         </StackPanel>
