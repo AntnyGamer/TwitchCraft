@@ -93,6 +93,7 @@ public sealed class TokenService
     internal void Load(int maximumBalance)
     {
         _store.Load();
+        _store.AcquireMinigameSession();
         _store.ApplyMaximumBalance(maximumBalance);
         if (!_store.TryCompleteMinigameBets([], MaximumBalance, refund: true))
             throw new InvalidOperationException("Unsettled minigame bets could not be recovered.");
