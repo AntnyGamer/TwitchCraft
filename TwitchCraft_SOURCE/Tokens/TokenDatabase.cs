@@ -427,6 +427,10 @@ internal sealed partial class TokenStore
                     FollowedAtUtc TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS IX_RewardedFollows_Username ON RewardedFollows (Username COLLATE NOCASE ASC);
+                CREATE TABLE IF NOT EXISTS PendingMinigameBets (
+                    Username TEXT PRIMARY KEY COLLATE NOCASE,
+                    Amount INTEGER NOT NULL CHECK (Amount > 0)
+                );
                 """;
             command.ExecuteNonQuery();
             _schemaInitialized = true;
