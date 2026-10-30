@@ -7,12 +7,12 @@ namespace TwitchCraft_V1;
 
 internal sealed partial class TokenStore
 {
-    private FileStream? _minigameSessionLock;
+    private FileStream? _databaseSessionLock;
 
-    internal void AcquireMinigameSession()
+    internal void AcquireDatabaseSessionLock()
     {
         lock (_gate)
-            _minigameSessionLock ??= new FileStream(_dbPath + ".minigame.lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            _databaseSessionLock ??= new FileStream(_dbPath + ".minigame.lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
     }
 
     internal bool TrySpendForMinigameBet(string user, int amount)
