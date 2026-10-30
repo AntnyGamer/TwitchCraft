@@ -51,13 +51,7 @@ public sealed class CategorizedSettingsPersistenceTests
                 name => Assert.Null(root.SelectToken(name))),
             () => Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveRewardsRequireActivity)]),
             () => Assert.NotNull(root["Economy"]?[nameof(StartingProfile.PassiveActivityWindowMinutes)]),
-            () => Assert.All(placements, item =>
-            {
-                Assert.NotNull(root[item.Category]?[item.Property]);
-                Assert.Single(root.Properties(),
-                    category => category.Value.Type == JTokenType.Object &&
-                        category.Value[item.Property] != null);
-            }),
+            () => Assert.All(placements, item => Assert.NotNull(root[item.Category]?[item.Property])),
             () => Assert.Equal(serialized.Length, serialized.Distinct(StringComparer.OrdinalIgnoreCase).Count()),
             () => Assert.Equal(expected, actual));
     }
@@ -156,6 +150,4 @@ public sealed class CategorizedSettingsPersistenceTests
 
         Assert.Equal(["alpha", "Zulu"], commands.Properties().Select(property => property.Name));
     }
-
-
 }

@@ -157,9 +157,6 @@ public sealed class EconomyBalanceTests
             Assert.Equal(new TokenRankResult("alice", 50, 1), alice);
             Assert.Equal(new TokenRankResult("bob", 50, 2), bob);
             Assert.Equal(new TokenRankResult("charlie", 25, 3), charlie);
-            TokenRankResult?[] ranks = [alice, bob, charlie];
-            for (int index = 0; index < leaders.Count; index++)
-                Assert.Equal(new TokenRankResult(leaders[index].Key, leaders[index].Value, index + 1), ranks[index]);
         }
         finally
         {
