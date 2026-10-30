@@ -84,6 +84,14 @@ public sealed class QueryProtocolDecoderTests
     }
 
     [Fact]
+    public void ParsePlayers_DeduplicatesNamesIgnoringCase()
+    {
+        byte[] packet = BuildPacket(0, 1234, Encoding.ASCII.GetBytes("player_\0\0Steve\0sTeVe\0\0"));
+        Assert.Single(MinecraftQueryClient.ParsePlayers(packet, 1234),
+            name => string.Equals("Steve", name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ParsePlayers_AcceptsAnEmptyPlayerList()
     {
         byte[] payload = Encoding.ASCII.GetBytes("hostname\0server\0\0player_\0\0\0");
