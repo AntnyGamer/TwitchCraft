@@ -33,9 +33,14 @@ internal sealed partial class TokenStore
             {
                 SqliteConnection connection = GetConnectionNoLock();
                 using SqliteTransaction transaction = connection.BeginTransaction();
-                using SqliteCommand upsert = CreateUpsertCommand(connection, transaction);
-                using SqliteCommand delete = CreateDeleteCommand(connection, transaction);
-                SaveBalanceNoLock(upsert, delete, name, balance - amount);
+                int remaining = balance - amount;
+                using SqliteCommand balanceCommand = remaining == 0
+                    ? CreateDeleteCommand(connection, transaction)
+                    : CreateUpsertCommand(connection, transaction);
+                balanceCommand.Parameters[0].Value = name;
+                if (remaining > 0)
+                    balanceCommand.Parameters[1].Value = remaining;
+                balanceCommand.ExecuteNonQuery();
 
                 using SqliteCommand pending = connection.CreateCommand();
                 pending.Transaction = transaction;
