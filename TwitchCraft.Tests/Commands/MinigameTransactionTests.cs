@@ -1,5 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+using Microsoft.Data.Sqlite;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,6 +51,57 @@ public sealed class MinigameTransactionTests
                 "viewer, betting is closed."
             ],
             messages);
+    }
+
+    [Fact]
+    public void FailedMinigameSettlement_RetriesWinningsInsteadOfRefundingStake()
+    {
+        using TemporaryDirectory directory = new();
+        string path = Path.Combine(directory.Path, "viewer_tokens.db");
+        MainHandler runtime = new(new AppShellViewModel(), path);
+        Type manager = typeof(MinigameManager);
+        BindingFlags flags = BindingFlags.Static | BindingFlags.NonPublic;
+        MethodInfo start = Assert.IsType<MethodInfo>(manager.GetMethod("TryStart", flags));
+        MethodInfo getState = Assert.IsType<MethodInfo>(manager.GetMethod("GetChickenStateNoLock", flags));
+        MethodInfo settle = Assert.IsType<MethodInfo>(manager.GetMethod("SettleBets", flags));
+        MethodInfo refund = Assert.IsType<MethodInfo>(manager.GetMethod("RefundBets", flags));
+
+        runtime.Tokens.Load(0);
+        try
+        {
+            runtime.Tokens.Award("winner", 100);
+            object?[] args = [runtime, "ChickenRun", 0L];
+            Assert.True((bool)start.Invoke(null, args)!);
+            long roundID = (long)args[2]!;
+            object state = getState.Invoke(null, [runtime])!;
+            Type betType = manager.GetNestedType("ChickenRunBet", BindingFlags.NonPublic)!;
+            object bet = Activator.CreateInstance(betType, nonPublic: true)!;
+            betType.GetProperty("Viewer")!.SetValue(bet, "winner");
+            betType.GetProperty("TokenAmount")!.SetValue(bet, 25);
+            ((IList)state.GetType().GetProperty("Bets")!.GetValue(state)!).Add(bet);
+            Assert.True(runtime.Tokens.TrySpendForMinigameBet("winner", 25));
+
+            using SqliteConnection connection = new($"Data Source={path}");
+            connection.Open();
+            using SqliteCommand sql = connection.CreateCommand();
+            sql.CommandText = "CREATE TRIGGER fail_settlement BEFORE UPDATE ON TokenBalances BEGIN SELECT RAISE(ABORT, 'test'); END;";
+            sql.ExecuteNonQuery();
+
+            List<KeyValuePair<string, int>> payouts = [new("winner", 50)];
+            Assert.False((bool)settle.MakeGenericMethod(betType).Invoke(null, [runtime, state, "ChickenRun", roundID, payouts])!);
+            Assert.Equal(75, runtime.Tokens.GetBalance("winner"));
+            sql.CommandText = "DROP TRIGGER fail_settlement;";
+            sql.ExecuteNonQuery();
+
+            refund.MakeGenericMethod(betType).Invoke(null, [runtime, state]);
+            Assert.Equal(125, runtime.Tokens.GetBalance("winner"));
+            Assert.Empty((IList)state.GetType().GetProperty("Bets")!.GetValue(state)!);
+        }
+        finally
+        {
+            MinigameManager.StopLoops(runtime);
+            runtime.Tokens.Close();
+        }
     }
 
     [Theory]
