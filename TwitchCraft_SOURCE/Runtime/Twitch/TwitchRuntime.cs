@@ -337,7 +337,12 @@ public sealed partial class MainHandler
                     else
                     {
                         var settings = CurrentSettings;
-                        if (!settings.NonCommandChatRelayEnabled ||
+                        if (!settings.NonCommandChatRelayEnabled)
+                            continue;
+                        bool hasOnlinePlayers;
+                        lock (_playerGate)
+                            hasOnlinePlayers = _knownPlayers.Count > 0;
+                        if (!hasOnlinePlayers ||
                             !_twitchSession.TryUseRelaySlot(settings.MinecraftRelayMessagesPerSecond, settings.LowResourceModeEnabled))
                             continue;
                         bool includeTimestamp = settings.IncludeRelayTimestamps;
