@@ -20,11 +20,7 @@ public sealed class MinigameTransactionTests
     public async Task ReplyBetErrorAsync_ReportsRejectedReasonsWithoutSendingForSuccess()
     {
         List<string> messages = [];
-        Func<string, CancellationToken, Task> capture = (message, _) =>
-        {
-            messages.Add(message);
-            return Task.CompletedTask;
-        };
+        Func<string, CancellationToken, Task> capture = CaptureMessages(messages);
 
         foreach (MinigameManager.BetUpdateResult result in new[]
         {
@@ -61,10 +57,11 @@ public sealed class MinigameTransactionTests
         MainHandler runtime = new(new AppShellViewModel(), path);
         Type manager = typeof(MinigameManager);
         BindingFlags flags = BindingFlags.Static | BindingFlags.NonPublic;
-        MethodInfo start = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("TryStart", flags));
-        MethodInfo getState = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("GetChickenStateNoLock", flags));
-        MethodInfo settle = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("SettleBets", flags));
-        MethodInfo refund = Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod("RefundBets", flags));
+        MethodInfo RequireMethod(string name) => Assert.IsAssignableFrom<MethodInfo>(manager.GetMethod(name, flags));
+        MethodInfo start = RequireMethod("TryStart");
+        MethodInfo getState = RequireMethod("GetChickenStateNoLock");
+        MethodInfo settle = RequireMethod("SettleBets");
+        MethodInfo refund = RequireMethod("RefundBets");
 
         runtime.Tokens.Load(0);
         try
@@ -134,19 +131,7 @@ public sealed class MinigameTransactionTests
         List<(string Expected, string[] Errors, string[] Successes, int Balance, long Persisted, long Pending)> results = [];
 
         runtime.Tokens.Award("viewer", 500);
-        MinigameManager.AddHandlers(
-            runtime,
-            handlers,
-            (message, _) =>
-            {
-                errors.Add(message);
-                return Task.CompletedTask;
-            },
-            (message, _) =>
-            {
-                successes.Add(message);
-                return Task.CompletedTask;
-            });
+        MinigameManager.AddHandlers(runtime, handlers, CaptureMessages(errors), CaptureMessages(successes));
 
         try
         {
@@ -202,4 +187,11 @@ public sealed class MinigameTransactionTests
             reopened.CloseConnection();
         }
     }
+
+    private static Func<string, CancellationToken, Task> CaptureMessages(List<string> messages)
+        => (message, _) =>
+        {
+            messages.Add(message);
+            return Task.CompletedTask;
+        };
 }
