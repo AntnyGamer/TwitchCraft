@@ -41,6 +41,7 @@ public static partial class MinigameManager
     {
         public bool BettingOpen { get; set; }
         public List<TBet> Bets { get; } = [];
+        public List<KeyValuePair<string, int>>? PendingSettlement { get; set; }
         public Lock SettlementGate { get; } = new();
     }
 
