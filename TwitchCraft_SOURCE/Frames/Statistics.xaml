@@ -21,24 +21,13 @@
         </Style>
     </UserControl.Resources>
     <Grid ClipToBounds="True">
-        <Rectangle IsHitTestVisible="False">
-            <Rectangle.Fill>
-                <LinearGradientBrush StartPoint="0,3" EndPoint="0,0">
-                    <GradientStop Color="#00000000" Offset="0" />
-                    <GradientStop Color="#DD000000" Offset="1" />
-                </LinearGradientBrush>
-            </Rectangle.Fill>
-        </Rectangle>
+        <Rectangle IsHitTestVisible="False" Fill="{StaticResource PageFadeBrush}" />
 
         <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
                 <Button Width="100" Height="30" Content="Back" KeyboardNavigation.TabIndex="0" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Back_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
-                <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="0,18,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <TextBlock.Effect>
-                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="0" Opacity="1" />
-                    </TextBlock.Effect>
-                </TextBlock>
+                <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="0,18,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Effect="{StaticResource PageTitleShadow}" />
 
                 <Border Width="350" Height="326" BorderBrush="#FF5A5A5A" BorderThickness="2" Background="#B3202020" CornerRadius="8" Padding="12" Margin="-374,94,0,0" HorizontalAlignment="Center" VerticalAlignment="Top">
                     <Grid>
