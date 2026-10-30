@@ -25,24 +25,12 @@ public sealed partial class MainHandler
         if (rateLimited) await _twitchSession.ChatRateGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (rateLimited)
-            {
-                while (true)
-                {
-                    long now = Environment.TickCount64;
-                    while (_twitchSession.ChatSendTimes.TryPeek(out long sentAt) && now - sentAt >= 30_000)
-                        _twitchSession.ChatSendTimes.Dequeue();
+            long sendDelay = 0;
+            if (rateLimited && _twitchSession.ChatSendTimes.Count >= 100)
+                sendDelay = Math.Max(0, _twitchSession.ChatSendTimes.Peek() + 30_000 - Environment.TickCount64);
 
-                    bool privileged = _twitchSession.ChatPrivileged;
-                    long delay = _twitchSession.ChatSendTimes.Count >= (privileged ? 100 : 20)
-                        ? _twitchSession.ChatSendTimes.Peek() + 30_000 - now : 0;
-                    if (!privileged && _twitchSession.LastChatSentMilliseconds != 0)
-                        delay = Math.Max(delay, _twitchSession.LastChatSentMilliseconds + 1000 - now);
-                    if (delay <= 0)
-                        break;
-                    await Task.Delay(TimeSpan.FromMilliseconds(delay), cancellationToken).ConfigureAwait(false);
-                }
-            }
+            if (sendDelay > 0)
+                await Task.Delay(TimeSpan.FromMilliseconds(sendDelay), cancellationToken).ConfigureAwait(false);
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(TwitchSession.OperationTimeout);
             CancellationToken writeToken = timeoutCts.Token;
@@ -56,11 +44,8 @@ public sealed partial class MainHandler
                 await writer.FlushAsync(writeToken).ConfigureAwait(false);
                 if (rateLimited)
                 {
-                    long now = Environment.TickCount64;
-                    while (_twitchSession.ChatSendTimes.TryPeek(out long sentAt) && now - sentAt >= 30_000)
-                        _twitchSession.ChatSendTimes.Dequeue();
-                    _twitchSession.ChatSendTimes.Enqueue(now);
-                    _twitchSession.LastChatSentMilliseconds = now;
+                    if (_twitchSession.ChatSendTimes.Count >= 100) _twitchSession.ChatSendTimes.Dequeue();
+                    _twitchSession.ChatSendTimes.Enqueue(Environment.TickCount64);
                 }
             }
             finally
@@ -210,7 +195,6 @@ public sealed partial class MainHandler
                     cancellationToken).ConfigureAwait(false);
 
                 bool separateBotAccount = !string.Equals(botName, channelLogin, StringComparison.OrdinalIgnoreCase);
-                _twitchSession.ChatPrivileged = !separateBotAccount;
                 IRCMessage message = new();
 
                 while (!cancellationToken.IsCancellationRequested)
@@ -292,8 +276,6 @@ public sealed partial class MainHandler
 
                     if (!string.Equals(message.Command, "PRIVMSG", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(message.Command, "USERSTATE", StringComparison.OrdinalIgnoreCase))
-                            _twitchSession.ChatPrivileged = !separateBotAccount || message.IsPrivileged;
                         if (string.Equals(message.Command, "JOIN", StringComparison.OrdinalIgnoreCase) &&
                             string.Equals(message.SenderLogin, botName, StringComparison.OrdinalIgnoreCase))
                         {
@@ -402,10 +384,7 @@ public sealed partial class MainHandler
             finally
             {
                 if (_twitchSession.TryClearWriter(writer))
-                {
                     _twitchSession.ChatConnected = false;
-                    _twitchSession.ChatPrivileged = false;
-                }
 
                 try
                 {
@@ -489,8 +468,6 @@ internal sealed class TwitchSession
     internal HashSet<string> MessageIDs { get; } = new(StringComparer.Ordinal);
     internal Queue<string> MessageIDOrder { get; } = new();
     internal Queue<long> ChatSendTimes { get; } = new(100);
-    internal long LastChatSentMilliseconds;
-    internal volatile bool ChatPrivileged;
     internal WorkQueueState CommandQueue { get; } = new(MaxQueuedCommands);
     internal WorkQueueState QuickQueue { get; } = new(MaxQueuedQuickWork);
     internal CancellationTokenSource? FollowRewardsCts;
