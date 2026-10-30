@@ -1,4 +1,4 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="TwitchCraft_V1.Frames.Setup" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:TwitchCraft_V1" x:Class="TwitchCraft_V1.Frames.Setup" Background="Transparent" Foreground="White" UseLayoutRounding="True" SnapsToDevicePixels="True">
 
     <UserControl.Resources>
         <DataTemplate x:Key="VersionItemTemplate">
@@ -7,7 +7,7 @@
     </UserControl.Resources>
 
     <Grid ClipToBounds="True">
-        <Rectangle IsHitTestVisible="False" Fill="{StaticResource PageFadeBrush}" />
+        <Rectangle IsHitTestVisible="False" Fill="{x:Static local:App.PageFadeBrush}" />
 
         <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
