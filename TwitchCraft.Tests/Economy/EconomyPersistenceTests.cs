@@ -87,6 +87,35 @@ public sealed class EconomyPersistenceTests
         }
     }
 
+    [Fact]
+    public void PassiveBatchAward_FailedWriteReportsFailureWithoutPartialCreditAndRetries()
+    {
+        using TemporaryDirectory directory = new();
+        string path = Path.Combine(directory.Path, "viewer_tokens.db");
+        TokenService tokens = new(path, () => 0);
+        try
+        {
+            tokens.Load(0);
+            Assert.Equal(2, tokens.Award(["alice", "bob"], 10));
+            using SqliteConnection connection = new($"Data Source={path}");
+            connection.Open();
+            using SqliteCommand sql = connection.CreateCommand();
+            sql.CommandText = "CREATE TRIGGER fail_bob BEFORE UPDATE ON TokenBalances WHEN NEW.Username = 'bob' BEGIN SELECT RAISE(ABORT, 'test'); END;";
+            sql.ExecuteNonQuery();
+
+            Assert.False(tokens.TryAward(["alice", "bob"], 5));
+            Assert.Equal(10, tokens.GetBalance("alice"));
+            Assert.Equal(10, tokens.GetBalance("bob"));
+
+            sql.CommandText = "DROP TRIGGER fail_bob;";
+            sql.ExecuteNonQuery();
+            Assert.True(tokens.TryAward(["alice", "bob"], 5));
+            Assert.Equal(15, tokens.GetBalance("alice"));
+            Assert.Equal(15, tokens.GetBalance("bob"));
+        }
+        finally { tokens.Close(); }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
