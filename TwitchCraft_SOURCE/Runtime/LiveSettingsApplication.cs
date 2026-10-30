@@ -80,9 +80,7 @@ public sealed partial class MainHandler
     private void RefreshMinigames(bool minigamesEnabled)
     {
         if (_runtimeState != RuntimeState.Running)
-        {
             return;
-        }
 
         if (!minigamesEnabled)
         {
