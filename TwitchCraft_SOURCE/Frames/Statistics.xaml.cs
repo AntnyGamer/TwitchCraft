@@ -37,6 +37,7 @@ public partial class Statistics : UserControl
     private void StopRefreshTimer(bool clearParent)
     {
         _refreshTimer.Stop();
+        StatisticsDisabledBox.Visibility = Visibility.Collapsed;
         _refreshCancellation?.Cancel();
         if (!_refreshing)
             Interlocked.Exchange(ref _refreshCancellation, null)?.Dispose();
@@ -57,7 +58,8 @@ public partial class Statistics : UserControl
         try
         {
             _parent ??= AppHelpers.GetTwitchCraftWindow(this);
-            if (_parent is not TwitchCraft parent || !IsVisible)
+            if (_parent is not TwitchCraft parent || !IsVisible ||
+                (StatisticsDisabledBox.Visibility == Visibility.Visible && !parent.Runtime.Statistics.Enabled))
                 return;
 
             StatisticsSnapshot? stats = await Task.Run(() => parent.Runtime.Statistics.GetSnapshot(refreshToken), refreshToken);
