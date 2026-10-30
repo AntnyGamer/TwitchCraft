@@ -104,40 +104,33 @@ public sealed class MinigameTransactionTests
         }
     }
 
-    [Theory]
-    [InlineData("chickenbet", null, null, "viewer, usage: !chickenbet <tokenamt> <seconds>")]
-    [InlineData("chickenbet", "abc", "10", "viewer, please enter a valid token amount.")]
-    [InlineData("chickenbet", "10", "abc", "viewer, please enter a valid second value.")]
-    [InlineData("chickenbet", "10", "0", "viewer, please enter a valid second value.")]
-    [InlineData("chickenbet", "100", "10", "viewer, Chicken Run betting is not open right now.")]
-    [InlineData("guess", null, null, "viewer, usage: !guess <number>")]
-    [InlineData("guess", "abc", null, "viewer, please enter a valid number between 1 and 100.")]
-    [InlineData("guess", "0", null, "viewer, please enter a valid number between 1 and 100.")]
-    [InlineData("guess", "101", null, "viewer, please enter a valid number between 1 and 100.")]
-    [InlineData("guess", "50", null, "viewer, there is no Guess The Number round active right now.")]
-    [InlineData("damagewither", null, null, "viewer, usage: !damagewither <tokenamt> (your token bet is your damage)")]
-    [InlineData("damagewither", "abc", null, "viewer, please enter a valid token amount.")]
-    [InlineData("damagewither", "201", null, "viewer, the max Wither Battle bet is 200 tokens.")]
-    [InlineData("damagewither", "200", null, "viewer, a Wither Battle is not active right now.")]
-    public async Task MinigameHandlers_RejectInvalidOrInactiveWithoutCharge(
-        string command,
-        string? firstArgument,
-        string? secondArgument,
-        string expectedMessage)
+    [Fact]
+    public async Task MinigameHandlers_RejectInvalidOrInactiveCasesWithoutCharge()
     {
+        (string Command, string? First, string? Second, string Expected)[] cases =
+        [
+            ("chickenbet", null, null, "viewer, usage: !chickenbet <tokenamt> <seconds>"),
+            ("chickenbet", "abc", "10", "viewer, please enter a valid token amount."),
+            ("chickenbet", "10", "abc", "viewer, please enter a valid second value."),
+            ("chickenbet", "10", "0", "viewer, please enter a valid second value."),
+            ("chickenbet", "100", "10", "viewer, Chicken Run betting is not open right now."),
+            ("guess", null, null, "viewer, usage: !guess <number>"),
+            ("guess", "abc", null, "viewer, please enter a valid number between 1 and 100."),
+            ("guess", "0", null, "viewer, please enter a valid number between 1 and 100."),
+            ("guess", "101", null, "viewer, please enter a valid number between 1 and 100."),
+            ("guess", "50", null, "viewer, there is no Guess The Number round active right now."),
+            ("damagewither", null, null, "viewer, usage: !damagewither <tokenamt> (your token bet is your damage)"),
+            ("damagewither", "abc", null, "viewer, please enter a valid token amount."),
+            ("damagewither", "201", null, "viewer, the max Wither Battle bet is 200 tokens."),
+            ("damagewither", "200", null, "viewer, a Wither Battle is not active right now.")
+        ];
         using TemporaryDirectory directory = new();
         string databasePath = Path.Combine(directory.Path, "viewer_tokens.db");
-        MainHandler runtime = new(
-            new AppShellViewModel(),
-            databasePath);
+        MainHandler runtime = new(new AppShellViewModel(), databasePath);
         Dictionary<string, ChatCommandHandler> handlers = new(StringComparer.OrdinalIgnoreCase);
         List<string> errors = [];
         List<string> successes = [];
-        List<string> arguments = [];
-        if (firstArgument != null)
-            arguments.Add(firstArgument);
-        if (secondArgument != null)
-            arguments.Add(secondArgument);
+        List<Action> checks = [];
 
         runtime.Tokens.Award("viewer", 500);
         MinigameManager.AddHandlers(
@@ -156,11 +149,27 @@ public sealed class MinigameTransactionTests
 
         try
         {
-            await handlers[command]([.. arguments], "viewer", TestContext.Current.CancellationToken);
+            foreach ((string command, string? first, string? second, string expected) in cases)
+            {
+                errors.Clear();
+                successes.Clear();
+                List<string> arguments = [];
+                if (first != null)
+                    arguments.Add(first);
+                if (second != null)
+                    arguments.Add(second);
 
-            Assert.Equal([expectedMessage], errors);
-            Assert.Empty(successes);
-            Assert.Equal(500, runtime.Tokens.GetBalance("viewer"));
+                await handlers[command]([.. arguments], "viewer", TestContext.Current.CancellationToken);
+
+                string[] actualErrors = [.. errors];
+                string[] actualSuccesses = [.. successes];
+                int balance = runtime.Tokens.GetBalance("viewer");
+                checks.Add(() => Assert.Equal([expected], actualErrors));
+                checks.Add(() => Assert.Empty(actualSuccesses));
+                checks.Add(() => Assert.Equal(500, balance));
+            }
+
+            Assert.Multiple([.. checks]);
         }
         finally
         {
@@ -178,4 +187,5 @@ public sealed class MinigameTransactionTests
             reopened.CloseConnection();
         }
     }
+
 }
