@@ -89,9 +89,7 @@ public static partial class MinigameManager
     private static ChickenRunState GetChickenState(MainHandler runtime)
     {
         lock (MinigameGate)
-        {
             return GetChickenStateNoLock(runtime);
-        }
     }
 
     private static TState GetStateNoLock<TState>(Dictionary<MainHandler, TState> states, MainHandler runtime)
@@ -115,9 +113,7 @@ public static partial class MinigameManager
     private static WitherBattleState GetWitherState(MainHandler runtime)
     {
         lock (MinigameGate)
-        {
             return GetWitherStateNoLock(runtime);
-        }
     }
 
     private static WitherBattleState GetWitherStateNoLock(MainHandler runtime)
