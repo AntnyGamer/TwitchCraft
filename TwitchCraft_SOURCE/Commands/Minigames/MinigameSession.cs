@@ -74,9 +74,7 @@ public static partial class MinigameManager
             return false;
 
         lock (MinigameGate)
-        {
             return IsGuessRoundActiveNoLock(runtime, GetGuessStateNoLock(runtime), roundID);
-        }
     }
 
     private static bool IsGuessRoundActiveNoLock(MainHandler runtime, GuessNumberState state, long roundID)
