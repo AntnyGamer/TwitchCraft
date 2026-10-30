@@ -200,6 +200,7 @@ internal static class MinecraftRCONClient
         bool confirmedAny = false;
         try
         {
+            // Vanilla Minecraft can disconnect if RCON commands are pipelined.
             foreach (string command in commands)
             {
                 if (string.IsNullOrWhiteSpace(command))
@@ -241,6 +242,7 @@ internal static class MinecraftRCONClient
 
                 if (!sentinelSent)
                 {
+                    // Send the non-executing delimiter only after the first response.
                     await WritePacketAsync(stream, sentinelID, 100, string.Empty, cancellationToken).ConfigureAwait(false);
                     sentinelSent = true;
                 }
