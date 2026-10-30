@@ -74,9 +74,7 @@ public static partial class MinigameManager
             return false;
 
         lock (MinigameGate)
-        {
             return IsGuessRoundActiveNoLock(runtime, GetGuessStateNoLock(runtime), roundID);
-        }
     }
 
     private static bool IsGuessRoundActiveNoLock(MainHandler runtime, GuessNumberState state, long roundID)
@@ -177,13 +175,13 @@ public static partial class MinigameManager
     {
         lock (state.SettlementGate)
         {
-            List<KeyValuePair<string, int>> adjustments;
+            List<KeyValuePair<string, int>>? pending;
             lock (MinigameGate)
             {
-                if (state.PendingSettlement == null && state.Bets.Count == 0) return;
-                adjustments = state.PendingSettlement ?? BuildRefunds(state.Bets);
+                if (state.Bets.Count == 0 && state.PendingSettlement == null) return;
+                pending = state.PendingSettlement;
             }
-            if (runtime.Tokens.Adjust(adjustments))
+            if (runtime.Tokens.TryCompleteMinigameBets(pending ?? [], refund: pending == null))
                 lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
         }
     }
@@ -225,7 +223,7 @@ public static partial class MinigameManager
                     return false;
                 state.PendingSettlement = payouts;
             }
-            if (!runtime.Tokens.Adjust(payouts)) return false;
+            if (!runtime.Tokens.TryCompleteMinigameBets(payouts)) return false;
             lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
             return true;
         }

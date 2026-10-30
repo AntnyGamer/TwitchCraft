@@ -129,7 +129,7 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
-    public void TokenLeaderboard_SortsByBalanceThenUsernameAndHonorsLimit()
+    public void LeaderboardAndRank_AgreeOnNormalizedUsersTieBreaksAndLimits()
     {
         using TemporaryDirectory directory = new();
         TokenService tokens = new(Path.Combine(directory.Path, "viewer_tokens.db"), static () => 0);
@@ -144,34 +144,19 @@ public sealed class EconomyBalanceTests
             Assert.True(tokens.TryGetTopBalances(3, out IReadOnlyList<KeyValuePair<string, int>> leaders));
             Assert.Equal(["alice", "bob", "charlie"], leaders.Select(entry => entry.Key));
             Assert.Equal([50, 50, 25], leaders.Select(entry => entry.Value));
-        }
-        finally
-        {
-            tokens.Close();
-        }
-    }
 
-    [Fact]
-    public void TokenRank_ReturnsExactLeaderboardPositionAndBalance()
-    {
-        using TemporaryDirectory directory = new();
-        TokenService tokens = new(Path.Combine(directory.Path, "viewer_tokens.db"), static () => 0);
-
-        try
-        {
-            tokens.Award("charlie", 25);
-            tokens.Award("Bob", 50);
-            tokens.Award("alice", 50);
-            tokens.Award("delta", 10);
+            Assert.True(tokens.TryGetTopBalances(2, out IReadOnlyList<KeyValuePair<string, int>> limited));
+            Assert.Equal(["alice", "bob"], limited.Select(entry => entry.Key));
 
             Assert.True(tokens.TryGetRank("@ALICE", out TokenRankResult? alice));
             Assert.True(tokens.TryGetRank("bob", out TokenRankResult? bob));
             Assert.True(tokens.TryGetRank("Charlie", out TokenRankResult? charlie));
             Assert.True(tokens.TryGetRank("not_ranked", out TokenRankResult? missing));
+            Assert.Null(missing);
+
             Assert.Equal(new TokenRankResult("alice", 50, 1), alice);
             Assert.Equal(new TokenRankResult("bob", 50, 2), bob);
             Assert.Equal(new TokenRankResult("charlie", 25, 3), charlie);
-            Assert.Null(missing);
         }
         finally
         {

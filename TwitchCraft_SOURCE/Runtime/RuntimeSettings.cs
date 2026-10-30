@@ -107,7 +107,7 @@ public sealed partial class MainHandler
 
     internal int PassiveTokensPerPayout => CurrentSettings.PassiveTokensPerPayout;
 
-    internal void RecordChatActivity(string sender, long unixSeconds)
+    internal void RecordChatActivity(string sender, long? unixSeconds = null)
     {
         if (!CurrentSettings.PassiveRewardsRequireActivity)
             return;
@@ -116,8 +116,9 @@ public sealed partial class MainHandler
         if (normalizedSender.Length == 0)
             return;
 
+        long timestamp = unixSeconds ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         lock (_viewerGate)
-            _viewerLastChatActivity[normalizedSender] = unixSeconds;
+            _viewerLastChatActivity[normalizedSender] = timestamp;
     }
 
     internal bool IsRewardEligibleNoLock(string viewer, long nowUnixSeconds)

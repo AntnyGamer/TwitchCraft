@@ -132,6 +132,7 @@ internal sealed class FakeRCONServer : IAsyncDisposable
 
             if (_rejectPipelinedRequests)
             {
+                // A compliant client waits for each response before issuing another request.
                 await Task.Delay(30, cancellationToken).ConfigureAwait(false);
                 if (stream.DataAvailable)
                     return;

@@ -309,7 +309,7 @@ public sealed partial class MainHandler
                     if (!hasChatMessage || IsIgnoredUser(sender, botName, separateBotAccount))
                         continue;
 
-                    RecordChatActivity(sender, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                    RecordChatActivity(sender);
 
                     if (message.Bits > 0)
                     {
@@ -342,7 +342,7 @@ public sealed partial class MainHandler
                         bool hasOnlinePlayers;
                         lock (_playerGate)
                             hasOnlinePlayers = _knownPlayers.Count > 0;
-                        if (!hasOnlinePlayers ||
+                        if ((!hasOnlinePlayers && HasOnlinePlayerSnapshot) ||
                             !_twitchSession.TryUseRelaySlot(settings.MinecraftRelayMessagesPerSecond, settings.LowResourceModeEnabled))
                             continue;
                         bool includeTimestamp = settings.IncludeRelayTimestamps;

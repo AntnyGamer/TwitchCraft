@@ -117,122 +117,24 @@ public sealed partial class ConfigurationStore
     internal static TwitchCraftConfig Clone(TwitchCraftConfig source)
     {
         ArgumentNullException.ThrowIfNull(source);
-
-        return new TwitchCraftConfig
-        {
-            Server =
-            {
-                Java =
-                {
-                    ExecutablePath = source.Server.Java.ExecutablePath,
-                    HomeDirectory = source.Server.Java.HomeDirectory
-                },
-                RCON =
-                {
-                    Port = source.Server.RCON.Port,
-                    Password = source.Server.RCON.Password
-                },
-                MinecraftVersion = source.Server.MinecraftVersion,
-                ServerDirectory = source.Server.ServerDirectory,
-                JarPath = source.Server.JarPath,
-                BindIP = source.Server.BindIP,
-                PreviousBindIP = source.Server.PreviousBindIP,
-                RemoteHost = source.Server.RemoteHost,
-                Port = source.Server.Port,
-                MaxPlayers = source.Server.MaxPlayers,
-                MemoryMinGB = source.Server.MemoryMinGB,
-                MemoryMaxGB = source.Server.MemoryMaxGB
-            },
-            Twitch =
-            {
-                ClientID = source.Twitch.ClientID,
-                BotToken = source.Twitch.BotToken,
-                RefreshToken = source.Twitch.RefreshToken,
-                StreamerName = source.Twitch.StreamerName,
-                BotName = source.Twitch.BotName
-            },
-            Identity =
-            {
-                StreamerMinecraftName = source.Identity.StreamerMinecraftName
-            },
-            Settings =
-            {
-                MultiplayerEnabled = source.Settings.MultiplayerEnabled,
-                MultiplayerPvPEnabled = source.Settings.MultiplayerPvPEnabled,
-                WhitelistEnabled = source.Settings.WhitelistEnabled,
-                RemoteControlEnabled = source.Settings.RemoteControlEnabled,
-                HardcoreEnabled = source.Settings.HardcoreEnabled,
-                Difficulty = source.Settings.Difficulty,
-                RequireOnlineMode = source.Settings.RequireOnlineMode,
-                MinigamesEnabled = source.Settings.MinigamesEnabled,
-                MinigameCooldown = source.Settings.MinigameCooldown,
-                PassiveTokenEarningEnabled = source.Settings.PassiveTokenEarningEnabled,
-                AutomaticFollowRewardsEnabled = source.Settings.AutomaticFollowRewardsEnabled,
-                FollowRewardAmount = source.Settings.FollowRewardAmount,
-                AutomaticBitRewardsEnabled = source.Settings.AutomaticBitRewardsEnabled,
-                CommandCostMultiplier = source.Settings.CommandCostMultiplier,
-                BotResponseVerbosity = source.Settings.BotResponseVerbosity,
-                NonCommandChatRelayEnabled = source.Settings.NonCommandChatRelayEnabled,
-                ModeratorsCanUseStreamerCommands = source.Settings.ModeratorsCanUseStreamerCommands,
-                GlobalGameCommandCooldownEnabled = source.Settings.GlobalGameCommandCooldownEnabled,
-                GlobalGameCommandCooldownSeconds = source.Settings.GlobalGameCommandCooldownSeconds,
-                StatisticsEnabled = source.Settings.StatisticsEnabled,
-                CommandPrefix = source.Settings.CommandPrefix,
-                SecondaryCommandPrefix = source.Settings.SecondaryCommandPrefix,
-                MentionViewersInBotReplies = source.Settings.MentionViewersInBotReplies,
-                ShowExactCooldownRemaining = source.Settings.ShowExactCooldownRemaining,
-                RespondToUnknownCommands = source.Settings.RespondToUnknownCommands,
-                ViewerCommandsPaused = source.Settings.ViewerCommandsPaused,
-                PassiveTokensPerPayout = source.Settings.PassiveTokensPerPayout,
-                PassiveTokenPayoutMinimumSeconds = source.Settings.PassiveTokenPayoutMinimumSeconds,
-                PassiveTokenPayoutMaximumSeconds = source.Settings.PassiveTokenPayoutMaximumSeconds,
-                MaximumTokenBalance = source.Settings.MaximumTokenBalance,
-                PassiveRewardsRequireActivity = source.Settings.PassiveRewardsRequireActivity,
-                ChannelCommandLimitPerMinute = source.Settings.ChannelCommandLimitPerMinute,
-                AllowAllPlayerTarget = source.Settings.AllowAllPlayerTarget,
-                AllowRandomPlayerTarget = source.Settings.AllowRandomPlayerTarget,
-                IncludeRelayTimestamps = source.Settings.IncludeRelayTimestamps,
-                MinecraftRelayTextColor = source.Settings.MinecraftRelayTextColor,
-                ShowConnectionHealth = source.Settings.ShowConnectionHealth,
-                ViewerCommandLimitPerMinute = source.Settings.ViewerCommandLimitPerMinute,
-                PassiveActivityWindowMinutes = source.Settings.PassiveActivityWindowMinutes,
-                AutomaticBackupsEnabled = source.Settings.AutomaticBackupsEnabled,
-                AutomaticBackupIntervalHours = source.Settings.AutomaticBackupIntervalHours,
-                AutomaticBackupRetentionCount = source.Settings.AutomaticBackupRetentionCount,
-                LowResourceModeEnabled = source.Settings.LowResourceModeEnabled,
-                PauseUIUpdatesWhenMinimized = source.Settings.PauseUIUpdatesWhenMinimized,
-                MaxVisibleTwitchLogLines = source.Settings.MaxVisibleTwitchLogLines,
-                MaxVisibleMinecraftLogLines = source.Settings.MaxVisibleMinecraftLogLines,
-                ViewerRosterRefreshIntervalSeconds = source.Settings.ViewerRosterRefreshIntervalSeconds,
-                MinecraftRelayMessagesPerSecond = source.Settings.MinecraftRelayMessagesPerSecond,
-                MaxGameplayCommandQueue = source.Settings.MaxGameplayCommandQueue,
-                RCONTimeoutSeconds = source.Settings.RCONTimeoutSeconds,
-                GracefulShutdownTimeoutSeconds = source.Settings.GracefulShutdownTimeoutSeconds,
-                SQLiteOptimizeIntervalHours = source.Settings.SQLiteOptimizeIntervalHours,
-                ViewDistance = source.Settings.ViewDistance,
-                SimulationDistance = source.Settings.SimulationDistance,
-                EntityBroadcastRangePercentage = source.Settings.EntityBroadcastRangePercentage,
-                NetworkCompressionThreshold = source.Settings.NetworkCompressionThreshold,
-                EmptyServerShutdownDelayMinutes = source.Settings.EmptyServerShutdownDelayMinutes,
-                CommandCustomizations = CloneCommands(source.Settings.CommandCustomizations)
-            }
-        };
+        TwitchCraftConfig copy = source.ShallowCopy();
+        copy.Server = source.Server.ShallowCopy();
+        copy.Server.Java = source.Server.Java.ShallowCopy();
+        copy.Server.RCON = source.Server.RCON.ShallowCopy();
+        copy.Twitch = source.Twitch.ShallowCopy();
+        copy.Identity = source.Identity.ShallowCopy();
+        copy.Settings = source.Settings.ShallowCopy();
+        copy.Settings.CommandCustomizations = CloneCommands(source.Settings.CommandCustomizations);
+        return copy;
     }
 
     private static Dictionary<string, CommandCustomization> CloneCommands(
         Dictionary<string, CommandCustomization>? source)
     {
         Dictionary<string, CommandCustomization> result = new(source?.Count ?? 0, StringComparer.OrdinalIgnoreCase);
-        if (source == null)
-            return result;
-
-        foreach ((string name, CommandCustomization customization) in source)
-            result[name] = new CommandCustomization
-            {
-                Enabled = customization.Enabled,
-                CooldownSeconds = customization.CooldownSeconds,
-                GlobalCooldownSeconds = customization.GlobalCooldownSeconds
-            };
+        if (source != null)
+            foreach ((string name, CommandCustomization value) in source)
+                result[name] = value.ShallowCopy();
         return result;
     }
 

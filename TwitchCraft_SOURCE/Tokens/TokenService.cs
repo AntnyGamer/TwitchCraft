@@ -33,6 +33,12 @@ public sealed class TokenService
     public bool TrySpend(string user, int amount)
         => amount > 0 && _store.TrySpend(user, amount);
 
+    internal bool TrySpendForMinigameBet(string user, int amount)
+        => _store.TrySpendForMinigameBet(user, amount);
+
+    internal bool TryCompleteMinigameBets(IReadOnlyList<KeyValuePair<string, int>> payouts, bool refund = false)
+        => _store.TryCompleteMinigameBets(payouts, MaximumBalance, refund);
+
     internal int? TryTransfer(string fromUser, string toUser, int amount)
         => _store.TryTransfer(fromUser, toUser, amount, MaximumBalance);
 
@@ -64,6 +70,12 @@ public sealed class TokenService
             : _store.AdjustBalances(users, amount, MaximumBalance);
     }
 
+    internal bool TryAward(IEnumerable<string> users, int amount)
+    {
+        _ = _store.AdjustBalances(users, amount, MaximumBalance, out bool succeeded);
+        return succeeded;
+    }
+
     internal FollowRewardResult TryRewardFollower(
         string userID,
         string userLogin,
@@ -78,7 +90,14 @@ public sealed class TokenService
             out awardedAmount,
             MaximumBalance);
 
-    internal void Load(int maximumBalance) { _store.Load(); _store.ApplyMaximumBalance(maximumBalance); }
+    internal void Load(int maximumBalance)
+    {
+        _store.Load();
+        _store.AcquireDatabaseSessionLock();
+        _store.ApplyMaximumBalance(maximumBalance);
+        if (!_store.TryCompleteMinigameBets([], MaximumBalance, refund: true))
+            throw new InvalidOperationException("Unsettled minigame bets could not be recovered.");
+    }
 
     internal bool TryBackup(string destinationPath) => _store.TryBackup(destinationPath);
 

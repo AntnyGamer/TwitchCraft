@@ -14,6 +14,7 @@ namespace TwitchCraft.Tests.TestInfrastructure;
 internal static class FakeJavaServer
 {
     internal static readonly TimeSpan PollingTimeout = TimeSpan.FromSeconds(10);
+    private static readonly Lazy<string> Executable = new(ResolveExecutable);
 
     internal static TwitchCraftConfig CreateConfig(string directory, string mode = "normal")
     {
@@ -65,14 +66,19 @@ internal static class FakeJavaServer
         string? attributes = null)
     {
         File.WriteAllText(jarPath + ".players", string.Join(",", players));
-        File.WriteAllText(jarPath + ".spectators", string.Join(",", spectators ?? []));
-        File.WriteAllText(jarPath + ".health", maxHealth.ToString(CultureInfo.InvariantCulture));
-        File.WriteAllText(jarPath + ".item", selectedItem ?? "{id:'minecraft:air',count:1}");
-        File.WriteAllText(jarPath + ".attributes", attributes ?? "[]");
-        File.WriteAllText(jarPath + ".drop-responses", "0");
+        if (spectators is { Count: > 0 })
+            File.WriteAllText(jarPath + ".spectators", string.Join(",", spectators));
+        if (maxHealth != 20)
+            File.WriteAllText(jarPath + ".health", maxHealth.ToString(CultureInfo.InvariantCulture));
+        if (selectedItem != null)
+            File.WriteAllText(jarPath + ".item", selectedItem);
+        if (attributes != null)
+            File.WriteAllText(jarPath + ".attributes", attributes);
     }
 
-    internal static string GetExecutable()
+    internal static string GetExecutable() => Executable.Value;
+
+    private static string ResolveExecutable()
     {
         DirectoryInfo? root = new(AppContext.BaseDirectory);
         while (root != null && !File.Exists(Path.Combine(root.FullName, "TwitchCraft.slnx")))
@@ -149,8 +155,14 @@ internal static class FakeJavaServer
 
     internal static async Task StopRuntimeAndProcessAsync(MainHandler runtime, string jarPath)
     {
-        await runtime.StopProcessSafeAsync(waitBriefly: false);
-        runtime.Tokens.Close();
+        try
+        {
+            await runtime.StopProcessSafeAsync(waitBriefly: false);
+        }
+        finally
+        {
+            runtime.Tokens.Close();
+        }
 
         string processIDPath = jarPath + ".pid";
         if (!File.Exists(processIDPath))
@@ -178,6 +190,19 @@ internal static class FakeJavaServer
         {
             // The process has already exited and left the process table.
         }
+    }
+
+    internal static bool AnyLineShared(string path, Func<string, bool> matches)
+    {
+        if (!File.Exists(path))
+            return false;
+
+        using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using StreamReader reader = new(stream);
+        while (reader.ReadLine() is string line)
+            if (matches(line))
+                return true;
+        return false;
     }
 
     internal static List<string> ReadAllLinesShared(string path)

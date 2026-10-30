@@ -451,17 +451,13 @@ public partial class Start : UserControl
     }
 
     private bool TryGetRCONPort(out int port)
-    {
-        return int.TryParse(RemoteRCONPortTextbox.Text.AsSpan().Trim(), out port)
+        => int.TryParse(RemoteRCONPortTextbox.Text.AsSpan().Trim(), out port)
             && port is >= 1 and <= 65535;
-    }
 
     private string GetRCONPassword()
-    {
-        return RemoteRCONPasswordShowCheckbox.IsChecked == true
+        => RemoteRCONPasswordShowCheckbox.IsChecked == true
             ? RemoteRCONPasswordTextbox.Text ?? string.Empty
             : RemoteRCONPasswordBox.Password ?? string.Empty;
-    }
 
     private void ClearRCONPassword()
     {

@@ -200,8 +200,7 @@ internal static class MinecraftRCONClient
         bool confirmedAny = false;
         try
         {
-            // Vanilla Minecraft can disconnect when multiple RCON requests arrive in one TCP read.
-            // Wait for each response before sending the next command.
+            // Vanilla Minecraft can disconnect if RCON commands are pipelined.
             foreach (string command in commands)
             {
                 if (string.IsNullOrWhiteSpace(command))
@@ -243,9 +242,7 @@ internal static class MinecraftRCONClient
 
                 if (!sentinelSent)
                 {
-                    // Wait for the first response before sending the delimiter. Vanilla Minecraft
-                    // can close the connection if it reads two requests in a single TCP read.
-                    // An unknown packet type is answered without executing an empty command.
+                    // Send the non-executing delimiter only after the first response.
                     await WritePacketAsync(stream, sentinelID, 100, string.Empty, cancellationToken).ConfigureAwait(false);
                     sentinelSent = true;
                 }

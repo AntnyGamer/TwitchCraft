@@ -48,7 +48,7 @@ jobs:
           [xml]$coverage = Get-Content $report.FullName
           $lineCoverage = [double]$coverage.coverage.'line-rate' * 100
           Write-Host "Line coverage: $($lineCoverage.ToString('0.00'))%"
-          if ($lineCoverage -lt 40) { throw "Line coverage fell below 40%." }
+          if ($lineCoverage -lt 50) { throw "Line coverage fell below 50%." }
 
       - name: Upload code coverage
         if: always()
@@ -56,4 +56,4 @@ jobs:
         with:
           name: code-coverage
           path: TestResults/coverage.cobertura.*.xml
-          if-no-files-found: error
+          if-no-files-found: warn

@@ -407,6 +407,8 @@ internal sealed partial class TokenStore(string path)
             }
             finally
             {
+                _databaseSessionLock?.Dispose();
+                _databaseSessionLock = null;
                 _connection = null;
                 _schemaInitialized = false;
                 _balances.Clear();

@@ -41,6 +41,7 @@ public static partial class MinigameManager
     {
         public bool BettingOpen { get; set; }
         public List<TBet> Bets { get; } = [];
+        // Preserve calculated winnings across transient settlement failures.
         public List<KeyValuePair<string, int>>? PendingSettlement { get; set; }
         public Lock SettlementGate { get; } = new();
     }
@@ -89,9 +90,7 @@ public static partial class MinigameManager
     private static ChickenRunState GetChickenState(MainHandler runtime)
     {
         lock (MinigameGate)
-        {
             return GetChickenStateNoLock(runtime);
-        }
     }
 
     private static TState GetStateNoLock<TState>(Dictionary<MainHandler, TState> states, MainHandler runtime)
@@ -115,9 +114,7 @@ public static partial class MinigameManager
     private static WitherBattleState GetWitherState(MainHandler runtime)
     {
         lock (MinigameGate)
-        {
             return GetWitherStateNoLock(runtime);
-        }
     }
 
     private static WitherBattleState GetWitherStateNoLock(MainHandler runtime)
@@ -152,16 +149,4 @@ public static partial class MinigameManager
         return cloned;
     }
 
-    private static List<KeyValuePair<string, int>> BuildRefunds<TBet>(List<TBet> bets) where TBet : IBet
-    {
-        List<KeyValuePair<string, int>> refunds = new(bets.Count);
-        for (int i = 0; i < bets.Count; i++)
-        {
-            TBet bet = bets[i];
-            if (!string.IsNullOrWhiteSpace(bet.Viewer) && bet.TokenAmount > 0)
-                refunds.Add(new(bet.Viewer, bet.TokenAmount));
-        }
-
-        return refunds;
-    }
 }

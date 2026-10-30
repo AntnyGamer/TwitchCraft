@@ -53,6 +53,18 @@ public sealed class IRCFrameParserTests
     }
 
     [Fact]
+    public void TryParse_DoesNotCarryPrivilegesIntoNextValidMessage()
+    {
+        IRCMessage message = new();
+        Assert.True(message.TryParse("@mod=1;bits=250;id=first :Mod!mod@host PRIVMSG #channel :hello"));
+        Assert.True(message.TryParse(":Viewer!viewer@host PRIVMSG #channel :hello"));
+        Assert.False(message.IsModerator);
+        Assert.Equal(0, message.Bits);
+        Assert.Empty(message.ID);
+        Assert.Equal("viewer", message.SenderLogin);
+    }
+
+    [Fact]
     public void TryParse_IgnoresOverflowingBitsWithoutRejectingChat()
     {
         IRCMessage message = new();
