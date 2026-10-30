@@ -14,6 +14,7 @@ namespace TwitchCraft.Tests.TestInfrastructure;
 internal static class FakeJavaServer
 {
     internal static readonly TimeSpan PollingTimeout = TimeSpan.FromSeconds(10);
+    private static readonly Lazy<string> Executable = new(ResolveExecutable);
 
     internal static TwitchCraftConfig CreateConfig(string directory, string mode = "normal")
     {
@@ -72,7 +73,9 @@ internal static class FakeJavaServer
         File.WriteAllText(jarPath + ".drop-responses", "0");
     }
 
-    internal static string GetExecutable()
+    internal static string GetExecutable() => Executable.Value;
+
+    private static string ResolveExecutable()
     {
         DirectoryInfo? root = new(AppContext.BaseDirectory);
         while (root != null && !File.Exists(Path.Combine(root.FullName, "TwitchCraft.slnx")))
