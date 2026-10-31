@@ -155,7 +155,7 @@ internal static class MinecraftRCONClient
         {
             await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
             NetworkStream stream = client.GetStream();
-            byte[] packetLengthBuffer = new byte[4];
+            byte[] packetLengthBuffer = new byte[10];
 
             if (!await AuthenticateAsync(stream, packetLengthBuffer, NextRequestID(), password, cancellationToken).ConfigureAwait(false))
             {
@@ -285,7 +285,7 @@ internal static class MinecraftRCONClient
     private static async Task WritePacketAsync(Stream stream, int ID, int type, string payload, CancellationToken cancellationToken)
     {
         int payloadLength = RCONEncoding.GetByteCount(payload);
-        int length = 4 + 4 + payloadLength + 2;
+        int length = payloadLength + 10;
         if (length > MaxPacketLength)
             throw new InvalidDataException("RCON command payload is too large.");
 
@@ -316,7 +316,7 @@ internal static class MinecraftRCONClient
         if (length < 10 || length > MaxPacketLength)
             throw new InvalidDataException("RCON returned an invalid packet length.");
 
-        byte[] payload = ArrayPool<byte>.Shared.Rent(length);
+        byte[] payload = length == 10 ? packetLengthBuffer : ArrayPool<byte>.Shared.Rent(length);
         try
         {
             await stream.ReadExactlyAsync(payload.AsMemory(0, length), cancellationToken).ConfigureAwait(false);
@@ -334,7 +334,8 @@ internal static class MinecraftRCONClient
         finally
         {
             payload.AsSpan(0, length).Clear();
-            ArrayPool<byte>.Shared.Return(payload);
+            if (length > 10)
+                ArrayPool<byte>.Shared.Return(payload);
         }
     }
 
@@ -355,7 +356,7 @@ internal static class MinecraftRCONClient
 
     private static int NextRequestID()
     {
-        _nextRequestID = unchecked((_nextRequestID + 1) & 0x3FFFFFFF);
+        _nextRequestID = (_nextRequestID + 1) & 0x3FFFFFFF;
         if (_nextRequestID == 0)
             _nextRequestID = 1;
 
