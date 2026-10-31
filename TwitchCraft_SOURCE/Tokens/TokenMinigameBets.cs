@@ -13,7 +13,6 @@ internal sealed partial class TokenStore
         ON CONFLICT(Username) DO UPDATE SET Amount = Amount + excluded.Amount;
         """;
 
-
     internal void AcquireDatabaseSessionLock()
     {
         lock (_gate)
@@ -71,7 +70,10 @@ internal sealed partial class TokenStore
             try
             {
                 SqliteConnection connection = GetConnectionNoLock();
-                Dictionary<string, int> pending = new(StringComparer.Ordinal);
+                using SqliteCommand clear = new("DELETE FROM PendingMinigameBets;", connection);
+                if (!refund && payouts.Count == 0)
+                    return clear.ExecuteNonQuery() > 0;
+                Dictionary<string, int> pending = new();
                 using (SqliteCommand read = connection.CreateCommand())
                 {
                     read.CommandText = "SELECT Username, Amount FROM PendingMinigameBets;";
@@ -83,7 +85,7 @@ internal sealed partial class TokenStore
                 if (pending.Count == 0)
                     return refund;
 
-                Dictionary<string, int> adjustments = refund ? pending : new(StringComparer.Ordinal);
+                Dictionary<string, int> adjustments = refund ? pending : new();
                 if (!refund)
                 {
                     foreach (KeyValuePair<string, int> payout in payouts)
@@ -100,7 +102,7 @@ internal sealed partial class TokenStore
                 if (!EnsureManyLoadedNoLock(adjustments.Keys))
                     return false;
 
-                Dictionary<string, int> balances = new(adjustments.Count, StringComparer.Ordinal);
+                Dictionary<string, int> balances = new(adjustments.Count);
                 using SqliteTransaction transaction = connection.BeginTransaction();
                 using SqliteCommand upsert = CreateUpsertCommand(connection, transaction);
                 using SqliteCommand delete = CreateDeleteCommand(connection, transaction);
@@ -114,9 +116,7 @@ internal sealed partial class TokenStore
                     balances.Add(adjustment.Key, updated);
                 }
 
-                using SqliteCommand clear = connection.CreateCommand();
                 clear.Transaction = transaction;
-                clear.CommandText = "DELETE FROM PendingMinigameBets;";
                 clear.ExecuteNonQuery();
                 transaction.Commit();
 
