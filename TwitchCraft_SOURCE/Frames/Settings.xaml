@@ -346,7 +346,7 @@
                                                 <TextBlock Text="Enable low-resource preset:" Style="{StaticResource SettingLabel}" />
                                                 <CheckBox x:Name="LowResourceModeCheckbox" AutomationProperties.Name="Enable low-resource preset" Checked="LowResource_Changed" Unchecked="LowResource_Changed" ToolTip="Uses smaller logs and queues, slower roster/health refreshes, minimized UI pausing, and a safe relay limit." />
                                             </DockPanel>
-                                            <Border x:Name="LowResourceEffectiveValuesBorder" Visibility="Collapsed" Margin="0,2,0,10" Padding="10" Width="465" HorizontalAlignment="Center" BorderBrush="Black" BorderThickness="1" CornerRadius="4">
+                                            <Border x:Name="LowResourceEffectiveValuesBorder" Visibility="Collapsed" Margin="0,2,0,10" Padding="10" Width="465" HorizontalAlignment="Left" BorderBrush="Black" BorderThickness="1" CornerRadius="4">
                                                 <Border.Background>
                                                     <SolidColorBrush Color="#FF656565" Opacity="0.5" />
                                                 </Border.Background>
