@@ -8,7 +8,6 @@ using TwitchCraft_V1.Setup;
 
 namespace TwitchCraft_V1;
 
-/// Owns command targeting, authorization, costs, and command-specific cooldown state.
 public sealed class CommandService
 {
     private const double DefaultGlobalGameCommandCooldownSeconds = 10.0;

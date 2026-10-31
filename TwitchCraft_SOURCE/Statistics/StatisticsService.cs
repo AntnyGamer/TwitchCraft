@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace TwitchCraft_V1;
 
-/// Owns session and lifetime statistics, persistence coordination, and snapshots.
 public sealed partial class StatisticsService
 {
     private static readonly string[] DeathMessagePhrases =

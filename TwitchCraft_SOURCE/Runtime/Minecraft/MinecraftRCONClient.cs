@@ -19,6 +19,7 @@ internal static class MinecraftRCONClient
     private const int MaxPacketLength = 1_048_576;
     private const int MaxResponseLength = 1_048_576;
     private static readonly UTF8Encoding RCONEncoding = new(false);
+    private static readonly Decoder RCONDecoder = RCONEncoding.GetDecoder();
     private static readonly SemaphoreSlim ConnectionGate = new(1, 1);
     private static TcpClient? _client;
     private static NetworkStream? _stream;
@@ -154,7 +155,7 @@ internal static class MinecraftRCONClient
         {
             await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
             NetworkStream stream = client.GetStream();
-            byte[] packetLengthBuffer = new byte[4];
+            byte[] packetLengthBuffer = new byte[10];
 
             if (!await AuthenticateAsync(stream, packetLengthBuffer, NextRequestID(), password, cancellationToken).ConfigureAwait(false))
             {
@@ -227,11 +228,11 @@ internal static class MinecraftRCONClient
         await WritePacketAsync(stream, commandID, CommandPacketType, command, cancellationToken).ConfigureAwait(false);
 
         StringBuilder response = new();
-        Decoder decoder = RCONEncoding.GetDecoder();
+        RCONDecoder.Reset();
         bool sentinelSent = false;
         while (true)
         {
-            RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decoder: decoder).ConfigureAwait(false);
+            RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decoder: RCONDecoder).ConfigureAwait(false);
             if (packet.ID == commandID)
             {
                 if (packet.Type != ResponseValuePacketType)
@@ -284,7 +285,7 @@ internal static class MinecraftRCONClient
     private static async Task WritePacketAsync(Stream stream, int ID, int type, string payload, CancellationToken cancellationToken)
     {
         int payloadLength = RCONEncoding.GetByteCount(payload);
-        int length = 4 + 4 + payloadLength + 2;
+        int length = payloadLength + 10;
         if (length > MaxPacketLength)
             throw new InvalidDataException("RCON command payload is too large.");
 
@@ -315,7 +316,7 @@ internal static class MinecraftRCONClient
         if (length < 10 || length > MaxPacketLength)
             throw new InvalidDataException("RCON returned an invalid packet length.");
 
-        byte[] payload = ArrayPool<byte>.Shared.Rent(length);
+        byte[] payload = length == 10 ? packetLengthBuffer : ArrayPool<byte>.Shared.Rent(length);
         try
         {
             await stream.ReadExactlyAsync(payload.AsMemory(0, length), cancellationToken).ConfigureAwait(false);
@@ -333,7 +334,8 @@ internal static class MinecraftRCONClient
         finally
         {
             payload.AsSpan(0, length).Clear();
-            ArrayPool<byte>.Shared.Return(payload);
+            if (length > 10)
+                ArrayPool<byte>.Shared.Return(payload);
         }
     }
 
@@ -354,7 +356,7 @@ internal static class MinecraftRCONClient
 
     private static int NextRequestID()
     {
-        _nextRequestID = unchecked((_nextRequestID + 1) & 0x3FFFFFFF);
+        _nextRequestID = (_nextRequestID + 1) & 0x3FFFFFFF;
         if (_nextRequestID == 0)
             _nextRequestID = 1;
 

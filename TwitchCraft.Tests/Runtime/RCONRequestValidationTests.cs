@@ -46,7 +46,7 @@ public sealed class RCONRequestValidationTests
         CancellationToken cancellationToken = timeout.Token;
         const string password = "strict-request-order-password";
         await using FakeRCONServer RCON = new(password,
-            responseFactory: command => "reply:" + command,
+            responseFactory: command => command == "say two" ? string.Empty : "reply:" + command,
             rejectPipelinedRequests: true);
 
         try

@@ -26,7 +26,7 @@ public sealed class BackupRetentionPolicyTests
     }
 
     [Fact]
-    public void PruneBackups_DefaultRetentionKeepsThreeNewestCompleteBackups()
+    public void PruneBackups_KeepsThreeNewestCompleteBackups()
     {
         using TemporaryDirectory root = new();
         string[] names =

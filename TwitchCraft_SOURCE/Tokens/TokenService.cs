@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace TwitchCraft_V1;
 
-/// Owns viewer balances, follower rewards, and token-database maintenance.
 public sealed class TokenService
 {
     private readonly TokenStore _store;
