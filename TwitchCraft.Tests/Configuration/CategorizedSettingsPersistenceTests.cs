@@ -15,7 +15,7 @@ public sealed class CategorizedSettingsPersistenceTests
     };
 
     [Fact]
-    public void Serialize_DefaultProfileHasCompleteAndUnambiguousCategoryMapping()
+    public void Serialize_MapsEachPersistedPropertyToOneCategory()
     {
         JObject root = JObject.Parse(JsonConvert.SerializeObject(new StartingProfile(), SerializerSettings));
         string[] serialized = root.Properties()
