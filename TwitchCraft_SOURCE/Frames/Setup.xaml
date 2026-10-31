@@ -9,8 +9,8 @@
     <Grid ClipToBounds="True">
         <Rectangle IsHitTestVisible="False" Fill="{x:Static local:App.PageFadeBrush}" />
 
-        <Viewbox Stretch="Uniform" StretchDirection="Both">
-            <Grid Width="800" Height="450" SnapsToDevicePixels="True">
+        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
                 <Button KeyboardNavigation.TabIndex="0" Style="{StaticResource HelpIconButton}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,10,0,0" />
                 <TextBlock x:Name="Title" Text="TwitchCraft Setup" FontFamily="Cascadia Mono" FontSize="30" Foreground="Red" TextAlignment="Center" Margin="0,26,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" />
                 <TextBlock x:Name="JavaRequirementText" Width="91" Text="JDK 25 REQUIRED" FontFamily="Arial Rounded MT Bold" FontSize="10" Foreground="#FFD6D6D6" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="196,111,0,0" />
