@@ -350,7 +350,7 @@
                                                 <Border.Background>
                                                     <SolidColorBrush Color="#FF656565" Opacity="0.5" />
                                                 </Border.Background>
-                                                <TextBlock x:Name="LowResourceEffectiveValuesTextBlock" TextWrapping="Wrap" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" VerticalAlignment="Center" />
+                                                <TextBlock x:Name="LowResourceEffectiveValuesTextBlock" TextWrapping="Wrap" Foreground="#C6C6C6" FontSize="13" VerticalAlignment="Center" />
                                             </Border>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Pause unnecessary UI updates while minimized:" Style="{StaticResource SettingLabel}" />
@@ -454,13 +454,13 @@
                                                         <RowDefinition Height="34" />
                                                     </Grid.RowDefinitions>
                                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Minimum Minecraft RAM (GB):" Style="{StaticResource SettingLabel}" Width="Auto" />
-                                                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="MinRAMTextBox" AutomationProperties.Name="Minimum Minecraft RAM in GB" Width="52" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="RAM_Changed" PreviewTextInput="RAM_PreviewTextInput" FontFamily="Arial Rounded MT Bold" FontSize="16" MaxLength="3" />
+                                                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="MinRAMTextBox" AutomationProperties.Name="Minimum Minecraft RAM in GB" Width="52" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="RAM_Changed" PreviewTextInput="RAM_PreviewTextInput" FontSize="16" MaxLength="3" />
                                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Maximum Minecraft RAM (GB):" Style="{StaticResource SettingLabel}" Width="Auto" />
-                                                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="MaxRAMTextBox" AutomationProperties.Name="Maximum Minecraft RAM in GB" Width="52" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="RAM_Changed" PreviewTextInput="RAM_PreviewTextInput" FontFamily="Arial Rounded MT Bold" FontSize="16" MaxLength="3" />
+                                                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="MaxRAMTextBox" AutomationProperties.Name="Maximum Minecraft RAM in GB" Width="52" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center" TextChanged="RAM_Changed" PreviewTextInput="RAM_PreviewTextInput" FontSize="16" MaxLength="3" />
                                                 </Grid>
-                                                <TextBlock Width="410" Margin="0,0,0,25" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" VerticalAlignment="Center" Text="RAM changes apply on the next server start." />
+                                                <TextBlock Width="410" Margin="0,0,0,25" Foreground="#C6C6C6" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" VerticalAlignment="Center" Text="RAM changes apply on the next server start." />
                                                 <Button x:Name="AuthorizeTwitchButton" Content="Authorize Twitch" ToolTipService.ShowOnDisabled="True" Width="178" Height="30" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" HorizontalAlignment="Center" />
-                                                <TextBlock Width="410" Margin="0,4,0,22" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Foreground="#C6C6C6" FontFamily="Arial Rounded MT Bold" FontSize="13" VerticalAlignment="Center" Text="TwitchCraft uses a public Twitch application. No Client ID or Client Secret is entered by the user, and your Twitch password is never provided to TwitchCraft. Authorization tokens are stored locally and sent only to Twitch as needed." />
+                                                <TextBlock Width="410" Margin="0,4,0,22" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Foreground="#C6C6C6" FontSize="13" VerticalAlignment="Center" Text="TwitchCraft uses a public Twitch application. No Client ID or Client Secret is entered by the user, and your Twitch password is never provided to TwitchCraft. Authorization tokens are stored locally and sent only to Twitch as needed." />
                                                 <StackPanel x:Name="RCONPasswordEditor" Margin="0,0,0,8" IsKeyboardFocusWithinChanged="RCONPasswordEditor_FocusWithinChanged">
                                                     <Grid Width="410" HorizontalAlignment="Center" Margin="0,0,0,4">
                                                         <Grid.ColumnDefinitions>
@@ -469,8 +469,8 @@
                                                             <ColumnDefinition Width="66" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Text="RCON Password:" Style="{StaticResource SettingLabel}" Width="Auto" TextWrapping="NoWrap" Margin="0,0,8,0" />
-                                                        <PasswordBox Grid.Column="1" x:Name="RCONPasswordBox" AutomationProperties.Name="RCON Password" Height="26" VerticalAlignment="Center" PasswordChar="●" FontFamily="Arial Rounded MT Bold" FontSize="16" />
-                                                        <TextBox Grid.Column="1" x:Name="RCONPasswordTextBox" AutomationProperties.Name="RCON Password" UndoLimit="0" Height="26" VerticalAlignment="Center" FontFamily="Arial Rounded MT Bold" FontSize="16" Visibility="Collapsed" />
+                                                        <PasswordBox Grid.Column="1" x:Name="RCONPasswordBox" AutomationProperties.Name="RCON Password" Height="26" VerticalAlignment="Center" PasswordChar="●" FontSize="16" />
+                                                        <TextBox Grid.Column="1" x:Name="RCONPasswordTextBox" AutomationProperties.Name="RCON Password" UndoLimit="0" Height="26" VerticalAlignment="Center" FontSize="16" Visibility="Collapsed" />
                                                         <Button Grid.Column="2" x:Name="RCONPasswordShowButton" Content="Show" Width="58" Height="26" HorizontalAlignment="Right" Click="ToggleRCONPasswordVisibility_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="16" />
                                                     </Grid>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
