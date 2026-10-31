@@ -122,8 +122,7 @@ public sealed partial class StatisticsService
             return null;
         }
 
-        double clampedSeconds = Math.Min(seconds, TimeSpan.MaxValue.TotalSeconds);
-        return TimeSpan.FromSeconds(clampedSeconds);
+        return TimeSpan.FromSeconds(Math.Min(seconds, TimeSpan.MaxValue.TotalSeconds));
     }
 
     private void PauseLifeNoLock(DateTime now)
@@ -163,7 +162,7 @@ public sealed partial class StatisticsService
             return 0;
         }
 
-        return (long)Math.Floor((nowUtc - startedUtc).TotalSeconds);
+        return (nowUtc - startedUtc).Ticks / TimeSpan.TicksPerSecond;
     }
 
     private static int ClampDeathScore(long deathScore)
