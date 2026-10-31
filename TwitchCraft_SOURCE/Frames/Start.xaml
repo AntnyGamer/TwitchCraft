@@ -10,9 +10,13 @@
         <Rectangle IsHitTestVisible="False" Fill="{x:Static local:App.PageFadeBrush}" />
 
         <Viewbox Stretch="Uniform"
-                 StretchDirection="Both">
+                 StretchDirection="Both"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Stretch">
             <Grid Width="800"
                   Height="450"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
                   SnapsToDevicePixels="True">
 
                 <TextBlock x:Name="Title"
