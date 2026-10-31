@@ -182,7 +182,13 @@ public static partial class MinigameManager
                 pending = state.PendingSettlement;
             }
             if (runtime.Tokens.TryCompleteMinigameBets(pending ?? [], refund: pending == null))
-                lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
+            {
+                lock (MinigameGate)
+                {
+                    state.Bets.Clear();
+                    state.PendingSettlement = null;
+                }
+            }
         }
     }
 
@@ -224,7 +230,11 @@ public static partial class MinigameManager
                 state.PendingSettlement = payouts;
             }
             if (!runtime.Tokens.TryCompleteMinigameBets(payouts)) return false;
-            lock (MinigameGate) { state.Bets.Clear(); state.PendingSettlement = null; }
+            lock (MinigameGate)
+            {
+                state.Bets.Clear();
+                state.PendingSettlement = null;
+            }
             return true;
         }
     }
