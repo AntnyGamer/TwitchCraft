@@ -23,8 +23,8 @@
     <Grid ClipToBounds="True">
         <Rectangle IsHitTestVisible="False" Fill="{x:Static local:App.PageFadeBrush}" />
 
-        <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <Grid Width="800" Height="450" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
+        <Viewbox Stretch="Uniform" StretchDirection="Both">
+            <Grid Width="800" Height="450" SnapsToDevicePixels="True">
                 <Button Width="100" Height="30" Content="Back" KeyboardNavigation.TabIndex="0" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Back_Click" Margin="24,10,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
 
                 <TextBlock FontFamily="Cascadia Mono" FontSize="32" FontWeight="Bold" Text="Statistics" Foreground="#FFFF1B1B" Margin="0,18,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Effect="{x:Static local:App.PageTitleShadow}" />
@@ -47,34 +47,34 @@
                             <RowDefinition Height="25" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Session" Style="{StaticResource StatHeaderText}" />
+                        <TextBlock Grid.ColumnSpan="2" Text="Session" Style="{StaticResource StatHeaderText}" />
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Commands" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="1" Text="Commands" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="1" Grid.Column="1" x:Name="SessionCommandsText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Most used" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="2" Text="Most used" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="2" Grid.Column="1" x:Name="SessionMostUsedCommandText" Text="None yet" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Tokens spent" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="3" Text="Tokens spent" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="3" Grid.Column="1" x:Name="SessionTokensSpentText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Effects received" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="4" Text="Effects received" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="4" Grid.Column="1" x:Name="SessionEffectsText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="5" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
                         <Viewbox Grid.Row="5" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock x:Name="SessionDangerousText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
                         </Viewbox>
 
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="6" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
                         <Viewbox Grid.Row="6" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock x:Name="SessionNicestText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
                         </Viewbox>
 
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Deaths" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="7" Text="Deaths" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="7" Grid.Column="1" x:Name="SessionDeathsText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Time survived" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="8" Text="Time survived" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="8" Grid.Column="1" x:Name="SessionSurvivedText" Text="Waiting for join" Style="{StaticResource StatValueText}" />
                     </Grid>
                 </Border>
@@ -99,40 +99,40 @@
                             <RowDefinition Height="25" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="All-time" Style="{StaticResource StatHeaderText}" />
+                        <TextBlock Grid.ColumnSpan="2" Text="All-time" Style="{StaticResource StatHeaderText}" />
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Commands" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="1" Text="Commands" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TotalCommandsText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Most used" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="2" Text="Most used" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalMostUsedCommandText" Text="None yet" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Tokens spent" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="3" Text="Tokens spent" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TotalTokensSpentText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Effects received" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="4" Text="Effects received" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="4" Grid.Column="1" x:Name="TotalEffectsText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="5" Text="Dangerous viewer" Style="{StaticResource StatLabelText}" />
                         <Viewbox Grid.Row="5" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock x:Name="TotalDangerousText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
                         </Viewbox>
 
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="6" Text="Nicest viewer" Style="{StaticResource StatLabelText}" />
                         <Viewbox Grid.Row="6" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock x:Name="TotalNicestText" Text="None yet" Style="{StaticResource StatValueText}" TextTrimming="None" TextWrapping="NoWrap" />
                         </Viewbox>
 
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Deaths" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="7" Text="Deaths" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="7" Grid.Column="1" x:Name="TotalDeathsText" Text="0" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Longest survived" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="8" Text="Longest survived" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="8" Grid.Column="1" x:Name="TotalLongestText" Text="None" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="9" Grid.Column="0" Text="Shortest survived" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="9" Text="Shortest survived" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="9" Grid.Column="1" x:Name="TotalShortestText" Text="None" Style="{StaticResource StatValueText}" />
 
-                        <TextBlock Grid.Row="10" Grid.Column="0" Text="Sessions" Style="{StaticResource StatLabelText}" />
+                        <TextBlock Grid.Row="10" Text="Sessions" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="10" Grid.Column="1" x:Name="TotalSessionsStartedText" Text="0" Style="{StaticResource StatValueText}" />
                     </Grid>
                 </Border>
