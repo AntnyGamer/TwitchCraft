@@ -118,9 +118,7 @@ public sealed partial class StatisticsService
     private static TimeSpan? ToDuration(long seconds)
     {
         if (seconds <= 0)
-        {
             return null;
-        }
 
         return TimeSpan.FromSeconds(Math.Min(seconds, TimeSpan.MaxValue.TotalSeconds));
     }
