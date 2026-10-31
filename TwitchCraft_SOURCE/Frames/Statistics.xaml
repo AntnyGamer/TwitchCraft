@@ -137,7 +137,7 @@
                     </Grid>
                 </Border>
 
-                <TextBlock Width="352" Height="12" TextAlignment="Center" Text="In-game statistics only apply to the username written in the config." FontFamily="Arial Rounded MT Bold" FontSize="11" Foreground="#FFC6C6C6" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,429,0,0" />
+                <TextBlock Width="500" TextAlignment="Center" Text="In-game statistics only apply to the username written in the config." FontFamily="Arial Rounded MT Bold" FontSize="11" Foreground="#FFC6C6C6" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,429,0,0" />
 
                 <Border x:Name="StatisticsDisabledBox" Width="484" Height="53" Background="#CCFFFFFF" CornerRadius="12" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,60,0,0">
                     <TextBlock x:Name="StatisticsDisabledText" Text="Statistics are disabled. Existing saved stats are shown, but new stats will not be counted." TextAlignment="Center" TextWrapping="Wrap" FontFamily="Arial Rounded MT Bold" FontSize="20" Foreground="#FFFF4C4C" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="10,0" />

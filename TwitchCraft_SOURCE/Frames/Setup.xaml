@@ -34,7 +34,7 @@
                 <TextBox x:Name="BotUserTextbox" AutomationProperties.Name="Authorized Bot Account" Width="200" Height="30" IsReadOnly="True" IsTabStop="False" ToolTip="Filled automatically after Twitch authorization." FontFamily="Arial Rounded MT Bold" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="404,219,0,0" />
                 <TextBlock Width="500" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,258,0,0" FontFamily="Arial Rounded MT Bold" FontSize="10.5" FontWeight="Bold" Foreground="Red" Text="IMPORTANT: Authorize with the Twitch account you want TwitchCraft to use as your bot account." />
 
-                <Button x:Name="AuthorizeTwitchButton" KeyboardNavigation.TabIndex="4" ToolTipService.ShowOnDisabled="True" Width="156" Height="32" Content="Authorize Twitch" IsEnabled="True" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,292,0,0" />
+                <Button x:Name="AuthorizeTwitchButton" KeyboardNavigation.TabIndex="4" ToolTipService.ShowOnDisabled="True" Width="156" Height="32" Content="Authorize Twitch" Click="AuthorizeTwitch_Click" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,292,0,0" />
 
                 <Button x:Name="StartButton" KeyboardNavigation.TabIndex="5" Width="116" Height="51" Content="Start" IsEnabled="False" ToolTipService.ShowOnDisabled="True" FontFamily="Tw Cen MT Condensed Extra Bold" FontSize="20" Click="Start_Click" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,330,0,0" />
 
