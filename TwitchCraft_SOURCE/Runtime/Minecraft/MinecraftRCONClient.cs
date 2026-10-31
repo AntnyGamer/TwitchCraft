@@ -19,6 +19,7 @@ internal static class MinecraftRCONClient
     private const int MaxPacketLength = 1_048_576;
     private const int MaxResponseLength = 1_048_576;
     private static readonly UTF8Encoding RCONEncoding = new(false);
+    private static readonly Decoder RCONDecoder = RCONEncoding.GetDecoder();
     private static readonly SemaphoreSlim ConnectionGate = new(1, 1);
     private static TcpClient? _client;
     private static NetworkStream? _stream;
@@ -227,11 +228,11 @@ internal static class MinecraftRCONClient
         await WritePacketAsync(stream, commandID, CommandPacketType, command, cancellationToken).ConfigureAwait(false);
 
         StringBuilder response = new();
-        Decoder decoder = RCONEncoding.GetDecoder();
+        RCONDecoder.Reset();
         bool sentinelSent = false;
         while (true)
         {
-            RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decoder: decoder).ConfigureAwait(false);
+            RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decoder: RCONDecoder).ConfigureAwait(false);
             if (packet.ID == commandID)
             {
                 if (packet.Type != ResponseValuePacketType)
