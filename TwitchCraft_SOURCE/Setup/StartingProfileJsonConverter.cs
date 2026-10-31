@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace TwitchCraft_V1.Setup;
 
-/// Keeps the runtime settings model simple while making config.json mirror the Settings UI.
+/// Groups config.json settings to match the Settings UI.
 internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfile>
 {
     internal static readonly (string Category, string[] Properties)[] CategoryOrder =
