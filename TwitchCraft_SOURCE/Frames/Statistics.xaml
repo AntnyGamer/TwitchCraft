@@ -47,7 +47,7 @@
                             <RowDefinition Height="25" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Session" Style="{StaticResource StatHeaderText}" />
+                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Session" HorizontalAlignment="Center" Style="{StaticResource StatHeaderText}" />
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Commands" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="1" Grid.Column="1" x:Name="SessionCommandsText" Text="0" Style="{StaticResource StatValueText}" />
@@ -99,7 +99,7 @@
                             <RowDefinition Height="25" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="All-time" Style="{StaticResource StatHeaderText}" />
+                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="All-time" HorizontalAlignment="Center" Style="{StaticResource StatHeaderText}" />
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Commands" Style="{StaticResource StatLabelText}" />
                         <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TotalCommandsText" Text="0" Style="{StaticResource StatValueText}" />
