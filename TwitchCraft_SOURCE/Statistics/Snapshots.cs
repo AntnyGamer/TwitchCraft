@@ -58,10 +58,7 @@ public sealed partial class StatisticsService
         }
     }
 
-    internal static void FlushForShutdown()
-    {
-        StatisticsStore.TryExportJson();
-    }
+    internal static void FlushForShutdown() => StatisticsStore.TryExportJson();
 
     private StatisticsSnapshot BuildSnapshotNoLock(DateTime now)
     {
@@ -110,10 +107,7 @@ public sealed partial class StatisticsService
         return (dangerous, nice);
     }
 
-    private void MarkLeaderboardDirty()
-    {
-        _leaderboardVersion++;
-    }
+    private void MarkLeaderboardDirty() => _leaderboardVersion++;
 
     private static TimeSpan? ToDuration(long seconds)
     {
@@ -164,7 +158,7 @@ public sealed partial class StatisticsService
     }
 
     private static int ClampDeathScore(long deathScore)
-        => (int)Math.Min(int.MaxValue, Math.Max(0L, deathScore));
+        => (int)Math.Clamp(deathScore, 0, int.MaxValue);
 
     internal bool ShouldTrackPlayer(string playerName)
     {
