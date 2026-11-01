@@ -44,14 +44,7 @@ public static partial class CommandList
             try
             {
                 string fireworkCommand = "execute at " + target.Selector + " run summon firework_rocket ~ ~1 ~ {LifeTime:20}";
-                if (!await SendPricedAsync(
-                    target,
-                    sender,
-                    10,
-                    fireworkCommand,
-                    ct,
-                    sender + " sent you some fireworks.",
-                    "GOT FIREWORKS!").ConfigureAwait(false))
+                if (!await SendPricedAsync(target, sender, 10, fireworkCommand, ct, sender + " sent you some fireworks.", "GOT FIREWORKS!").ConfigureAwait(false))
                 {
                     return;
                 }
@@ -146,10 +139,7 @@ public static partial class CommandList
 
             if (!runtime.Commands.TryUseTimedCommand("lightning", out TimeSpan remaining, out long reservation))
             {
-                await SayAsync(sender +
-                    ", command is on global cooldown. Try again in " +
-                    runtime.FormatCooldown(remaining) +
-                    ".", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
             }
             ResolvedTarget? target;
@@ -169,11 +159,11 @@ public static partial class CommandList
             }
             int cost = runtime.Commands.ScaleCost(50, target.PlayerCount);
             if (!await TrySendPaidNoCooldownAsync(
-                sender,
-                cost,
-                MinecraftCommandBuilder.Lightning(target.Selector),
-                () => runtime.Commands.ClearTimedCommandCooldown("lightning", reservation),
-                ct).ConfigureAwait(false))
+                    sender,
+                    cost,
+                    MinecraftCommandBuilder.Lightning(target.Selector),
+                    () => runtime.Commands.ClearTimedCommandCooldown("lightning", reservation),
+                    ct).ConfigureAwait(false))
             {
                 return;
             }
@@ -324,16 +314,12 @@ public static partial class CommandList
             }
             else if (targetsEveryone)
             {
-                await ConfirmAsync(sender +
-                    ", you rolled random enchantments for " +
-                    rolls.Length.ToString(CultureInfo.InvariantCulture) +
-                    " players.", ct).ConfigureAwait(false);
+                await ConfirmAsync(sender + ", you rolled random enchantments for " + rolls.Length.ToString(CultureInfo.InvariantCulture) + " players.", ct).ConfigureAwait(false);
             }
             else
             {
                 await ConfirmAsync(
-                    sender + ", you rolled random enchantments for " +
-                        rolls.Length.ToString(CultureInfo.InvariantCulture) + " targets in " + TargetName(target) + ".",
+                    sender + ", you rolled random enchantments for " + rolls.Length.ToString(CultureInfo.InvariantCulture) + " targets in " + TargetName(target) + ".",
                     ct).ConfigureAwait(false);
             }
         }
@@ -369,10 +355,7 @@ public static partial class CommandList
 
                 if (!runtime.Commands.TryUseTimedCommand("heart", out TimeSpan remaining, out long reservation))
                 {
-                    await SayAsync(sender +
-                        ", heart commands are on global cooldown. Try again in " +
-                        runtime.FormatCooldown(remaining) +
-                        ".", ct).ConfigureAwait(false);
+                    await SayAsync(sender + ", heart commands are on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                     return;
                 }
 
@@ -386,8 +369,7 @@ public static partial class CommandList
                         double? health = await runtime.QueryMaxHealthAsync(player, ct).ConfigureAwait(false);
                         if (!health.HasValue)
                         {
-                            await SayAsync(sender + ", TwitchCraft could not read " + player +
-                                "'s maximum health. You were not charged.", ct).ConfigureAwait(false);
+                            await SayAsync(sender + ", TwitchCraft could not read " + player + "'s maximum health. You were not charged.", ct).ConfigureAwait(false);
                             return;
                         }
                         double future = health.Value + delta;
@@ -405,8 +387,7 @@ public static partial class CommandList
                         }
                         if (invalid)
                         {
-                            await SayAsync(sender + ", that would put " + player +
-                                " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false);
+                            await SayAsync(sender + ", that would put " + player + " outside the 5-20 heart limit. You were not charged.", ct).ConfigureAwait(false);
                             return;
                         }
                     }
@@ -420,11 +401,7 @@ public static partial class CommandList
                             runtime.UsesModernAttributeIDs, runtime.UsesNamespacedAttributeModifierIDs);
                     }
 
-                    sent = await TrySendPricedAsync(
-                        sender,
-                        runtime.Commands.ScaleCost(hearts * 50, players.Count),
-                        () => commands,
-                        ct).ConfigureAwait(false);
+                    sent = await TrySendPricedAsync(sender, runtime.Commands.ScaleCost(hearts * 50, players.Count), () => commands, ct).ConfigureAwait(false);
                     if (!sent)
                     {
                         return;
@@ -441,8 +418,7 @@ public static partial class CommandList
                     }
                     runtime.TrackTask(ResetHeartAsync(ID, ct));
                     await ConfirmAsync(
-                        sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" +
-                            (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) +
+                        sender + ", you " + (add ? "added " : "removed ") + hearts + " max heart" + (hearts == 1 ? "" : "s") + " " + (add ? "to " : "from ") + TargetName(target) +
                             " for 10 minutes.",
                         ct).ConfigureAwait(false);
                 }
@@ -628,10 +604,7 @@ public static partial class CommandList
 
             if (!runtime.Commands.TryUseTimedCommand(commandName, out TimeSpan remaining, out long reservation))
             {
-                await SayAsync(sender +
-                    ", command is on global cooldown. Try again in " +
-                    runtime.FormatCooldown(remaining) +
-                    ".", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", command is on global cooldown. Try again in " + runtime.FormatCooldown(remaining) + ".", ct).ConfigureAwait(false);
                 return;
             }
 
@@ -713,13 +686,7 @@ public static partial class CommandList
                 }
 
                 string singleSelector = MinecraftCommandBuilder.PlayerSelector(playerName);
-                if (!ItemComponents.TryBuildRenameCommand(
-                    singleSelector,
-                    selectedItemData,
-                    sender,
-                    runtime.UsesInlineTextComponentSyntax,
-                    out string renameCommand,
-                    out string itemName))
+                if (!ItemComponents.TryBuildRenameCommand(singleSelector, selectedItemData, sender, runtime.UsesInlineTextComponentSyntax, out string renameCommand, out string itemName))
                 {
                     continue;
                 }
@@ -747,12 +714,7 @@ public static partial class CommandList
             {
                 foreach (string playerName in renamedPlayers)
                 {
-                    await runtime.SendTellrawAsync(
-                        MinecraftCommandBuilder.PlayerSelector(playerName),
-                        notificationMessage,
-                        "yellow",
-                        true,
-                        ct).ConfigureAwait(false);
+                    await runtime.SendTellrawAsync(MinecraftCommandBuilder.PlayerSelector(playerName), notificationMessage, "yellow", true, ct).ConfigureAwait(false);
                 }
             }
             else
@@ -760,12 +722,7 @@ public static partial class CommandList
                 List<string> notifyCommands = new(renamedPlayers.Count);
                 foreach (string playerName in renamedPlayers)
                 {
-                    notifyCommands.Add(MinecraftCommandBuilder.Tellraw(
-                        MinecraftCommandBuilder.PlayerSelector(playerName),
-                        notificationMessage,
-                        "yellow",
-                        true,
-                        runtime.UsesInlineTextComponentSyntax));
+                    notifyCommands.Add(MinecraftCommandBuilder.Tellraw(MinecraftCommandBuilder.PlayerSelector(playerName), notificationMessage, "yellow", true, runtime.UsesInlineTextComponentSyntax));
                 }
 
                 await runtime.SendServerCommandsAsync(notifyCommands, ct).ConfigureAwait(false);
@@ -776,16 +733,11 @@ public static partial class CommandList
             }
             else if (targetsEveryone)
             {
-                await ConfirmAsync(sender +
-                    ", you renamed " +
-                    renamedPlayers.Count.ToString(CultureInfo.InvariantCulture) +
-                    " players' held items.", ct).ConfigureAwait(false);
+                await ConfirmAsync(sender + ", you renamed " + renamedPlayers.Count.ToString(CultureInfo.InvariantCulture) + " players' held items.", ct).ConfigureAwait(false);
             }
             else
             {
-                await ConfirmAsync(sender + ", you renamed " +
-                    renamedPlayers.Count.ToString(CultureInfo.InvariantCulture) + " held items for " +
-                    TargetName(target) + ".", ct).ConfigureAwait(false);
+                await ConfirmAsync(sender + ", you renamed " + renamedPlayers.Count.ToString(CultureInfo.InvariantCulture) + " held items for " + TargetName(target) + ".", ct).ConfigureAwait(false);
             }
         }
 
@@ -806,12 +758,7 @@ public static partial class CommandList
                 string pretty = PrettyName(mob);
                 prettyNames[count] = pretty;
                 swarmCommands[count * 2] = MinecraftCommandBuilder.SummonMob(target.Selector, mob);
-                swarmCommands[count * 2 + 1] = MinecraftCommandBuilder.Tellraw(
-                    target.Selector,
-                    sender + " spawned a " + pretty + " on you.",
-                    "yellow",
-                    true,
-                    runtime.UsesInlineTextComponentSyntax);
+                swarmCommands[count * 2 + 1] = MinecraftCommandBuilder.Tellraw(target.Selector, sender + " spawned a " + pretty + " on you.", "yellow", true, runtime.UsesInlineTextComponentSyntax);
                 count++;
             }
             return SendPricedReplyAsync(
@@ -862,12 +809,7 @@ public static partial class CommandList
             }
             switchMilkCommands.Add("execute as " + taggedMilkSelector + " run clear @s minecraft:milk_bucket 1");
             switchMilkCommands.Add("execute as " + taggedMilkSelector + " run give @s " + itemID + " 1");
-            switchMilkCommands.Add("execute as " + taggedMilkSelector + " run " + MinecraftCommandBuilder.Tellraw(
-                "@s",
-                sender + " transformed one of your milk buckets into " + itemName + "!",
-                "yellow",
-                true,
-                runtime.UsesInlineTextComponentSyntax));
+            switchMilkCommands.Add("execute as " + taggedMilkSelector + " run " + MinecraftCommandBuilder.Tellraw("@s", sender + " transformed one of your milk buckets into " + itemName + "!", "yellow", true, runtime.UsesInlineTextComponentSyntax));
             switchMilkCommands.Add("execute if entity " + taggedMilkSelector + " run tag " + taggedMilkSelector + " remove " + switchMilkTag);
             return SendPricedReplyAsync(
                 target,

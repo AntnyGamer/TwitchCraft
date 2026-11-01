@@ -372,8 +372,7 @@ public static partial class CommandList
                 await SayAsync(failure, ct).ConfigureAwait(false);
                 return null;
             }
-            if (IsSingleplayer() &&
-                !string.IsNullOrEmpty(runtime.StreamerName) &&
+            if (IsSingleplayer() && !string.IsNullOrEmpty(runtime.StreamerName) &&
                 target.PlayerCount == 1 &&
                 !IsEveryone(target) &&
                 !string.Equals(target.DisplayName, "everyone", StringComparison.OrdinalIgnoreCase))
@@ -427,10 +426,7 @@ public static partial class CommandList
             }
             if (count > MaxEffectCount)
             {
-                await SayAsync(sender +
-                    ", effect count cannot be higher than " +
-                    MaxEffectCount.ToString(CultureInfo.InvariantCulture) +
-                    ".", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", effect count cannot be higher than " + MaxEffectCount.ToString(CultureInfo.InvariantCulture) + ".", ct).ConfigureAwait(false);
                 return false;
             }
             return true;
@@ -488,9 +484,7 @@ public static partial class CommandList
                 return true;
             }
 
-            await SayAsync((string.IsNullOrWhiteSpace(sender) ? "This user" : sender) +
-                ", only the broadcaster (or moderators if allowed) can use !" +
-                commandName +
+            await SayAsync((string.IsNullOrWhiteSpace(sender) ? "This user" : sender) + ", only the broadcaster (or moderators if allowed) can use !" + commandName +
                 ".", ct).ConfigureAwait(false);
             return false;
         }
@@ -617,17 +611,7 @@ public static partial class CommandList
             string? othersColor,
             CancellationToken ct)
         {
-            if (await SendPricedAsync(
-                target,
-                sender,
-                baseCost,
-                buildCommands,
-                ct,
-                targetMessage,
-                othersMessage,
-                color,
-                bold,
-                othersColor).ConfigureAwait(false))
+            if (await SendPricedAsync(target, sender, baseCost, buildCommands, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
             {
                 await ConfirmAsync(channelMessage, ct).ConfigureAwait(false);
             }
@@ -646,17 +630,7 @@ public static partial class CommandList
             string? othersColor,
             CancellationToken ct)
         {
-            if (await SendPricedAsync(
-                target,
-                sender,
-                baseCost,
-                command,
-                ct,
-                targetMessage,
-                othersMessage,
-                color,
-                bold,
-                othersColor).ConfigureAwait(false))
+            if (await SendPricedAsync(target, sender, baseCost, command, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
             {
                 await ConfirmAsync(channelMessage, ct).ConfigureAwait(false);
             }

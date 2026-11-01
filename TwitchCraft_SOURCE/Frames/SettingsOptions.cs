@@ -343,12 +343,9 @@ public partial class Settings
             (GlobalOptions, _globalCooldown) = OptionsFor(CommandGlobalCooldownOptions, global);
         }
 
-        public string Name
-        { get; }
-        public CooldownOption<int>[] PerUserOptions
-        { get; }
-        public CooldownOption<double>[] GlobalOptions
-        { get; }
+        public string Name { get; }
+        public CooldownOption<int>[] PerUserOptions { get; }
+        public CooldownOption<double>[] GlobalOptions { get; }
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public bool Enabled

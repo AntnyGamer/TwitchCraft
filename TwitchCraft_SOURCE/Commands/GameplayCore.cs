@@ -61,8 +61,7 @@ public static partial class CommandList
                 await SuccessAsync(sender + ", there are no players online right now.", ct).ConfigureAwait(false);
                 return;
             }
-            await SuccessAsync(sender + ", active players (" + players.Count.ToString(CultureInfo.InvariantCulture) +
-                "): " + string.Join(", ", players) + ".", ct).ConfigureAwait(false);
+            await SuccessAsync(sender + ", active players (" + players.Count.ToString(CultureInfo.InvariantCulture) + "): " + string.Join(", ", players) + ".", ct).ConfigureAwait(false);
         }
 
         private Task KickAsync(string[]? args, string sender, CancellationToken ct)
@@ -92,12 +91,10 @@ public static partial class CommandList
             string command = MinecraftCommandBuilder.ModeratePlayer(playerName, reason, ban);
             if (!await runtime.SendServerCommandAsync(command, ct).ConfigureAwait(false))
             {
-                await SayAsync(sender + ", the " + commandName +
-                    " command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
+                await SayAsync(sender + ", the " + commandName + " command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
                 return;
             }
-            await ConfirmAsync(sender + ", " + past + " " + playerName +
-                (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
+            await ConfirmAsync(sender + ", " + past + " " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
         }
 
         private async Task UnbanAsync(string[]? args, string sender, CancellationToken ct)
@@ -242,8 +239,7 @@ public static partial class CommandList
             }
             if (count > 1)
             {
-                await ConfirmAsync(sender + ", you gave " + count.ToString(CultureInfo.InvariantCulture) +
-                    " effects to " + channelTargetName + ".", ct).ConfigureAwait(false);
+                await ConfirmAsync(sender + ", you gave " + count.ToString(CultureInfo.InvariantCulture) + " effects to " + channelTargetName + ".", ct).ConfigureAwait(false);
             }
         }
     }

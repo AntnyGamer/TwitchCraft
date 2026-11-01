@@ -72,21 +72,16 @@ public sealed class StartingProfile
     internal const int DefaultAutomaticBackupRetentionCount = 3;
     internal const int DefaultFollowRewardAmount = 50;
 
-    public bool MultiplayerEnabled
-    { get; set; }
-    public bool MultiplayerPvPEnabled
-    { get; set; }
-    public bool WhitelistEnabled
-    { get; set; }
-    public bool RemoteControlEnabled
-    { get; set; }
+    public bool MultiplayerEnabled { get; set; }
+    public bool MultiplayerPvPEnabled { get; set; }
+    public bool WhitelistEnabled { get; set; }
+    public bool RemoteControlEnabled { get; set; }
     public bool RequireOnlineMode { get; set; } = true;
     public bool HardcoreEnabled { get; set; } = true;
     public string Difficulty { get; set; } = "Medium";
     public bool MinigamesEnabled { get; set; } = true;
     public int MinigameCooldown { get; set; } = 15;
-    public bool GlobalGameCommandCooldownEnabled
-    { get; set; }
+    public bool GlobalGameCommandCooldownEnabled { get; set; }
     public double GlobalGameCommandCooldownSeconds { get; set; } = 10.0;
     public bool PassiveTokenEarningEnabled { get; set; } = true;
     public bool AutomaticFollowRewardsEnabled { get; set; } = true;
@@ -95,61 +90,46 @@ public sealed class StartingProfile
     public double CommandCostMultiplier { get; set; } = 1.0;
     public string BotResponseVerbosity { get; set; } = "Normal";
     public bool NonCommandChatRelayEnabled { get; set; } = true;
-    public bool ModeratorsCanUseStreamerCommands
-    { get; set; }
+    public bool ModeratorsCanUseStreamerCommands { get; set; }
     public bool StatisticsEnabled { get; set; } = true;
     public string CommandPrefix { get; set; } = "!";
     public string SecondaryCommandPrefix { get; set; } = string.Empty;
     public bool MentionViewersInBotReplies { get; set; } = true;
     public bool ShowExactCooldownRemaining { get; set; } = true;
-    public bool RespondToUnknownCommands
-    { get; set; }
-    public bool ViewerCommandsPaused
-    { get; set; }
+    public bool RespondToUnknownCommands { get; set; }
+    public bool ViewerCommandsPaused { get; set; }
     public int PassiveTokensPerPayout { get; set; } = 1;
     public int PassiveTokenPayoutMinimumSeconds { get; set; } = 30;
     public int PassiveTokenPayoutMaximumSeconds { get; set; } = 60;
-    public int MaximumTokenBalance
-    { get; set; }
-    public bool PassiveRewardsRequireActivity
-    { get; set; }
-    public int ChannelCommandLimitPerMinute
-    { get; set; }
+    public int MaximumTokenBalance { get; set; }
+    public bool PassiveRewardsRequireActivity { get; set; }
+    public int ChannelCommandLimitPerMinute { get; set; }
     public bool AllowAllPlayerTarget { get; set; } = true;
     public bool AllowRandomPlayerTarget { get; set; } = true;
-    public bool IncludeRelayTimestamps
-    { get; set; }
+    public bool IncludeRelayTimestamps { get; set; }
     public string MinecraftRelayTextColor { get; set; } = "white";
-    public bool ShowConnectionHealth
-    { get; set; }
-    public int ViewerCommandLimitPerMinute
-    { get; set; }
+    public bool ShowConnectionHealth { get; set; }
+    public int ViewerCommandLimitPerMinute { get; set; }
     public int PassiveActivityWindowMinutes { get; set; } = 10;
     public bool AutomaticBackupsEnabled { get; set; } = true;
     public int AutomaticBackupIntervalHours { get; set; } = 24;
     public int AutomaticBackupRetentionCount { get; set; } = DefaultAutomaticBackupRetentionCount;
-    public bool LowResourceModeEnabled
-    { get; set; }
-    public bool PauseUIUpdatesWhenMinimized
-    { get; set; }
+    public bool LowResourceModeEnabled { get; set; }
+    public bool PauseUIUpdatesWhenMinimized { get; set; }
     public int MaxVisibleTwitchLogLines { get; set; } = 250;
     public int MaxVisibleMinecraftLogLines { get; set; } = 250;
     public int ViewerRosterRefreshIntervalSeconds { get; set; } = 30;
-    public int MinecraftRelayMessagesPerSecond
-    { get; set; }
+    public int MinecraftRelayMessagesPerSecond { get; set; }
     public int MaxGameplayCommandQueue { get; set; } = 75;
     public int RCONTimeoutSeconds { get; set; } = 5;
     public int GracefulShutdownTimeoutSeconds { get; set; } = 5;
-    public int SQLiteOptimizeIntervalHours
-    { get; set; }
+    public int SQLiteOptimizeIntervalHours { get; set; }
     public int ViewDistance { get; set; } = 12;
     public int SimulationDistance { get; set; } = 10;
     public int EntityBroadcastRangePercentage { get; set; } = 100;
     public int NetworkCompressionThreshold { get; set; } = 256;
-    public int EmptyServerShutdownDelayMinutes
-    { get; set; }
-    public Dictionary<string, CommandCustomization> CommandCustomizations
-    { get; set; } =
+    public int EmptyServerShutdownDelayMinutes { get; set; }
+    public Dictionary<string, CommandCustomization> CommandCustomizations { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
 }
 
@@ -158,8 +138,6 @@ public sealed class CommandCustomization
     internal CommandCustomization ShallowCopy() => (CommandCustomization)MemberwiseClone();
 
     public bool Enabled { get; set; } = true;
-    public int? CooldownSeconds
-    { get; set; }
-    public double? GlobalCooldownSeconds
-    { get; set; }
+    public int? CooldownSeconds { get; set; }
+    public double? GlobalCooldownSeconds { get; set; }
 }

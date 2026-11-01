@@ -39,11 +39,9 @@ public partial class TwitchCraft : Window
         Shell.PropertyChanged += OnShellPropertyChanged;
     }
 
-    public AppShellViewModel Shell
-    { get; }
+    public AppShellViewModel Shell { get; }
 
-    public MainHandler Runtime
-    { get; }
+    public MainHandler Runtime { get; }
 
     public void ShowStart() => Shell.Navigate(ShellPage.Start);
 

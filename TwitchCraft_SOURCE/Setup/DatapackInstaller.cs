@@ -123,12 +123,21 @@ internal static class DatapackInstaller
         if (version.UsesModernPackMetadata)
         {
             string exact = version.GetPackFormatJson();
-            return "{\n" + "  \"pack\": {\n" + "    \"min_format\": " + exact + ",\n" + "    \"max_format\": " + exact +
-                ",\n" + "    \"description\": \"" + DatapackDescription + "\"\n" + "  }\n" + "}";
+            return "{\n"
+                 + "  \"pack\": {\n"
+                 + "    \"min_format\": " + exact + ",\n"
+                 + "    \"max_format\": " + exact + ",\n"
+                 + "    \"description\": \"" + DatapackDescription + "\"\n"
+                 + "  }\n"
+                 + "}";
         }
 
-        return "{\n" + "  \"pack\": {\n" + "    \"pack_format\": " + version.DataPackFormatMajor + ",\n" +
-            "    \"description\": \"" + DatapackDescription + "\"\n" + "  }\n" + "}";
+        return "{\n"
+             + "  \"pack\": {\n"
+             + "    \"pack_format\": " + version.DataPackFormatMajor + ",\n"
+             + "    \"description\": \"" + DatapackDescription + "\"\n"
+             + "  }\n"
+             + "}";
     }
 
     private static void RewriteCommands(string destinationDirectory)

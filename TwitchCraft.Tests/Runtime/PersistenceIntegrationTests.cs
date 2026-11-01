@@ -85,10 +85,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
         Assert.Equal(37, global.GetProperty("TokensSpent").GetInt64());
         Assert.Equal(1, global.GetProperty("Deaths").GetInt64());
         Assert.Equal(2, exported.RootElement.GetProperty("CommandUseCounts").GetProperty("!heal").GetInt64());
-        using JsonDocument viewers = JsonDocument.Parse(File.ReadAllText(Path.Combine(
-            TestApplicationData.Path,
-            "exports",
-            "statistics_viewers.json")));
+        using JsonDocument viewers = JsonDocument.Parse(File.ReadAllText(Path.Combine(TestApplicationData.Path, "exports", "statistics_viewers.json")));
         JsonElement scores = viewers.RootElement.GetProperty("ViewerStatistics");
         Assert.Equal(1, scores.GetProperty("viewer").GetProperty("NiceScore").GetInt64());
         Assert.Equal(1, scores.GetProperty("troublemaker").GetProperty("DangerousScore").GetInt64());
@@ -242,10 +239,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
     [Fact]
     public void ShutdownBackup_PreservesRestorableSnapshotAfterLiveChanges()
     {
-        TwitchCraftConfig config = new()
-        {
-            Twitch = { BotName = "savedbot" }
-        };
+        TwitchCraftConfig config = new() { Twitch = { BotName = "savedbot" } };
         config.Settings.AutomaticBackupsEnabled = true;
         ConfigurationStore.Save(config);
         TokenService tokens = new(ConfigurationStore.ViewerTokensPath, () => 0);
@@ -255,9 +249,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
             Assert.True(tokens.TrySpend("viewer", 25));
             CreateStatistics([], []).RecordCommand("heal", "viewer", 25);
             DataMaintenance maintenance = new(() => config, config.Settings, tokens,
-                (_, _) => Task.FromResult(string.Empty), (_, _) =>
-                {
-                }, (_, _) => Task.FromResult(false));
+                (_, _) => Task.FromResult(string.Empty), (_, _) => { }, (_, _) => Task.FromResult(false));
 
             string[] priorBackups = Directory.Exists(ConfigurationStore.BackupsDirectory)
                 ? Directory.GetDirectories(ConfigurationStore.BackupsDirectory) : [];
@@ -334,11 +326,7 @@ public sealed class PersistenceIntegrationTests : IDisposable
             Twitch = { BotName = "savedbot", BotToken = "test-token" },
             Settings = { MultiplayerEnabled = true, RemoteControlEnabled = true, RequireOnlineMode = false, FollowRewardAmount = 125 }
         };
-        config.Settings.CommandCustomizations["heal"] = new()
-        {
-            Enabled = false,
-            CooldownSeconds = 17
-        };
+        config.Settings.CommandCustomizations["heal"] = new() { Enabled = false, CooldownSeconds = 17 };
         ConfigurationStore.Save(config);
         Assert.True(config.Settings.MultiplayerEnabled);
         Assert.True(config.Settings.RemoteControlEnabled);

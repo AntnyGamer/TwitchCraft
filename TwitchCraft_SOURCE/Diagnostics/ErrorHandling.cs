@@ -232,24 +232,16 @@ internal static partial class ErrorHandling
 
     private sealed class StructuredLogEvent
     {
-        public required string Timestamp
-        { get; init; }
-        public required string Level
-        { get; init; }
-        public required string Event
-        { get; init; }
-        public required string ApplicationVersion
-        { get; init; }
+        public required string Timestamp { get; init; }
+        public required string Level { get; init; }
+        public required string Event { get; init; }
+        public required string ApplicationVersion { get; init; }
         [JsonPropertyName("sessionID")]
-        public required string SessionID
-        { get; init; }
-        public string? ExceptionType
-        { get; init; }
-        public string? Message
-        { get; init; }
+        public required string SessionID { get; init; }
+        public string? ExceptionType { get; init; }
+        public string? Message { get; init; }
         [JsonPropertyName("details")]
-        public string? OriginalError
-        { get; init; }
+        public string? OriginalError { get; init; }
     }
 }
 

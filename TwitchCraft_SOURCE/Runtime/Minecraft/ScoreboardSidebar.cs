@@ -73,11 +73,7 @@ public sealed partial class MainHandler
         }
     }
 
-    private static List<string> BuildSidebar(
-        List<string> players,
-        List<string> previousPlayers,
-        bool needsInitialization,
-        bool usesInlineTextComponents)
+    private static List<string> BuildSidebar(List<string> players, List<string> previousPlayers, bool needsInitialization, bool usesInlineTextComponents)
     {
         const string objective = "tc_playerlist";
         const string healthObjective = "tc_health";

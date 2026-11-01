@@ -184,9 +184,9 @@ public sealed partial class MainHandler
                 if (await EnsureDeathScoreAsync(t).ConfigureAwait(false))
                 {
                     if (!string.Equals(
-                        Volatile.Read(ref _deathScoreInitializedPlayerName),
-                        normalizedPlayerName,
-                        StringComparison.OrdinalIgnoreCase))
+                            Volatile.Read(ref _deathScoreInitializedPlayerName),
+                            normalizedPlayerName,
+                            StringComparison.OrdinalIgnoreCase))
                     {
                         string initializeCommand = "scoreboard players add " + normalizedPlayerName + " " + DeathScoreObjective + " 0";
                         if (!await SendServerCommandAsync(initializeCommand, t).ConfigureAwait(false))

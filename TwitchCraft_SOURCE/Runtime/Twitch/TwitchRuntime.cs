@@ -190,11 +190,7 @@ public sealed partial class MainHandler
                     return;
                 }
 
-                socket = new()
-                {
-                    SendTimeout = 30000,
-                    NoDelay = true
-                };
+                socket = new() { SendTimeout = 30000, NoDelay = true };
                 socket.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
                 socket.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 30);
                 socket.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 10);
@@ -371,11 +367,9 @@ public sealed partial class MainHandler
                         int awardedBits = bitReward > 0 ? Tokens.Award(sender, bitReward) : 0;
                         string bitsText = message.Bits.ToString(CultureInfo.InvariantCulture);
                         string rewardResult = bitReward > 0
-                            ? " and received " + awardedBits.ToString(CultureInfo.InvariantCulture) + " " +
-                                (awardedBits == 1 ? "token" : "tokens") + "."
+                            ? " and received " + awardedBits.ToString(CultureInfo.InvariantCulture) + " " + (awardedBits == 1 ? "token" : "tokens") + "."
                             : "; automatic Bit rewards are disabled.";
-                        _shellWindow?.AddChatLogLine("[Bits] " + sender + " cheered " + bitsText + " " +
-                            (message.Bits == 1 ? "Bit" : "Bits") + rewardResult);
+                        _shellWindow?.AddChatLogLine("[Bits] " + sender + " cheered " + bitsText + " " + (message.Bits == 1 ? "Bit" : "Bits") + rewardResult);
                     }
 
                     if (ParsedCommand.TryMatchPrefix(payload, CommandPrefix, SecondaryCommandPrefix, out string matchedPrefix))
@@ -553,8 +547,7 @@ internal sealed class TwitchSession
     internal long LastCommandOverflowNoticeMilliseconds;
     internal volatile bool ChatConnected;
     internal string ChannelPrefix { get; private set; } = string.Empty;
-    internal int ChannelMessageMaxBytes
-    { get; private set; }
+    internal int ChannelMessageMaxBytes { get; private set; }
 
     internal TcpClient? Socket
     {
@@ -576,16 +569,9 @@ internal sealed class TwitchSession
 
     internal bool TryUseRelaySlot(int configuredLimit, bool lowResourceMode, long? nowMilliseconds = null)
     {
-        int limit;
-        if (lowResourceMode)
-        {
-            limit = configuredLimit <= 0 ? 5 : Math.Min(configuredLimit, 5);
-        }
-        else
-        {
-            limit = configuredLimit;
-        }
-
+        int limit = lowResourceMode
+            ? configuredLimit <= 0 ? 5 : Math.Min(configuredLimit, 5)
+            : configuredLimit;
         if (limit <= 0)
         {
             return true;
@@ -646,10 +632,10 @@ internal sealed class TwitchSession
     }
 
     internal readonly struct QueuedWork(
-            Func<CancellationToken, Task> work,
-            string context,
-            int generation,
-            CancellationToken cancellationToken)
+        Func<CancellationToken, Task> work,
+        string context,
+        int generation,
+        CancellationToken cancellationToken)
     {
         internal Func<CancellationToken, Task> Work { get; } = work;
         internal string Context { get; } = context;

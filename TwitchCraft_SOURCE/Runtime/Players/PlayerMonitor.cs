@@ -343,13 +343,13 @@ public sealed partial class MainHandler
                 Interlocked.Increment(ref _suppressedOnlinePlayersLogLines);
                 suppressedLineReleasePending = 1;
                 if (!await SendProbeAsync(
-                    "list",
-                    () =>
+                        "list",
+                        () =>
                         {
                             CompleteSnapshot(false, waiter);
                             ReleaseLine();
                         },
-                    cancellationToken).ConfigureAwait(false))
+                        cancellationToken).ConfigureAwait(false))
                 {
                     CompleteSnapshot(false, waiter);
                     ReleaseLine();

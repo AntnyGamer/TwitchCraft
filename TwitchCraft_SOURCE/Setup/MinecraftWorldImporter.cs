@@ -5,18 +5,12 @@ namespace TwitchCraft_V1.Setup;
 
 internal sealed class MinecraftWorldImportPlan
 {
-    public required string SourceWorldPath
-    { get; init; }
-    public required string DestinationWorldPath
-    { get; init; }
-    public required string StagingWorldPath
-    { get; init; }
-    public required string BackupWorldPath
-    { get; init; }
-    public required string ServerDirectory
-    { get; init; }
-    public required string LevelName
-    { get; init; }
+    public required string SourceWorldPath { get; init; }
+    public required string DestinationWorldPath { get; init; }
+    public required string StagingWorldPath { get; init; }
+    public required string BackupWorldPath { get; init; }
+    public required string ServerDirectory { get; init; }
+    public required string LevelName { get; init; }
 
     public bool DestinationExists => Directory.Exists(DestinationWorldPath);
     public bool SourceIsCurrentWorld => string.Equals(

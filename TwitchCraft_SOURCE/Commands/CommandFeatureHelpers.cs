@@ -52,8 +52,7 @@ internal static class ItemComponents
         }
 
         string componentSuffix = BuildComponentSuffix(componentEntries);
-        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " +
-            count.ToString(CultureInfo.InvariantCulture);
+        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " + count.ToString(CultureInfo.InvariantCulture);
         return true;
     }
 
@@ -538,8 +537,7 @@ internal static class GameplayCommands
 
         return
         [
-            "execute at " + selector + " run summon minecraft:" + entityID + " ~" +
-                offsetX.ToString(CultureInfo.InvariantCulture) + " ~100 ~" +
+            "execute at " + selector + " run summon minecraft:" + entityID + " ~" + offsetX.ToString(CultureInfo.InvariantCulture) + " ~100 ~" +
                 offsetZ.ToString(CultureInfo.InvariantCulture) + " " + summonData,
             "execute at " + selector + " as " + entitySelector + " run effect give @s minecraft:glowing 255 0 true",
             "execute at " + selector + " as " + entitySelector + " run tag @s remove " + newEntityTag,

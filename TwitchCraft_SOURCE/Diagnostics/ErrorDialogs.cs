@@ -146,11 +146,13 @@ Do you want to reset the Bind IP to its default?";
 
     public static bool ConfirmJavaRetry(object? source, int javaVersion)
     {
-        string help = "Java " + javaVersion + " was not found or did not match the required version.\n\n" +
-            "Fix options:\n" + "• Install Java " + javaVersion + "\n" + "• Make sure Java " + javaVersion +
-            " is on PATH\n" + "• Or set JAVA_HOME to your Java " + javaVersion + " folder\n\n" +
-            "TwitchCraft checks JAVA_HOME, PATH, and common install folders like C:\\Program Files\\Java.\n\n" +
-            "Click Yes to retry, or No to cancel setup.";
+        string help = "Java " + javaVersion + " was not found or did not match the required version.\n\n"
+                    + "Fix options:\n"
+                    + "• Install Java " + javaVersion + "\n"
+                    + "• Make sure Java " + javaVersion + " is on PATH\n"
+                    + "• Or set JAVA_HOME to your Java " + javaVersion + " folder\n\n"
+                    + "TwitchCraft checks JAVA_HOME, PATH, and common install folders like C:\\Program Files\\Java.\n\n"
+                    + "Click Yes to retry, or No to cancel setup.";
 
         return ShowQuestion(source, "Java Not Found", help, MessageBoxImage.Warning) == MessageBoxResult.Yes;
     }
@@ -251,8 +253,5 @@ Do you want to reset the Bind IP to its default?";
         => ShowError(source, "Restart Error", message);
 
     public static void ShowStatsWarning()
-        => ShowWarning(
-            null,
-            "Statistics",
-            "Statistics could not be loaded, so empty values are being displayed. The statistics database was not reset.");
+        => ShowWarning(null, "Statistics", "Statistics could not be loaded, so empty values are being displayed. The statistics database was not reset.");
 }

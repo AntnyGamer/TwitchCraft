@@ -44,10 +44,7 @@ public sealed class ConfigurationNormalizationTests
             () => Assert.Equal(string.Empty, config.Identity.StreamerMinecraftName),
             () => Assert.Equal("?", config.Settings.CommandPrefix),
             () => Assert.Empty(config.Settings.CommandCustomizations));
-        CommandCustomization heal = new()
-        {
-            Enabled = false
-        };
+        CommandCustomization heal = new() { Enabled = false };
         config.Settings.CommandCustomizations.Add("heal", heal);
         Assert.Same(heal, config.Settings.CommandCustomizations["HEAL"]);
     }

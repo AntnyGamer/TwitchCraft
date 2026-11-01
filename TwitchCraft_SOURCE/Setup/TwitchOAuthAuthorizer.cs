@@ -11,20 +11,20 @@ using System.Threading.Tasks;
 namespace TwitchCraft_V1.Setup;
 
 internal readonly record struct TwitchOAuthResult(
-        string Token,
-        string Login,
-        string Error,
-        string RefreshToken = "")
+    string Token,
+    string Login,
+    string Error,
+    string RefreshToken = "")
 {
     public bool IsSuccess => !string.IsNullOrEmpty(Token) && string.IsNullOrEmpty(Error);
 }
 
 internal readonly record struct TwitchDeviceAuthorization(
-        string DeviceCode,
-        string UserCode,
-        Uri VerificationUri,
-        int ExpiresInSeconds,
-        int IntervalSeconds);
+    string DeviceCode,
+    string UserCode,
+    Uri VerificationUri,
+    int ExpiresInSeconds,
+    int IntervalSeconds);
 
 internal static class TwitchOAuthAuthorizer
 {
@@ -53,7 +53,7 @@ internal static class TwitchOAuthAuthorizer
         try
         {
             using FormUrlEncodedContent content = new(
-                [
+            [
                     new KeyValuePair<string, string>("client_id", normalizedClientID),
                     new KeyValuePair<string, string>("scopes", RequiredScopes)
                 ]);
@@ -144,7 +144,7 @@ internal static class TwitchOAuthAuthorizer
         try
         {
             using FormUrlEncodedContent content = new(
-                [
+            [
                     new KeyValuePair<string, string>("client_id", normalizedClientID),
                     new KeyValuePair<string, string>("refresh_token", normalizedRefreshToken),
                     new KeyValuePair<string, string>("grant_type", "refresh_token")
@@ -162,11 +162,7 @@ internal static class TwitchOAuthAuthorizer
                 return Fail(error);
             }
 
-            TwitchOAuthResult validated = await ValidateTokenAsync(
-                token,
-                newRefreshToken,
-                normalizedClientID,
-                cancellationToken).ConfigureAwait(false);
+            TwitchOAuthResult validated = await ValidateTokenAsync(token, newRefreshToken, normalizedClientID, cancellationToken).ConfigureAwait(false);
             return validated.IsSuccess ? validated : validated with
             {
                 RefreshToken = newRefreshToken
@@ -330,7 +326,7 @@ internal static class TwitchOAuthAuthorizer
         try
         {
             using FormUrlEncodedContent content = new(
-                [
+            [
                     new KeyValuePair<string, string>("client_id", clientID),
                     new KeyValuePair<string, string>("scopes", RequiredScopes),
                     new KeyValuePair<string, string>("device_code", deviceCode),
@@ -480,8 +476,8 @@ internal static class TwitchOAuthAuthorizer
     private static string GetString(JsonElement root, string propertyName)
     {
         if (root.ValueKind == JsonValueKind.Object &&
-            root.TryGetProperty(propertyName, out JsonElement value) &&
-            value.ValueKind == JsonValueKind.String)
+        root.TryGetProperty(propertyName, out JsonElement value) &&
+        value.ValueKind == JsonValueKind.String)
         {
             return value.GetString() ?? string.Empty;
         }
@@ -493,8 +489,7 @@ internal static class TwitchOAuthAuthorizer
     {
         if (root.ValueKind == JsonValueKind.Object &&
             root.TryGetProperty(propertyName, out JsonElement value) &&
-            value.ValueKind == JsonValueKind.Number &&
-            value.TryGetInt32(out int number) && number > 0)
+            value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number) && number > 0)
         {
             return number;
         }

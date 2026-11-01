@@ -25,12 +25,7 @@ public sealed partial class MainHandler
 
     public Task SendTellrawAsync(string selector, string message, string color, bool bold, CancellationToken cancellationToken)
         => SendServerCommandAsync(
-            MinecraftCommandBuilder.Tellraw(
-                string.IsNullOrWhiteSpace(selector) ? "@a" : selector,
-                message,
-                color,
-                bold,
-                UsesInlineTextComponentSyntax),
+            MinecraftCommandBuilder.Tellraw(string.IsNullOrWhiteSpace(selector) ? "@a" : selector, message, color, bold, UsesInlineTextComponentSyntax),
             cancellationToken);
 
     public bool HasOtherPlayer(string excludedPlayerName)

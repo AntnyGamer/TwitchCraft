@@ -595,16 +595,10 @@ public sealed class CommandService
         if (!multiTargetingEnabled)
         {
             string streamer = config?.Twitch.StreamerName.Trim() ?? string.Empty;
-            string displayName = streamer;
-            if (displayName.Length == 0)
-            {
-                displayName = defaultMinecraftPlayer.Length == 0 ? "everyone" : defaultMinecraftPlayer;
-            }
-
             return new ResolvedTarget
             {
                 Selector = "@a",
-                DisplayName = displayName,
+                DisplayName = streamer.Length > 0 ? streamer : (defaultMinecraftPlayer.Length == 0 ? "everyone" : defaultMinecraftPlayer),
                 MinecraftName = defaultMinecraftPlayer,
                 PlayerCount = 1
             };

@@ -252,24 +252,10 @@ public sealed partial class ConfigurationStore
         config.Settings.PassiveActivityWindowMinutes = NormalizeChoice(
             config.Settings.PassiveActivityWindowMinutes, 10, 1, 2, 5, 10, 15, 30, 60, 120);
         config.Settings.AutomaticBackupIntervalHours = NormalizeChoice(config.Settings.AutomaticBackupIntervalHours, 24, 1, 6, 12, 24, 48, 168);
-        config.Settings.AutomaticBackupRetentionCount = NormalizeChoice(
-            config.Settings.AutomaticBackupRetentionCount,
-            StartingProfile.DefaultAutomaticBackupRetentionCount,
-            1,
-            3,
-            5,
-            10,
-            20);
+        config.Settings.AutomaticBackupRetentionCount = NormalizeChoice(config.Settings.AutomaticBackupRetentionCount, StartingProfile.DefaultAutomaticBackupRetentionCount, 1, 3, 5, 10, 20);
         config.Settings.MaxVisibleTwitchLogLines = NormalizeRange(config.Settings.MaxVisibleTwitchLogLines, 250, 50, 5000);
         config.Settings.MaxVisibleMinecraftLogLines = NormalizeRange(config.Settings.MaxVisibleMinecraftLogLines, 250, 50, 5000);
-        config.Settings.ViewerRosterRefreshIntervalSeconds = NormalizeChoice(
-            config.Settings.ViewerRosterRefreshIntervalSeconds,
-            30,
-            15,
-            30,
-            60,
-            120,
-            300);
+        config.Settings.ViewerRosterRefreshIntervalSeconds = NormalizeChoice(config.Settings.ViewerRosterRefreshIntervalSeconds, 30, 15, 30, 60, 120, 300);
         config.Settings.MinecraftRelayMessagesPerSecond = NormalizeRange(config.Settings.MinecraftRelayMessagesPerSecond, 0, 0, 100);
         config.Settings.MaxGameplayCommandQueue = NormalizeRange(config.Settings.MaxGameplayCommandQueue, 75, 10, 1000);
         config.Settings.RCONTimeoutSeconds = NormalizeRange(config.Settings.RCONTimeoutSeconds, 5, 1, 60);
@@ -279,16 +265,7 @@ public sealed partial class ConfigurationStore
         config.Settings.SimulationDistance = NormalizeRange(config.Settings.SimulationDistance, 10, 2, 32);
         config.Settings.EntityBroadcastRangePercentage = NormalizeRange(config.Settings.EntityBroadcastRangePercentage, 100, 10, 1000);
         config.Settings.NetworkCompressionThreshold = NormalizeRange(config.Settings.NetworkCompressionThreshold, 256, -1, 4096);
-        config.Settings.EmptyServerShutdownDelayMinutes = NormalizeChoice(
-            config.Settings.EmptyServerShutdownDelayMinutes,
-            0,
-            0,
-            5,
-            10,
-            15,
-            30,
-            60,
-            120);
+        config.Settings.EmptyServerShutdownDelayMinutes = NormalizeChoice(config.Settings.EmptyServerShutdownDelayMinutes, 0, 0, 5, 10, 15, 30, 60, 120);
         NormalizeCommands(config.Settings);
         config.Settings.MinecraftRelayTextColor = NormalizeColor(config.Settings.MinecraftRelayTextColor);
 
@@ -354,25 +331,19 @@ public sealed partial class ConfigurationStore
     internal static string NormalizeDifficulty(string? difficulty)
     {
         ReadOnlySpan<char> value = difficulty.AsSpan().Trim();
-        if (value.Equals("easy", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Easy";
-        }
-
-        return value.Equals("hard", StringComparison.OrdinalIgnoreCase) ? "Hard" : "Medium";
+        return value.Equals("easy", StringComparison.OrdinalIgnoreCase) ? "Easy"
+            : value.Equals("hard", StringComparison.OrdinalIgnoreCase) ? "Hard"
+            : "Medium";
     }
 
     internal static string NormalizeVerbosity(string? verbosity)
     {
         ReadOnlySpan<char> value = verbosity.AsSpan().Trim();
-        if (value.Equals(BotResponseVerbositySettings.Reduced, StringComparison.OrdinalIgnoreCase))
-        {
-            return BotResponseVerbositySettings.Reduced;
-        }
-
-        return value.Equals(BotResponseVerbositySettings.EssentialOnly, StringComparison.OrdinalIgnoreCase)
-            ? BotResponseVerbositySettings.EssentialOnly
-            : BotResponseVerbositySettings.Normal;
+        return value.Equals(BotResponseVerbositySettings.Reduced, StringComparison.OrdinalIgnoreCase)
+            ? BotResponseVerbositySettings.Reduced
+            : value.Equals(BotResponseVerbositySettings.EssentialOnly, StringComparison.OrdinalIgnoreCase)
+                ? BotResponseVerbositySettings.EssentialOnly
+                : BotResponseVerbositySettings.Normal;
     }
 
     internal static string NormalizeCommandPrefix(string? prefix, string fallback)

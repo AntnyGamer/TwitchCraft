@@ -270,11 +270,11 @@ public sealed partial class StatisticsService
 }
 
 internal sealed record StatisticsDependencies(
-        Func<string, ChatCommandStatisticFlags> GetCommandFlags,
-        Func<string, bool> IsKnownPlayer,
-        Func<string, bool> IsSpectator,
-        Action QueueSnapshot,
-        Action QueueGamemode,
-        Action QueueAllDeathScores,
-        Action<string> QueueDeathScore,
-        Action<string> QueueRespawn);
+    Func<string, ChatCommandStatisticFlags> GetCommandFlags,
+    Func<string, bool> IsKnownPlayer,
+    Func<string, bool> IsSpectator,
+    Action QueueSnapshot,
+    Action QueueGamemode,
+    Action QueueAllDeathScores,
+    Action<string> QueueDeathScore,
+    Action<string> QueueRespawn);

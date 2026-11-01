@@ -29,12 +29,7 @@ internal static class MinecraftRCONClient
     private static int _port;
     private static int _nextRequestID = Environment.TickCount & 0x3FFFFFFF;
 
-    public static Task<bool> ExecuteCommandAsync(
-        string host,
-        int port,
-        string password,
-        string command,
-        CancellationToken cancellationToken)
+    public static Task<bool> ExecuteCommandAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command))
         {
@@ -42,18 +37,13 @@ internal static class MinecraftRCONClient
         }
 
         return UseConnectionAsync(host.Trim(), port, password, async token =>
-            {
-                await WriteCommandAsync(command, token).ConfigureAwait(false);
-                return true;
-            }, cancellationToken);
+        {
+            await WriteCommandAsync(command, token).ConfigureAwait(false);
+            return true;
+        }, cancellationToken);
     }
 
-    public static Task<bool> ExecuteCommandsAsync(
-        string host,
-        int port,
-        string password,
-        IReadOnlyList<string> commands,
-        CancellationToken cancellationToken)
+    public static Task<bool> ExecuteCommandsAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || commands.Count == 0)
         {
@@ -64,12 +54,7 @@ internal static class MinecraftRCONClient
             token => WriteCommandsAsync(commands, token), cancellationToken);
     }
 
-    public static Task<string?> ExecuteQueryAsync(
-        string host,
-        int port,
-        string password,
-        string command,
-        CancellationToken cancellationToken)
+    public static Task<string?> ExecuteQueryAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command))
         {
@@ -194,10 +179,7 @@ internal static class MinecraftRCONClient
         }
 
         DisposeConnection();
-        TcpClient client = new()
-        {
-            NoDelay = true
-        };
+        TcpClient client = new() { NoDelay = true };
         try
         {
             await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);

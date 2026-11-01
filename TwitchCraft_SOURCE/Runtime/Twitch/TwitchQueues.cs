@@ -17,10 +17,7 @@ public sealed partial class MainHandler
             return;
         }
 
-        if (Interlocked.CompareExchange(
-            ref _twitchSession.LastCommandOverflowNoticeMilliseconds,
-            nowMilliseconds,
-            previousMilliseconds) != previousMilliseconds)
+        if (Interlocked.CompareExchange(ref _twitchSession.LastCommandOverflowNoticeMilliseconds, nowMilliseconds, previousMilliseconds) != previousMilliseconds)
         {
             return;
         }
@@ -246,11 +243,11 @@ public sealed partial class MainHandler
                 return;
             }
             if (!Commands.TryReserveCustomCooldown(
-                parsed.Name,
-                sender,
-                customization?.CooldownSeconds,
-                out TimeSpan customCooldownRemaining,
-                out customCooldownReservation))
+                    parsed.Name,
+                    sender,
+                    customization?.CooldownSeconds,
+                    out TimeSpan customCooldownRemaining,
+                    out customCooldownReservation))
             {
                 await SendReplyAsync(
                     sender + ", you are on cooldown for " + prefix + parsed.Name + ". Try again in " + FormatCooldown(customCooldownRemaining) + ".",
@@ -260,15 +257,14 @@ public sealed partial class MainHandler
             }
 
             if (!Commands.TryReserveCustomCooldown(
-                parsed.Name,
-                CommandService.GlobalCooldownKey,
-                customization?.GlobalCooldownSeconds,
-                out TimeSpan customGlobalCooldownRemaining,
-                out globalCooldownReservation))
+                    parsed.Name,
+                    CommandService.GlobalCooldownKey,
+                    customization?.GlobalCooldownSeconds,
+                    out TimeSpan customGlobalCooldownRemaining,
+                    out globalCooldownReservation))
             {
                 await SendReplyAsync(
-                    sender + ", " + prefix + parsed.Name + " is on global cooldown. Try again in " +
-                        FormatCooldown(customGlobalCooldownRemaining) + ".",
+                    sender + ", " + prefix + parsed.Name + " is on global cooldown. Try again in " + FormatCooldown(customGlobalCooldownRemaining) + ".",
                     BotResponseKind.Essential,
                     cancellationToken).ConfigureAwait(false);
                 return;
@@ -278,10 +274,7 @@ public sealed partial class MainHandler
             {
                 if (viewerLimited && Commands.ShouldWarnViewerLimit(sender))
                 {
-                    await SendReplyAsync(
-                        sender + ", you have reached your command limit. Try again shortly.",
-                        BotResponseKind.Essential,
-                        cancellationToken).ConfigureAwait(false);
+                    await SendReplyAsync(sender + ", you have reached your command limit. Try again shortly.", BotResponseKind.Essential, cancellationToken).ConfigureAwait(false);
                 }
                 else if (!viewerLimited && Commands.ShouldWarnChannelLimit())
                 {

@@ -23,11 +23,7 @@ public sealed class CommandSettingsEditorTests
     {
         List<(bool Enabled, int? PerUser, double? Global)> saves = [];
         List<string?> changed = [];
-        Settings.CommandSettingsRow row = new("heal", new()
-        {
-            CooldownSeconds = perUser,
-            GlobalCooldownSeconds = global
-        },
+        Settings.CommandSettingsRow row = new("heal", new() { CooldownSeconds = perUser, GlobalCooldownSeconds = global },
             edited => saves.Add((edited.Enabled, edited.PerUserCooldown.Value, edited.GlobalCooldown.Value)));
         row.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
         Assert.Equal(perUser, row.PerUserCooldown.Value);
@@ -119,9 +115,7 @@ public sealed class CommandSettingsEditorTests
         }, TimeSpan.FromSeconds(30), "Command editor test timed out.");
     }
 
-    private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() =>
-    {
-    }, DispatcherPriority.ApplicationIdle);
+    private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
 
     private static byte[] RenderPixels(FrameworkElement element)
     {

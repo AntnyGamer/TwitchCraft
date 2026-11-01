@@ -63,11 +63,8 @@ public partial class Settings
     private static bool TryReadInt(ComboBox dropdown, int minimum, int maximum, out int value)
     {
         ReadOnlySpan<char> text = (dropdown.SelectedItem as string ?? dropdown.Text).AsSpan().Trim();
-        return int.TryParse(
-            text,
-            NumberStyles.Integer | NumberStyles.AllowThousands,
-            CultureInfo.InvariantCulture,
-            out value) && value >= minimum && value <= maximum;
+        return int.TryParse(text, NumberStyles.Integer | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value) &&
+            value >= minimum && value <= maximum;
     }
 
     private static bool TryReadDouble(
@@ -451,22 +448,13 @@ public partial class Settings
             static (settings, value) => settings.ViewerCommandLimitPerMinute = value);
 
     private async void ActivityWindow_Changed(object sender, SelectionChangedEventArgs e)
-        => await SaveOptionAsync(
-            ActivityWindowDropdown,
-            ActivityWindowOptions,
-            static (settings, value) => settings.PassiveActivityWindowMinutes = value);
+        => await SaveOptionAsync(ActivityWindowDropdown, ActivityWindowOptions, static (settings, value) => settings.PassiveActivityWindowMinutes = value);
 
     private async void BackupInterval_Changed(object sender, SelectionChangedEventArgs e)
-        => await SaveOptionAsync(
-            BackupIntervalDropdown,
-            BackupIntervalOptions,
-            static (settings, value) => settings.AutomaticBackupIntervalHours = value);
+        => await SaveOptionAsync(BackupIntervalDropdown, BackupIntervalOptions, static (settings, value) => settings.AutomaticBackupIntervalHours = value);
 
     private async void BackupRetention_Changed(object sender, SelectionChangedEventArgs e)
-        => await SaveOptionAsync(
-            BackupRetentionDropdown,
-            BackupRetentionOptions,
-            static (settings, value) => settings.AutomaticBackupRetentionCount = value);
+        => await SaveOptionAsync(BackupRetentionDropdown, BackupRetentionOptions, static (settings, value) => settings.AutomaticBackupRetentionCount = value);
 
     private async void TwitchLogLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -504,10 +492,7 @@ public partial class Settings
 
     private async void RosterInterval_Changed(object sender, SelectionChangedEventArgs e)
     {
-        await SaveOptionAsync(
-            ViewerRosterIntervalDropdown,
-            ViewerRosterIntervalOptions,
-            static (settings, value) => settings.ViewerRosterRefreshIntervalSeconds = value);
+        await SaveOptionAsync(ViewerRosterIntervalDropdown, ViewerRosterIntervalOptions, static (settings, value) => settings.ViewerRosterRefreshIntervalSeconds = value);
         if (!_initializing)
         {
             UpdateLowResource();
@@ -570,16 +555,10 @@ public partial class Settings
             static (settings, value) => settings.GracefulShutdownTimeoutSeconds = value);
 
     private async void SqliteOptimize_Changed(object sender, SelectionChangedEventArgs e)
-        => await SaveOptionAsync(
-            SqliteOptimizeDropdown,
-            SqliteOptimizeOptions,
-            static (settings, value) => settings.SQLiteOptimizeIntervalHours = value);
+        => await SaveOptionAsync(SqliteOptimizeDropdown, SqliteOptimizeOptions, static (settings, value) => settings.SQLiteOptimizeIntervalHours = value);
 
     private async void EmptyShutdown_Changed(object sender, SelectionChangedEventArgs e)
-        => await SaveOptionAsync(
-            EmptyShutdownDropdown,
-            EmptyShutdownOptions,
-            static (settings, value) => settings.EmptyServerShutdownDelayMinutes = value);
+        => await SaveOptionAsync(EmptyShutdownDropdown, EmptyShutdownOptions, static (settings, value) => settings.EmptyServerShutdownDelayMinutes = value);
 
     private async void Whitelist_Changed(object sender, RoutedEventArgs e)
     {
@@ -745,12 +724,13 @@ public partial class Settings
 
             LowResourceEffectiveValuesTextBlock.Text =
                 "Effective while this preset is enabled (your configured values are preserved):\n" +
-                    "• Connection-health refresh: about every 3 seconds\n" + "• UI updates while minimized: paused\n" +
-                    $"• Twitch log lines: {twitchLogs:N0} (configured {settings.MaxVisibleTwitchLogLines:N0})\n" +
-                    $"• Minecraft log lines: {minecraftLogs:N0} (configured {settings.MaxVisibleMinecraftLogLines:N0})\n" +
-                    $"• Viewer roster refresh: {rosterSeconds}s (configured {settings.ViewerRosterRefreshIntervalSeconds}s)\n" +
-                    $"• Gameplay queue: {gameplayQueue:N0} (configured {settings.MaxGameplayCommandQueue:N0})\n" +
-                    $"• Minecraft relay: {relayRate}/s (configured {configuredRelayText})";
+                "• Connection-health refresh: about every 3 seconds\n" +
+                "• UI updates while minimized: paused\n" +
+                $"• Twitch log lines: {twitchLogs:N0} (configured {settings.MaxVisibleTwitchLogLines:N0})\n" +
+                $"• Minecraft log lines: {minecraftLogs:N0} (configured {settings.MaxVisibleMinecraftLogLines:N0})\n" +
+                $"• Viewer roster refresh: {rosterSeconds}s (configured {settings.ViewerRosterRefreshIntervalSeconds}s)\n" +
+                $"• Gameplay queue: {gameplayQueue:N0} (configured {settings.MaxGameplayCommandQueue:N0})\n" +
+                $"• Minecraft relay: {relayRate}/s (configured {configuredRelayText})";
         }
         catch
         {

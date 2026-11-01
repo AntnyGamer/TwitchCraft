@@ -125,17 +125,17 @@ internal static class MinecraftVersionSupport
     }
 
     internal sealed class MinecraftVersionInfo(
-            string ID,
-            string alias,
-            int requiredJDK,
-            int dataPackFormatMajor,
-            int dataPackFormatMinor,
-            bool usesSingularFunctionDirectories,
-            bool usesInlineTextComponents,
-            bool usesModernPackMetadata,
-            bool usesNamespacedGameRules,
-            int additionalMobCount,
-            int additionalLootTableCount)
+        string ID,
+        string alias,
+        int requiredJDK,
+        int dataPackFormatMajor,
+        int dataPackFormatMinor,
+        bool usesSingularFunctionDirectories,
+        bool usesInlineTextComponents,
+        bool usesModernPackMetadata,
+        bool usesNamespacedGameRules,
+        int additionalMobCount,
+        int additionalLootTableCount)
     {
         public string ID { get; } = ID;
         public string DisplayID { get; } = alias.Length > 0 ? alias : ID;
@@ -154,8 +154,7 @@ internal static class MinecraftVersionSupport
         {
             if (DataPackFormatMinor > 0 || UsesModernPackMetadata)
             {
-                return "[" + DataPackFormatMajor.ToString(CultureInfo.InvariantCulture) + ", " +
-                    DataPackFormatMinor.ToString(CultureInfo.InvariantCulture) + "]";
+                return "[" + DataPackFormatMajor.ToString(CultureInfo.InvariantCulture) + ", " + DataPackFormatMinor.ToString(CultureInfo.InvariantCulture) + "]";
             }
 
             return DataPackFormatMajor.ToString(CultureInfo.InvariantCulture);

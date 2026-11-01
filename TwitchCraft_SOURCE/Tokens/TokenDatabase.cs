@@ -86,16 +86,9 @@ internal sealed partial class TokenStore
                 string username = Normalize(reader.GetString(0));
                 int balance = ClampBalance(reader.GetInt64(1));
                 long rank = reader.GetInt64(2);
-                if (username.Length == 0 || balance <= 0 || rank <= 0)
-                {
-                    result = null;
-                }
-                else
-                {
-                    int position = rank > int.MaxValue ? int.MaxValue : (int)rank;
-                    result = new TokenRankResult(username, balance, position);
-                }
-
+                result = username.Length == 0 || balance <= 0 || rank <= 0
+                    ? null
+                    : new TokenRankResult(username, balance, rank > int.MaxValue ? int.MaxValue : (int)rank);
                 return true;
             }
             catch (Exception ex)

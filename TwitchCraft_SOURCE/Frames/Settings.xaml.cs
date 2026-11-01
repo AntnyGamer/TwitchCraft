@@ -360,14 +360,11 @@ public partial class Settings : UserControl
     {
         AuthorizeTwitchButton.IsEnabled = true;
         AuthorizeTwitchButton.ToolTip = null;
-        if (_tokenAuthorizationCts != null)
-        {
-            AuthorizeTwitchButton.Content = "Cancel Authorization";
-        }
-        else
-        {
-            AuthorizeTwitchButton.Content = _hasSavedTwitchAuthorization ? "Reauthorize Twitch" : "Authorize Twitch";
-        }
+        AuthorizeTwitchButton.Content = _tokenAuthorizationCts != null
+            ? "Cancel Authorization"
+            : _hasSavedTwitchAuthorization
+                ? "Reauthorize Twitch"
+                : "Authorize Twitch";
     }
 
     private static bool HasTwitchAuth(TwitchCraftConfig config)

@@ -144,8 +144,8 @@ public sealed partial class MainHandler
         try
         {
             if (await SendServerCommandsAsync(
-                [command, "data get storage " + ProbeMarkerNamespace + marker],
-                cancellationToken).ConfigureAwait(false))
+                    [command, "data get storage " + ProbeMarkerNamespace + marker],
+                    cancellationToken).ConfigureAwait(false))
             {
                 QueueProbeFallback(marker, cancellationToken);
                 return true;

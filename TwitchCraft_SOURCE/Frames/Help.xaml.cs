@@ -142,14 +142,7 @@ public partial class Help : UserControl
     }
 
     private static string FormatEnabled(bool? enabled)
-    {
-        if (!enabled.HasValue)
-        {
-            return "Unavailable";
-        }
-
-        return enabled.Value ? "Enabled" : "Disabled";
-    }
+        => enabled.HasValue ? enabled.Value ? "Enabled" : "Disabled" : "Unavailable";
 
     internal void ShowDiagnosticsCopied()
     {

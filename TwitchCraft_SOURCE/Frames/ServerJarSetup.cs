@@ -56,10 +56,7 @@ public partial class Setup : UserControl
 
         if (File.Exists(jarPath))
         {
-            bool existingJarValid = await Task.Run(() => ServerJarMatches(
-                jarPath,
-                expectedSHA,
-                expectedSize), cancellationToken).ConfigureAwait(false);
+            bool existingJarValid = await Task.Run(() => ServerJarMatches(jarPath, expectedSHA, expectedSize), cancellationToken).ConfigureAwait(false);
             if (existingJarValid)
             {
                 return;
@@ -73,20 +70,13 @@ public partial class Setup : UserControl
         {
             await DownloadJarAsync(http, downloadUri, tempPath, cancellationToken).ConfigureAwait(false);
             await Task.Run(() => VerifyServerJar(tempPath, expectedSHA, expectedSize), cancellationToken).ConfigureAwait(false);
-            FileReplaceMode replaceMode = FileSystemHelper.ReplaceFile(
-                tempPath,
-                jarPath,
-                backupPath,
-                "Atomic server jar replace failed; falling back to copy");
+            FileReplaceMode replaceMode = FileSystemHelper.ReplaceFile(tempPath, jarPath, backupPath, "Atomic server jar replace failed; falling back to copy");
             if (replaceMode == FileReplaceMode.Fallback)
             {
                 await Task.Run(() => VerifyServerJar(jarPath, expectedSHA, expectedSize), cancellationToken).ConfigureAwait(false);
             }
         }
-        catch (Exception ex) when (ex is IOException ||
-            ex is UnauthorizedAccessException ||
-            ex is HttpRequestException ||
-            ex is InvalidOperationException)
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is HttpRequestException || ex is InvalidOperationException)
         {
             throw new InvalidOperationException(
                 "Could not create a verified Minecraft server jar. Check the network, disk permissions, and whether another process is using the jar, then try again.\n\nJar path: " + jarPath,
@@ -103,10 +93,7 @@ public partial class Setup : UserControl
         using CancellationTokenSource downloadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         downloadCts.CancelAfter(TimeSpan.FromMinutes(15));
         cancellationToken = downloadCts.Token;
-        using HttpResponseMessage response = await http.GetAsync(
-            downloadUri,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken).ConfigureAwait(false);
+        using HttpResponseMessage response = await http.GetAsync(downloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         _ = CreateHttpsUri(response.RequestMessage?.RequestUri?.AbsoluteUri, "Minecraft server download redirect");
 
@@ -117,13 +104,7 @@ public partial class Setup : UserControl
         }
 
         using Stream input = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        await using FileStream output = new(
-            outputPath,
-            FileMode.Create,
-            FileAccess.Write,
-            FileShare.None,
-            DownloadBufferSize,
-            FileOptions.SequentialScan);
+        await using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, DownloadBufferSize, FileOptions.SequentialScan);
         await CopyLimitedAsync(input, output, MaxServerJarDownloadBytes, cancellationToken).ConfigureAwait(false);
     }
 

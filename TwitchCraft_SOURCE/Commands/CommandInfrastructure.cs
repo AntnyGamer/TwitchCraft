@@ -23,14 +23,10 @@ internal static class CommandRandom
 public sealed class EffectDefinition
 {
     public string ID { get; set; } = string.Empty;
-    public int MinSeconds
-    { get; set; }
-    public int MaxSeconds
-    { get; set; }
-    public int MinAmplifier
-    { get; set; }
-    public int MaxAmplifier
-    { get; set; }
+    public int MinSeconds { get; set; }
+    public int MaxSeconds { get; set; }
+    public int MinAmplifier { get; set; }
+    public int MaxAmplifier { get; set; }
 }
 
 public delegate Task ChatCommandHandler(string[] args, string sender, CancellationToken cancellationToken);
@@ -41,12 +37,9 @@ public sealed class ResolvedTarget
     public string DisplayName { get; set; } = "everyone";
     public string MinecraftName { get; set; } = string.Empty;
     public int PlayerCount { get; set; } = 1;
-    public bool DefaultPlayerInclusionKnown
-    { get; set; }
-    public bool IncludesDefaultMinecraftPlayer
-    { get; set; }
-    public List<string>? TargetablePlayers
-    { get; set; }
+    public bool DefaultPlayerInclusionKnown { get; set; }
+    public bool IncludesDefaultMinecraftPlayer { get; set; }
+    public List<string>? TargetablePlayers { get; set; }
 }
 
 // ===== Command registry =====
@@ -61,8 +54,8 @@ public enum ChatCommandStatisticFlags
 }
 
 public sealed class ChatCommandRegistry(
-        Dictionary<string, ChatCommandHandler>? handlers,
-        Dictionary<string, ChatCommandStatisticFlags>? statisticFlags = null)
+    Dictionary<string, ChatCommandHandler>? handlers,
+    Dictionary<string, ChatCommandStatisticFlags>? statisticFlags = null)
 {
     private readonly Dictionary<string, ChatCommandHandler> _handlers = handlers ?? new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ChatCommandStatisticFlags> _statisticFlags = statisticFlags ?? new(StringComparer.OrdinalIgnoreCase);
@@ -171,14 +164,11 @@ public static class MinecraftCommandBuilder
     }
 
     public static string AddMaxHealthModifier(string selector, string ID, int delta, bool modernAttribute, bool namespacedID)
-        => "execute as " + selector + " run attribute @s " +
-            (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") +
-            " modifier add " + ID + (namespacedID ? "" : " twitchcraft_health") + " " +
-            delta.ToString(CultureInfo.InvariantCulture) + " add_value";
+        => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") +
+            " modifier add " + ID + (namespacedID ? "" : " twitchcraft_health") + " " + delta.ToString(CultureInfo.InvariantCulture) + " add_value";
 
     public static string RemoveMaxHealthModifier(string selector, string ID, bool modernAttribute)
-        => "execute as " + selector + " run attribute @s " +
-            (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") + " modifier remove " + ID;
+        => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") + " modifier remove " + ID;
 
     public static string ModeratePlayer(string playerName, string reason, bool ban)
     {

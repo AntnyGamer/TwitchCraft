@@ -42,7 +42,7 @@ public sealed partial class MainHandler
         if (possessiveIndex > setPrefix.Length)
         {
             if (MinecraftNameHelper.TryNormalizePlayerName(
-                message.AsSpan(setPrefix.Length, possessiveIndex - setPrefix.Length), out string candidate) &&
+                    message.AsSpan(setPrefix.Length, possessiveIndex - setPrefix.Length), out string candidate) &&
                 TryParseGamemodeName(message.AsSpan(possessiveIndex + possessiveMarker.Length), out gameType))
             {
                 playerName = candidate;
@@ -57,7 +57,7 @@ public sealed partial class MainHandler
             if (toIndex > ofPrefix.Length)
             {
                 if (MinecraftNameHelper.TryNormalizePlayerName(
-                    message.AsSpan(ofPrefix.Length, toIndex - ofPrefix.Length), out string candidate) &&
+                        message.AsSpan(ofPrefix.Length, toIndex - ofPrefix.Length), out string candidate) &&
                     TryParseGamemodeName(message.AsSpan(toIndex + 4), out gameType))
                 {
                     playerName = candidate;
@@ -158,10 +158,7 @@ public sealed partial class MainHandler
         {
             foreach (string player in _pendingMaxHealthRequests.Keys)
             {
-                if (TryParseMaxHealthResponse(
-                    line,
-                    player,
-                    out double health) && _pendingMaxHealthRequests.Remove(player, out TaskCompletionSource<double?>? waiter))
+                if (TryParseMaxHealthResponse(line, player, out double health) && _pendingMaxHealthRequests.Remove(player, out TaskCompletionSource<double?>? waiter))
                 {
                     waiter.TrySetResult(health);
                     return true;

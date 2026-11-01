@@ -32,13 +32,9 @@ public sealed partial class MainHandler
                     difficultyChanged = _activeConfig.Settings.Difficulty != activeConfig.Settings.Difficulty;
                     pvpChanged = _activeConfig.Settings.MultiplayerPvPEnabled != activeConfig.Settings.MultiplayerPvPEnabled;
                     followRewardsChanged = _activeConfig.Settings.AutomaticFollowRewardsEnabled != activeConfig.Settings.AutomaticFollowRewardsEnabled;
-                    twitchAuthChanged = !preserveTwitchAuth && !string.Equals(
-                        NormalizeToken(_activeConfig.Twitch.BotToken),
-                        NormalizeToken(activeConfig.Twitch.BotToken),
-                        StringComparison.Ordinal);
+                    twitchAuthChanged = !preserveTwitchAuth && !string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), NormalizeToken(activeConfig.Twitch.BotToken), StringComparison.Ordinal);
                     maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 &&
-                        (_activeConfig.Settings.MaximumTokenBalance == 0 ||
-                         activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
+                        (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
                     passiveScheduleChanged =
                         _activeConfig.Settings.PassiveTokenEarningEnabled != activeConfig.Settings.PassiveTokenEarningEnabled ||
                         _activeConfig.Settings.PassiveRewardsRequireActivity != activeConfig.Settings.PassiveRewardsRequireActivity ||

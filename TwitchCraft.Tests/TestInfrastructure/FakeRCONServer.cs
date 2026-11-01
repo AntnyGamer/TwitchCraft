@@ -42,8 +42,7 @@ internal sealed class FakeRCONServer : IAsyncDisposable
         _serverTask = RunAsync(_cts.Token);
     }
 
-    internal int Port
-    { get; }
+    internal int Port { get; }
 
     internal IReadOnlyList<string> Commands
     {

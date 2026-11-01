@@ -134,8 +134,7 @@ public static partial class CommandList
                 List<string> viewers = runtime.GetViewerRosterSnapshot();
                 if (viewers.Count == 0)
                 {
-                    await sayToChannel(who + ", there are no known viewers to " + action + " tokens " + direction +
-                        " right now.", ct).ConfigureAwait(false);
+                    await sayToChannel(who + ", there are no known viewers to " + action + " tokens " + direction + " right now.", ct).ConfigureAwait(false);
                     return;
                 }
                 int adjustedCount = isGive
@@ -177,8 +176,7 @@ public static partial class CommandList
             }
             if (!CommandUserHelper.TryNormalizeTwitchUser(targetToken, out string targetUsername))
             {
-                await sayToChannel(who + ", please provide a valid Twitch username to " + action + " tokens " +
-                    direction + ".", ct).ConfigureAwait(false);
+                await sayToChannel(who + ", please provide a valid Twitch username to " + action + " tokens " + direction + ".", ct).ConfigureAwait(false);
                 return;
             }
             int changed = isGive ? runtime.Tokens.Award(targetUsername, amount) : runtime.Tokens.Adjust(targetUsername, delta);
@@ -201,13 +199,11 @@ public static partial class CommandList
             }
             if (args is { Length: > 0 })
             {
-                await saySuccessfulToChannel(whoAsked + ", " + queryUser + " has " +
-                    balance.ToString(CultureInfo.InvariantCulture) + " " + TokenLabel(balance) + ".", ct).ConfigureAwait(false);
+                await saySuccessfulToChannel(whoAsked + ", " + queryUser + " has " + balance.ToString(CultureInfo.InvariantCulture) + " " + TokenLabel(balance) + ".", ct).ConfigureAwait(false);
             }
             else
             {
-                await saySuccessfulToChannel(whoAsked + ", you have " + balance.ToString(CultureInfo.InvariantCulture) +
-                    " " + TokenLabel(balance) + ".", ct).ConfigureAwait(false);
+                await saySuccessfulToChannel(whoAsked + ", you have " + balance.ToString(CultureInfo.InvariantCulture) + " " + TokenLabel(balance) + ".", ct).ConfigureAwait(false);
             }
         };
         handlers["tokenleaderboard"] = async (_, sender, ct) =>
@@ -252,8 +248,7 @@ public static partial class CommandList
             if (rank is not TokenRankResult result)
             {
                 string subject = string.Equals(queryUser, whoAsked, StringComparison.OrdinalIgnoreCase) ? "you are" : queryUser + " is";
-                await saySuccessfulToChannel(whoAsked + ", " + subject +
-                    " not ranked yet because the balance is 0 tokens.", ct).ConfigureAwait(false);
+                await saySuccessfulToChannel(whoAsked + ", " + subject + " not ranked yet because the balance is 0 tokens.", ct).ConfigureAwait(false);
                 return;
             }
 

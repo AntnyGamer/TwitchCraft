@@ -185,10 +185,7 @@ public partial class Settings
             ? Task.CompletedTask
             : SaveConfigAsync(config => update(config, enabled), refreshMinigameLoops: refreshMinigameLoops);
 
-    private async Task SaveConfigAsync(
-        Action<TwitchCraftConfig> update,
-        Action<TwitchCraftConfig>? beforeSave = null,
-        bool refreshMinigameLoops = false)
+    private async Task SaveConfigAsync(Action<TwitchCraftConfig> update, Action<TwitchCraftConfig>? beforeSave = null, bool refreshMinigameLoops = false)
     {
         await _settingsSaveGate.WaitAsync();
         try

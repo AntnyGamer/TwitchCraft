@@ -42,10 +42,7 @@ public partial class Main : UserControl
         InitializeComponent();
         _flushMinecraftLogs = () => FlushLogs(MinecraftLogs, _minecraftLogLines, _pendingMinecraftLogLines, isMinecraftLog: true);
         _flushTwitchLogs = () => FlushLogs(TwitchLogs, _twitchLogLines, _pendingTwitchLogLines, isMinecraftLog: false);
-        _connectionHealthTimer = new()
-        {
-            Interval = TimeSpan.FromSeconds(1)
-        };
+        _connectionHealthTimer = new() { Interval = TimeSpan.FromSeconds(1) };
         _connectionHealthTimer.Tick += HealthTimer_Tick;
         IsVisibleChanged += Visibility_Changed;
         Loaded += (_, _) =>
@@ -194,10 +191,7 @@ public partial class Main : UserControl
         {
             string countText = $"You have {viewers.Count} viewer{(viewers.Count == 1 ? string.Empty : "s")}.";
 
-            if (BotViewerList.ItemsSource is not List<string> currentViewers || !SortedListHelper.EqualInOrder(
-                currentViewers,
-                viewers,
-                ViewerNameComparer))
+            if (BotViewerList.ItemsSource is not List<string> currentViewers || !SortedListHelper.EqualInOrder(currentViewers, viewers, ViewerNameComparer))
             {
                 BotViewerList.ItemsSource = viewers;
             }

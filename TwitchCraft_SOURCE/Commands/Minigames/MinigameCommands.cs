@@ -101,13 +101,7 @@ public static partial class MinigameManager
                     ct).ConfigureAwait(false);
                 return;
             }
-            if (await ReplyBetErrorAsync(
-                updateResult,
-                sender,
-                "Chicken Run",
-                "Chicken Run betting is not open right now.",
-                sayToChannel,
-                ct).ConfigureAwait(false))
+            if (await ReplyBetErrorAsync(updateResult, sender, "Chicken Run", "Chicken Run betting is not open right now.", sayToChannel, ct).ConfigureAwait(false))
             {
                 return;
             }
@@ -179,8 +173,7 @@ public static partial class MinigameManager
             if (onCooldown)
             {
                 await sayToChannel(
-                    sender + ", please wait " + waitSeconds.ToString(CultureInfo.InvariantCulture) + " second" +
-                        (waitSeconds == 1 ? "" : "s") + " before guessing again.",
+                    sender + ", please wait " + waitSeconds.ToString(CultureInfo.InvariantCulture) + " second" + (waitSeconds == 1 ? "" : "s") + " before guessing again.",
                     ct).ConfigureAwait(false);
                 return;
             }
@@ -200,10 +193,7 @@ public static partial class MinigameManager
             }
 
             runtime.Tokens.Award(sender, 10); //Guess Number Win
-            await saySuccessfulToChannel(sender +
-                ", you guessed the number " +
-                targetNumber.ToString(CultureInfo.InvariantCulture) +
-                " and won 10 tokens!", ct).ConfigureAwait(false);
+            await saySuccessfulToChannel(sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + " and won 10 tokens!", ct).ConfigureAwait(false);
         };
 
         handlers["damagewither"] = async delegate (string[] args, string sender, CancellationToken ct)
@@ -275,13 +265,7 @@ public static partial class MinigameManager
                 }
             }
 
-            if (await ReplyBetErrorAsync(
-                updateResult,
-                sender,
-                "Wither Battle",
-                "a Wither Battle is not active right now.",
-                sayToChannel,
-                ct).ConfigureAwait(false))
+            if (await ReplyBetErrorAsync(updateResult, sender, "Wither Battle", "a Wither Battle is not active right now.", sayToChannel, ct).ConfigureAwait(false))
             {
                 return;
             }

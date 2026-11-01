@@ -46,9 +46,7 @@ public static partial class MinigameManager
         {
             ActiveState state = GetActiveStateNoLock(runtime);
             if (!string.IsNullOrWhiteSpace(state.Kind) ||
-                ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) &&
-                (chicken.Bets.Count > 0 ||
-                chicken.PendingSettlement != null) ||
+                ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) && (chicken.Bets.Count > 0 || chicken.PendingSettlement != null) ||
                 WitherBattleStates.TryGetValue(runtime, out WitherBattleState? wither) && (wither.Bets.Count > 0 || wither.PendingSettlement != null))
             {
                 return false;

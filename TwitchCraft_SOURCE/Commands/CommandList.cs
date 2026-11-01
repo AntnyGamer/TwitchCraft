@@ -57,9 +57,7 @@ public static partial class CommandList
             AddCommand("whitelistadd", WhitelistAddAsync);
             AddCommand("whitelistremove", WhitelistRemoveAsync);
             AddTargetCommands(
-                new(
-                    "anvil",
-                    5,
+                new("anvil", 5,
                     target =>
                     [
                         MinecraftCommandBuilder.ClearColumn(target.Selector, 5),
@@ -70,27 +68,21 @@ public static partial class CommandList
                     (sender, target) => $"{sender}, you dropped an anvil on {TargetName(target)}.",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "clear",
-                    125,
+                new("clear", 125,
                     target => [$"clear {target.Selector}"],
                     (sender, _) => sender + " cleared your inventory.",
                     "GOT THEIR INVENTORY CLEARED!",
                     (sender, target) => sender + ", you cleared " + TargetName(target) + "'s inventory!",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "clearhand",
-                    25,
+                new("clearhand", 25,
                     target => [MinecraftCommandBuilder.ClearMainHand(target.Selector)],
                     (sender, _) => sender + " cleared your hand.",
                     "GOT THEIR HAND CLEARED!",
                     (sender, target) => sender + ", you cleared " + TargetName(target) + "'s hand.",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "explode",
-                    15,
+                new("explode", 15,
                     target =>
                     [
                         MinecraftCommandBuilder.SpawnPrimedTnt(target.Selector),
@@ -101,68 +93,57 @@ public static partial class CommandList
                     (sender, target) => $"{sender}, you placed TNT on {TargetName(target)}.",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "freeze",
-                    30,
+                new("freeze", 30,
                     target => [$"effect give {target.Selector} minecraft:slowness 15 255"],
                     (sender, _) => sender + " froze you for 15 seconds!",
                     "GOT FROZEN!",
                     (sender, target) => $"{sender}, you froze {TargetName(target)}.",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "givelight",
-                    3,
+                new("givelight", 3,
                     target => [$"execute at {target.Selector} run setblock ~ ~1 ~ minecraft:light"],
                     (sender, _) => "Let there be light! (from " + sender + ")",
                     "GOT A LIGHT SOURCE!",
                     (sender, target) => sender + ", you gave " + TargetName(target) + " a source of light.",
                     StatisticFlags: NiceCommand),
 
-                new(
-                    "heal",
-                    3,
+                new("heal", 3,
                     target => [MinecraftCommandBuilder.Heal(target.Selector)],
                     (sender, _) => sender + " healed you.",
                     "GOT HEALED!",
                     (sender, target) => $"{sender}, you healed {TargetName(target)}.",
                     StatisticFlags: NiceCommand),
 
-                new(
-                    "invincible",
-                    15,
+                new("invincible", 15,
                     target => [$"effect give {target.Selector} minecraft:resistance 15 255 true"],
                     (sender, _) => sender + " made you invincible for 15 seconds!",
                     "WAS MADE INVINCIBLE!",
                     (sender, target) => sender + ", you made " + TargetName(target) + " invincible for 15 seconds.",
                     StatisticFlags: NiceCommand),
 
-                new(
-                    "lava",
-                    15,
+                new("lava", 15,
                     target => [$"execute at {target.Selector} run setblock ~ ~3 ~ minecraft:lava"],
                     (sender, _) => sender + " released lava above you.",
                     "GOT LAVA RELEASED ON THEM!",
                     (sender, target) => $"{sender}, you released lava above {TargetName(target)}.",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "removeblock",
-                    50,
+                new("removeblock", 50,
                     target =>
                     [
-                        "execute at " + target.Selector + " unless block ~ ~-1 ~ minecraft:bedrock" +
-                            " unless block ~ ~-1 ~ minecraft:chest" + " unless block ~ ~-1 ~ minecraft:trapped_chest" +
-                            " unless block ~ ~-1 ~ minecraft:ender_chest" + " run setblock ~ ~-1 ~ minecraft:air"
+                        "execute at " + target.Selector +
+                        " unless block ~ ~-1 ~ minecraft:bedrock" +
+                        " unless block ~ ~-1 ~ minecraft:chest" +
+                        " unless block ~ ~-1 ~ minecraft:trapped_chest" +
+                        " unless block ~ ~-1 ~ minecraft:ender_chest" +
+                        " run setblock ~ ~-1 ~ minecraft:air"
                     ],
                     (sender, _) => sender + " removed the block below you.",
                     "GOT THEIR FEET SWEPT!",
                     (sender, target) => sender + ", you removed the block below " + TargetName(target) + ".",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "teleport",
-                    70,
+                new("teleport", 70,
                     target =>
                     [
                         "execute as " + target.Selector + " at @s if dimension minecraft:the_nether run spreadplayers ~ ~ 0 2000 under 127 false @s",
@@ -173,45 +154,35 @@ public static partial class CommandList
                     (sender, target) => sender + ", you teleported " + TargetName(target) + " to a random location.",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "turnaround",
-                    5,
+                new("turnaround", 5,
                     target => [MinecraftCommandBuilder.TurnAround(target.Selector)],
                     (sender, _) => sender + " turned you around.",
                     "GOT TURNED AROUND!",
                     (sender, target) => sender + ", you turned " + TargetName(target) + " around.",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "totem",
-                    100,
+                new("totem", 100,
                     target => [$"item replace entity {target.Selector} weapon.offhand with minecraft:totem_of_undying"],
                     (sender, _) => sender + " gave you a Totem of Undying!",
                     "GOT A TOTEM!",
                     (sender, target) => sender + ", you gave " + TargetName(target) + " a Totem of Undying.",
                     StatisticFlags: NiceCommand),
 
-                new(
-                    "troll",
-                    5,
+                new("troll", 5,
                     target => [$"execute as {target.Selector} at @s run playsound minecraft:entity.creeper.primed master @s ~ ~ ~ 1 1"],
                     (_, _) => null,
                     null,
                     (sender, target) => sender + ", you played a creeper noise on " + TargetName(target) + ".",
                     StatisticFlags: DangerousCommand),
 
-                new(
-                    "water",
-                    15,
+                new("water", 15,
                     target => [$"execute at {target.Selector} run setblock ~ ~3 ~ minecraft:water"],
                     (sender, _) => sender + " released water above you.",
                     "GOT WATER RELEASED ON THEM!",
                     (sender, target) => $"{sender}, you released water above {TargetName(target)}.",
                     StatisticFlags: GameCommand),
 
-                new(
-                    "xp",
-                    5,
+                new("xp", 5,
                     target => [$"experience add {target.Selector} -1 levels"],
                     (sender, _) => sender + " took away 1 of your XP levels.",
                     "LOST 1 XP LEVEL!",
@@ -223,14 +194,7 @@ public static partial class CommandList
             AddTargetCommand("fireworks", FireworksAsync, GameCommand, minimumTokenCost: 10);
             AddTargetCommand(
                 "giant",
-                (target, sender, ct) => TimedScaleAsync(
-                    target,
-                    sender,
-                    "giant",
-                    2.0,
-                    "giant-sized",
-                    "BECAME GIANT-SIZED!",
-                    ct),
+                (target, sender, ct) => TimedScaleAsync(target, sender, "giant", 2.0, "giant-sized", "BECAME GIANT-SIZED!", ct),
                 DangerousCommand,
                 minimumTokenCost: 20);
             AddTargetCommand("insult", InsultAsync, DangerousCommand, minimumTokenCost: 5);
@@ -248,14 +212,7 @@ public static partial class CommandList
             AddTargetCommand("switchmilk", SwitchMilkAsync, DangerousCommand, minimumTokenCost: 6);
             AddTargetCommand(
                 "tiny",
-                (target, sender, ct) => TimedScaleAsync(
-                    target,
-                    sender,
-                    "tiny",
-                    0.5,
-                    "tiny",
-                    "BECAME TINY!",
-                    ct),
+                (target, sender, ct) => TimedScaleAsync(target, sender, "tiny", 0.5, "tiny", "BECAME TINY!", ct),
                 DangerousCommand,
                 minimumTokenCost: 20);
             AddCommand("weather", WeatherAsync, DangerousCommand);
@@ -269,16 +226,16 @@ public static partial class CommandList
     }
 
     private sealed record TargetCommand(
-            string Name,
-            int BaseCost,
-            Func<ResolvedTarget, IEnumerable<string>> BuildCommands,
-            Func<string, ResolvedTarget, string?> BuildTargetMessage,
-            string? OthersMessage,
-            Func<string, ResolvedTarget, string> BuildChannelMessage,
-            string Color = "yellow",
-            bool Bold = true,
-            string? OthersColor = null,
-            ChatCommandStatisticFlags StatisticFlags = ChatCommandStatisticFlags.GameAffecting);
+        string Name,
+        int BaseCost,
+        Func<ResolvedTarget, IEnumerable<string>> BuildCommands,
+        Func<string, ResolvedTarget, string?> BuildTargetMessage,
+        string? OthersMessage,
+        Func<string, ResolvedTarget, string> BuildChannelMessage,
+        string Color = "yellow",
+        bool Bold = true,
+        string? OthersColor = null,
+        ChatCommandStatisticFlags StatisticFlags = ChatCommandStatisticFlags.GameAffecting);
 
     private static string NormalizeUser(string? value) => CommandUserHelper.NormalizeUser(value);
 

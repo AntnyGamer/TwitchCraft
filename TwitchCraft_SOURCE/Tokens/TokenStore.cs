@@ -229,10 +229,7 @@ internal sealed partial class TokenStore(string path)
 
             _balances.TryGetValue(to, out int toBalance);
             int newToBalance = ClampAdjusted(toBalance, amount / 2, maximumBalance);
-            Dictionary<string, int> changes = new(2)
-            {
-                [from] = fromBalance - amount
-            };
+            Dictionary<string, int> changes = new(2) { [from] = fromBalance - amount };
             if (newToBalance != toBalance)
             {
                 changes[to] = newToBalance;
@@ -555,14 +552,7 @@ internal sealed partial class TokenStore(string path)
     }
 
     private static int ClampBalance(long balance)
-    {
-        if (balance <= 0)
-        {
-            return 0;
-        }
-
-        return balance > int.MaxValue ? int.MaxValue : (int)balance;
-    }
+        => balance <= 0 ? 0 : balance > int.MaxValue ? int.MaxValue : (int)balance;
 
     private static int ClampAdjusted(int current, int delta, int maximumBalance)
     {
@@ -571,14 +561,7 @@ internal sealed partial class TokenStore(string path)
     }
 
     private static int ClampDelta(long delta)
-    {
-        if (delta > int.MaxValue)
-        {
-            return int.MaxValue;
-        }
-
-        return delta < int.MinValue ? int.MinValue : (int)delta;
-    }
+        => delta > int.MaxValue ? int.MaxValue : delta < int.MinValue ? int.MinValue : (int)delta;
 
     private static string Normalize(string? user) => CommandUserHelper.NormalizeUser(user);
 

@@ -284,12 +284,9 @@ public sealed class ServerPropertyEditor
     private static string ToDifficulty(string? difficulty)
     {
         ReadOnlySpan<char> value = difficulty.AsSpan().Trim();
-        if (value.Equals("Easy", StringComparison.OrdinalIgnoreCase))
-        {
-            return "easy";
-        }
-
-        return value.Equals("Hard", StringComparison.OrdinalIgnoreCase) ? "hard" : "normal";
+        return value.Equals("Easy", StringComparison.OrdinalIgnoreCase) ? "easy"
+            : value.Equals("Hard", StringComparison.OrdinalIgnoreCase) ? "hard"
+            : "normal";
     }
 
     private static Dictionary<string, string> LoadPropertiesForUpdate(string propsPath, out string existingContent)
@@ -367,8 +364,7 @@ public sealed class ServerPropertyEditor
             }
         }
 
-        builder.AppendLine()
-            .AppendLine("# RCON PASSWORD - MANAGED BY TWITCHCRAFT - KEEP SECURE")
+        builder.AppendLine().AppendLine("# RCON PASSWORD - MANAGED BY TWITCHCRAFT - KEEP SECURE")
             .AppendLine("# IF LOCALLY HOSTING, CHANGE IT IN TWITCHCRAFT: SETTINGS > DANGEROUS");
         if (props.TryGetValue("rcon.password", out string? RCONPassword))
         {

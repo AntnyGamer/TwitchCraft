@@ -9,12 +9,12 @@ using TwitchCraft_V1.Setup;
 namespace TwitchCraft_V1;
 
 internal sealed class DataMaintenance(
-        Func<TwitchCraftConfig?> getConfig,
-        StartingProfile defaultSettings,
-        TokenService tokens,
-        Func<string, CancellationToken, Task<string>> validateBot,
-        Action<string, string> saveBot,
-        Func<string, CancellationToken, Task<bool>> tryRefreshAuth)
+    Func<TwitchCraftConfig?> getConfig,
+    StartingProfile defaultSettings,
+    TokenService tokens,
+    Func<string, CancellationToken, Task<string>> validateBot,
+    Action<string, string> saveBot,
+    Func<string, CancellationToken, Task<bool>> tryRefreshAuth)
 {
     private readonly Func<TwitchCraftConfig?> _getConfig = getConfig ?? throw new ArgumentNullException(nameof(getConfig));
     private readonly StartingProfile _defaultSettings = defaultSettings ?? throw new ArgumentNullException(nameof(defaultSettings));

@@ -271,10 +271,7 @@ public partial class Setup : UserControl
         cancellationToken.ThrowIfCancellationRequested();
         string selectedBeforeRefresh = GetVersionID(MCVersionDropdown);
 
-        CollectionViewSource supportedVersions = new()
-        {
-            Source = SupportedVersionOptions
-        };
+        CollectionViewSource supportedVersions = new() { Source = SupportedVersionOptions };
         supportedVersions.GroupDescriptions.Add(new PropertyGroupDescription(nameof(VersionOption.Group)));
 
         MCVersionDropdown.ItemTemplate = (DataTemplate?)FindResource("VersionItemTemplate");
@@ -311,13 +308,13 @@ public partial class Setup : UserControl
         _ = CommandUserHelper.TryNormalizeTwitchUser(BotUserTextbox.Text, out string botUser);
 
         if (!SetupInputValidator.CanStart(
-            selectedVersion,
-            bindIP,
-            clientID,
-            _authorizedClientID,
-            botToken,
-            channel,
-            botUser))
+                selectedVersion,
+                bindIP,
+                clientID,
+                _authorizedClientID,
+                botToken,
+                channel,
+                botUser))
         {
             ErrorHandling.ShowSetupIncomplete(this);
             return;
@@ -367,10 +364,7 @@ public partial class Setup : UserControl
                         throw new InvalidOperationException("Minecraft version metadata could not be loaded from Mojang.");
                     }
 
-                    version = onlineVersions.FirstOrDefault(v => string.Equals(
-                        (string?)v["id"],
-                        minecraftVersion,
-                        StringComparison.OrdinalIgnoreCase))
+                    version = onlineVersions.FirstOrDefault(v => string.Equals((string?)v["id"], minecraftVersion, StringComparison.OrdinalIgnoreCase))
                         ?? throw new InvalidOperationException("The selected Minecraft version could not be found in Mojang's online manifest.");
                 }
 
@@ -414,18 +408,7 @@ public partial class Setup : UserControl
 
                 ServerPropertyEditor.CleanupServerJars(serverDir, jarPath);
 
-                TwitchCraftConfig config = BuildConfig(
-                    minecraftVersion,
-                    serverDir,
-                    jarPath,
-                    bindIP,
-                    javaExe,
-                    javaHome,
-                    clientID,
-                    botToken,
-                    refreshToken,
-                    channel,
-                    botUser);
+                TwitchCraftConfig config = BuildConfig(minecraftVersion, serverDir, jarPath, bindIP, javaExe, javaHome, clientID, botToken, refreshToken, channel, botUser);
                 ServerPropertyEditor.WriteInitialFiles(config);
                 ConfigurationStore.Save(config);
                 host.ShowStart();

@@ -9,8 +9,7 @@ internal sealed class RuntimeTestScope : IDisposable
 {
     private readonly TemporaryDirectory _directory = new();
 
-    internal MainHandler Runtime
-    { get; }
+    internal MainHandler Runtime { get; }
 
     internal RuntimeTestScope()
     {

@@ -15,8 +15,7 @@ internal sealed class TemporaryDirectory : IDisposable
         Directory.CreateDirectory(Path);
     }
 
-    internal string Path
-    { get; }
+    internal string Path { get; }
 
     public void Dispose()
     {

@@ -131,13 +131,7 @@ public sealed partial class MainHandler
         {
             TwitchCraftConfig persisted = ConfigurationStore.Update(config =>
             {
-                if (!string.Equals(
-                    config.Twitch.ClientID,
-                    clientID,
-                    StringComparison.Ordinal) || !string.Equals(
-                        NormalizeToken(config.Twitch.BotToken),
-                        expectedToken,
-                        StringComparison.Ordinal))
+                if (!string.Equals(config.Twitch.ClientID, clientID, StringComparison.Ordinal) || !string.Equals(NormalizeToken(config.Twitch.BotToken), expectedToken, StringComparison.Ordinal))
                 {
                     return;
                 }
@@ -157,10 +151,7 @@ public sealed partial class MainHandler
             if (_activeConfig != null &&
                 string.Equals(_activeConfig.Twitch.ClientID, clientID, StringComparison.Ordinal) &&
                 string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), expectedToken, StringComparison.Ordinal) &&
-                string.Equals(
-                    NormalizeToken(persisted.Twitch.BotToken),
-                    refreshed.IsSuccess ? NormalizeToken(refreshed.Token) : expectedToken,
-                    StringComparison.Ordinal))
+                string.Equals(NormalizeToken(persisted.Twitch.BotToken), refreshed.IsSuccess ? NormalizeToken(refreshed.Token) : expectedToken, StringComparison.Ordinal))
             {
                 TwitchCraftConfig active = ConfigurationStore.Clone(_activeConfig);
                 active.Twitch.RefreshToken = persisted.Twitch.RefreshToken;
@@ -189,10 +180,7 @@ public sealed partial class MainHandler
             try
             {
                 twitch = _activeConfig?.Twitch;
-                resolvedBotName = string.Equals(
-                    NormalizeToken(twitch?.BotToken),
-                    normalizedToken,
-                    StringComparison.Ordinal) && NormalizeUser(twitch?.BotName) is { Length: > 0 } cachedBotName
+                resolvedBotName = string.Equals(NormalizeToken(twitch?.BotToken), normalizedToken, StringComparison.Ordinal) && NormalizeUser(twitch?.BotName) is { Length: > 0 } cachedBotName
                     ? cachedBotName
                     : await ValidateBotAsync(normalizedToken, twitch?.ClientID ?? string.Empty, cancellationToken).ConfigureAwait(false);
             }

@@ -40,11 +40,11 @@ public static partial class MinigameManager
             await SafeReplyAsync(
                 runtime,
                 "🔴 A Chicken Run is starting in 1 minute! You can bet between " +
-                    minSeconds.ToString(CultureInfo.InvariantCulture) + "-" +
-                    maxSeconds.ToString(CultureInfo.InvariantCulture) +
-                    " seconds for how long the chicken survives! Max " +
-                    MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
-                    " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
+                minSeconds.ToString(CultureInfo.InvariantCulture) + "-" +
+                maxSeconds.ToString(CultureInfo.InvariantCulture) +
+                " seconds for how long the chicken survives! Max " +
+                MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
+                " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
                 cancellationToken).ConfigureAwait(false);
 
             await Task.Delay(ChickenRunBettingDelay, cancellationToken).ConfigureAwait(false);

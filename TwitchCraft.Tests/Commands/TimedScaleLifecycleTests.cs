@@ -171,9 +171,7 @@ public sealed class TimedScaleLifecycleTests
             },
             _ => true,
             trackedTasks.Add,
-            _ =>
-            {
-            },
+            _ => { },
             (_, cancellationToken) =>
             {
                 TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);

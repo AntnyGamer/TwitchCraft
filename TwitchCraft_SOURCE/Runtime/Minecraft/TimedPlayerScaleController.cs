@@ -10,9 +10,9 @@ internal sealed class TimedPlayerScaleController
     private static readonly TimeSpan RestoreWarningLeadTime = TimeSpan.FromSeconds(3);
 
     private readonly record struct ScaleState(
-            long Generation,
-            bool UsesModernAttributeIDs,
-            bool UsesInlineTextComponents);
+        long Generation,
+        bool UsesModernAttributeIDs,
+        bool UsesInlineTextComponents);
 
     private readonly Lock _gate = new();
     private readonly Dictionary<string, SemaphoreSlim> _playerGates = new(StringComparer.OrdinalIgnoreCase);
@@ -142,14 +142,7 @@ internal sealed class TimedPlayerScaleController
         List<string> players;
         lock (_gate)
         {
-            if (playerName == null)
-            {
-                players = [.. _states.Keys];
-            }
-            else
-            {
-                players = _states.ContainsKey(playerName) ? [playerName] : [];
-            }
+            players = playerName == null ? [.. _states.Keys] : _states.ContainsKey(playerName) ? [playerName] : [];
         }
 
         if (playerName == null)
@@ -176,11 +169,7 @@ internal sealed class TimedPlayerScaleController
                     }
                 }
 
-                bool sent = await TryResetAsync(
-                    player,
-                    state,
-                    retryUntilCancelled: false,
-                    cancellationToken: cancellationToken).ConfigureAwait(false);
+                bool sent = await TryResetAsync(player, state, retryUntilCancelled: false, cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (sent)
                 {
                     RemoveIfCurrent(player, state);

@@ -57,8 +57,7 @@ public sealed partial class MainHandler
             await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" +
-            config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
+        _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" + config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
         QueueFirstSnapshot();
         QueueSnapshot();
         QueueGamemode();
@@ -142,8 +141,7 @@ public sealed partial class MainHandler
         await _lifecycleGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         try
         {
-            if (cancellationToken.IsCancellationRequested
-                || _minecraftSession.ServerExitExpected
+            if (cancellationToken.IsCancellationRequested || _minecraftSession.ServerExitExpected
                 || !ReferenceEquals(process, _minecraftSession.Process)
                 || _runtimeState != RuntimeState.Running)
             {

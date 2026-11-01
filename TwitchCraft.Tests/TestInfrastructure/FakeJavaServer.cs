@@ -240,11 +240,7 @@ internal static class FakeJavaServer
             return [];
         }
 
-        using FileStream stream = new(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete);
+        using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         using StreamReader reader = new(stream);
         List<string> lines = [];
         while (reader.ReadLine() is string line)

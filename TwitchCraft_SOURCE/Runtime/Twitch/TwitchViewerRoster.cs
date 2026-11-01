@@ -347,10 +347,7 @@ public sealed partial class MainHandler
                     }
                 }
             }
-            else if (string.Equals(
-                propertyName,
-                "pagination",
-                StringComparison.Ordinal) && reader.Read() && reader.TokenType == JsonToken.StartObject)
+            else if (string.Equals(propertyName, "pagination", StringComparison.Ordinal) && reader.Read() && reader.TokenType == JsonToken.StartObject)
             {
                 while (reader.Read() && reader.TokenType != JsonToken.EndObject)
                 {

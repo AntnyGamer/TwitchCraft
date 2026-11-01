@@ -27,10 +27,8 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         Runtime = runtime;
     }
 
-    internal TwitchCraftConfig Config
-    { get; }
-    internal MainHandler Runtime
-    { get; }
+    internal TwitchCraftConfig Config { get; }
+    internal MainHandler Runtime { get; }
     internal string JarPath => Config.Server.JarPath;
     internal CancellationToken Token => _cts.Token;
 

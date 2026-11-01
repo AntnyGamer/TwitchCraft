@@ -125,10 +125,7 @@ public sealed partial class MainHandler
             playerName,
             gate,
             pendingRequests,
-            (complete, ct) => SendProbeAsync(
-                "data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path,
-                complete,
-                ct),
+            (complete, ct) => SendProbeAsync("data get entity " + MinecraftCommandBuilder.SinglePlayerSelector(playerName) + " " + path, complete, ct),
             cancellationToken);
 
     public Task<string?> QueryHeartModifiersAsync(string playerName, CancellationToken cancellationToken)
@@ -186,12 +183,7 @@ public sealed partial class MainHandler
                     {
                         for (int i = 0; i < createdWaiters.Count; i++)
                         {
-                            CompleteRequest(
-                                createdWaiters[i].Player,
-                                _selectedItemProbeGate,
-                                _pendingSelectedItemRequests,
-                                createdWaiters[i].Waiter,
-                                null);
+                            CompleteRequest(createdWaiters[i].Player, _selectedItemProbeGate, _pendingSelectedItemRequests, createdWaiters[i].Waiter, null);
                         }
                     },
                     _sessionCts?.Token ?? CancellationToken.None).WaitAsync(cancellationToken).ConfigureAwait(false);
