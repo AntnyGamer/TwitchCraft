@@ -146,12 +146,12 @@ internal sealed class DataMaintenance(
         try
         {
             StartingProfile? settings = _getConfig()?.Settings;
-            if (settings == null && !ConfigurationStore.HasConfig())
-                return;
-            settings ??= ConfigurationStore.Load().Settings;
+            settings ??= ConfigurationStore.HasConfig() ? ConfigurationStore.Load().Settings : null;
 
-            if (settings.AutomaticBackupsEnabled)
+            if (settings?.AutomaticBackupsEnabled == true)
+            {
                 CreateBackup(settings.AutomaticBackupRetentionCount);
+            }
         }
         catch (Exception ex)
         {
