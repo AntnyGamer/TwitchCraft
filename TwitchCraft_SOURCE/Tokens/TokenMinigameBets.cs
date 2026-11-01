@@ -13,7 +13,6 @@ internal sealed partial class TokenStore
         ON CONFLICT(Username) DO UPDATE SET Amount = Amount + excluded.Amount;
         """;
 
-
     internal void AcquireDatabaseSessionLock()
     {
         lock (_gate)
