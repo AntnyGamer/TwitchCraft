@@ -35,33 +35,6 @@ internal sealed class DataMaintenance(
             try
             {
                 StartingProfile settings = _getConfig()?.Settings ?? _defaultSettings;
-                bool validationFailed = false;
-                try
-                {
-                    if (DateTime.UtcNow - _lastTwitchValidationUtc >= TimeSpan.FromHours(1))
-                    {
-                        TwitchConfig? twitch = _getConfig()?.Twitch;
-                        string token = TwitchTokenHelper.NormalizeAccessToken(twitch?.BotToken);
-                        if (token.Length > 0)
-                        {
-                            try
-                            {
-                                string login = await _validateBot(token, cancellationToken).ConfigureAwait(false);
-                                if (login.Length > 0 && !string.Equals(login, twitch?.BotName, StringComparison.OrdinalIgnoreCase))
-                                    _saveBot(token, login);
-                                _lastTwitchValidationUtc = DateTime.UtcNow;
-                            }
-                            catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                            { if (await _tryRefreshAuth(token, cancellationToken).ConfigureAwait(false)) _lastTwitchValidationUtc = DateTime.UtcNow; }
-                        }
-                    }
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-                {
-                    ErrorHandling.LogNonFatal("Twitch validation failed", ex);
-                    validationFailed = true;
-                }
-
                 if (settings.AutomaticBackupsEnabled && IsBackupDue(settings.AutomaticBackupIntervalHours))
                     CreateBackup(settings.AutomaticBackupRetentionCount);
                 int optimizeHours = settings.SQLiteOptimizeIntervalHours;
@@ -70,7 +43,25 @@ internal sealed class DataMaintenance(
                     _tokens.TryOptimize())
                     _lastDatabaseOptimizeUtc = DateTime.UtcNow;
 
-                await Task.Delay(TimeSpan.FromMinutes(validationFailed ? 1 : 5), cancellationToken).ConfigureAwait(false);
+                if (DateTime.UtcNow - _lastTwitchValidationUtc >= TimeSpan.FromHours(1))
+                {
+                    TwitchConfig? twitch = _getConfig()?.Twitch;
+                    string token = TwitchTokenHelper.NormalizeAccessToken(twitch?.BotToken);
+                    if (token.Length > 0)
+                    {
+                        try
+                        {
+                            string login = await _validateBot(token, cancellationToken).ConfigureAwait(false);
+                            if (login.Length > 0 && !string.Equals(login, twitch?.BotName, StringComparison.OrdinalIgnoreCase))
+                                _saveBot(token, login);
+                            _lastTwitchValidationUtc = DateTime.UtcNow;
+                        }
+                        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        { if (await _tryRefreshAuth(token, cancellationToken).ConfigureAwait(false)) _lastTwitchValidationUtc = DateTime.UtcNow; }
+                    }
+                }
+
+                await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
