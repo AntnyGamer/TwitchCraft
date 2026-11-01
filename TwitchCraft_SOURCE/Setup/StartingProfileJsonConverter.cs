@@ -6,9 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace TwitchCraft_V1.Setup;
 
-/// <summary>
 /// Groups config.json settings to match the Settings UI.
-/// </summary>
 internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfile>
 {
     internal static readonly (string Category, string[] Properties)[] CategoryOrder =

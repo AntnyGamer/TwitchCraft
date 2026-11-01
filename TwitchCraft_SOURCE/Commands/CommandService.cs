@@ -570,7 +570,7 @@ public sealed class CommandService
     private static string? FindOnlinePlayer(List<string> online, string playerName)
     {
         int index = online.BinarySearch(playerName, StringComparer.OrdinalIgnoreCase);
-        return index >= 0 ? online[index] : null;
+        return index >= 0 ? online[index] : null; // Keep null
     }
 
     private static ResolvedTarget MakePlayerTarget(string playerName) => new()

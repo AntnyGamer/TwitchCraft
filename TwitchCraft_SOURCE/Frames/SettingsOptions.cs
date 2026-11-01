@@ -178,35 +178,35 @@ public partial class Settings
     }
 
     private static readonly (int Value, string Label)[] ViewerCommandLimitOptions =
-    [(0, "Unlimited"), (3, "3"), (5, "5"), (10, "10"), (15, "15"), (20, "20"), (30, "30"), (60, "60")];
+        [(0, "Unlimited"), (3, "3"), (5, "5"), (10, "10"), (15, "15"), (20, "20"), (30, "30"), (60, "60")];
     private static readonly (int Value, string Label)[] ActivityWindowOptions =
-    [(1, "1 minute"), (2, "2 minutes"), (5, "5 minutes"), (10, "10 minutes"), (15, "15 minutes"), (30, "30 minutes"), (60, "1 hour"), (120, "2 hours")];
+        [(1, "1 minute"), (2, "2 minutes"), (5, "5 minutes"), (10, "10 minutes"), (15, "15 minutes"), (30, "30 minutes"), (60, "1 hour"), (120, "2 hours")];
     private static readonly (int Value, string Label)[] BackupIntervalOptions =
-    [(1, "1 hour"), (6, "6 hours"), (12, "12 hours"), (24, "24 hours"), (48, "2 days"), (168, "1 week")];
+        [(1, "1 hour"), (6, "6 hours"), (12, "12 hours"), (24, "24 hours"), (48, "2 days"), (168, "1 week")];
     private static readonly (int Value, string Label)[] BackupRetentionOptions =
-    [(1, "1 backup"), (3, "3 backups"), (5, "5 backups"), (10, "10 backups"), (20, "20 backups")];
+        [(1, "1 backup"), (3, "3 backups"), (5, "5 backups"), (10, "10 backups"), (20, "20 backups")];
     private static readonly (int Value, string Label)[] VisibleLogLineOptions =
-    [(50, "50"), (100, "100"), (250, "250"), (500, "500"), (1000, "1,000"), (2500, "2,500"), (5000, "5,000")];
+        [(50, "50"), (100, "100"), (250, "250"), (500, "500"), (1000, "1,000"), (2500, "2,500"), (5000, "5,000")];
     private static readonly (int Value, string Label)[] ViewerRosterIntervalOptions =
-    [(15, "15 seconds"), (30, "30 seconds"), (60, "1 minute"), (120, "2 minutes"), (300, "5 minutes")];
+        [(15, "15 seconds"), (30, "30 seconds"), (60, "1 minute"), (120, "2 minutes"), (300, "5 minutes")];
     private static readonly (int Value, string Label)[] RelayRateOptions =
-    [(0, "Unlimited"), (1, "1"), (2, "2"), (5, "5"), (10, "10"), (20, "20"), (50, "50")];
+        [(0, "Unlimited"), (1, "1"), (2, "2"), (5, "5"), (10, "10"), (20, "20"), (50, "50")];
     private static readonly (int Value, string Label)[] GameplayQueueOptions =
-    [(10, "10"), (25, "25"), (35, "35"), (50, "50"), (75, "75"), (100, "100"), (200, "200"), (500, "500")];
+        [(10, "10"), (25, "25"), (35, "35"), (50, "50"), (75, "75"), (100, "100"), (200, "200"), (500, "500")];
     private static readonly (int Value, string Label)[] RCONTimeoutOptions =
-    [(1, "1 second"), (2, "2 seconds"), (5, "5 seconds"), (10, "10 seconds"), (15, "15 seconds"), (30, "30 seconds"), (60, "60 seconds")];
+        [(1, "1 second"), (2, "2 seconds"), (5, "5 seconds"), (10, "10 seconds"), (15, "15 seconds"), (30, "30 seconds"), (60, "60 seconds")];
     private static readonly (int Value, string Label)[] GracefulShutdownTimeoutOptions =
-    [(3, "3 seconds"), (5, "5 seconds"), (10, "10 seconds"), (15, "15 seconds"), (30, "30 seconds"), (60, "60 seconds")];
+        [(3, "3 seconds"), (5, "5 seconds"), (10, "10 seconds"), (15, "15 seconds"), (30, "30 seconds"), (60, "60 seconds")];
     private static readonly (int Value, string Label)[] SqliteOptimizeOptions =
-    [(0, "Off"), (1, "Hourly"), (6, "Every 6 hours"), (12, "Every 12 hours"), (24, "Daily"), (168, "Weekly")];
+        [(0, "Off"), (1, "Hourly"), (6, "Every 6 hours"), (12, "Every 12 hours"), (24, "Daily"), (168, "Weekly")];
     private static readonly (int Value, string Label)[] DistanceOptions =
-    [(2, "2"), (4, "4"), (6, "6"), (8, "8"), (10, "10"), (12, "12"), (16, "16"), (20, "20"), (24, "24"), (32, "32")];
+        [(2, "2"), (4, "4"), (6, "6"), (8, "8"), (10, "10"), (12, "12"), (16, "16"), (20, "20"), (24, "24"), (32, "32")];
     private static readonly (int Value, string Label)[] EntityBroadcastOptions =
-    [(25, "25%"), (50, "50%"), (75, "75%"), (100, "100%"), (150, "150%"), (200, "200%")];
+        [(25, "25%"), (50, "50%"), (75, "75%"), (100, "100%"), (150, "150%"), (200, "200%")];
     private static readonly (int Value, string Label)[] NetworkCompressionOptions =
-    [(-1, "Disabled"), (0, "Always"), (64, "64 bytes"), (128, "128 bytes"), (256, "256 bytes"), (512, "512 bytes"), (1024, "1,024 bytes")];
+        [(-1, "Disabled"), (0, "Always"), (64, "64 bytes"), (128, "128 bytes"), (256, "256 bytes"), (512, "512 bytes"), (1024, "1,024 bytes")];
     private static readonly (int Value, string Label)[] EmptyShutdownOptions =
-    [(0, "Off"), (5, "5 minutes"), (10, "10 minutes"), (15, "15 minutes"), (30, "30 minutes"), (60, "1 hour"), (120, "2 hours")];
+        [(0, "Off"), (5, "5 minutes"), (10, "10 minutes"), (15, "15 minutes"), (30, "30 minutes"), (60, "1 hour"), (120, "2 hours")];
     private static readonly CooldownOption<int>[] CommandCooldownOptions =
     [
         new(null, "Default"),
@@ -348,10 +348,7 @@ public partial class Settings
         public CooldownOption<double>[] GlobalOptions { get; }
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public bool Enabled
-        {
-            get => _enabled; set => Change(ref _enabled, value);
-        }
+        public bool Enabled { get => _enabled; set => Change(ref _enabled, value); }
         // A recycled ComboBox may temporarily clear its selection; that is not an edit.
         public CooldownOption<int> PerUserCooldown
         {
