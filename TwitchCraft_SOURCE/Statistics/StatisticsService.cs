@@ -260,4 +260,3 @@ internal sealed record StatisticsDependencies(
     Action QueueAllDeathScores,
     Action<string> QueueDeathScore,
     Action<string> QueueRespawn);
-
