@@ -40,7 +40,9 @@ public sealed partial class StatisticsService
     internal void RecordDeathScore(string playerName, int deathScore)
     {
         if (!Enabled || deathScore < 0 || !ShouldTrackPlayer(playerName))
+        {
             return;
+        }
 
         Load();
 

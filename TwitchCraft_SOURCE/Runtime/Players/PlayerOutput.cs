@@ -28,7 +28,9 @@ public sealed partial class MainHandler
     private void HandleRCONLine(string line)
     {
         if (string.IsNullOrWhiteSpace(line) || TryHandleHealthProbe(line))
+        {
             return;
+        }
 
         int entityMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
         if (entityMarkerIndex >= 0)
@@ -39,7 +41,9 @@ public sealed partial class MainHandler
 
         ServerLogLineFlags flags = new(line);
         if (flags.HasGameMode && TryParseGamemode(line, out string playerName, out int gameType))
+        {
             HandleGamemode(playerName, gameType);
+        }
 
         Statistics.RecordLine(line, flags.HasTcDeaths);
     }
@@ -48,7 +52,9 @@ public sealed partial class MainHandler
     {
         Process? process = _minecraftSession.Process;
         if (process == null)
+        {
             return;
+        }
 
         try
         {
@@ -56,12 +62,16 @@ public sealed partial class MainHandler
             {
                 string? line = await process.StandardOutput.ReadLineAsync(cancellationToken).ConfigureAwait(false);
                 if (line == null)
+                {
                     break;
+                }
 
                 try
                 {
                     if (TryHandleProbe(line) || TryHandleHealthProbe(line))
+                    {
                         continue;
+                    }
 
                     int entityMarkerIndex = line.IndexOf(EntityDataMarker, StringComparison.OrdinalIgnoreCase);
                     if (entityMarkerIndex >= 0)
@@ -72,7 +82,9 @@ public sealed partial class MainHandler
 
                     ServerLogLineFlags flags = new(line);
                     if (flags.HasGameMode && TryParseGamemode(line, out string playerName, out int gameType))
+                    {
                         HandleGamemode(playerName, gameType);
+                    }
 
                     bool mightContainCommandError = line.Contains("command", StringComparison.OrdinalIgnoreCase)
                         || line.Contains("execute", StringComparison.OrdinalIgnoreCase)
@@ -89,7 +101,10 @@ public sealed partial class MainHandler
 
                     HandleReadyState(line, cancellationToken);
                     if (!RemoteControlEnabled && !MultiplayerEnabled && line.Contains("RCON running on", StringComparison.OrdinalIgnoreCase))
+                    {
                         await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
+                    }
+
                     RestoreSidebar(isSidebarObjectiveIssue);
                     Statistics.RecordLine(line, flags.HasTcDeaths);
 
@@ -102,7 +117,9 @@ public sealed partial class MainHandler
                         isSidebarObjectiveIssue);
                     bool hidePlayerListLine = !hideServerLine && ShouldHidePlayerList(line);
                     if (!hideServerLine && !hidePlayerListLine)
+                    {
                         _shellWindow?.AddServerLogLine(line);
+                    }
 
                     CapturePlayers(line);
                 }
@@ -125,7 +142,9 @@ public sealed partial class MainHandler
     {
         Process? process = _minecraftSession.Process;
         if (process == null)
+        {
             return;
+        }
 
         MinecraftSTDERRFilter filter = new();
         Exception? readerFailure = null;
@@ -138,7 +157,9 @@ public sealed partial class MainHandler
             {
                 string? line = await process.StandardError.ReadLineAsync(cancellationToken).ConfigureAwait(false);
                 if (line == null)
+                {
                     break;
+                }
 
                 filter.ProcessLine(line, ShowSTDERRLine);
             }
@@ -153,7 +174,9 @@ public sealed partial class MainHandler
 
         filter.Flush(ShowSTDERRLine);
         if (readerFailure != null)
+        {
             _shellWindow?.AddServerLogLine(ErrorHandling.FormatLog("Server error reader failed", readerFailure));
+        }
     }
 
     private async Task RunRosterAsync(CancellationToken cancellationToken)
@@ -163,10 +186,14 @@ public sealed partial class MainHandler
             try
             {
                 if (MultiTargetingEnabled)
+                {
                     QueueSnapshot();
+                }
 
                 if (MultiplayerEnabled)
+                {
                     QueueSidebarRefresh();
+                }
 
                 QueueGamemode();
                 QueueDeathScore();
@@ -194,13 +221,17 @@ public sealed partial class MainHandler
     private bool AddKnownPlayer(string playerName)
     {
         if (!MinecraftNameHelper.TryNormalizePlayerName(playerName, out string normalizedPlayer))
+        {
             return false;
+        }
 
         lock (_playerGate)
         {
             int index = _knownPlayers.BinarySearch(normalizedPlayer, PlayerNameComparer);
             if (index >= 0)
+            {
                 return false;
+            }
 
             List<string> players = new(_knownPlayers.Count + 1);
             players.AddRange(_knownPlayers);
@@ -209,7 +240,9 @@ public sealed partial class MainHandler
         }
 
         if (MultiplayerEnabled)
+        {
             QueueSidebarRefresh();
+        }
 
         return true;
     }
@@ -217,13 +250,17 @@ public sealed partial class MainHandler
     private bool RemoveKnownPlayer(string playerName)
     {
         if (!MinecraftNameHelper.TryNormalizePlayerName(playerName, out string normalizedPlayer))
+        {
             return false;
+        }
 
         lock (_playerGate)
         {
             int index = _knownPlayers.BinarySearch(normalizedPlayer, PlayerNameComparer);
             if (index < 0)
+            {
                 return false;
+            }
 
             if (_knownPlayers.Count == 1)
             {
@@ -238,7 +275,9 @@ public sealed partial class MainHandler
         }
 
         if (MultiplayerEnabled)
+        {
             QueueSidebarRefresh();
+        }
 
         return true;
     }
@@ -259,7 +298,9 @@ public sealed partial class MainHandler
             if (joinedPlayer.Length > 0)
             {
                 if (!AddKnownPlayer(joinedPlayer) && MultiplayerEnabled)
+                {
                     QueueSidebarRefresh();
+                }
 
                 RemoveSpectator(joinedPlayer);
 
@@ -278,7 +319,9 @@ public sealed partial class MainHandler
             if (leftPlayer.Length > 0)
             {
                 if (!RemoveKnownPlayer(leftPlayer) && MultiplayerEnabled)
+                {
                     QueueSidebarRefresh();
+                }
 
                 RemoveSpectator(leftPlayer);
 
@@ -290,7 +333,9 @@ public sealed partial class MainHandler
         }
 
         if (!TryParseList(line, out List<string> players))
+        {
             return;
+        }
 
         ApplySnapshot(players);
         CompleteSnapshot(true);

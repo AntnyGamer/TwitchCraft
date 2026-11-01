@@ -14,7 +14,9 @@ internal sealed partial class TokenStore
     {
         result = [];
         if (limit <= 0)
+        {
             return true;
+        }
 
         limit = Math.Min(limit, 100);
         lock (_gate)
@@ -33,7 +35,9 @@ internal sealed partial class TokenStore
                     string username = Normalize(reader.GetString(0));
                     int balance = ClampBalance(reader.GetInt64(1));
                     if (username.Length > 0 && balance > 0)
+                    {
                         resultList.Add(new KeyValuePair<string, int>(username, balance));
+                    }
                 }
 
                 result = resultList;
@@ -52,7 +56,9 @@ internal sealed partial class TokenStore
         result = null;
         string normalized = Normalize(user);
         if (normalized.Length == 0)
+        {
             return true;
+        }
 
         lock (_gate)
         {
@@ -72,14 +78,24 @@ internal sealed partial class TokenStore
                 command.Parameters.AddWithValue("$username", normalized);
 
                 using SqliteDataReader reader = command.ExecuteReader();
-                if (!reader.Read()) return true;
+                if (!reader.Read())
+                {
+                    return true;
+                }
 
                 string username = Normalize(reader.GetString(0));
                 int balance = ClampBalance(reader.GetInt64(1));
                 long rank = reader.GetInt64(2);
-                result = username.Length == 0 || balance <= 0 || rank <= 0
-                    ? null
-                    : new TokenRankResult(username, balance, rank > int.MaxValue ? int.MaxValue : (int)rank);
+                if (username.Length == 0 || balance <= 0 || rank <= 0)
+                {
+                    result = null;
+                }
+                else
+                {
+                    int position = rank > int.MaxValue ? int.MaxValue : (int)rank;
+                    result = new TokenRankResult(username, balance, position);
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -132,14 +148,20 @@ internal sealed partial class TokenStore
         foreach (string normalized in users)
         {
             if (!string.IsNullOrEmpty(normalized) && !_loadedUsers.Contains(normalized))
+            {
                 (toLoad ??= new List<string>(users.Count)).Add(normalized);
+            }
         }
 
         if (toLoad == null)
+        {
             return true;
+        }
 
         if (toLoad.Count == 1)
+        {
             return EnsureLoadedNoLock(toLoad[0]);
+        }
 
         try
         {
@@ -167,7 +189,9 @@ internal sealed partial class TokenStore
         for (int i = 0; i < count; i++)
         {
             if (i > 0)
+            {
                 query.Append(", ");
+            }
 
             string parameterName = BatchParameterNames[i];
             query.Append(parameterName);
@@ -182,7 +206,9 @@ internal sealed partial class TokenStore
             {
                 string username = Normalize(reader.GetString(0));
                 if (username.Length == 0)
+                {
                     continue;
+                }
 
                 SetCacheNoLock(username, ClampBalance(reader.GetInt64(1)));
                 _loadedUsers.Add(username);
@@ -192,7 +218,11 @@ internal sealed partial class TokenStore
         for (int i = 0; i < count; i++)
         {
             string username = users[startIndex + i];
-            if (_loadedUsers.Contains(username)) continue;
+            if (_loadedUsers.Contains(username))
+            {
+                continue;
+            }
+
             SetCacheNoLock(username, 0);
             _loadedUsers.Add(username);
         }
@@ -216,7 +246,13 @@ internal sealed partial class TokenStore
     private bool SaveChangesNoLock(Dictionary<string, int> changedUsers)
     {
         if (changedUsers.Count == 1)
-            foreach (KeyValuePair<string, int> pair in changedUsers) return SaveChangedNoLock(pair.Key, pair.Value);
+        {
+            foreach (KeyValuePair<string, int> pair in changedUsers)
+            {
+                return SaveChangedNoLock(pair.Key, pair.Value);
+            }
+        }
+
         try
         {
             SqliteConnection connection = GetConnectionNoLock();
@@ -227,7 +263,9 @@ internal sealed partial class TokenStore
             delete.Prepare();
 
             foreach (KeyValuePair<string, int> pair in changedUsers)
+            {
                 SaveBalanceNoLock(upsert, delete, pair.Key, pair.Value);
+            }
 
             transaction.Commit();
             return true;
@@ -365,12 +403,20 @@ internal sealed partial class TokenStore
     private SqliteConnection GetConnectionNoLock()
     {
         if (_connection is { State: ConnectionState.Open })
+        {
             return _connection;
+        }
 
         if (_connection != null)
         {
             DisposeCommandsNoLock();
-            try { _connection.Dispose(); } catch { }
+            try
+            {
+                _connection.Dispose();
+            }
+            catch
+            {
+            }
             _connection = null;
             _schemaInitialized = false;
         }
@@ -393,7 +439,13 @@ internal sealed partial class TokenStore
         }
         catch
         {
-            try { connection.Dispose(); } catch { }
+            try
+            {
+                connection.Dispose();
+            }
+            catch
+            {
+            }
             throw;
         }
     }

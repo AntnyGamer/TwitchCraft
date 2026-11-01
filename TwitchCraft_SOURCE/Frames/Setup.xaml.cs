@@ -125,7 +125,10 @@ public partial class Setup : UserControl
         {
             TwitchOAuthResult result = await TwitchOAuthAuthorizer.AuthorizeAsync(clientID, authorizationCts.Token);
             if (!ReferenceEquals(_authorizationCts, authorizationCts))
+            {
                 return;
+            }
+
             if (!result.IsSuccess)
             {
                 ErrorHandling.ShowAuthError(this, result.Error);
@@ -188,7 +191,9 @@ public partial class Setup : UserControl
     private async Task LoadManifestAsync(CancellationToken cancellationToken)
     {
         if (_manifest != null || _manifestLoadAttempted)
+        {
             return;
+        }
 
         _manifestLoadAttempted = true;
         string path = Environment.ExpandEnvironmentVariables(@"%APPDATA%\.minecraft\versions\version_manifest_v2.json");
@@ -266,7 +271,10 @@ public partial class Setup : UserControl
         cancellationToken.ThrowIfCancellationRequested();
         string selectedBeforeRefresh = GetVersionID(MCVersionDropdown);
 
-        CollectionViewSource supportedVersions = new() { Source = SupportedVersionOptions };
+        CollectionViewSource supportedVersions = new()
+        {
+            Source = SupportedVersionOptions
+        };
         supportedVersions.GroupDescriptions.Add(new PropertyGroupDescription(nameof(VersionOption.Group)));
 
         MCVersionDropdown.ItemTemplate = (DataTemplate?)FindResource("VersionItemTemplate");
@@ -276,9 +284,14 @@ public partial class Setup : UserControl
 
         SelectVersion(selectedBeforeRefresh);
         if (MCVersionDropdown.SelectedItem == null)
+        {
             SelectVersion(DefaultMinecraftVersion);
+        }
+
         if (MCVersionDropdown.SelectedItem == null && MCVersionDropdown.Items.Count > 0)
+        {
             MCVersionDropdown.SelectedItem = MCVersionDropdown.Items[0];
+        }
 
         MCVersionDropdown.IsEnabled = true;
         UpdateJavaText();
@@ -298,13 +311,13 @@ public partial class Setup : UserControl
         _ = CommandUserHelper.TryNormalizeTwitchUser(BotUserTextbox.Text, out string botUser);
 
         if (!SetupInputValidator.CanStart(
-                selectedVersion,
-                bindIP,
-                clientID,
-                _authorizedClientID,
-                botToken,
-                channel,
-                botUser))
+            selectedVersion,
+            bindIP,
+            clientID,
+            _authorizedClientID,
+            botToken,
+            channel,
+            botUser))
         {
             ErrorHandling.ShowSetupIncomplete(this);
             return;
@@ -320,7 +333,9 @@ public partial class Setup : UserControl
         }
 
         if (_setupInProgress)
+        {
             return;
+        }
 
         _setupInProgress = true;
         bool navigatedToStart = false;
@@ -333,10 +348,14 @@ public partial class Setup : UserControl
             await ErrorHandling.RunSetupAsync(this, async () =>
             {
                 if (_manifest == null)
+                {
                     await LoadManifestAsync(cancellationToken);
+                }
 
                 if (_manifest?["versions"] is not JArray versions)
+                {
                     throw new InvalidOperationException("Minecraft version metadata could not be loaded.");
+                }
 
                 JToken? version = versions.FirstOrDefault(v => string.Equals((string?)v["id"], minecraftVersion, StringComparison.OrdinalIgnoreCase));
                 if (version == null)
@@ -344,9 +363,14 @@ public partial class Setup : UserControl
                     await LoadOnlineManifestAsync(cancellationToken);
 
                     if (_manifest?["versions"] is not JArray onlineVersions)
+                    {
                         throw new InvalidOperationException("Minecraft version metadata could not be loaded from Mojang.");
+                    }
 
-                    version = onlineVersions.FirstOrDefault(v => string.Equals((string?)v["id"], minecraftVersion, StringComparison.OrdinalIgnoreCase))
+                    version = onlineVersions.FirstOrDefault(v => string.Equals(
+                        (string?)v["id"],
+                        minecraftVersion,
+                        StringComparison.OrdinalIgnoreCase))
                         ?? throw new InvalidOperationException("The selected Minecraft version could not be found in Mojang's online manifest.");
                 }
 
@@ -367,7 +391,9 @@ public partial class Setup : UserControl
                     ?? throw new InvalidOperationException("The selected version did not include a SHA-1 checksum.");
                 long? serverSize = (long?)server["size"];
                 if (!serverSize.HasValue || serverSize.Value <= 0)
+                {
                     serverSize = null;
+                }
 
                 ConfigurationStore.EnsureWorkDir();
                 string serverDir = Path.Combine(ConfigurationStore.WorkingDirectory, "MCServer");
@@ -379,14 +405,27 @@ public partial class Setup : UserControl
                 (string javaExe, string javaHome) = await FindJavaAsync(requiredJavaVersion, cancellationToken);
 
                 if (!ErrorHandling.ConfirmJarVerify(this, minecraftVersion))
+                {
                     return;
+                }
 
                 await EnsureServerJarAsync(SetupHttpClient, serverUrl, jarPath, serverSHA, serverSize, cancellationToken);
                 ErrorHandling.ShowVerifySuccess(this);
 
                 ServerPropertyEditor.CleanupServerJars(serverDir, jarPath);
 
-                TwitchCraftConfig config = BuildConfig(minecraftVersion, serverDir, jarPath, bindIP, javaExe, javaHome, clientID, botToken, refreshToken, channel, botUser);
+                TwitchCraftConfig config = BuildConfig(
+                    minecraftVersion,
+                    serverDir,
+                    jarPath,
+                    bindIP,
+                    javaExe,
+                    javaHome,
+                    clientID,
+                    botToken,
+                    refreshToken,
+                    channel,
+                    botUser);
                 ServerPropertyEditor.WriteInitialFiles(config);
                 ConfigurationStore.Save(config);
                 host.ShowStart();
@@ -447,10 +486,14 @@ public partial class Setup : UserControl
             cancellationToken.ThrowIfCancellationRequested();
             (string javaExe, string javaHome) = await Task.Run(() => JavaInstallationFinder.FindMatching(javaVersion), cancellationToken);
             if (!string.IsNullOrWhiteSpace(javaExe))
+            {
                 return (javaExe, javaHome);
+            }
 
             if (!ErrorHandling.ConfirmJavaRetry(this, javaVersion))
+            {
                 throw new OperationCanceledException("Setup cancelled by user (No Java).");
+            }
         }
     }
 }

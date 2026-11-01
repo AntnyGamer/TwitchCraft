@@ -20,7 +20,9 @@ public sealed partial class MainHandler
     private bool HasRespawnRequest(string playerName)
     {
         lock (_respawnProbeGate)
+        {
             return _pendingRespawnRequests.ContainsKey(playerName);
+        }
     }
 
     internal static bool TryParseGamemode(string line, out string playerName, out int gameType)
@@ -31,14 +33,16 @@ public sealed partial class MainHandler
         string message = AfterLastColon(line, line.Length);
         const string setPrefix = "Set ";
         if (!message.StartsWith(setPrefix, StringComparison.OrdinalIgnoreCase))
+        {
             return false;
+        }
 
         const string possessiveMarker = "'s game mode to ";
         int possessiveIndex = message.IndexOf(possessiveMarker, StringComparison.OrdinalIgnoreCase);
         if (possessiveIndex > setPrefix.Length)
         {
             if (MinecraftNameHelper.TryNormalizePlayerName(
-                    message.AsSpan(setPrefix.Length, possessiveIndex - setPrefix.Length), out string candidate) &&
+                message.AsSpan(setPrefix.Length, possessiveIndex - setPrefix.Length), out string candidate) &&
                 TryParseGamemodeName(message.AsSpan(possessiveIndex + possessiveMarker.Length), out gameType))
             {
                 playerName = candidate;
@@ -53,7 +57,7 @@ public sealed partial class MainHandler
             if (toIndex > ofPrefix.Length)
             {
                 if (MinecraftNameHelper.TryNormalizePlayerName(
-                        message.AsSpan(ofPrefix.Length, toIndex - ofPrefix.Length), out string candidate) &&
+                    message.AsSpan(ofPrefix.Length, toIndex - ofPrefix.Length), out string candidate) &&
                     TryParseGamemodeName(message.AsSpan(toIndex + 4), out gameType))
                 {
                     playerName = candidate;
@@ -67,11 +71,23 @@ public sealed partial class MainHandler
 
     private static bool TryParseGamemodeName(ReadOnlySpan<char> text, out int gameType)
     {
-        gameType = text.Contains("survival", StringComparison.OrdinalIgnoreCase) ? 0
-            : text.Contains("creative", StringComparison.OrdinalIgnoreCase) ? 1
-            : text.Contains("adventure", StringComparison.OrdinalIgnoreCase) ? 2
-            : text.Contains("spectator", StringComparison.OrdinalIgnoreCase) ? 3
-            : -1;
+        if (text.Contains("survival", StringComparison.OrdinalIgnoreCase))
+        {
+            gameType = 0;
+        }
+        else if (text.Contains("creative", StringComparison.OrdinalIgnoreCase))
+        {
+            gameType = 1;
+        }
+        else if (text.Contains("adventure", StringComparison.OrdinalIgnoreCase))
+        {
+            gameType = 2;
+        }
+        else
+        {
+            gameType = text.Contains("spectator", StringComparison.OrdinalIgnoreCase) ? 3 : -1;
+        }
+
         return gameType >= 0;
     }
 
@@ -80,9 +96,13 @@ public sealed partial class MainHandler
         lock (_spectatorProbeGate)
         {
             if (gameType == 3)
+            {
                 _spectatorPlayers.Add(playerName);
+            }
             else
+            {
                 _spectatorPlayers.Remove(playerName);
+            }
 
             _pendingGamemodeRequests.Remove(playerName, out TaskCompletionSource<int?>? waiter);
             waiter?.TrySetResult(gameType);
@@ -111,7 +131,8 @@ public sealed partial class MainHandler
 
     private static bool MatchesPlayer(ReadOnlySpan<char> entity, string player)
     {
-        int i = entity.IndexOf(player, StringComparison.OrdinalIgnoreCase), end = i + player.Length;
+        int i = entity.IndexOf(player, StringComparison.OrdinalIgnoreCase);
+        int end = i + player.Length;
         return i >= 0 && (i == 0 || !IsPlayerNameChar(entity[i - 1])) && (end == entity.Length || !IsPlayerNameChar(entity[end]));
     }
 
@@ -122,7 +143,8 @@ public sealed partial class MainHandler
 
     internal static bool TryParseMaxHealthResponse(string line, string player, out double health)
     {
-        int entity = line.LastIndexOf(" for entity ", StringComparison.OrdinalIgnoreCase), value = line.LastIndexOf(" is ", StringComparison.OrdinalIgnoreCase);
+        int entity = line.LastIndexOf(" for entity ", StringComparison.OrdinalIgnoreCase);
+        int value = line.LastIndexOf(" is ", StringComparison.OrdinalIgnoreCase);
         health = 0;
         return entity >= 0 && value >= 0 && line.Contains("value of attribute ", StringComparison.OrdinalIgnoreCase) &&
             (line.Contains("Max Health", StringComparison.OrdinalIgnoreCase) || line.Contains("max_health", StringComparison.OrdinalIgnoreCase)) &&
@@ -133,9 +155,20 @@ public sealed partial class MainHandler
     private bool TryHandleMaxHealth(string line)
     {
         lock (_maxHealthProbeGate)
+        {
             foreach (string player in _pendingMaxHealthRequests.Keys)
-                if (TryParseMaxHealthResponse(line, player, out double health) && _pendingMaxHealthRequests.Remove(player, out TaskCompletionSource<double?>? waiter))
-                { waiter.TrySetResult(health); return true; }
+            {
+                if (TryParseMaxHealthResponse(
+                    line,
+                    player,
+                    out double health) && _pendingMaxHealthRequests.Remove(player, out TaskCompletionSource<double?>? waiter))
+                {
+                    waiter.TrySetResult(health);
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -154,7 +187,10 @@ public sealed partial class MainHandler
         if (namespaced)
         {
             foreach (ValueMatch match in ModernHeartModifierRegex().EnumerateMatches(data))
+            {
                 ids.Add(data.Substring(match.Index, match.Length));
+            }
+
             return ids;
         }
 
@@ -166,9 +202,14 @@ public sealed partial class MainHandler
                 !int.TryParse(UUID.Groups[2].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) ||
                 !int.TryParse(UUID.Groups[3].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int c) ||
                 !int.TryParse(UUID.Groups[4].ValueSpan, NumberStyles.Integer, CultureInfo.InvariantCulture, out int d))
+            {
                 continue;
+            }
 
-            uint ua = unchecked((uint)a), ub = unchecked((uint)b), uc = unchecked((uint)c), ud = unchecked((uint)d);
+            uint ua = unchecked((uint)a);
+            uint ub = unchecked((uint)b);
+            uint uc = unchecked((uint)c);
+            uint ud = unchecked((uint)d);
             ids.Add($"{ua:x8}-{(ub >> 16):x4}-{(ub & 0xffff):x4}-{(uc >> 16):x4}-{(uc & 0xffff):x4}{ud:x8}");
         }
         return ids;
@@ -177,11 +218,15 @@ public sealed partial class MainHandler
     private void HandleEntity(string line, int markerIndex)
     {
         if (markerIndex <= 0)
+        {
             return;
+        }
 
         string playerName = AfterLastColon(line, markerIndex);
         if (!MinecraftNameHelper.IsValidPlayerName(playerName))
+        {
             return;
+        }
 
         int dataStart = markerIndex + EntityDataMarker.Length;
         string suffix = TextSegmentHelper.TrimSegment(line, dataStart, line.Length - dataStart);
@@ -190,7 +235,10 @@ public sealed partial class MainHandler
         {
             TaskCompletionSource<string?>? waiter;
             lock (_maxHealthProbeGate)
+            {
                 _pendingHeartAttributeRequests.Remove(playerName, out waiter);
+            }
+
             if (waiter != null)
             {
                 waiter.TrySetResult(suffix);

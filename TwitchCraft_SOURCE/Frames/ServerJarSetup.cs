@@ -39,18 +39,31 @@ public partial class Setup : UserControl
         return JObject.Parse(await SetupHttpClient.GetStringAsync(detailUri, cancellationToken).ConfigureAwait(false));
     }
 
-    private static async Task EnsureServerJarAsync(HttpClient http, string serverUrl, string jarPath, string expectedSHA, long? expectedSize, CancellationToken cancellationToken)
+    private static async Task EnsureServerJarAsync(
+        HttpClient http,
+        string serverUrl,
+        string jarPath,
+        string expectedSHA,
+        long? expectedSize,
+        CancellationToken cancellationToken)
     {
         if (!IsValidSHA1Hex(expectedSHA))
+        {
             throw new InvalidOperationException("The selected Minecraft server checksum was missing or invalid.");
+        }
 
         Uri downloadUri = CreateHttpsUri(serverUrl, "Minecraft server download");
 
         if (File.Exists(jarPath))
         {
-            bool existingJarValid = await Task.Run(() => ServerJarMatches(jarPath, expectedSHA, expectedSize), cancellationToken).ConfigureAwait(false);
+            bool existingJarValid = await Task.Run(() => ServerJarMatches(
+                jarPath,
+                expectedSHA,
+                expectedSize), cancellationToken).ConfigureAwait(false);
             if (existingJarValid)
+            {
                 return;
+            }
         }
 
         string tempPath = FileSystemHelper.GetUniqueTempPath(jarPath);
@@ -60,11 +73,20 @@ public partial class Setup : UserControl
         {
             await DownloadJarAsync(http, downloadUri, tempPath, cancellationToken).ConfigureAwait(false);
             await Task.Run(() => VerifyServerJar(tempPath, expectedSHA, expectedSize), cancellationToken).ConfigureAwait(false);
-            FileReplaceMode replaceMode = FileSystemHelper.ReplaceFile(tempPath, jarPath, backupPath, "Atomic server jar replace failed; falling back to copy");
+            FileReplaceMode replaceMode = FileSystemHelper.ReplaceFile(
+                tempPath,
+                jarPath,
+                backupPath,
+                "Atomic server jar replace failed; falling back to copy");
             if (replaceMode == FileReplaceMode.Fallback)
+            {
                 await Task.Run(() => VerifyServerJar(jarPath, expectedSHA, expectedSize), cancellationToken).ConfigureAwait(false);
+            }
         }
-        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is HttpRequestException || ex is InvalidOperationException)
+        catch (Exception ex) when (ex is IOException ||
+            ex is UnauthorizedAccessException ||
+            ex is HttpRequestException ||
+            ex is InvalidOperationException)
         {
             throw new InvalidOperationException(
                 "Could not create a verified Minecraft server jar. Check the network, disk permissions, and whether another process is using the jar, then try again.\n\nJar path: " + jarPath,
@@ -81,16 +103,27 @@ public partial class Setup : UserControl
         using CancellationTokenSource downloadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         downloadCts.CancelAfter(TimeSpan.FromMinutes(15));
         cancellationToken = downloadCts.Token;
-        using HttpResponseMessage response = await http.GetAsync(downloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        using HttpResponseMessage response = await http.GetAsync(
+            downloadUri,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         _ = CreateHttpsUri(response.RequestMessage?.RequestUri?.AbsoluteUri, "Minecraft server download redirect");
 
         long? contentLength = response.Content.Headers.ContentLength;
         if (contentLength.HasValue && (contentLength.Value <= 0 || contentLength.Value > MaxServerJarDownloadBytes))
+        {
             throw new InvalidOperationException("The Minecraft server download size was invalid.");
+        }
 
         using Stream input = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        await using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, DownloadBufferSize, FileOptions.SequentialScan);
+        await using FileStream output = new(
+            outputPath,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            DownloadBufferSize,
+            FileOptions.SequentialScan);
         await CopyLimitedAsync(input, output, MaxServerJarDownloadBytes, cancellationToken).ConfigureAwait(false);
     }
 
@@ -105,11 +138,15 @@ public partial class Setup : UserControl
             {
                 int bytesRead = await input.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
                 if (bytesRead == 0)
+                {
                     return;
+                }
 
                 totalBytes += bytesRead;
                 if (totalBytes > maxBytes)
+                {
                     throw new InvalidOperationException("The Minecraft server download was larger than expected.");
+                }
 
                 await output.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
             }
@@ -123,7 +160,9 @@ public partial class Setup : UserControl
     private static Uri CreateHttpsUri(string? url, string description)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || !IsTrustedMinecraftUri(uri))
+        {
             throw new InvalidOperationException("The " + description + " URL was not a valid Mojang HTTPS URL.");
+        }
 
         return uri;
     }
@@ -136,13 +175,17 @@ public partial class Setup : UserControl
     private static bool IsValidSHA1Hex(string? expectedSHA)
     {
         if (expectedSHA == null || expectedSHA.Length != SHA1HexLength)
+        {
             return false;
+        }
 
         for (int i = 0; i < expectedSHA.Length; i++)
         {
             char c = expectedSHA[i];
             if (!char.IsAsciiHexDigit(c))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -154,7 +197,9 @@ public partial class Setup : UserControl
         {
             using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, DownloadBufferSize, FileOptions.SequentialScan);
             if (expectedSize.HasValue && fs.Length != expectedSize.Value)
+            {
                 return false;
+            }
 
             string actual = Convert.ToHexStringLower(SHA1.HashData(fs));
             return string.Equals(actual, expectedSHA, StringComparison.OrdinalIgnoreCase);
@@ -169,6 +214,8 @@ public partial class Setup : UserControl
     private static void VerifyServerJar(string filePath, string expectedSHA, long? expectedSize)
     {
         if (!ServerJarMatches(filePath, expectedSHA, expectedSize))
+        {
             throw new InvalidOperationException("The downloaded server jar did not match the expected size or SHA-1 checksum.");
+        }
     }
 }

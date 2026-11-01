@@ -23,6 +23,7 @@ public partial class Help : UserControl
     }
 
     private void OpenReadme_Click(object sender, RoutedEventArgs e) => OpenBundledFile("README.txt", "README");
+
     private void OpenLicense_Click(object sender, RoutedEventArgs e) => OpenBundledFile(Path.Combine("licenses", "LICENSE"), "License");
 
     private void OpenBundledFile(string relativePath, string name)
@@ -31,9 +32,13 @@ public partial class Help : UserControl
         try
         {
             if (File.Exists(path))
+            {
                 AppHelpers.OpenTarget(path);
+            }
             else
+            {
                 ErrorHandling.ShowFileMissing(this, name, path);
+            }
         }
         catch (Exception ex)
         {
@@ -48,7 +53,10 @@ public partial class Help : UserControl
         {
             _ = Dispatcher.BeginInvoke(() =>
             {
-                if (IsVisible) BackButton.Focus();
+                if (IsVisible)
+                {
+                    BackButton.Focus();
+                }
             }, DispatcherPriority.Input);
         }
     }
@@ -83,21 +91,46 @@ public partial class Help : UserControl
             }
 
             bool remoteControlEnabled = hasActiveProfile && runtime!.RemoteControlEnabled;
-            string diagnostics = string.Join(Environment.NewLine,
+            string controlStatus;
+            string processStatus;
+            string RCONStatus;
+            if (hasActiveProfile)
+            {
+                controlStatus = remoteControlEnabled ? "Remote Control" : "Local";
+                if (remoteControlEnabled)
+                {
+                    processStatus = "Not applicable";
+                    RCONStatus = runtime!.RCONConnected ? "Connected" : "Disconnected";
+                }
+                else
+                {
+                    processStatus = runtime!.MinecraftProcessRunning ? "Running" : "Not running";
+                    RCONStatus = "Not applicable";
+                }
+            }
+            else
+            {
+                controlStatus = "Unavailable";
+                processStatus = "Unavailable";
+                RCONStatus = "Unavailable";
+            }
+
+            string diagnostics = string.Join(
+                Environment.NewLine,
                 "TwitchCraft: " + AppHelpers.DisplayVersion,
                 ".NET: " + RuntimeInformation.FrameworkDescription,
                 "OS: " + RuntimeInformation.OSDescription,
                 "OS architecture: " + RuntimeInformation.OSArchitecture,
                 "CPU threads: " + Environment.ProcessorCount,
                 "Minecraft: " + (minecraftVersion.Length == 0 ? "Not configured" : minecraftVersion),
-                "Control: " + (hasActiveProfile ? remoteControlEnabled ? "Remote Control" : "Local" : "Unavailable"),
+                "Control: " + controlStatus,
                 "Multiplayer: " + (hasActiveProfile ? FormatEnabled(runtime!.MultiplayerEnabled) : "Unavailable"),
                 "Online mode: " + (hasActiveProfile ? FormatEnabled(runtime!.RequireOnlineMode) : "Unavailable"),
                 "Low resource mode: " + FormatEnabled(lowResourceModeEnabled),
                 "Twitch connection: " + (runtime?.TwitchChatConnected == true ? "Connected" : "Disconnected"),
-                "Minecraft process: " + (hasActiveProfile ? remoteControlEnabled ? "Not applicable" : runtime!.MinecraftProcessRunning ? "Running" : "Not running" : "Unavailable"),
+                "Minecraft process: " + processStatus,
                 "Minecraft server: " + (runtime?.MinecraftServerReady == true ? "Ready" : "Not ready"),
-                "RCON: " + (hasActiveProfile ? remoteControlEnabled ? runtime!.RCONConnected ? "Connected" : "Disconnected" : "Not applicable" : "Unavailable"));
+                "RCON: " + RCONStatus);
 
             Clipboard.SetText(diagnostics);
             ShowDiagnosticsCopied();
@@ -109,7 +142,14 @@ public partial class Help : UserControl
     }
 
     private static string FormatEnabled(bool? enabled)
-        => enabled.HasValue ? enabled.Value ? "Enabled" : "Disabled" : "Unavailable";
+    {
+        if (!enabled.HasValue)
+        {
+            return "Unavailable";
+        }
+
+        return enabled.Value ? "Enabled" : "Disabled";
+    }
 
     internal void ShowDiagnosticsCopied()
     {

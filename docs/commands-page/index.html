@@ -9,145 +9,1004 @@
   <title>Command Library | TwitchCraft</title>
   <link rel="icon" type="image/png" href="./server-icon.png">
 <style>
-:root{color-scheme:dark;--bg:#16161b;--panel:#202028;--edge:#383741;--fg:#f2f0f5;--muted:#b7b2c1;--accent:#c392df}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:24px}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
-a{color:inherit;text-decoration:none}
-button,input,select{font:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-[hidden]{display:none!important}
-.site{max-width:1400px;margin:auto}
-.visually-hidden,.skip-link:not(:focus){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.skip-link:focus{position:fixed;top:8px;left:8px;z-index:5;background:var(--accent);padding:12px;color:#19131d}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
-.brand,.footer-brand{display:flex;gap:10px;align-items:center;min-width:0}
-.brand-logo{width:40px;height:40px;object-fit:contain;image-rendering:pixelated;border-radius:4px}
-.brand-name{font-size:16px;font-weight:750;letter-spacing:.01em}
-.brand-name span{color:var(--accent)}
-.top-links{display:flex;gap:24px}
-.top-links a,.secondary-link{color:var(--muted);font-size:13px}
-a:hover{color:var(--accent)}
-.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,.75fr);align-items:center;gap:42px;padding:36px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
-.eyebrow{margin:0 0 7px;color:var(--accent);font-size:12px;font-weight:650}
-.hero h1{margin:0 0 11px;font-size:clamp(30px,3.6vw,47px);line-height:1.16;letter-spacing:-.035em}
-.lead{margin:0;max-width:580px;color:var(--muted)}
-.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:17px;margin-top:22px}
-.primary-link{display:inline-flex;align-items:center;justify-content:center;min-height:41px;padding:10px 15px;background:var(--accent);border:1px solid var(--accent);border-radius:5px;color:#241629;font-weight:700;font-size:13px}
-.primary-link:hover{background:#d4afea;color:#241629}
-.hero-art{min-width:0}
-.console-window{background:linear-gradient(180deg,#211d29,#191821);border:2px solid #514659;border-radius:8px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,.28)}
-.console-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid #423a49;background:#27222e;font:650 10px/1.5 Consolas,monospace;letter-spacing:.035em}
-.console-title{color:#dcd5e2}
-.console-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid #826393;border-radius:999px;background:#392746;color:#edcef9;font:700 10px/1.2 Consolas,monospace}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#cf8ce9}
-.console-lines{display:grid;gap:13px;padding:15px;font:12px/1.5 Consolas,monospace}
-.chat-row{display:grid;gap:5px}
-.chat-meta{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-.console-user{color:#d0aef0;font-weight:700;overflow-wrap:anywhere}
-.chat-time{color:#9e96a6;font-size:11px;white-space:nowrap}
-.chat-bubble{display:inline-flex;align-items:center;width:fit-content;max-width:100%;padding:7px 11px;border:1px solid #514b5b;border-radius:5px;background:#2b2632}
-.console-command{color:#f0e9f3;font-weight:700}
-.summary-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#1d1c24;padding:13px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge)}
-.summary-item{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;padding:2px 14px;border-left:1px solid var(--edge)}
-.summary-item:first-child{padding-left:0;border:0}
-.summary-item strong{font-size:24px;line-height:1.3;font-weight:750}
-.summary-item span{font-size:12px;color:var(--muted)}
-.browser{padding:40px clamp(20px,5vw,65px) 56px}
-.section-intro h2,.how-it-works h2,.targeting-guide h2{margin:0 0 7px;font-size:clamp(23px,2.6vw,31px);line-height:1.2;letter-spacing:-.025em}
-.section-intro p{margin:0;color:var(--muted);font-size:13px}
-.browser-panel{padding:16px;margin-top:21px;border:1px solid var(--edge);border-radius:6px;background:var(--panel)}
-.toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
-.search-box{display:flex;align-items:center;gap:10px;min-width:0;min-height:42px;flex:1 1 230px;padding:0 12px;background:#14141a;border:1px solid #4b4754;border-radius:4px}
-.search-box:focus-within{border-color:var(--accent)}
-.search-box svg{width:18px;height:18px;stroke:#b0aabb;stroke-width:2;flex:none}
-.search-box input{width:100%;min-width:0;padding:9px 0;color:var(--fg);border:0;outline:0;background:transparent;font-size:13px}
-.search-box input::placeholder{color:#9994a1}
-.search-box kbd{border:1px solid var(--edge);border-radius:3px;padding:2px 6px;color:#a49ba9;font:12px Consolas,monospace}
-.free-toggle{display:inline-flex;align-items:center;gap:8px;color:#d5cfd9;font-size:12px;white-space:nowrap;cursor:pointer}
-.free-toggle input{margin:0;width:16px;height:16px;accent-color:var(--accent)}
-.toolbar-select{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;white-space:nowrap}
-.toolbar-select select{max-width:180px;min-height:40px;padding:7px 9px;color:var(--fg);background:#14141a;border:1px solid #4b4754;border-radius:4px}
-.multiplier-note{margin:11px 0 0;font-size:12px;color:#aaa5b2}
-.category-row{display:flex;flex-wrap:wrap;gap:7px;padding-top:15px}
-.category-button{padding:7px 11px;background:#2a2933;color:#d2ced8;border:1px solid #44414e;border-radius:4px;font-size:12px;font-weight:600}
-.category-button:hover{border-color:#806d8d}
-.category-button.is-selected{background:#35263f;color:#eccdf6;border-color:#88689c}
-.category-button span{margin-left:4px;color:#b6aabe;font-size:11px}
-.result-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 15px}
-.result-bar p{margin:0;color:var(--muted);font-size:13px}
-.clear-button{background:transparent;border:0;color:var(--accent);font-size:12px}
-.command-group{margin-top:28px}
-.command-group:first-child{margin-top:0}
-.group-heading{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 13px;padding:0 0 10px;border-bottom:1px solid var(--edge)}
-.group-heading h3{margin:0;font-size:17px;font-weight:650}
-.group-heading span{font-size:12px;color:var(--muted)}
-.command-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.command-card{display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
-.command-card:hover{border-color:#68566f}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:9px}
-.command-name{margin:0;font-size:17px;color:#dfc1ef;overflow-wrap:anywhere}
-.cost{flex:0 1 52%;min-width:0;font-size:14px;line-height:1.4;font-weight:700;color:#f4eaf6;text-align:right;overflow-wrap:anywhere}
-.cost.is-free{color:#c7ebce}
-.card-description{flex:1;margin:10px 0 14px;font-size:13px;color:#d9d4df}
-.syntax{display:block;padding:9px;background:#16161c;border:1px solid #3b3946;border-radius:4px;font:12px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
-.card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.meta-tag{border:1px solid #4a4651;border-radius:3px;padding:2px 6px;font-size:10px;color:#aaa4b4}
-.category-tag{color:#d5b9e7}
-.meta-tag.admin{border-color:#756083;color:#e2c8ef}
-.copy-button{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:12px;padding:9px 11px;color:#dfbde9;border:1px solid #796487;border-radius:4px;background:transparent;font-size:12px;font-weight:600}
-.copy-button:hover,.copy-button.copied{background:#32273b}
-.empty-state{text-align:center;padding:35px 15px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
-.empty-icon{color:var(--accent);font-size:28px;font-weight:700}
-.empty-state h3{margin:5px 0}
-.empty-state p{color:var(--muted)}
-.targeting-guide{padding:32px clamp(20px,5vw,65px);border-bottom:1px solid var(--edge);background:#1b1a22}
-.targeting-lead,.targeting-note{margin:0;color:var(--muted);font-size:13px}
-.targeting-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:19px 0 15px}
-.targeting-card{min-width:0;padding:15px;border:1px solid var(--edge);border-radius:5px;background:var(--panel)}
-.targeting-card h3{margin:0 0 8px;color:#dfc1ef;font-size:14px}
-.targeting-card code{display:block;padding:7px 9px;background:#16161c;border:1px solid #3b3946;border-radius:4px;color:#e8c9f2;font:12px/1.5 Consolas,monospace;overflow-wrap:anywhere}
-.targeting-card p{margin:10px 0 0;color:var(--muted);font-size:12px}
-.targeting-note{margin-top:9px}
-.targeting-note code{color:#e8c9f2}
-.targeting-note a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-.how-it-works{border-top:1px solid var(--edge);padding:37px clamp(20px,5vw,65px)}
-.note-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;margin-top:20px}
-.note{border-top:1px solid var(--edge);padding-top:10px}
-.note-number{font-size:12px;color:var(--muted)}
-.note h3{margin:8px 0 6px;font-size:14px}
-.note p{margin:0;color:var(--muted);font-size:12px}
-.note code,.reward-note code{color:#dfc3ed}
-.reward-note{margin:22px 0 0;color:var(--muted);font-size:12px}
-.reward-note strong{color:var(--fg)}
-.gamble-help-link{align-self:flex-start;margin-top:10px;color:var(--accent);font-size:12px;text-decoration:underline;text-underline-offset:3px}
-.gamble-section{padding:0 clamp(20px,5vw,65px) 40px}
-.gamble-details{border:1px solid var(--edge);border-radius:6px;background:var(--panel);overflow:hidden}
-.gamble-details summary{padding:17px 20px;cursor:pointer;color:#e6caef;font-size:16px;font-weight:700}
-.gamble-details summary::marker{color:var(--accent)}
-.gamble-details[open] summary{border-bottom:1px solid var(--edge)}
-.gamble-body{padding:18px 20px 22px;color:#d9d4df;font-size:13px}
-.gamble-body p{margin:0 0 14px}
-.gamble-body p:last-child{margin-bottom:0}
-.gamble-body code{color:#ecc9f6;font-family:Consolas,monospace}
-.gamble-table-wrap{max-width:640px;overflow-x:auto;margin:14px 0}
-.gamble-table{width:100%;border-collapse:collapse;text-align:left}
-.gamble-table th,.gamble-table td{padding:8px 12px;border-bottom:1px solid var(--edge)}
-.gamble-table th{color:var(--fg);font-weight:650;text-align:left}
-.gamble-table thead th{background:#2b2933}
-.gamble-table tbody tr:last-child > *{border-bottom:0}
-.gamble-footnote{font-style:italic;color:var(--muted)}
-.footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;padding:21px clamp(20px,5vw,65px);background:#111116;border-top:1px solid var(--edge)}
-.footer-brand{font-size:12px;font-weight:700}
-.footer-logo{width:28px;height:28px;object-fit:contain;image-rendering:pixelated;border-radius:4px}
-.footer p{margin:0;color:var(--muted);font-size:11px}
-.footer a{color:var(--muted);font-size:12px}
-.toast{position:fixed;right:16px;bottom:16px;z-index:20;padding:11px 15px;background:#34253e;border:1px solid #9b7bb1;border-radius:4px;color:#f1dffa;font-size:12px}
-@media(max-width:1000px){.targeting-grid,.command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary-item{padding-left:9px}}
-@media(max-width:760px){.hero{grid-template-columns:1fr;padding-top:28px;padding-bottom:28px}.hero-art{display:none}.summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.summary-item,.summary-item:first-child{padding:2px;border:0}.note-grid{grid-template-columns:1fr;gap:15px}}
-@media(max-width:570px){.targeting-grid{grid-template-columns:1fr}.top-links a:last-child{display:none}.brand-name{font-size:14px}.hero h1{font-size:31px}.hero-actions{flex-direction:column;align-items:flex-start}.search-box{flex-basis:100%}.search-box kbd{display:none}.toolbar-select{flex:1 1 135px;justify-content:space-between}.toolbar-select select{min-width:120px;max-width:160px}.command-grid{grid-template-columns:1fr}.summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+:root {
+  color-scheme: dark;
+  --bg: #16161b;
+  --panel: #202028;
+  --edge: #383741;
+  --fg: #f2f0f5;
+  --muted: #b7b2c1;
+  --accent: #c392df
+}
+
+* {
+  box-sizing: border-box
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 24px
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif
+}
+
+a {
+  color: inherit;
+  text-decoration: none
+}
+
+button,
+input,
+select {
+  font: inherit
+}
+
+button {
+  cursor: pointer
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px
+}
+
+[hidden] {
+  display: none !important
+}
+
+.site {
+  max-width: 1400px;
+  margin: auto
+}
+
+.visually-hidden,
+.skip-link:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  background: var(--accent);
+  padding: 12px;
+  color: #19131d
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 14px clamp(20px, 5vw, 65px);
+  border-bottom: 1px solid var(--edge)
+}
+
+.brand,
+.footer-brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 4px
+}
+
+.brand-name {
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: .01em
+}
+
+.brand-name span {
+  color: var(--accent)
+}
+
+.top-links {
+  display: flex;
+  gap: 24px
+}
+
+.top-links a,
+.secondary-link {
+  color: var(--muted);
+  font-size: 13px
+}
+
+a:hover {
+  color: var(--accent)
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(250px, .75fr);
+  align-items: center;
+  gap: 42px;
+  padding: 36px clamp(20px, 5vw, 65px);
+  border-bottom: 1px solid var(--edge)
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 650
+}
+
+.hero h1 {
+  margin: 0 0 11px;
+  font-size: clamp(30px, 3.6vw, 47px);
+  line-height: 1.16;
+  letter-spacing: -.035em
+}
+
+.lead {
+  margin: 0;
+  max-width: 580px;
+  color: var(--muted)
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 17px;
+  margin-top: 22px
+}
+
+.primary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 15px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  color: #241629;
+  font-weight: 700;
+  font-size: 13px
+}
+
+.primary-link:hover {
+  background: #d4afea;
+  color: #241629
+}
+
+.hero-art {
+  min-width: 0
+}
+
+.console-window {
+  background: linear-gradient(180deg, #211d29, #191821);
+  border: 2px solid #514659;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .28)
+}
+
+.console-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #423a49;
+  background: #27222e;
+  font: 650 10px/1.5 Consolas, monospace;
+  letter-spacing: .035em
+}
+
+.console-title {
+  color: #dcd5e2
+}
+
+.console-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid #826393;
+  border-radius: 999px;
+  background: #392746;
+  color: #edcef9;
+  font: 700 10px/1.2 Consolas, monospace
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #cf8ce9
+}
+
+.console-lines {
+  display: grid;
+  gap: 13px;
+  padding: 15px;
+  font: 12px/1.5 Consolas, monospace
+}
+
+.chat-row {
+  display: grid;
+  gap: 5px
+}
+
+.chat-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px
+}
+
+.console-user {
+  color: #d0aef0;
+  font-weight: 700;
+  overflow-wrap: anywhere
+}
+
+.chat-time {
+  color: #9e96a6;
+  font-size: 11px;
+  white-space: nowrap
+}
+
+.chat-bubble {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 7px 11px;
+  border: 1px solid #514b5b;
+  border-radius: 5px;
+  background: #2b2632
+}
+
+.console-command {
+  color: #f0e9f3;
+  font-weight: 700
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  background: #1d1c24;
+  padding: 13px clamp(20px, 5vw, 65px);
+  border-bottom: 1px solid var(--edge)
+}
+
+.summary-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px;
+  padding: 2px 14px;
+  border-left: 1px solid var(--edge)
+}
+
+.summary-item:first-child {
+  padding-left: 0;
+  border: 0
+}
+
+.summary-item strong {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 750
+}
+
+.summary-item span {
+  font-size: 12px;
+  color: var(--muted)
+}
+
+.browser {
+  padding: 40px clamp(20px, 5vw, 65px) 56px
+}
+
+.section-intro h2,
+.how-it-works h2,
+.targeting-guide h2 {
+  margin: 0 0 7px;
+  font-size: clamp(23px, 2.6vw, 31px);
+  line-height: 1.2;
+  letter-spacing: -.025em
+}
+
+.section-intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px
+}
+
+.browser-panel {
+  padding: 16px;
+  margin-top: 21px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel)
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 42px;
+  flex: 1 1 230px;
+  padding: 0 12px;
+  background: #14141a;
+  border: 1px solid #4b4754;
+  border-radius: 4px
+}
+
+.search-box:focus-within {
+  border-color: var(--accent)
+}
+
+.search-box svg {
+  width: 18px;
+  height: 18px;
+  stroke: #b0aabb;
+  stroke-width: 2;
+  flex: none
+}
+
+.search-box input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 0;
+  color: var(--fg);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 13px
+}
+
+.search-box input::placeholder {
+  color: #9994a1
+}
+
+.search-box kbd {
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  padding: 2px 6px;
+  color: #a49ba9;
+  font: 12px Consolas, monospace
+}
+
+.free-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #d5cfd9;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer
+}
+
+.free-toggle input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent)
+}
+
+.toolbar-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap
+}
+
+.toolbar-select select {
+  max-width: 180px;
+  min-height: 40px;
+  padding: 7px 9px;
+  color: var(--fg);
+  background: #14141a;
+  border: 1px solid #4b4754;
+  border-radius: 4px
+}
+
+.multiplier-note {
+  margin: 11px 0 0;
+  font-size: 12px;
+  color: #aaa5b2
+}
+
+.category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 15px
+}
+
+.category-button {
+  padding: 7px 11px;
+  background: #2a2933;
+  color: #d2ced8;
+  border: 1px solid #44414e;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600
+}
+
+.category-button:hover {
+  border-color: #806d8d
+}
+
+.category-button.is-selected {
+  background: #35263f;
+  color: #eccdf6;
+  border-color: #88689c
+}
+
+.category-button span {
+  margin-left: 4px;
+  color: #b6aabe;
+  font-size: 11px
+}
+
+.result-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 22px 0 15px
+}
+
+.result-bar p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px
+}
+
+.clear-button {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-size: 12px
+}
+
+.command-group {
+  margin-top: 28px
+}
+
+.command-group:first-child {
+  margin-top: 0
+}
+
+.group-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 13px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--edge)
+}
+
+.group-heading h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650
+}
+
+.group-heading span {
+  font-size: 12px;
+  color: var(--muted)
+}
+
+.command-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px
+}
+
+.command-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--edge);
+  border-radius: 5px;
+  background: var(--panel)
+}
+
+.command-card:hover {
+  border-color: #68566f
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 9px
+}
+
+.command-name {
+  margin: 0;
+  font-size: 17px;
+  color: #dfc1ef;
+  overflow-wrap: anywhere
+}
+
+.cost {
+  flex: 0 1 52%;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #f4eaf6;
+  text-align: right;
+  overflow-wrap: anywhere
+}
+
+.cost.is-free {
+  color: #c7ebce
+}
+
+.card-description {
+  flex: 1;
+  margin: 10px 0 14px;
+  font-size: 13px;
+  color: #d9d4df
+}
+
+.syntax {
+  display: block;
+  padding: 9px;
+  background: #16161c;
+  border: 1px solid #3b3946;
+  border-radius: 4px;
+  font: 12px/1.6 Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere
+}
+
+.card-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px
+}
+
+.meta-tag {
+  border: 1px solid #4a4651;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: #aaa4b4
+}
+
+.category-tag {
+  color: #d5b9e7
+}
+
+.meta-tag.admin {
+  border-color: #756083;
+  color: #e2c8ef
+}
+
+.copy-button {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 9px 11px;
+  color: #dfbde9;
+  border: 1px solid #796487;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600
+}
+
+.copy-button:hover,
+.copy-button.copied {
+  background: #32273b
+}
+
+.empty-state {
+  text-align: center;
+  padding: 35px 15px;
+  border: 1px solid var(--edge);
+  border-radius: 5px;
+  background: var(--panel)
+}
+
+.empty-icon {
+  color: var(--accent);
+  font-size: 28px;
+  font-weight: 700
+}
+
+.empty-state h3 {
+  margin: 5px 0
+}
+
+.empty-state p {
+  color: var(--muted)
+}
+
+.targeting-guide {
+  padding: 32px clamp(20px, 5vw, 65px);
+  border-bottom: 1px solid var(--edge);
+  background: #1b1a22
+}
+
+.targeting-lead,
+.targeting-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px
+}
+
+.targeting-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 19px 0 15px
+}
+
+.targeting-card {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--edge);
+  border-radius: 5px;
+  background: var(--panel)
+}
+
+.targeting-card h3 {
+  margin: 0 0 8px;
+  color: #dfc1ef;
+  font-size: 14px
+}
+
+.targeting-card code {
+  display: block;
+  padding: 7px 9px;
+  background: #16161c;
+  border: 1px solid #3b3946;
+  border-radius: 4px;
+  color: #e8c9f2;
+  font: 12px/1.5 Consolas, monospace;
+  overflow-wrap: anywhere
+}
+
+.targeting-card p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.targeting-note {
+  margin-top: 9px
+}
+
+.targeting-note code {
+  color: #e8c9f2
+}
+
+.targeting-note a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px
+}
+
+.how-it-works {
+  border-top: 1px solid var(--edge);
+  padding: 37px clamp(20px, 5vw, 65px)
+}
+
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 25px;
+  margin-top: 20px
+}
+
+.note {
+  border-top: 1px solid var(--edge);
+  padding-top: 10px
+}
+
+.note-number {
+  font-size: 12px;
+  color: var(--muted)
+}
+
+.note h3 {
+  margin: 8px 0 6px;
+  font-size: 14px
+}
+
+.note p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.note code,
+.reward-note code {
+  color: #dfc3ed
+}
+
+.reward-note {
+  margin: 22px 0 0;
+  color: var(--muted);
+  font-size: 12px
+}
+
+.reward-note strong {
+  color: var(--fg)
+}
+
+.gamble-help-link {
+  align-self: flex-start;
+  margin-top: 10px;
+  color: var(--accent);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px
+}
+
+.gamble-section {
+  padding: 0 clamp(20px, 5vw, 65px) 40px
+}
+
+.gamble-details {
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel);
+  overflow: hidden
+}
+
+.gamble-details summary {
+  padding: 17px 20px;
+  cursor: pointer;
+  color: #e6caef;
+  font-size: 16px;
+  font-weight: 700
+}
+
+.gamble-details summary::marker {
+  color: var(--accent)
+}
+
+.gamble-details[open] summary {
+  border-bottom: 1px solid var(--edge)
+}
+
+.gamble-body {
+  padding: 18px 20px 22px;
+  color: #d9d4df;
+  font-size: 13px
+}
+
+.gamble-body p {
+  margin: 0 0 14px
+}
+
+.gamble-body p:last-child {
+  margin-bottom: 0
+}
+
+.gamble-body code {
+  color: #ecc9f6;
+  font-family: Consolas, monospace
+}
+
+.gamble-table-wrap {
+  max-width: 640px;
+  overflow-x: auto;
+  margin: 14px 0
+}
+
+.gamble-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left
+}
+
+.gamble-table th,
+.gamble-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--edge)
+}
+
+.gamble-table th {
+  color: var(--fg);
+  font-weight: 650;
+  text-align: left
+}
+
+.gamble-table thead th {
+  background: #2b2933
+}
+
+.gamble-table tbody tr:last-child>* {
+  border-bottom: 0
+}
+
+.gamble-footnote {
+  font-style: italic;
+  color: var(--muted)
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 21px clamp(20px, 5vw, 65px);
+  background: #111116;
+  border-top: 1px solid var(--edge)
+}
+
+.footer-brand {
+  font-size: 12px;
+  font-weight: 700
+}
+
+.footer-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 4px
+}
+
+.footer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px
+}
+
+.footer a {
+  color: var(--muted);
+  font-size: 12px
+}
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  padding: 11px 15px;
+  background: #34253e;
+  border: 1px solid #9b7bb1;
+  border-radius: 4px;
+  color: #f1dffa;
+  font-size: 12px
+}
+
+@media(max-width:1000px) {
+
+  .targeting-grid,
+  .command-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+  }
+
+  .summary-item {
+    padding-left: 9px
+  }
+}
+
+@media(max-width:760px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding-top: 28px;
+    padding-bottom: 28px
+  }
+
+  .hero-art {
+    display: none
+  }
+
+  .summary-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px
+  }
+
+  .summary-item,
+  .summary-item:first-child {
+    padding: 2px;
+    border: 0
+  }
+
+  .note-grid {
+    grid-template-columns: 1fr;
+    gap: 15px
+  }
+}
+
+@media(max-width:570px) {
+  .targeting-grid {
+    grid-template-columns: 1fr
+  }
+
+  .top-links a:last-child {
+    display: none
+  }
+
+  .brand-name {
+    font-size: 14px
+  }
+
+  .hero h1 {
+    font-size: 31px
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: flex-start
+  }
+
+  .search-box {
+    flex-basis: 100%
+  }
+
+  .search-box kbd {
+    display: none
+  }
+
+  .toolbar-select {
+    flex: 1 1 135px;
+    justify-content: space-between
+  }
+
+  .toolbar-select select {
+    min-width: 120px;
+    max-width: 160px
+  }
+
+  .command-grid {
+    grid-template-columns: 1fr
+  }
+
+  .summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  html {
+    scroll-behavior: auto
+  }
+}
 </style>
 </head>
 <body>
@@ -362,7 +1221,7 @@ a:hover{color:var(--accent)}
  * The command catalog is built from docs/COMMANDS.md, the project's existing
  * canonical command reference. Do not duplicate commands or prices here.
  */
-(function () {
+(function() {
   const sectionLabels = {
     gameplay: 'Game Commands',
     minigame: 'Minigame Commands',
@@ -387,7 +1246,13 @@ a:hover{color:var(--accent)}
   const initialCategory = params.get('category') || 'all';
 
   let commands = [];
-  const counts = { all: 0, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
+  const counts = {
+    all: 0,
+    gameplay: 0,
+    minigame: 0,
+    utility: 0,
+    streamer: 0
+  };
   let category = validCategories.has(initialCategory) ? initialCategory : 'all';
   let toastTimer = 0;
   const copyResetTimers = new WeakMap();
@@ -403,8 +1268,12 @@ a:hover{color:var(--accent)}
 
   function make(tag, className, value) {
     const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (value !== undefined) node.textContent = value;
+    if (className) {
+      node.className = className;
+    }
+    if (value !== undefined) {
+      node.textContent = value;
+    }
     return node;
   }
 
@@ -412,7 +1281,9 @@ a:hover{color:var(--accent)}
   // Avoid splitting on pipes that are part of commands such as <user|all|random>.
   function splitRow(line) {
     let raw = line.trim().slice(1);
-    if (raw.endsWith('|')) raw = raw.slice(0, -1);
+    if (raw.endsWith('|')) {
+      raw = raw.slice(0, -1);
+    }
     const cells = [];
     let cell = '';
     let inCode = false;
@@ -455,48 +1326,71 @@ a:hover{color:var(--accent)}
       // Examples inside fenced Markdown blocks are not command registrations.
       const fence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
       if (fence) {
-        if (!codeFence) codeFence = fence[1];
-        else if (fence[1][0] === codeFence[0] && fence[1].length >= codeFence.length && !fence[2].trim()) codeFence = '';
+        if (!codeFence) {
+          codeFence = fence[1];
+        } else if (fence[1][0] === codeFence[0] && fence[1].length >= codeFence.length && !fence[2].trim()) {
+          codeFence = '';
+        }
         continue;
       }
-      if (codeFence) continue;
+      if (codeFence) {
+        continue;
+      }
       if (/^ {0,3}#{2,3} /.test(line)) {
         const title = line.replace(/^ {0,3}#{2,3} /, '').trim().toLowerCase();
-        section = title === 'gameplay commands'
-          ? 'gameplay'
-          : title === 'minigame commands'
-            ? 'minigame'
-            : title === 'utility and economy'
-              ? 'utility'
-              : title === 'streamer commands'
-                ? 'streamer'
-                : null;
+        section = title === 'gameplay commands' ?
+          'gameplay' :
+          title === 'minigame commands' ?
+          'minigame' :
+          title === 'utility and economy' ?
+          'utility' :
+          title === 'streamer commands' ?
+          'streamer' :
+          null;
       }
-      if (!commandRow.test(line)) continue;
+      if (!commandRow.test(line)) {
+        continue;
+      }
       documentedRows++;
-      if (!section) continue;
+      if (!section) {
+        continue;
+      }
 
       const fields = splitRow(line).map(plainText);
-      if (fields.length !== 6) throw new Error('Unexpected command table format for ' + fields[0]);
+      if (fields.length !== 6) {
+        throw new Error('Unexpected command table format for ' + fields[0]);
+      }
       const [name, syntax, cost, targeting, permission, description] = fields;
-      if (fields.some(field => !field)) throw new Error('Missing command details for ' + name);
+      if (fields.some(field => !field)) {
+        throw new Error('Missing command details for ' + name);
+      }
       const lowerName = name.toLowerCase();
       const lowerSyntax = syntax.toLowerCase();
       if (!/^![a-z0-9_-]+$/i.test(name) ||
-          (lowerSyntax !== lowerName && !lowerSyntax.startsWith(lowerName + ' '))) {
+        (lowerSyntax !== lowerName && !lowerSyntax.startsWith(lowerName + ' '))) {
         throw new Error('Invalid command syntax for ' + name);
       }
-      if (seen.has(lowerName)) throw new Error('Duplicate command in documentation: ' + name);
+      if (seen.has(lowerName)) {
+        throw new Error('Duplicate command in documentation: ' + name);
+      }
       seen.add(lowerName);
       parsed.push({
-        name, syntax, cost, targeting, permission, description, section,
+        name,
+        syntax,
+        cost,
+        targeting,
+        permission,
+        description,
+        section,
         searchText: [name, syntax, cost, targeting, permission, description, sectionLabels[section]]
           .join(' ').toLowerCase()
       });
     }
 
     // An unterminated example would otherwise hide every command after it.
-    if (codeFence) throw new Error('Unclosed Markdown code fence in command documentation.');
+    if (codeFence) {
+      throw new Error('Unclosed Markdown code fence in command documentation.');
+    }
 
     // Fail loudly instead of silently showing just one section if headings change.
     if (!parsed.length || parsed.length !== documentedRows) {
@@ -509,7 +1403,9 @@ a:hover{color:var(--accent)}
     window.clearTimeout(toastTimer);
     toast.textContent = message;
     toast.hidden = false;
-    toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2500);
+    toastTimer = window.setTimeout(() => {
+      toast.hidden = true;
+    }, 2500);
   }
 
   async function copyToClipboard(value) {
@@ -544,11 +1440,16 @@ a:hover{color:var(--accent)}
 
   function parseMultiplierOptions(source) {
     const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
-    if (!definition) throw new Error('Multiplier presets were not found in Settings.xaml.cs');
+    if (!definition) {
+      throw new Error('Multiplier presets were not found in Settings.xaml.cs');
+    }
     const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
-      match => ({ value: String(Number(match[1])), label: match[2].replace(/x$/i, '×').replace(/^1×$/, '1× (default)') }));
-    if (!options.length || !options.some(item => item.value === '1')
-        || options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
+      match => ({
+        value: String(Number(match[1])),
+        label: match[2].replace(/x$/i, '×').replace(/^1×$/, '1× (default)')
+      }));
+    if (!options.length || !options.some(item => item.value === '1') ||
+      options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
       throw new Error('Multiplier preset values are invalid');
     }
     return options;
@@ -559,25 +1460,32 @@ a:hover{color:var(--accent)}
     // fallback; an unavailable GitHub host must not break the command list.
     try {
       const response = await fetch(presetSource);
-      if (!response.ok) throw new Error('HTTP ' + response.status);
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
       const presets = parseMultiplierOptions(await response.text());
       const previousSelection = multiplierSelect.value;
       // Avoid resetting an open dropdown when the remote options are unchanged.
       if (presets.length !== multiplierSelect.options.length ||
-          presets.some((option, i) => option.value !== multiplierSelect.options[i].value ||
-            option.label !== multiplierSelect.options[i].textContent)) {
+        presets.some((option, i) => option.value !== multiplierSelect.options[i].value ||
+          option.label !== multiplierSelect.options[i].textContent)) {
         multiplierSelect.replaceChildren(
-          ...presets.map(({ label, value }) => new Option(label, value)));
+          ...presets.map(({
+            label,
+            value
+          }) => new Option(label, value)));
       }
       const values = presets.map(option => option.value);
       // Apply new presets from the URL, but never override a manual choice
       // made while the remote preset list was loading.
-      multiplierSelect.value = !multiplierChangedByUser && values.includes(requestedMultiplier)
-        ? requestedMultiplier
-        : values.includes(previousSelection) ? previousSelection
-          : values.includes('1') ? '1' : values[0];
+      multiplierSelect.value = !multiplierChangedByUser && values.includes(requestedMultiplier) ?
+        requestedMultiplier :
+        values.includes(previousSelection) ? previousSelection :
+        values.includes('1') ? '1' : values[0];
       // Updating the options alone does not change any displayed prices.
-      if (commands.length && multiplierSelect.value !== previousSelection) render();
+      if (commands.length && multiplierSelect.value !== previousSelection) {
+        render();
+      }
     } catch (error) {
       console.warn('Using local multiplier presets:', error);
     }
@@ -590,55 +1498,100 @@ a:hover{color:var(--accent)}
     const perUnit = source.match(/^(\d+) per (heart|effect)$/i);
     const baseCost = numeric ? Number(source) : perUnit ? Number(perUnit[1]) : null;
 
-    if (free || baseCost === 0) return { label: free ? source : 'Free (0 tokens)', free: true };
+    if (free || baseCost === 0) {
+      return {
+        label: free ? source : 'Free (0 tokens)',
+        free: true
+      };
+    }
     // Only gameplay charges are affected by the bot's multiplier.
     if (item.section !== 'gameplay') {
-      return { label: numeric ? source + ' tokens' : source, free: false };
+      return {
+        label: numeric ? source + ' tokens' : source,
+        free: false
+      };
     }
     // Unknown or viewer-entered prices must never be shown as free at 0×.
-    if (baseCost === null) return { label: source, free: false };
+    if (baseCost === null) {
+      return {
+        label: source,
+        free: false
+      };
+    }
 
     const multiplier = Number(multiplierSelect.value);
-    if (multiplier === 0) return { label: 'Free (0 tokens)', free: true };
+    if (multiplier === 0) {
+      return {
+        label: 'Free (0 tokens)',
+        free: true
+      };
+    }
     const scale = amount => Math.ceil(amount * multiplier);
-    if (numeric) return { label: scale(baseCost) + ' tokens', free: false };
+    if (numeric) {
+      return {
+        label: scale(baseCost) + ' tokens',
+        free: false
+      };
+    }
 
     // Read the supported amount from the documented syntax instead of
     // embedding the heart/effect limits in the website.
     const quantity = item.syntax.match(/\b1-(\d+)\b/);
     if (!quantity) {
-      return { label: scale(baseCost) + ' tokens per ' + perUnit[2].toLowerCase(), free: false };
+      return {
+        label: scale(baseCost) + ' tokens per ' + perUnit[2].toLowerCase(),
+        free: false
+      };
     }
     const maximum = Number(quantity[1]);
     const unit = perUnit[2].toLowerCase() + 's';
-    return { label: scale(baseCost) + '–' + scale(baseCost * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')', free: false };
+    return {
+      label: scale(baseCost) + '–' + scale(baseCost * maximum) + ' tokens (1–' + maximum + ' ' + unit + ')',
+      free: false
+    };
   }
 
   // Price sorting uses the minimum charge for a single target. Viewer-entered
   // transfer amounts and bets do not have a fixed price and sort last.
   function sortablePrice(item) {
     const source = item.cost;
-    if (/^free\b/i.test(source) || source === '0') return 0;
+    if (/^free\b/i.test(source) || source === '0') {
+      return 0;
+    }
     const base = source.match(/^(\d+)(?:\s+per\s+(?:heart|effect))?$/i);
-    if (!base) return null;
+    if (!base) {
+      return null;
+    }
     // Only gameplay prices use the multiplier; other fixed costs sort as listed.
-    return item.section === 'gameplay'
-      ? Math.ceil(Number(base[1]) * Number(multiplierSelect.value))
-      : Number(base[1]);
+    return item.section === 'gameplay' ?
+      Math.ceil(Number(base[1]) * Number(multiplierSelect.value)) :
+      Number(base[1]);
   }
 
   function sortCommands(items) {
     const mode = sortSelect.value;
-    if (mode === 'category' || mode === 'name-asc') return items;
-    if (mode === 'name-desc') return items.reverse();
+    if (mode === 'category' || mode === 'name-asc') {
+      return items;
+    }
+    if (mode === 'name-desc') {
+      return items.reverse();
+    }
     const prices = new Map();
-    for (const item of items) prices.set(item, sortablePrice(item));
+    for (const item of items) {
+      prices.set(item, sortablePrice(item));
+    }
     return items.sort((a, b) => {
-      const aPrice = prices.get(a), bPrice = prices.get(b);
-      if (aPrice === null && bPrice !== null) return 1;
-      if (bPrice === null && aPrice !== null) return -1;
-      if (aPrice !== null && bPrice !== null && aPrice !== bPrice)
+      const aPrice = prices.get(a),
+        bPrice = prices.get(b);
+      if (aPrice === null && bPrice !== null) {
+        return 1;
+      }
+      if (bPrice === null && aPrice !== null) {
+        return -1;
+      }
+      if (aPrice !== null && bPrice !== null && aPrice !== bPrice) {
         return mode === 'price-asc' ? aPrice - bPrice : bPrice - aPrice;
+      }
       return a.name.localeCompare(b.name);
     });
   }
@@ -653,7 +1606,9 @@ a:hover{color:var(--accent)}
     const description = make('p', 'card-description', item.description);
     const syntax = make('code', 'syntax', item.syntax);
     const meta = make('div', 'card-meta');
-    if (showCategory) meta.append(make('span', 'meta-tag category-tag', sectionLabels[item.section]));
+    if (showCategory) {
+      meta.append(make('span', 'meta-tag category-tag', sectionLabels[item.section]));
+    }
     meta.append(
       make('span', 'meta-tag', item.targeting),
       make('span', item.permission === 'Everyone' ? 'meta-tag' : 'meta-tag admin', item.permission)
@@ -678,8 +1633,11 @@ a:hover{color:var(--accent)}
   }
 
   let renderedCategory = null;
+
   function updateCategoryButtons() {
-    if (renderedCategory === category) return;
+    if (renderedCategory === category) {
+      return;
+    }
     renderedCategory = category;
     for (const button of categoryRow.querySelectorAll('[data-category]')) {
       const active = button.dataset.category === category;
@@ -691,30 +1649,54 @@ a:hover{color:var(--accent)}
   function syncAddress() {
     const next = new URL(window.location.href);
     const query = searchInput.value.trim();
-    if (query) next.searchParams.set('q', query);
-    else next.searchParams.delete('q');
-    if (category !== 'all') next.searchParams.set('category', category);
-    else next.searchParams.delete('category');
-    if (freeOnlyInput.checked) next.searchParams.set('free', '1');
-    else next.searchParams.delete('free');
-    if (multiplierSelect.value !== '1') next.searchParams.set('multiplier', multiplierSelect.value);
-    else next.searchParams.delete('multiplier');
-    if (sortSelect.value !== 'category') next.searchParams.set('sort', sortSelect.value);
-    else next.searchParams.delete('sort');
+    if (query) {
+      next.searchParams.set('q', query);
+    } else {
+      next.searchParams.delete('q');
+    }
+    if (category !== 'all') {
+      next.searchParams.set('category', category);
+    } else {
+      next.searchParams.delete('category');
+    }
+    if (freeOnlyInput.checked) {
+      next.searchParams.set('free', '1');
+    } else {
+      next.searchParams.delete('free');
+    }
+    if (multiplierSelect.value !== '1') {
+      next.searchParams.set('multiplier', multiplierSelect.value);
+    } else {
+      next.searchParams.delete('multiplier');
+    }
+    if (sortSelect.value !== 'category') {
+      next.searchParams.set('sort', sortSelect.value);
+    } else {
+      next.searchParams.delete('sort');
+    }
     const address = next.pathname + next.search + next.hash;
-    if (address !== window.location.pathname + window.location.search + window.location.hash)
+    if (address !== window.location.pathname + window.location.search + window.location.hash) {
       window.history.replaceState(null, '', address);
+    }
   }
 
   function render() {
-    if (!commands.length) return; // Keep the loading/error state until a catalog is available.
+    if (!commands.length) {
+      return;
+    } // Keep the loading/error state until a catalog is available.
     const query = searchInput.value.toLowerCase().trim();
     const onlyFree = freeOnlyInput.checked;
     const filtered = commands.filter(item => {
-      if (category !== 'all' && item.section !== category) return false;
+      if (category !== 'all' && item.section !== category) {
+        return false;
+      }
       const cost = onlyFree ? displayCost(item) : null;
-      if (onlyFree && !cost.free) return false;
-      if (!query) return true;
+      if (onlyFree && !cost.free) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
       return item.searchText.includes(query) || (cost || displayCost(item)).label.toLowerCase().includes(query);
     });
     const sorted = sortCommands(filtered);
@@ -722,23 +1704,26 @@ a:hover{color:var(--accent)}
     // Keep the familiar category layout by default. Alternative sorts use
     // one ordered list so prices and A–Z order are genuinely global.
     const grouped = sortSelect.value === 'category' && category === 'all';
-    const sections = grouped
-      ? sectionOrder.map(section => ({
-          name: sectionLabels[section],
-          items: sorted.filter(item => item.section === section)
-        }))
-      : [{
-          name: category === 'all' ? 'All commands' : sectionLabels[category],
-          items: sorted
-        }];
+    const sections = grouped ?
+      sectionOrder.map(section => ({
+        name: sectionLabels[section],
+        items: sorted.filter(item => item.section === section)
+      })) : [{
+        name: category === 'all' ? 'All commands' : sectionLabels[category],
+        items: sorted
+      }];
     for (const section of sections) {
-      if (!section.items.length) continue;
+      if (!section.items.length) {
+        continue;
+      }
       const wrapper = make('section', 'command-group');
       wrapper.setAttribute('aria-label', section.name);
       const heading = make('div', 'group-heading');
       heading.append(make('h3', '', section.name), make('span', '', section.items.length + (section.items.length === 1 ? ' command' : ' commands')));
       const grid = make('div', 'command-grid');
-      for (const item of section.items) grid.appendChild(createCommandCard(item, category === 'all' && !grouped));
+      for (const item of section.items) {
+        grid.appendChild(createCommandCard(item, category === 'all' && !grouped));
+      }
       wrapper.append(heading, grid);
       fragment.appendChild(wrapper);
     }
@@ -767,7 +1752,9 @@ a:hover{color:var(--accent)}
     sortSelect.addEventListener('change', render);
     categoryRow.addEventListener('click', event => {
       const button = event.target.closest('[data-category]');
-      if (!button || !categoryRow.contains(button) || button.dataset.category === category) return;
+      if (!button || !categoryRow.contains(button) || button.dataset.category === category) {
+        return;
+      }
       category = validCategories.has(button.dataset.category) ? button.dataset.category : 'all';
       render();
     });
@@ -778,11 +1765,15 @@ a:hover{color:var(--accent)}
         return;
       }
       const button = event.target.closest('.copy-button');
-      if (!button) return;
+      if (!button) {
+        return;
+      }
       const request = copyToClipboard(button.dataset.syntax);
       copyRequests.set(button, request);
       const success = await request;
-      if (copyRequests.get(button) !== request) return;
+      if (copyRequests.get(button) !== request) {
+        return;
+      }
       if (!success) {
         window.clearTimeout(copyResetTimers.get(button));
         button.querySelector('span').textContent = 'Copy syntax';
@@ -804,8 +1795,8 @@ a:hover{color:var(--accent)}
     document.getElementById('empty-reset').addEventListener('click', clearFilters);
     document.addEventListener('keydown', event => {
       const element = document.activeElement;
-      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA'
-        || element.tagName === 'SELECT' || element.isContentEditable);
+      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' ||
+        element.tagName === 'SELECT' || element.isContentEditable);
       if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey && !typing) {
         event.preventDefault();
         searchInput.focus();
@@ -816,25 +1807,35 @@ a:hover{color:var(--accent)}
   async function initialize() {
     wireEvents();
     const revealGambleGuide = () => {
-      if (window.location.hash === '#gamble-help')
+      if (window.location.hash === '#gamble-help') {
         document.getElementById('gamble-help').open = true;
+      }
     };
     window.addEventListener('hashchange', revealGambleGuide);
     revealGambleGuide();
     // Never block the command catalog on an optional external preset lookup.
     void refreshMultiplierOptions();
     try {
-      const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
-      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const response = await fetch('../COMMANDS.md', {
+        cache: 'no-cache'
+      });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
       const markdown = await response.text();
-      if (/^\s*<(?:!doctype html|html)/i.test(markdown))
+      if (/^\s*<(?:!doctype html|html)/i.test(markdown)) {
         throw new Error('Command documentation returned HTML instead of Markdown. Check the GitHub Pages deployment source.');
+      }
       commands = parseCommands(markdown).sort((a, b) => a.name.localeCompare(b.name));
       counts.all = commands.length;
-      for (const item of commands) counts[item.section]++;
+      for (const item of commands) {
+        counts[item.section]++;
+      }
       for (const button of categoryRow.querySelectorAll('[data-category]')) {
         const countElement = button.querySelector('[data-count]');
-        if (countElement) countElement.textContent = String(counts[button.dataset.category]);
+        if (countElement) {
+          countElement.textContent = String(counts[button.dataset.category]);
+        }
       }
       for (const section of ['all', ...sectionOrder]) {
         document.getElementById((section === 'all' ? 'total' : section) + '-count').textContent = String(counts[section]);
@@ -851,7 +1852,6 @@ a:hover{color:var(--accent)}
 
   initialize();
 })();
-
 </script>
 </body>
 </html>

@@ -88,16 +88,16 @@ public sealed class ServerPropertiesContractTests
         string[] propertyLines = File.ReadAllLines(propertiesPath);
 
         Assert.All([
-            "a-custom=first", @"custom-setting=keep\=this",
-            @"escaped-value=hello\=world\\path", "z-custom=last",
-            "view-distance=6", "simulation-distance=8",
-            "entity-broadcast-range-percentage=75",
-            "network-compression-threshold=128",
-            "white-list=true", "enforce-whitelist=true",
-            "level-name=Streamer World", "server-port=25570",
-            "rcon.port=25580", @"rcon.password=secret\:password",
-            "max-players=7", "online-mode=false"
-        ], property => Assert.Contains(property, propertyLines));
+                "a-custom=first", @"custom-setting=keep\=this",
+                @"escaped-value=hello\=world\\path", "z-custom=last",
+                "view-distance=6", "simulation-distance=8",
+                "entity-broadcast-range-percentage=75",
+                "network-compression-threshold=128",
+                "white-list=true", "enforce-whitelist=true",
+                "level-name=Streamer World", "server-port=25570",
+                "rcon.port=25580", @"rcon.password=secret\:password",
+                "max-players=7", "online-mode=false"
+            ], property => Assert.Contains(property, propertyLines));
         Assert.DoesNotContain("\npvp=", "\n" + content, StringComparison.Ordinal);
         Assert.Contains("difficulty=hard", propertyLines);
         Assert.Contains("hardcore=false", propertyLines);
@@ -119,9 +119,9 @@ public sealed class ServerPropertiesContractTests
             AssertPropertyInSection(content, key, editableHeader, managedHeader));
 
         Assert.All([
-            "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
-            "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
-        ], key => AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader));
+                "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
+                "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
+            ], key => AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader));
 
         AssertPropertyInSection(content, "rcon.password", RCONPasswordHeader, content.Length);
 

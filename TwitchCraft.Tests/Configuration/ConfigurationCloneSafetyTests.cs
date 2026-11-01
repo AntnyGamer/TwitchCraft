@@ -53,8 +53,14 @@ public sealed class ConfigurationCloneSafetyTests
         };
 
         foreach ((Type type, string[] allowed) in references)
+        {
             foreach (PropertyInfo property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+            {
                 if (!property.PropertyType.IsValueType && property.PropertyType != typeof(string))
+                {
                     Assert.Contains(property.Name, allowed);
+                }
+            }
+        }
     }
 }

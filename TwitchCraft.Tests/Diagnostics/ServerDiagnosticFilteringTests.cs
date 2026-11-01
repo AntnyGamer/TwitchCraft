@@ -82,7 +82,9 @@ public sealed class ServerDiagnosticFilteringTests
         MinecraftSTDERRFilter filter = new();
         List<string> shownLines = [];
         foreach (string line in lines)
+        {
             filter.ProcessLine(line, shownLines.Add);
+        }
 
         filter.Flush(shownLines.Add);
         return shownLines;

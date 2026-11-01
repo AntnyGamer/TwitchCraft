@@ -10,7 +10,9 @@ public sealed partial class MainHandler
     private async Task ClearSidebarAsync(CancellationToken cancellationToken)
     {
         if (_minecraftSession.ServerReady && _activeConfig is { } config)
+        {
             await SendRCONCommandsAsync(config, ClearPlayerSidebarCommands, cancellationToken).ConfigureAwait(false);
+        }
 
         lock (_playerGate)
         {
@@ -22,7 +24,9 @@ public sealed partial class MainHandler
     private async Task RefreshSidebarAsync(CancellationToken cancellationToken)
     {
         if (!MultiplayerEnabled || !_minecraftSession.ServerReady)
+        {
             return;
+        }
 
         List<string> players;
         List<string> previousPlayers;
@@ -32,10 +36,14 @@ public sealed partial class MainHandler
         {
             needsInitialization = !_playerSidebarInitialized;
             if (_knownPlayers.Count == 0 && _lastSidebarPlayers.Count == 0)
+            {
                 return;
+            }
 
             if (!needsInitialization && SortedListHelper.EqualInOrder(_knownPlayers, _lastSidebarPlayers, PlayerNameComparer))
+            {
                 return;
+            }
 
             players = _knownPlayers.Count == 0 ? [] : [.. _knownPlayers];
             previousPlayers = _lastSidebarPlayers.Count == 0 ? [] : [.. _lastSidebarPlayers];
@@ -49,10 +57,14 @@ public sealed partial class MainHandler
 
         List<string> commands = BuildSidebar(players, previousPlayers, needsInitialization, UsesInlineTextComponentSyntax);
         if (commands.Count == 0)
+        {
             return;
+        }
 
         if (!await SendServerCommandsAsync(commands, cancellationToken).ConfigureAwait(false))
+        {
             return;
+        }
 
         lock (_playerGate)
         {
@@ -61,7 +73,11 @@ public sealed partial class MainHandler
         }
     }
 
-    private static List<string> BuildSidebar(List<string> players, List<string> previousPlayers, bool needsInitialization, bool usesInlineTextComponents)
+    private static List<string> BuildSidebar(
+        List<string> players,
+        List<string> previousPlayers,
+        bool needsInitialization,
+        bool usesInlineTextComponents)
     {
         const string objective = "tc_playerlist";
         const string healthObjective = "tc_health";
@@ -85,10 +101,14 @@ public sealed partial class MainHandler
         foreach (string oldName in previousPlayers)
         {
             while (playerIndex < players.Count && PlayerNameComparer.Compare(players[playerIndex], oldName) < 0)
+            {
                 playerIndex++;
+            }
 
             if (playerIndex >= players.Count || !PlayerNameComparer.Equals(players[playerIndex], oldName))
+            {
                 commands.Add("scoreboard players reset " + oldName + " " + objective);
+            }
         }
 
         int previousIndex = 0;
@@ -96,7 +116,9 @@ public sealed partial class MainHandler
         foreach (string player in players)
         {
             while (previousIndex < previousPlayers.Count && PlayerNameComparer.Compare(previousPlayers[previousIndex], player) < 0)
+            {
                 previousIndex++;
+            }
 
             bool scoreChanged = needsInitialization ||
                 previousIndex >= previousPlayers.Count ||
@@ -104,7 +126,9 @@ public sealed partial class MainHandler
                 previousPlayers.Count - previousIndex != score;
 
             if (scoreChanged)
+            {
                 commands.Add(string.Create(CultureInfo.InvariantCulture, $"scoreboard players set {player} {objective} {score}"));
+            }
 
             score--;
         }
@@ -136,10 +160,14 @@ public sealed partial class MainHandler
     private void QueueSidebarRefresh()
     {
         if (!TryGetSessionToken(requireMultiplayer: true, out CancellationToken token))
+        {
             return;
+        }
 
         if (!TryQueueCoalesced(ref _playerSidebarRefreshQueued))
+        {
             return;
+        }
 
         RunCoalescedWork(
             RefreshSidebarAsync,

@@ -23,13 +23,19 @@ internal static class FileSystemHelper
     {
         string? directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory))
+        {
             Directory.CreateDirectory(directory);
+        }
     }
 
     public static void BackupSqliteDatabase(SqliteConnection source, string destinationPath)
     {
         EnsureParentDir(destinationPath);
-        SqliteConnectionStringBuilder builder = new() { DataSource = destinationPath, Pooling = false };
+        SqliteConnectionStringBuilder builder = new()
+        {
+            DataSource = destinationPath,
+            Pooling = false
+        };
         using SqliteConnection destination = new(builder.ToString());
         source.BackupDatabase(destination);
     }
@@ -39,9 +45,13 @@ internal static class FileSystemHelper
         try
         {
             if (File.Exists(targetPath))
+            {
                 File.Replace(tempPath, targetPath, backupPath, true);
+            }
             else
+            {
                 File.Move(tempPath, targetPath);
+            }
 
             return FileReplaceMode.Atomic;
         }
@@ -79,7 +89,9 @@ internal static class FileSystemHelper
         try
         {
             if (!string.IsNullOrWhiteSpace(path))
+            {
                 File.Delete(path);
+            }
         }
         catch (Exception ex)
         {
@@ -91,20 +103,26 @@ internal static class FileSystemHelper
     {
         DirectoryInfo source = new(sourceDirectory);
         if ((source.Attributes & FileAttributes.ReparsePoint) != 0)
+        {
             return;
+        }
 
         Directory.CreateDirectory(destinationDirectory);
 
         foreach (FileInfo file in source.EnumerateFiles())
         {
             if ((file.Attributes & FileAttributes.ReparsePoint) == 0)
+            {
                 file.CopyTo(Path.Combine(destinationDirectory, file.Name), true);
+            }
         }
 
         foreach (DirectoryInfo directory in source.EnumerateDirectories())
         {
             if ((directory.Attributes & FileAttributes.ReparsePoint) == 0)
+            {
                 CopyDirectory(directory.FullName, Path.Combine(destinationDirectory, directory.Name));
+            }
         }
     }
 
@@ -113,7 +131,9 @@ internal static class FileSystemHelper
         try
         {
             if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path))
+            {
                 Directory.Delete(path, true);
+            }
         }
         catch (Exception ex)
         {

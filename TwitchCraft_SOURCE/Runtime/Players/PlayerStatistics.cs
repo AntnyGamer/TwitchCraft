@@ -10,16 +10,22 @@ public sealed partial class MainHandler
     private void QueueGamemode()
     {
         if (!Statistics.Enabled)
+        {
             return;
+        }
 
         string playerName = _streamerMinecraftName;
         if (playerName.Length == 0)
+        {
             return;
+        }
 
         lock (_playerGate)
         {
             if (!HasPlayer(_knownPlayers, playerName))
+            {
                 return;
+            }
         }
 
         QueueGamemode(playerName);
@@ -65,7 +71,9 @@ public sealed partial class MainHandler
             {
                 await Task.Delay(250, t).ConfigureAwait(false);
                 if (await QueryRespawnAsync(playerName, t).ConfigureAwait(false))
+                {
                     Statistics.RecordRespawn(playerName);
+                }
             },
             () => Interlocked.Exchange(ref _respawnRefreshQueued, 0),
             "Tracked player respawn position refresh failed",
@@ -92,16 +100,22 @@ public sealed partial class MainHandler
     private async Task<bool> EnsureDeathScoreAsync(CancellationToken cancellationToken)
     {
         if (!Statistics.Enabled)
+        {
             return false;
+        }
 
         if (Volatile.Read(ref _deathScoreObjectiveReady) != 0)
+        {
             return true;
+        }
 
         await _deathScoreObjectiveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (Volatile.Read(ref _deathScoreObjectiveReady) != 0)
+            {
                 return true;
+            }
 
             TaskCompletionSource waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
             bool sent = await SendProbeAsync(
@@ -110,7 +124,9 @@ public sealed partial class MainHandler
                 cancellationToken).ConfigureAwait(false);
 
             if (!sent)
+            {
                 return false;
+            }
 
             await waiter.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
             Statistics.ResetDeathBaseline();
@@ -126,16 +142,22 @@ public sealed partial class MainHandler
     private void QueueDeathScore()
     {
         if (!Statistics.Enabled)
+        {
             return;
+        }
 
         string playerName = _streamerMinecraftName;
         if (playerName.Length == 0)
+        {
             return;
+        }
 
         lock (_playerGate)
         {
             if (!HasPlayer(_knownPlayers, playerName))
+            {
                 return;
+            }
         }
 
         QueueDeathScore(playerName);
@@ -152,7 +174,9 @@ public sealed partial class MainHandler
         }
 
         if (Interlocked.Exchange(ref _deathScoreRefreshQueued, 1) != 0)
+        {
             return;
+        }
 
         RunSessionWork(
             async t =>
@@ -160,13 +184,15 @@ public sealed partial class MainHandler
                 if (await EnsureDeathScoreAsync(t).ConfigureAwait(false))
                 {
                     if (!string.Equals(
-                            Volatile.Read(ref _deathScoreInitializedPlayerName),
-                            normalizedPlayerName,
-                            StringComparison.OrdinalIgnoreCase))
+                        Volatile.Read(ref _deathScoreInitializedPlayerName),
+                        normalizedPlayerName,
+                        StringComparison.OrdinalIgnoreCase))
                     {
                         string initializeCommand = "scoreboard players add " + normalizedPlayerName + " " + DeathScoreObjective + " 0";
                         if (!await SendServerCommandAsync(initializeCommand, t).ConfigureAwait(false))
+                        {
                             return;
+                        }
 
                         Volatile.Write(ref _deathScoreInitializedPlayerName, normalizedPlayerName);
                     }
@@ -176,7 +202,9 @@ public sealed partial class MainHandler
                     {
                         string? response = await ExecuteRCONQueryAsync(command, t).ConfigureAwait(false);
                         if (!string.IsNullOrWhiteSpace(response))
+                        {
                             HandleRCONResponse(response);
+                        }
                     }
                     else
                     {
@@ -195,7 +223,9 @@ public sealed partial class MainHandler
         lock (_playerGate)
         {
             if (now - _lastSidebarRefreshErrorUtc < PlayerSidebarRefreshErrorLogInterval)
+            {
                 return;
+            }
 
             _lastSidebarRefreshErrorUtc = now;
         }
@@ -206,9 +236,16 @@ public sealed partial class MainHandler
     private void RecordPlayerJoin(string player)
     {
         Statistics.RecordPlayerJoin(player);
-        if (!TryGetSessionToken(requireMultiplayer: false, out CancellationToken token)) return;
+        if (!TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+        {
+            return;
+        }
+
         TrackTask(_timedPlayerScaleController.ResetRecoveredAsync(player, token));
-        if (Commands.ResetHeartEffectsAsync != null) TrackTask(Commands.ResetHeartEffectsAsync(player, false, token));
+        if (Commands.ResetHeartEffectsAsync != null)
+        {
+            TrackTask(Commands.ResetHeartEffectsAsync(player, false, token));
+        }
     }
 
     private void RecordRoster(List<string> previousPlayers, List<string> currentPlayers)
@@ -248,23 +285,31 @@ public sealed partial class MainHandler
         }
 
         for (; currentIndex < currentPlayers.Count; currentIndex++)
+        {
             RecordPlayerJoin(currentPlayers[currentIndex]);
+        }
     }
 
     private static List<string> ParsePlayers(ReadOnlySpan<char> remainder)
     {
         List<string> players = [];
         if (remainder.IsEmpty)
+        {
             return players;
+        }
 
         int start = 0;
         for (int i = 0; i <= remainder.Length; i++)
         {
             if (i < remainder.Length && remainder[i] != ',')
+            {
                 continue;
+            }
 
             if (MinecraftNameHelper.TryNormalizePlayerName(remainder[start..i], out string normalizedPlayer))
+            {
                 players.Add(normalizedPlayer);
+            }
 
             start = i + 1;
         }
@@ -278,11 +323,15 @@ public sealed partial class MainHandler
         players = [];
         ReadOnlySpan<char> text = response.AsSpan().Trim();
         if (text.IsEmpty)
+        {
             return false;
+        }
 
         int marker = text.IndexOf("players online".AsSpan(), StringComparison.OrdinalIgnoreCase);
         if (marker < 0)
+        {
             marker = text.IndexOf("player online".AsSpan(), StringComparison.OrdinalIgnoreCase);
+        }
 
         if (marker >= 0)
         {
@@ -305,11 +354,15 @@ public sealed partial class MainHandler
         for (int i = 0; i < text.Length; i++)
         {
             if (!char.IsDigit(text[i]))
+            {
                 continue;
+            }
 
             int start = i;
             while (i < text.Length && char.IsDigit(text[i]))
+            {
                 i++;
+            }
 
             return int.TryParse(text[start..i], out value);
         }
@@ -320,17 +373,25 @@ public sealed partial class MainHandler
     private static string GetPlayerName(string line, int markerIndex)
     {
         if (string.IsNullOrEmpty(line) || markerIndex <= 0)
+        {
             return string.Empty;
+        }
 
         int start = line.IndexOf("]: ", StringComparison.Ordinal) + 3;
         if (start < 3 || start >= markerIndex)
+        {
             return string.Empty;
+        }
 
         ReadOnlySpan<char> name = line.AsSpan(start, markerIndex - start);
         if (name.StartsWith("System chat: ", StringComparison.Ordinal))
+        {
             name = name["System chat: ".Length..];
+        }
         else if (name.StartsWith("[System] [CHAT] ", StringComparison.OrdinalIgnoreCase))
+        {
             name = name["[System] [CHAT] ".Length..];
+        }
 
         return MinecraftNameHelper.TryNormalizePlayerName(name, out string normalizedPlayer)
             ? normalizedPlayer
@@ -342,10 +403,14 @@ public sealed partial class MainHandler
         ReadOnlySpan<char> segment = value.AsSpan(0, length).Trim();
         int colon = segment.LastIndexOf(':');
         if (colon >= 0 && colon < segment.Length - 1)
+        {
             segment = segment[(colon + 1)..].Trim();
+        }
 
         if (segment.StartsWith("[System] [CHAT] ", StringComparison.OrdinalIgnoreCase))
+        {
             segment = segment["[System] [CHAT] ".Length..];
+        }
 
         return segment.Length == value.Length ? value : segment.ToString();
     }

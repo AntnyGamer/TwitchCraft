@@ -14,11 +14,21 @@ public sealed partial class MainHandler
         _shellWindow = shellWindow;
     }
 
-    public void ApplyProfile(bool multiplayerEnabled, bool requireOnlineMode, string streamerMinecraftName, bool remoteControlEnabled = false, string remoteHost = "", int RCONPort = 25575, string RCONPassword = "")
+    public void ApplyProfile(
+        bool multiplayerEnabled,
+        bool requireOnlineMode,
+        string streamerMinecraftName,
+        bool remoteControlEnabled = false,
+        string remoteHost = "",
+        int RCONPort = 25575,
+        string RCONPassword = "")
     {
         TwitchCraftConfig config = ConfigurationStore.Load();
         if (!remoteControlEnabled)
+        {
             _minecraftSession.ClearLocalRCONPassword();
+        }
+
         (int localRCONPort, string localRCONPassword) = (config.Server.RCON.Port, config.Server.RCON.Password);
         config.Settings.MultiplayerEnabled = multiplayerEnabled;
         config.Settings.RequireOnlineMode = !multiplayerEnabled || requireOnlineMode;
@@ -30,7 +40,10 @@ public sealed partial class MainHandler
             if (!string.IsNullOrWhiteSpace(RCONPassword))
             {
                 if (!ConfigurationStore.TryNormalizeRCONPassword(RCONPassword, out string normalizedRCONPassword))
+                {
                     throw new InvalidOperationException("RCON password is invalid.");
+                }
+
                 config.Server.RCON.Password = normalizedRCONPassword;
             }
         }
@@ -54,9 +67,14 @@ public sealed partial class MainHandler
             }
 
             if (currentBind.Length == 0 || string.Equals(currentBind, "127.0.0.1", StringComparison.OrdinalIgnoreCase))
+            {
                 currentBind = "0.0.0.0";
+            }
             else if (string.Equals(currentBind, "::1", StringComparison.OrdinalIgnoreCase))
+            {
                 currentBind = "::";
+            }
+
             config.Server.BindIP = currentBind;
             config.Server.MaxPlayers = Math.Max(5, config.Server.MaxPlayers);
         }
@@ -72,10 +90,16 @@ public sealed partial class MainHandler
         }
 
         if (!remoteControlEnabled)
+        {
             ApplyProfile(config);
+        }
+
         TwitchCraftConfig persistedConfig = ConfigurationStore.Clone(config);
         if (remoteControlEnabled)
+        {
             (persistedConfig.Server.RCON.Port, persistedConfig.Server.RCON.Password) = (localRCONPort, localRCONPassword);
+        }
+
         persistedConfig.Settings.MultiplayerEnabled = false;
         persistedConfig.Settings.RemoteControlEnabled = false;
         persistedConfig.Settings.RequireOnlineMode = true;
@@ -157,7 +181,9 @@ public sealed partial class MainHandler
                 {
                     bool hasPlayers;
                     lock (_playerGate)
+                    {
                         hasPlayers = _knownPlayers.Count > 0;
+                    }
 
                     if (hasPlayers)
                     {
@@ -167,7 +193,9 @@ public sealed partial class MainHandler
                     {
                         long nowTicks = DateTime.UtcNow.Ticks;
                         if (emptySinceTicks == 0)
+                        {
                             emptySinceTicks = nowTicks;
+                        }
                         else if (nowTicks - emptySinceTicks >= delayMinutes * TimeSpan.TicksPerMinute)
                         {
                             AddServerLogLine("No players have been online for " + delayMinutes + " minutes. Pausing the Minecraft server.");
@@ -224,7 +252,9 @@ public sealed partial class MainHandler
                     }
 
                     if (config.Settings.MultiplayerEnabled)
+                    {
                         DatapackInstaller.SyncLocateDatapack(config.Server.ServerDirectory, config.Server.MinecraftVersion, levelName);
+                    }
                 }
 
                 Statistics.ResetSurvival();
@@ -240,12 +270,20 @@ public sealed partial class MainHandler
 
     public async Task StartSessionAsync(bool resetStatistics = true, bool countSessionStarted = false)
     {
-        if (Volatile.Read(ref _shutdownRequested) != 0) return;
+        if (Volatile.Read(ref _shutdownRequested) != 0)
+        {
+            return;
+        }
+
         int stopGeneration = Volatile.Read(ref _lifecycleStopGeneration);
         await _lifecycleGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            if (Volatile.Read(ref _shutdownRequested) != 0) return;
+            if (Volatile.Read(ref _shutdownRequested) != 0)
+            {
+                return;
+            }
+
             if (_runtimeState == RuntimeState.Starting || _runtimeState == RuntimeState.Running)
             {
                 return;
@@ -253,17 +291,29 @@ public sealed partial class MainHandler
 
             _runtimeState = RuntimeState.Starting;
             _sessionCts = new CancellationTokenSource();
-            if (stopGeneration != Volatile.Read(ref _lifecycleStopGeneration)) _sessionCts.Cancel();
+            if (stopGeneration != Volatile.Read(ref _lifecycleStopGeneration))
+            {
+                _sessionCts.Cancel();
+            }
+
             CancellationToken token = _sessionCts.Token;
             TwitchCraftConfig config = ConfigurationStore.Clone(_activeConfig ?? ConfigurationStore.Load());
             if (!config.Settings.RemoteControlEnabled && _minecraftSession.TakeLocalRCONPassword() is string localRCONPassword)
+            {
                 config.Server.RCON.Password = localRCONPassword;
+            }
+
             config = await EnsureAuthAsync(config, token).ConfigureAwait(false);
             if (!config.Settings.MultiplayerEnabled)
+            {
                 config.Settings.RequireOnlineMode = true;
+            }
 
             if (!config.Settings.RemoteControlEnabled)
+            {
                 ApplyProfile(config);
+            }
+
             SetupInputValidator.ValidateRuntimeConfig(config);
             SetConfig(config);
             Tokens.Load(config.Settings.MaximumTokenBalance);
@@ -285,8 +335,15 @@ public sealed partial class MainHandler
             }
 
             _runtimeState = RuntimeState.Running;
-            if (resetStatistics || countSessionStarted) Statistics.ResetForSession();
-            if (countSessionStarted) Statistics.RecordSession();
+            if (resetStatistics || countSessionStarted)
+            {
+                Statistics.ResetForSession();
+            }
+
+            if (countSessionStarted)
+            {
+                Statistics.RecordSession();
+            }
 
             MinigameManager.StartLoops(this, token);
             TrackTask(RunIRCAsync(token));
@@ -298,7 +355,10 @@ public sealed partial class MainHandler
             TrackTask(RunEmptyShutdownAsync(token));
 
             if (!config.Settings.RemoteControlEnabled)
+            {
                 TrackTask(WatchServerAsync(token));
+            }
+
             UIThread.BeginInvoke(() => _shellModel.Navigate(ShellPage.Main));
         }
         catch (Exception)
@@ -323,7 +383,10 @@ public sealed partial class MainHandler
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(false).ConfigureAwait(false);
             for (Task? timeout = null; _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && !(timeout ??= Task.Delay(3000)).IsCompleted;)
+            {
                 await Task.WhenAny(tasks.Length == 1 ? tasks[0] : Task.WhenAll(tasks), timeout!).ConfigureAwait(false);
+            }
+
             _backgroundTaskTracker.Clear();
             StatisticsService.FlushForShutdown();
             CloseStores();
@@ -375,12 +438,21 @@ public sealed partial class MainHandler
             await _timedPlayerScaleController.ResetAllAsync(CancellationToken.None).ConfigureAwait(false);
 
             for (Task? timeout = null; _backgroundTaskTracker.Snapshot() is { Length: > 0 } tasks && !(timeout ??= Task.Delay(3000)).IsCompleted;)
+            {
                 await Task.WhenAny(tasks.Length == 1 ? tasks[0] : Task.WhenAll(tasks), timeout!).ConfigureAwait(false);
+            }
 
-            if (Commands.ResetHeartEffectsAsync != null) await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false);
+            if (Commands.ResetHeartEffectsAsync != null)
+            {
+                await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false);
+            }
+
             _twitchSession.CloseSocket();
             if (!RemoteControlEnabled)
+            {
                 await TryStopServerAsync().ConfigureAwait(false);
+            }
+
             await MinecraftRCONClient.DisconnectAsync().ConfigureAwait(false);
             await StopProcessSafeAsync(true).ConfigureAwait(false);
 

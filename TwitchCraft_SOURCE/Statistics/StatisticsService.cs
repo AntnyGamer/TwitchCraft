@@ -8,54 +8,54 @@ namespace TwitchCraft_V1;
 public sealed partial class StatisticsService
 {
     private static readonly string[] DeathMessagePhrases =
-[
-    " was shot by ",
-    " was pummeled by ",
-    " was fireballed by ",
-    " was killed",
-    " was slain by ",
-    " was stung to death",
-    " was impaled by ",
-    " was impaled on a stalagmite",
-    " was squashed by ",
-    " was poked to death by ",
-    " was pricked to death",
-    " walked into a cactus",
-    " drowned",
-    " died",
-    " blew up",
-    " was blown up by ",
-    " went off with a bang",
-    " hit the ground too hard",
-    " fell from a high place",
-    " fell too far and was finished by ",
-    " fell off ",
-    " fell while ",
-    " was doomed to fall",
-    " went up in flames",
-    " burned to death",
-    " was burned to a crisp",
-    " was burnt to a crisp",
-    " walked into fire",
-    " walked into the danger zone",
-    " tried to swim in lava",
-    " discovered the floor was lava",
-    " suffocated in a wall",
-    " was squished too much",
-    " was smashed by ",
-    " experienced kinetic energy",
-    " starved to death",
-    " withered away",
-    " froze to death",
-    " was frozen to death by ",
-    " was roasted in dragon's breath",
-    " was obliterated by ",
-    " was skewered by ",
-    " was struck by lightning",
-    " fell out of the world",
-    " left the confines of this world",
-    " didn't want to live in the same world as "
-];
+    [
+        " was shot by ",
+        " was pummeled by ",
+        " was fireballed by ",
+        " was killed",
+        " was slain by ",
+        " was stung to death",
+        " was impaled by ",
+        " was impaled on a stalagmite",
+        " was squashed by ",
+        " was poked to death by ",
+        " was pricked to death",
+        " walked into a cactus",
+        " drowned",
+        " died",
+        " blew up",
+        " was blown up by ",
+        " went off with a bang",
+        " hit the ground too hard",
+        " fell from a high place",
+        " fell too far and was finished by ",
+        " fell off ",
+        " fell while ",
+        " was doomed to fall",
+        " went up in flames",
+        " burned to death",
+        " was burned to a crisp",
+        " was burnt to a crisp",
+        " walked into fire",
+        " walked into the danger zone",
+        " tried to swim in lava",
+        " discovered the floor was lava",
+        " suffocated in a wall",
+        " was squished too much",
+        " was smashed by ",
+        " experienced kinetic energy",
+        " starved to death",
+        " withered away",
+        " froze to death",
+        " was frozen to death by ",
+        " was roasted in dragon's breath",
+        " was obliterated by ",
+        " was skewered by ",
+        " was struck by lightning",
+        " fell out of the world",
+        " left the confines of this world",
+        " didn't want to live in the same world as "
+    ];
     private readonly Lock _statisticsGate = new();
     private readonly Lock _deathStatisticsGate = new();
     private readonly Lock _statisticsLoadGate = new();
@@ -92,15 +92,23 @@ public sealed partial class StatisticsService
         if (_enabled != enabled)
         {
             _enabled = enabled;
-            if (enabled) _dependencies.QueueAllDeathScores();
-            else ResetSurvival();
+            if (enabled)
+            {
+                _dependencies.QueueAllDeathScores();
+            }
+            else
+            {
+                ResetSurvival();
+            }
         }
         if (!string.Equals(_commandPrefix, commandPrefix, StringComparison.Ordinal))
+        {
             lock (_statisticsGate)
             {
                 _commandPrefix = commandPrefix;
                 _cachedLeaderboardVersion = -1;
             }
+        }
     }
 
     internal void Load()
@@ -118,7 +126,11 @@ public sealed partial class StatisticsService
             }
 
             LifetimeStatistics? loadedStatistics = StatisticsStore.LoadGlobal();
-            if (loadedStatistics == null) return;
+            if (loadedStatistics == null)
+            {
+                return;
+            }
+
             lock (_statisticsGate)
             {
                 _totalStatistics = loadedStatistics;
@@ -147,7 +159,10 @@ public sealed partial class StatisticsService
         if (Enabled)
         {
             Load();
-            if (!StatisticsStore.SaveDeathBaseline(0)) return;
+            if (!StatisticsStore.SaveDeathBaseline(0))
+            {
+                return;
+            }
         }
 
         lock (_statisticsGate)
@@ -226,7 +241,10 @@ public sealed partial class StatisticsService
 
             int deathScoreBaseline = Math.Max(0, preservedLastDeathScore ?? 0);
             if (!StatisticsStore.ClearAll(deathScoreBaseline))
+            {
                 throw new IOException("Statistics could not be reset because the statistics database could not be reset.");
+            }
+
             lock (_statisticsGate)
             {
                 _sessionStatistics = new SessionStatistics
@@ -252,11 +270,11 @@ public sealed partial class StatisticsService
 }
 
 internal sealed record StatisticsDependencies(
-    Func<string, ChatCommandStatisticFlags> GetCommandFlags,
-    Func<string, bool> IsKnownPlayer,
-    Func<string, bool> IsSpectator,
-    Action QueueSnapshot,
-    Action QueueGamemode,
-    Action QueueAllDeathScores,
-    Action<string> QueueDeathScore,
-    Action<string> QueueRespawn);
+        Func<string, ChatCommandStatisticFlags> GetCommandFlags,
+        Func<string, bool> IsKnownPlayer,
+        Func<string, bool> IsSpectator,
+        Action QueueSnapshot,
+        Action QueueGamemode,
+        Action QueueAllDeathScores,
+        Action<string> QueueDeathScore,
+        Action<string> QueueRespawn);

@@ -95,12 +95,15 @@ public sealed class TokenService
         _store.AcquireDatabaseSessionLock();
         _store.ApplyMaximumBalance(maximumBalance);
         if (!_store.TryCompleteMinigameBets([], MaximumBalance, refund: true))
+        {
             throw new InvalidOperationException("Unsettled minigame bets could not be recovered.");
+        }
     }
 
     internal bool TryBackup(string destinationPath) => _store.TryBackup(destinationPath);
 
     internal bool TryOptimize() => _store.TryOptimize();
+
     internal void ApplyMaximumBalance(int maximumBalance) => _store.ApplyMaximumBalance(maximumBalance);
 
     internal bool TryExportJson() => _store.TryExportJson();

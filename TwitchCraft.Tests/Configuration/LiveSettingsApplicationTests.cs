@@ -76,7 +76,10 @@ public sealed class LiveSettingsApplicationTests
     {
         using RuntimeTestScope scope = new();
         MainHandler runtime = scope.Runtime;
-        TwitchCraftConfig config = new() { Settings = { PassiveRewardsRequireActivity = true } };
+        TwitchCraftConfig config = new()
+        {
+            Settings = { PassiveRewardsRequireActivity = true }
+        };
 
         await runtime.ApplySettingsAsync(config);
         runtime.RecordChatActivity("viewer", 1000);

@@ -6,7 +6,8 @@ namespace TwitchCraft.Tests.TestInfrastructure;
 
 internal static class TestApplicationData
 {
-    internal static string Path { get; } = System.IO.Path.Combine(
+    internal static string Path
+    { get; } = System.IO.Path.Combine(
         System.IO.Path.GetTempPath(), "TwitchCraftTests", Guid.NewGuid().ToString("N"));
 
     [ModuleInitializer]

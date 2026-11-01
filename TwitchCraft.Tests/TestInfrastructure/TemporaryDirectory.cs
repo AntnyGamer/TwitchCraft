@@ -15,7 +15,8 @@ internal sealed class TemporaryDirectory : IDisposable
         Directory.CreateDirectory(Path);
     }
 
-    internal string Path { get; }
+    internal string Path
+    { get; }
 
     public void Dispose()
     {
@@ -36,9 +37,14 @@ internal sealed class TemporaryDirectory : IDisposable
             {
                 lastException = ex;
                 if (attempt == 1)
+                {
                     Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                }
+
                 if (attempt < MaxAttempts)
+                {
                     Thread.Sleep(50 * attempt);
+                }
             }
         }
 

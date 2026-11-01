@@ -9,12 +9,12 @@ using TwitchCraft_V1.Setup;
 namespace TwitchCraft_V1;
 
 internal sealed class DataMaintenance(
-    Func<TwitchCraftConfig?> getConfig,
-    StartingProfile defaultSettings,
-    TokenService tokens,
-    Func<string, CancellationToken, Task<string>> validateBot,
-    Action<string, string> saveBot,
-    Func<string, CancellationToken, Task<bool>> tryRefreshAuth)
+        Func<TwitchCraftConfig?> getConfig,
+        StartingProfile defaultSettings,
+        TokenService tokens,
+        Func<string, CancellationToken, Task<string>> validateBot,
+        Action<string, string> saveBot,
+        Func<string, CancellationToken, Task<bool>> tryRefreshAuth)
 {
     private readonly Func<TwitchCraftConfig?> _getConfig = getConfig ?? throw new ArgumentNullException(nameof(getConfig));
     private readonly StartingProfile _defaultSettings = defaultSettings ?? throw new ArgumentNullException(nameof(defaultSettings));
@@ -47,11 +47,19 @@ internal sealed class DataMaintenance(
                             {
                                 string login = await _validateBot(token, cancellationToken).ConfigureAwait(false);
                                 if (login.Length > 0 && !string.Equals(login, twitch?.BotName, StringComparison.OrdinalIgnoreCase))
+                                {
                                     _saveBot(token, login);
+                                }
+
                                 _lastTwitchValidationUtc = DateTime.UtcNow;
                             }
                             catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                            { if (await _tryRefreshAuth(token, cancellationToken).ConfigureAwait(false)) _lastTwitchValidationUtc = DateTime.UtcNow; }
+                            {
+                                if (await _tryRefreshAuth(token, cancellationToken).ConfigureAwait(false))
+                                {
+                                    _lastTwitchValidationUtc = DateTime.UtcNow;
+                                }
+                            }
                         }
                     }
                 }
@@ -59,12 +67,17 @@ internal sealed class DataMaintenance(
                 {
                     if (!cancellationToken.IsCancellationRequested && settings.AutomaticBackupsEnabled &&
                         IsBackupDue(settings.AutomaticBackupIntervalHours))
+                    {
                         CreateBackup(settings.AutomaticBackupRetentionCount);
+                    }
+
                     int optimizeHours = settings.SQLiteOptimizeIntervalHours;
                     if (!cancellationToken.IsCancellationRequested && optimizeHours > 0 &&
                         DateTime.UtcNow - _lastDatabaseOptimizeUtc >= TimeSpan.FromHours(optimizeHours) &&
                         _tokens.TryOptimize())
+                    {
                         _lastDatabaseOptimizeUtc = DateTime.UtcNow;
+                    }
                 }
                 await Task.Delay(TimeSpan.FromMinutes(5), cancellationToken).ConfigureAwait(false);
             }
@@ -99,12 +112,17 @@ internal sealed class DataMaintenance(
     {
         string root = ConfigurationStore.BackupsDirectory;
         if (!Directory.Exists(root))
+        {
             return DateTime.MinValue;
+        }
+
         DateTime newest = DateTime.MinValue;
         foreach (DirectoryInfo directory in new DirectoryInfo(root).EnumerateDirectories())
         {
             if (TryGetBackupTime(directory, requireCompleteBackup: true, out DateTime timestamp) && timestamp > newest)
+            {
                 newest = timestamp;
+            }
         }
 
         return newest;
@@ -170,11 +188,16 @@ internal sealed class DataMaintenance(
             if (pendingBackup)
             {
                 if (directory.LastWriteTimeUtc <= DateTime.UtcNow.AddHours(-1))
+                {
                     FileSystemHelper.DeleteDirectorySafe(directory.FullName);
+                }
+
                 continue;
             }
             if (!TryGetBackupTime(directory, requireCompleteBackup: false, out DateTime timestamp))
+            {
                 continue;
+            }
 
             if (!IsBackupComplete(directory.FullName))
             {

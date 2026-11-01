@@ -29,7 +29,8 @@ public sealed partial class MainHandler
     private List<string> _knownViewers;
     private List<string> _knownPlayers;
     private List<string> _lastSidebarPlayers;
-    private bool _playerSidebarInitialized, _profileApplied;
+    private bool _playerSidebarInitialized;
+    private bool _profileApplied;
     private long _lastOnlinePlayersSnapshotTicks;
     private int _lifecycleStopGeneration;
     private int _shutdownRequested;
@@ -42,11 +43,14 @@ public sealed partial class MainHandler
     private List<EffectDefinition> _effectList;
     private MinecraftVersionSupport.MinecraftVersionInfo? _minecraftVersionInfo;
 
-    public TokenService Tokens { get; }
+    public TokenService Tokens
+    { get; }
 
-    public CommandService Commands { get; }
+    public CommandService Commands
+    { get; }
 
-    public StatisticsService Statistics { get; }
+    public StatisticsService Statistics
+    { get; }
 
     internal void AddChatLogLine(string line) => _shellWindow?.AddChatLogLine(line);
 

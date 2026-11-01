@@ -38,15 +38,21 @@ public static partial class MinigameManager
         runID = 0;
 
         if (runtime == null || string.IsNullOrWhiteSpace(kind))
+        {
             return false;
+        }
 
         lock (MinigameGate)
         {
             ActiveState state = GetActiveStateNoLock(runtime);
             if (!string.IsNullOrWhiteSpace(state.Kind) ||
-                ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) && (chicken.Bets.Count > 0 || chicken.PendingSettlement != null) ||
+                ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) &&
+                (chicken.Bets.Count > 0 ||
+                chicken.PendingSettlement != null) ||
                 WitherBattleStates.TryGetValue(runtime, out WitherBattleState? wither) && (wither.Bets.Count > 0 || wither.PendingSettlement != null))
+            {
                 return false;
+            }
 
             ResetStatesNoLock(runtime);
             state.Kind = kind.Trim();
@@ -58,7 +64,9 @@ public static partial class MinigameManager
     private static bool IsActive(MainHandler runtime, string kind, long runID)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(kind) || runID <= 0)
+        {
             return false;
+        }
 
         lock (MinigameGate)
         {
@@ -71,10 +79,14 @@ public static partial class MinigameManager
     private static bool IsGuessRoundActive(MainHandler runtime, long roundID)
     {
         if (runtime == null || roundID <= 0)
+        {
             return false;
+        }
 
         lock (MinigameGate)
+        {
             return IsGuessRoundActiveNoLock(runtime, GetGuessStateNoLock(runtime), roundID);
+        }
     }
 
     private static bool IsGuessRoundActiveNoLock(MainHandler runtime, GuessNumberState state, long roundID)
@@ -98,7 +110,9 @@ public static partial class MinigameManager
     private static void End(MainHandler runtime, string kind, long runID)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(kind) || runID <= 0)
+        {
             return;
+        }
 
         lock (MinigameGate)
         {
@@ -119,7 +133,9 @@ public static partial class MinigameManager
     private static async Task SafeReplyAsync(MainHandler runtime, string message, CancellationToken cancellationToken)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(message))
+        {
             return;
+        }
 
         try
         {
@@ -134,7 +150,9 @@ public static partial class MinigameManager
     private static async Task PlaySoundAsync(MainHandler runtime, string soundID, CancellationToken cancellationToken)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(soundID))
+        {
             return;
+        }
 
         string sound = soundID.Trim();
 
@@ -153,7 +171,9 @@ public static partial class MinigameManager
     private static async Task ShowSubtitleAsync(MainHandler runtime, string subtitleText, CancellationToken cancellationToken)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(subtitleText))
+        {
             return;
+        }
 
         try
         {
@@ -178,7 +198,11 @@ public static partial class MinigameManager
             List<KeyValuePair<string, int>>? pending;
             lock (MinigameGate)
             {
-                if (state.Bets.Count == 0 && state.PendingSettlement == null) return;
+                if (state.Bets.Count == 0 && state.PendingSettlement == null)
+                {
+                    return;
+                }
+
                 pending = state.PendingSettlement;
             }
             if (runtime.Tokens.TryCompleteMinigameBets(pending ?? [], refund: pending == null))
@@ -197,7 +221,11 @@ public static partial class MinigameManager
         ChickenRunState state;
         lock (MinigameGate)
         {
-            if (!ChickenRunStates.TryGetValue(runtime, out state!)) return;
+            if (!ChickenRunStates.TryGetValue(runtime, out state!))
+            {
+                return;
+            }
+
             state.BettingOpen = false;
         }
         RefundBets(runtime, state);
@@ -208,7 +236,11 @@ public static partial class MinigameManager
         WitherBattleState state;
         lock (MinigameGate)
         {
-            if (!WitherBattleStates.TryGetValue(runtime, out state!)) return;
+            if (!WitherBattleStates.TryGetValue(runtime, out state!))
+            {
+                return;
+            }
+
             state.BettingOpen = false;
             state.CurrentHealth = 0;
             state.DefeatedSignal?.TrySetResult();
@@ -217,7 +249,12 @@ public static partial class MinigameManager
         RefundBets(runtime, state);
     }
 
-    private static bool SettleBets<TBet>(MainHandler runtime, BettingState<TBet> state, string kind, long runID, List<KeyValuePair<string, int>> payouts) where TBet : IBet
+    private static bool SettleBets<TBet>(
+        MainHandler runtime,
+        BettingState<TBet> state,
+        string kind,
+        long runID,
+        List<KeyValuePair<string, int>> payouts) where TBet : IBet
     {
         lock (state.SettlementGate)
         {
@@ -226,10 +263,17 @@ public static partial class MinigameManager
                 if (state.Bets.Count == 0 ||
                     !ActiveMinigames.TryGetValue(runtime, out ActiveState? activeState) ||
                     !string.Equals(activeState.Kind, kind, StringComparison.Ordinal) || activeState.RunID != runID)
+                {
                     return false;
+                }
+
                 state.PendingSettlement = payouts;
             }
-            if (!runtime.Tokens.TryCompleteMinigameBets(payouts)) return false;
+            if (!runtime.Tokens.TryCompleteMinigameBets(payouts))
+            {
+                return false;
+            }
+
             lock (MinigameGate)
             {
                 state.Bets.Clear();
@@ -271,7 +315,9 @@ public static partial class MinigameManager
         };
 
         if (message == null)
+        {
             return false;
+        }
 
         await sayToChannel(sender + ", " + message, ct).ConfigureAwait(false);
         return true;

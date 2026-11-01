@@ -4,10 +4,12 @@ namespace TwitchCraft_V1;
 
 internal sealed class IRCMessage
 {
-    public int Bits { get; private set; }
+    public int Bits
+    { get; private set; }
     public string ID { get; private set; } = string.Empty;
 
-    public bool IsModerator { get; private set; }
+    public bool IsModerator
+    { get; private set; }
 
     public string Command { get; private set; } = string.Empty;
 
@@ -19,7 +21,9 @@ internal sealed class IRCMessage
     {
         Reset();
         if (string.IsNullOrEmpty(line) || char.IsWhiteSpace(line[0]))
+        {
             return false;
+        }
 
         int index = 0;
 
@@ -27,7 +31,9 @@ internal sealed class IRCMessage
         {
             int tagEnd = line.IndexOf(' ');
             if (tagEnd < 0)
+            {
                 return false;
+            }
 
             ParseTags(line, tagEnd, this);
             index = tagEnd + 1;
@@ -39,12 +45,16 @@ internal sealed class IRCMessage
         {
             int prefixEnd = line.IndexOf(' ', index);
             if (prefixEnd < 0)
+            {
                 return false;
+            }
 
             int prefixStart = index + 1;
             int senderEnd = line.IndexOf('!', prefixStart, prefixEnd - prefixStart);
             if (senderEnd < 0)
+            {
                 senderEnd = prefixEnd;
+            }
 
             senderStart = prefixStart;
             senderLength = senderEnd - prefixStart;
@@ -70,7 +80,9 @@ internal sealed class IRCMessage
         {
             int trailingStart = line.IndexOf(" :", index, StringComparison.Ordinal);
             if (trailingStart >= 0)
+            {
                 Trailing = line[(trailingStart + 2)..];
+            }
         }
 
         SenderLogin = ExtractSender(line, senderStart, senderLength);
@@ -80,7 +92,9 @@ internal sealed class IRCMessage
     internal static string StripIRCTags(string line)
     {
         if (line.Length == 0 || line[0] != '@')
+        {
             return line;
+        }
 
         int firstSpace = line.IndexOf(' ');
         return firstSpace > 0 && firstSpace + 1 < line.Length ? line[(firstSpace + 1)..] : line;
@@ -103,7 +117,9 @@ internal sealed class IRCMessage
         {
             int end = line.IndexOf(';', start, tagEnd - start);
             if (end < 0)
+            {
                 end = tagEnd;
+            }
 
             if (end > start)
             {
@@ -115,22 +131,30 @@ internal sealed class IRCMessage
                     int valueLength = end - valueStart;
 
                     if (keyLength == 2 && TagKeyEquals(line, start, "id"))
+                    {
                         message.ID = line.Substring(valueStart, valueLength);
+                    }
                     else if (keyLength == 4 && TagKeyEquals(line, start, "bits"))
                     {
                         int bits = ParsePositiveIntTag(line, valueStart, valueLength);
                         if (bits > 0)
+                        {
                             message.Bits = bits;
+                        }
                     }
                     else if (keyLength == 3 && TagKeyEquals(line, start, "mod"))
                     {
                         if (valueLength == 1 && line[valueStart] == '1')
+                        {
                             message.IsModerator = true;
+                        }
                     }
                     else if (keyLength == 6 && TagKeyEquals(line, start, "badges"))
                     {
                         if (valueLength > 0 && line.IndexOf("moderator/", valueStart, valueLength, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
                             message.IsModerator = true;
+                        }
                     }
                 }
             }
@@ -146,7 +170,9 @@ internal sealed class IRCMessage
             char actual = line[start + i];
             char wanted = expected[i];
             if (actual != wanted && CommandUserHelper.LowerFast(actual) != wanted)
+            {
                 return false;
+            }
         }
 
         return true;
@@ -159,11 +185,15 @@ internal sealed class IRCMessage
         {
             char c = line[start + i];
             if (!char.IsAsciiDigit(c))
+            {
                 return 0;
+            }
 
             int digit = c - '0';
             if (value > (int.MaxValue - digit) / 10)
+            {
                 return 0;
+            }
 
             value = (value * 10) + digit;
         }
@@ -174,13 +204,20 @@ internal sealed class IRCMessage
     private static string ExtractSender(string line, int start, int length)
     {
         if (start < 0 || length <= 0)
+        {
             return string.Empty;
+        }
 
         int end = start + length - 1;
         while (start <= end && char.IsWhiteSpace(line[start]))
+        {
             start++;
+        }
+
         while (end >= start && char.IsWhiteSpace(line[end]))
+        {
             end--;
+        }
 
         return start > end ? string.Empty : ParsedCommand.LowerSegment(line, start, end - start + 1);
     }

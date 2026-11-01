@@ -73,11 +73,17 @@ public partial class Settings : UserControl
     private static bool IsAsciiDigitsOnly(string? value)
     {
         if (string.IsNullOrEmpty(value))
+        {
             return false;
+        }
 
         for (int i = 0; i < value.Length; i++)
+        {
             if (!char.IsAsciiDigit(value[i]))
+            {
                 return false;
+            }
+        }
 
         return true;
     }
@@ -118,7 +124,9 @@ public partial class Settings : UserControl
             RCONTimeoutDropdown
         ];
         foreach (ComboBox dropdown in numericDropdowns)
+        {
             SetupNumericBox(dropdown);
+        }
 
         ShowPage(CommandsSettingsPage, CommandsCategoryButton, SettingsCategory.Commands);
         IsVisibleChanged += OnVisibilityChanged;
@@ -155,7 +163,9 @@ public partial class Settings : UserControl
         if (sender is not TextBox textBox ||
             args.DataObject.GetData(typeof(string)) is not string pastedText ||
             !IsValidRAMText(BuildTextCandidate(textBox, pastedText)))
+        {
             args.CancelCommand();
+        }
     }
 
     private static string BuildTextCandidate(TextBox textBox, string insertedText)
@@ -164,7 +174,11 @@ public partial class Settings : UserControl
         int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
         int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
         ArgumentNullException.ThrowIfNull(insertedText, "value");
-        if (length == 0 && insertedText.Length == 0) return current;
+        if (length == 0 && insertedText.Length == 0)
+        {
+            return current;
+        }
+
         ReadOnlySpan<char> textBeforeSelection = current.AsSpan(0, start);
         ReadOnlySpan<char> textAfterSelection = current.AsSpan(start + length);
         return string.Concat(textBeforeSelection, insertedText.AsSpan(), textAfterSelection);
@@ -183,17 +197,23 @@ public partial class Settings : UserControl
     private void NumericBox_GotFocus(object sender, KeyboardFocusChangedEventArgs args)
     {
         if (sender is not ComboBox dropdown)
+        {
             return;
+        }
 
         dropdown.ApplyTemplate();
         if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is TextBox editor)
+        {
             editor.SelectAll();
+        }
     }
 
     private void NumericBox_PreviewTextInput(object sender, TextCompositionEventArgs args)
     {
         if (sender is not ComboBox dropdown)
+        {
             return;
+        }
 
         string candidate = BuildNumberCandidate(dropdown, args.Text);
         args.Handled = !IsValidNumberText(candidate, GetNumberMode(dropdown));
@@ -202,7 +222,9 @@ public partial class Settings : UserControl
     private void NumericBox_Pasting(object sender, DataObjectPastingEventArgs args)
     {
         if (sender is not ComboBox dropdown)
+        {
             return;
+        }
 
         if (args.DataObject.GetData(typeof(string)) is not string pastedText ||
             !IsValidNumberText(
@@ -217,7 +239,9 @@ public partial class Settings : UserControl
     {
         dropdown.ApplyTemplate();
         if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is not TextBox editor)
+        {
             return (dropdown.Text ?? string.Empty) + insertedText;
+        }
 
         return BuildTextCandidate(editor, insertedText);
     }
@@ -238,14 +262,18 @@ public partial class Settings : UserControl
     private static bool IsValidNumberText(string text, NumericComboBoxInputMode mode)
     {
         if (text.Length == 0)
+        {
             return true;
+        }
 
         int index = 0;
         if (mode == NumericComboBoxInputMode.SignedInteger && text[0] == '-')
         {
             index = 1;
             if (text.Length == 1)
+            {
                 return true;
+            }
         }
 
         bool decimalPointSeen = false;
@@ -253,7 +281,9 @@ public partial class Settings : UserControl
         {
             char character = text[index];
             if (character >= '0' && character <= '9')
+            {
                 continue;
+            }
 
             if (mode == NumericComboBoxInputMode.Decimal && character == '.' && !decimalPointSeen)
             {
@@ -269,8 +299,14 @@ public partial class Settings : UserControl
 
     private void OnVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if ((bool)e.NewValue) ReloadSettings();
-        else HideSettings();
+        if ((bool)e.NewValue)
+        {
+            ReloadSettings();
+        }
+        else
+        {
+            HideSettings();
+        }
     }
 
     private void ReloadSettings()
@@ -284,7 +320,9 @@ public partial class Settings : UserControl
             ResetAuthButton();
 
             if (AppHelpers.GetTwitchCraftWindow(this) is null)
+            {
                 return;
+            }
 
             _initializing = true;
             LoadSettings(config.Settings, config.Server);
@@ -322,11 +360,14 @@ public partial class Settings : UserControl
     {
         AuthorizeTwitchButton.IsEnabled = true;
         AuthorizeTwitchButton.ToolTip = null;
-        AuthorizeTwitchButton.Content = _tokenAuthorizationCts != null
-            ? "Cancel Authorization"
-            : _hasSavedTwitchAuthorization
-                ? "Reauthorize Twitch"
-                : "Authorize Twitch";
+        if (_tokenAuthorizationCts != null)
+        {
+            AuthorizeTwitchButton.Content = "Cancel Authorization";
+        }
+        else
+        {
+            AuthorizeTwitchButton.Content = _hasSavedTwitchAuthorization ? "Reauthorize Twitch" : "Authorize Twitch";
+        }
     }
 
     private static bool HasTwitchAuth(TwitchCraftConfig config)
@@ -364,15 +405,24 @@ public partial class Settings : UserControl
     {
         _currentCategory = category;
         foreach (var (categoryPage, _) in _categoryControls)
+        {
             categoryPage.Visibility = Visibility.Collapsed;
+        }
+
         page.Visibility = Visibility.Visible;
 
         foreach (var (_, categoryButton) in _categoryControls)
+        {
             categoryButton.FontWeight = FontWeights.Normal;
+        }
+
         selectedButton.FontWeight = FontWeights.Bold;
 
         foreach (var (_, categoryButton) in _categoryControls)
+        {
             categoryButton.Opacity = 0.78;
+        }
+
         selectedButton.Opacity = 1;
     }
 
@@ -467,7 +517,10 @@ public partial class Settings : UserControl
         {
             TwitchOAuthResult result = await TwitchOAuthAuthorizer.AuthorizeAsync(TwitchOAuthAuthorizer.ApplicationClientID, authorizationCts.Token);
             if (!ReferenceEquals(_tokenAuthorizationCts, authorizationCts))
+            {
                 return;
+            }
+
             if (!result.IsSuccess)
             {
                 ErrorHandling.ShowAuthError(this, result.Error);
@@ -486,7 +539,9 @@ public partial class Settings : UserControl
             AuthorizeTwitchButton.Content = "Applying Twitch...";
             AuthorizeTwitchButton.ToolTip = "Twitch authorization is being applied.";
             if (AppHelpers.GetTwitchCraftWindow(this) is TwitchCraft parent)
+            {
                 await parent.Runtime.ApplySettingsAsync(updated);
+            }
 
             ErrorHandling.ShowAuthSuccess(this, result.Login, savedToConfig: true);
         }
@@ -563,13 +618,17 @@ public partial class Settings : UserControl
     private async void Verbosity_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && ResponseVerbosityDropdown.SelectedItem is string verbosity)
+        {
             await SaveConfigAsync(config => config.Settings.BotResponseVerbosity = verbosity);
+        }
     }
 
     private async void CostMultiplier_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && CommandCostMultiplierDropdown.SelectedItem is string)
+        {
             await SaveCostMultiplierAsync();
+        }
     }
 
     private async void CostMultiplier_LostFocus(object sender, RoutedEventArgs e)
@@ -578,7 +637,9 @@ public partial class Settings : UserControl
     private async Task SaveCostMultiplierAsync()
     {
         if (_initializing || _updatingCustomValueControls)
+        {
             return;
+        }
 
         if (!TryReadDouble(CommandCostMultiplierDropdown, CommandCostMultiplierOptions, 0.0, 5.0, out double multiplier))
         {
@@ -602,7 +663,9 @@ public partial class Settings : UserControl
     private async void FollowReward_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && FollowRewardAmountDropdown.SelectedItem is string)
+        {
             await SaveFollowRewardAsync();
+        }
     }
 
     private async void FollowReward_LostFocus(object sender, RoutedEventArgs e)
@@ -611,7 +674,9 @@ public partial class Settings : UserControl
     private async Task SaveFollowRewardAsync()
     {
         if (_initializing || _updatingCustomValueControls)
+        {
             return;
+        }
 
         if (!TryReadInt(FollowRewardAmountDropdown, 1, 1_000_000, out int amount))
         {
@@ -642,17 +707,23 @@ public partial class Settings : UserControl
     {
         bool enabled = GlobalCooldownCheckbox.IsChecked == true;
         if (enabled && !TryReadDouble(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, 0.1, 120.0, out _))
+        {
             SetGlobalCooldown(DefaultGlobalCooldownSeconds);
+        }
 
         UpdateGlobalCooldown(enabled);
         if (!_initializing)
+        {
             await SaveConfigAsync(config => config.Settings.GlobalGameCommandCooldownEnabled = enabled);
+        }
     }
 
     private async void CooldownTime_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && GlobalCooldownSecondsDropdown.SelectedItem is string)
+        {
             await SaveGlobalCooldownAsync();
+        }
     }
 
     private async void CooldownTime_LostFocus(object sender, RoutedEventArgs e)
@@ -661,7 +732,9 @@ public partial class Settings : UserControl
     private async Task SaveGlobalCooldownAsync()
     {
         if (_initializing || _updatingCustomValueControls)
+        {
             return;
+        }
 
         if (!TryReadDouble(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, 0.1, 120.0, out double seconds))
         {
@@ -681,7 +754,9 @@ public partial class Settings : UserControl
     private async void ResetStats_Click(object sender, RoutedEventArgs e)
     {
         if (!ErrorHandling.ConfirmStatsReset(this) || AppHelpers.GetTwitchCraftWindow(this) is not TwitchCraft parent)
+        {
             return;
+        }
 
         Button? button = sender as Button;
         if (button != null)
@@ -741,7 +816,9 @@ public partial class Settings : UserControl
     private static void ApplyLocalProfile(TwitchCraftConfig config)
     {
         if (!config.Settings.RemoteControlEnabled)
+        {
             ServerPropertyEditor.ApplyProfile(config);
+        }
     }
 
     private string GetRCONPassword() => RCONPasswordTextBox.Visibility == Visibility.Visible
@@ -752,9 +829,15 @@ public partial class Settings : UserControl
     {
         try
         {
-            if (GetRCONPassword() is { Length: > 0 } password) Clipboard.SetText(password);
+            if (GetRCONPassword() is { Length: > 0 } password)
+            {
+                Clipboard.SetText(password);
+            }
         }
-        catch (Exception ex) { ErrorHandling.LogNonFatal("RCON password copy failed", ex); }
+        catch (Exception ex)
+        {
+            ErrorHandling.LogNonFatal("RCON password copy failed", ex);
+        }
     }
 
     private void GenerateRCONPassword_Click(object sender, RoutedEventArgs e)
@@ -798,7 +881,9 @@ public partial class Settings : UserControl
     private async void RCONPasswordEditor_FocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (_initializing || RCONPasswordEditor.IsKeyboardFocusWithin)
+        {
             return;
+        }
 
         string currentPassword = GetRCONPassword();
         if (!ConfigurationStore.TryNormalizeRCONPassword(currentPassword, out string password))
@@ -806,8 +891,14 @@ public partial class Settings : UserControl
             if (!string.Equals(currentPassword, _savedRCONPassword, StringComparison.Ordinal))
             {
                 ErrorHandling.ShowInvalidRCONPassword(this);
-                if (RCONPasswordTextBox.Visibility == Visibility.Visible) RCONPasswordTextBox.Text = _savedRCONPassword;
-                else RCONPasswordBox.Password = _savedRCONPassword;
+                if (RCONPasswordTextBox.Visibility == Visibility.Visible)
+                {
+                    RCONPasswordTextBox.Text = _savedRCONPassword;
+                }
+                else
+                {
+                    RCONPasswordBox.Password = _savedRCONPassword;
+                }
             }
             return;
         }
@@ -816,8 +907,14 @@ public partial class Settings : UserControl
         {
             if (!string.Equals(currentPassword, password, StringComparison.Ordinal))
             {
-                if (RCONPasswordTextBox.Visibility == Visibility.Visible) RCONPasswordTextBox.Text = password;
-                else RCONPasswordBox.Password = password;
+                if (RCONPasswordTextBox.Visibility == Visibility.Visible)
+                {
+                    RCONPasswordTextBox.Text = password;
+                }
+                else
+                {
+                    RCONPasswordBox.Password = password;
+                }
             }
             return;
         }
@@ -826,15 +923,27 @@ public partial class Settings : UserControl
         try
         {
             if (string.Equals(password, _savedRCONPassword, StringComparison.Ordinal))
+            {
                 return;
+            }
 
             await Task.Run(() => ConfigurationStore.Update(config => config.Server.RCON.Password = password));
             _savedRCONPassword = password;
-            if (RCONPasswordTextBox.Visibility == Visibility.Visible) RCONPasswordTextBox.Text = password;
-            else RCONPasswordBox.Password = password;
+            if (RCONPasswordTextBox.Visibility == Visibility.Visible)
+            {
+                RCONPasswordTextBox.Text = password;
+            }
+            else
+            {
+                RCONPasswordBox.Password = password;
+            }
+
             AppHelpers.GetTwitchCraftWindow(this)?.Runtime.StageLocalRCONPassword(password);
         }
-        catch (Exception ex) { ErrorHandling.ShowSaveSettingsError(this, ex); }
+        catch (Exception ex)
+        {
+            ErrorHandling.ShowSaveSettingsError(this, ex);
+        }
         finally
         {
             _settingsSaveGate.Release();

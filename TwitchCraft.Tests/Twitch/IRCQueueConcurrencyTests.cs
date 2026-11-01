@@ -48,10 +48,14 @@ public sealed class IRCQueueConcurrencyTests
             finally
             {
                 lock (stateGate)
+                {
                     activeWorkers--;
+                }
 
                 if (Interlocked.Increment(ref completed) == capacity)
+                {
                     allCompleted.TrySetResult(true);
+                }
             }
         };
 
@@ -60,7 +64,10 @@ public sealed class IRCQueueConcurrencyTests
             Assert.True(runtime.QueueCommand(CreateWork(1), "!one", cancellationToken));
             await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
             for (int item = 2; item <= capacity; item++)
+            {
                 Assert.True(runtime.QueueCommand(CreateWork(item), "!queued", cancellationToken));
+            }
+
             Assert.False(runtime.QueueCommand(CreateWork(capacity + 1), "!overflow", cancellationToken));
 
             releaseFirst.TrySetResult(true);
@@ -146,7 +153,9 @@ public sealed class IRCQueueConcurrencyTests
                 async token =>
                 {
                     lock (orderGate)
+                    {
                         order.Add("old-start");
+                    }
 
                     oldWorkStarted.TrySetResult(true);
                     try
@@ -156,7 +165,9 @@ public sealed class IRCQueueConcurrencyTests
                     finally
                     {
                         lock (orderGate)
+                        {
                             order.Add("old-end");
+                        }
 
                         oldWorkCompleted.TrySetResult(true);
                     }
@@ -180,10 +191,14 @@ public sealed class IRCQueueConcurrencyTests
                 _ =>
                 {
                     lock (orderGate)
+                    {
                         order.Add("new-start");
+                    }
 
                     lock (orderGate)
+                    {
                         order.Add("new-end");
+                    }
 
                     newWorkCompleted.TrySetResult(true);
                     return Task.CompletedTask;

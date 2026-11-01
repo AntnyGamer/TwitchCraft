@@ -67,7 +67,12 @@ public sealed class CategorizedSettingsPersistenceTests
             AutomaticBackupRetentionCount = 5,
             CommandCustomizations = new(StringComparer.OrdinalIgnoreCase)
             {
-                ["heal"] = new() { Enabled = false, CooldownSeconds = 12, GlobalCooldownSeconds = 2.5 }
+                ["heal"] = new()
+                {
+                    Enabled = false,
+                    CooldownSeconds = 12,
+                    GlobalCooldownSeconds = 2.5
+                }
             }
         };
 
@@ -140,8 +145,14 @@ public sealed class CategorizedSettingsPersistenceTests
         {
             CommandCustomizations = new(StringComparer.OrdinalIgnoreCase)
             {
-                ["Zulu"] = new() { Enabled = false },
-                ["alpha"] = new() { CooldownSeconds = 4 }
+                ["Zulu"] = new()
+                {
+                    Enabled = false
+                },
+                ["alpha"] = new()
+                {
+                    CooldownSeconds = 4
+                }
             }
         };
 

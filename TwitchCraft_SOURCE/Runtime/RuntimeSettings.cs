@@ -15,10 +15,22 @@ public sealed partial class MainHandler
     public bool TwitchChatConnected => _twitchSession.ChatConnected;
     public bool LowResourceModeEnabled => CurrentSettings.LowResourceModeEnabled;
     public bool PauseUIUpdatesWhenMinimized => CurrentSettings.PauseUIUpdatesWhenMinimized || CurrentSettings.LowResourceModeEnabled;
-    public int MaxVisibleTwitchLogLines => CurrentSettings.LowResourceModeEnabled ? Math.Min(100, CurrentSettings.MaxVisibleTwitchLogLines) : CurrentSettings.MaxVisibleTwitchLogLines;
-    public int MaxVisibleMinecraftLogLines => CurrentSettings.LowResourceModeEnabled ? Math.Min(100, CurrentSettings.MaxVisibleMinecraftLogLines) : CurrentSettings.MaxVisibleMinecraftLogLines;
-    internal int ViewerRosterRefreshIntervalSeconds => CurrentSettings.LowResourceModeEnabled ? Math.Max(60, CurrentSettings.ViewerRosterRefreshIntervalSeconds) : CurrentSettings.ViewerRosterRefreshIntervalSeconds;
-    internal int MaxGameplayCommandQueue => CurrentSettings.LowResourceModeEnabled ? Math.Min(35, CurrentSettings.MaxGameplayCommandQueue) : CurrentSettings.MaxGameplayCommandQueue;
+    public int MaxVisibleTwitchLogLines => CurrentSettings.LowResourceModeEnabled
+        ? Math.Min(100, CurrentSettings.MaxVisibleTwitchLogLines)
+        : CurrentSettings.MaxVisibleTwitchLogLines;
+
+    public int MaxVisibleMinecraftLogLines => CurrentSettings.LowResourceModeEnabled
+        ? Math.Min(100, CurrentSettings.MaxVisibleMinecraftLogLines)
+        : CurrentSettings.MaxVisibleMinecraftLogLines;
+
+    internal int ViewerRosterRefreshIntervalSeconds => CurrentSettings.LowResourceModeEnabled
+        ? Math.Max(60, CurrentSettings.ViewerRosterRefreshIntervalSeconds)
+        : CurrentSettings.ViewerRosterRefreshIntervalSeconds;
+
+    internal int MaxGameplayCommandQueue => CurrentSettings.LowResourceModeEnabled
+        ? Math.Min(35, CurrentSettings.MaxGameplayCommandQueue)
+        : CurrentSettings.MaxGameplayCommandQueue;
+
     internal TimeSpan RCONTimeout => TimeSpan.FromSeconds(CurrentSettings.RCONTimeoutSeconds);
     internal TimeSpan GracefulShutdownTimeout => TimeSpan.FromSeconds(CurrentSettings.GracefulShutdownTimeoutSeconds);
     internal IReadOnlyList<string> RegisteredCommandNames => _commandRegistry.CommandNames;
@@ -32,7 +44,9 @@ public sealed partial class MainHandler
     internal static string FormatReply(string message, string sender, bool mentionViewer)
     {
         if (!mentionViewer || sender.Length == 0 || string.IsNullOrWhiteSpace(message))
+        {
             return message;
+        }
 
         if (message[0] == '@' &&
             StartsWithReplyUsername(message, sender, startIndex: 1))
@@ -64,7 +78,9 @@ public sealed partial class MainHandler
     internal static string ApplyPrefix(string message, string prefix)
     {
         if (prefix == "!" || string.IsNullOrEmpty(message))
+        {
             return message;
+        }
 
         StringBuilder? builder = null;
         int copyStart = 0;
@@ -87,7 +103,9 @@ public sealed partial class MainHandler
     internal string FormatCooldown(TimeSpan remaining)
     {
         if (!CurrentSettings.ShowExactCooldownRemaining)
+        {
             return "a moment";
+        }
 
         int seconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds));
         int minutes = seconds / 60;
@@ -110,22 +128,30 @@ public sealed partial class MainHandler
     internal void RecordChatActivity(string sender, long? unixSeconds = null)
     {
         if (!CurrentSettings.PassiveRewardsRequireActivity)
+        {
             return;
+        }
 
         string normalizedSender = NormalizeUser(sender);
         if (normalizedSender.Length == 0)
+        {
             return;
+        }
 
         long timestamp = unixSeconds ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         lock (_viewerGate)
+        {
             _viewerLastChatActivity[normalizedSender] = timestamp;
+        }
     }
 
     internal bool IsRewardEligibleNoLock(string viewer, long nowUnixSeconds)
     {
         StartingProfile settings = CurrentSettings;
         if (!settings.PassiveRewardsRequireActivity)
+        {
             return true;
+        }
 
         return _viewerLastChatActivity.TryGetValue(viewer, out long lastActive) &&
             nowUnixSeconds - lastActive <= settings.PassiveActivityWindowMinutes * 60L;

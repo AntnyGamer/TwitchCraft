@@ -146,7 +146,10 @@ public sealed class TimedScaleLifecycleTests
             ],
             sentCommands);
         while (delays.Reader.TryRead(out TaskCompletionSource? delay))
+        {
             delay.SetResult();
+        }
+
         await Task.WhenAll(trackedTasks).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         Assert.Equal(2, sentCommands.Count);
     }
@@ -168,7 +171,9 @@ public sealed class TimedScaleLifecycleTests
             },
             _ => true,
             trackedTasks.Add,
-            _ => { },
+            _ =>
+            {
+            },
             (_, cancellationToken) =>
             {
                 TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);

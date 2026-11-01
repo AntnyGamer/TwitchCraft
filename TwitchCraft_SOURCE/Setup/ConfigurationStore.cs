@@ -58,7 +58,9 @@ public sealed partial class ConfigurationStore
     public static bool HasConfig()
     {
         if (File.Exists(ConfigPath))
+        {
             return true;
+        }
 
         lock (IOGate)
         {
@@ -87,7 +89,9 @@ public sealed partial class ConfigurationStore
             bool hasTemp = File.Exists(tempPath);
 
             if (!hasConfig && !hasTemp)
+            {
                 return new TwitchCraftConfig();
+            }
 
             if (TryLoadConfig(ConfigPath, out TwitchCraftConfig loaded))
             {
@@ -133,8 +137,13 @@ public sealed partial class ConfigurationStore
     {
         Dictionary<string, CommandCustomization> result = new(source?.Count ?? 0, StringComparer.OrdinalIgnoreCase);
         if (source != null)
+        {
             foreach ((string name, CommandCustomization value) in source)
+            {
                 result[name] = value.ShallowCopy();
+            }
+        }
+
         return result;
     }
 
@@ -147,7 +156,11 @@ public sealed partial class ConfigurationStore
 
         lock (IOGate)
         {
-            if (_writesDisabled) throw new OperationCanceledException("Configuration reset is in progress.");
+            if (_writesDisabled)
+            {
+                throw new OperationCanceledException("Configuration reset is in progress.");
+            }
+
             SaveNoLock(config);
         }
     }
@@ -159,14 +172,20 @@ public sealed partial class ConfigurationStore
 
         lock (IOGate)
         {
-            if (_writesDisabled) throw new OperationCanceledException("Configuration reset is in progress.");
+            if (_writesDisabled)
+            {
+                throw new OperationCanceledException("Configuration reset is in progress.");
+            }
+
             string tempPath = ConfigTempPathValue;
             bool hasConfig = File.Exists(ConfigPath);
             bool hasTemp = File.Exists(tempPath);
             if (!TryLoadConfig(ConfigPath, out TwitchCraftConfig config) && !TryLoadConfig(tempPath, out config))
             {
                 if (hasConfig || hasTemp)
+                {
                     throw new InvalidDataException("config.json could not be read. Restore an automatic backup or run setup again.");
+                }
 
                 config = new TwitchCraftConfig();
             }
@@ -218,14 +237,19 @@ public sealed partial class ConfigurationStore
     {
         config = null!;
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
             return false;
+        }
 
         try
         {
             string text = File.ReadAllText(path, Encoding.UTF8);
             TwitchCraftConfig? loaded = JsonConvert.DeserializeObject<TwitchCraftConfig>(text, JsonSettings);
             if (loaded == null)
+            {
                 return false;
+            }
+
             config = loaded;
             return true;
         }
@@ -256,7 +280,10 @@ public sealed partial class ConfigurationStore
             lock (IOGate)
             {
                 if (!File.Exists(ConfigPath))
+                {
                     return false;
+                }
+
                 FileSystemHelper.EnsureParentDir(destinationPath);
                 File.Copy(ConfigPath, destinationPath, overwrite: true);
                 return true;

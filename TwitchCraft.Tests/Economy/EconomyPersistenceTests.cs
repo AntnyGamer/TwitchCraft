@@ -48,7 +48,7 @@ public sealed class EconomyPersistenceTests
             Assert.Equal(0, store.GetBalance("solo"));
             // Fail after an earlier balance was deleted inside the batch transaction.
             Assert.False(store.AdjustBalances([
-                new("viewer", -6), new("bob", 4), new("after", 5)]));
+                        new("viewer", -6), new("bob", 4), new("after", 5)]));
             Assert.Equal(6, store.GetBalance("viewer"));
             Assert.Equal(0, store.GetBalance("bob"));
             Assert.Equal(0, store.GetBalance("after"));
@@ -113,7 +113,10 @@ public sealed class EconomyPersistenceTests
             Assert.Equal(15, tokens.GetBalance("alice"));
             Assert.Equal(15, tokens.GetBalance("bob"));
         }
-        finally { tokens.Close(); }
+        finally
+        {
+            tokens.Close();
+        }
     }
 
     [Theory]

@@ -33,7 +33,9 @@ internal static class DatapackInstaller
     {
         ArgumentNullException.ThrowIfNull(reportWarning);
         if (string.IsNullOrWhiteSpace(serverDirectory))
+        {
             return true;
+        }
 
         string destinationDirectory = Path.Combine(ServerPropertyEditor.GetWorldDirectory(serverDirectory, levelName), "datapacks", DatapackName);
         try
@@ -56,12 +58,16 @@ internal static class DatapackInstaller
         foreach (string resourceName in typeof(DatapackInstaller).Assembly.GetManifestResourceNames())
         {
             if (!resourceName.StartsWith(EmbeddedDatapackPrefix, StringComparison.Ordinal))
+            {
                 continue;
+            }
 
             foundResource = true;
             string relativePath = resourceName[EmbeddedDatapackPrefix.Length..].Replace('\\', '/');
             if (functionDirectoryName == "function")
+            {
                 relativePath = relativePath.Replace("/functions/", "/function/", StringComparison.Ordinal);
+            }
 
             string destinationPath = Path.Combine(destinationDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
@@ -72,9 +78,14 @@ internal static class DatapackInstaller
         }
 
         if (!foundResource)
+        {
             throw new InvalidDataException("Embedded locateplayers datapack resources are missing.");
+        }
+
         if (rewriteCommands)
+        {
             RewriteCommands(destinationDirectory);
+        }
     }
 
     private static (string FunctionDirectoryName, bool RewriteCommands) PrepareDestination(string destinationDirectory, string minecraftVersion)
@@ -112,21 +123,12 @@ internal static class DatapackInstaller
         if (version.UsesModernPackMetadata)
         {
             string exact = version.GetPackFormatJson();
-            return "{\n"
-                 + "  \"pack\": {\n"
-                 + "    \"min_format\": " + exact + ",\n"
-                 + "    \"max_format\": " + exact + ",\n"
-                 + "    \"description\": \"" + DatapackDescription + "\"\n"
-                 + "  }\n"
-                 + "}";
+            return "{\n" + "  \"pack\": {\n" + "    \"min_format\": " + exact + ",\n" + "    \"max_format\": " + exact +
+                ",\n" + "    \"description\": \"" + DatapackDescription + "\"\n" + "  }\n" + "}";
         }
 
-        return "{\n"
-             + "  \"pack\": {\n"
-             + "    \"pack_format\": " + version.DataPackFormatMajor + ",\n"
-             + "    \"description\": \"" + DatapackDescription + "\"\n"
-             + "  }\n"
-             + "}";
+        return "{\n" + "  \"pack\": {\n" + "    \"pack_format\": " + version.DataPackFormatMajor + ",\n" +
+            "    \"description\": \"" + DatapackDescription + "\"\n" + "  }\n" + "}";
     }
 
     private static void RewriteCommands(string destinationDirectory)
@@ -137,7 +139,9 @@ internal static class DatapackInstaller
             bool isRunFile = string.Equals(fileName, "run.mcfunction", StringComparison.OrdinalIgnoreCase);
             bool isPrintFile = string.Equals(fileName, "print_one.mcfunction", StringComparison.OrdinalIgnoreCase);
             if (!isRunFile && !isPrintFile)
+            {
                 continue;
+            }
 
             string content = File.ReadAllText(filePath, Encoding.UTF8);
             string rewritten = isRunFile
@@ -145,14 +149,18 @@ internal static class DatapackInstaller
                 : content.Replace(LegacyPrintTellraw, InlinePrintTellraw, StringComparison.Ordinal);
 
             if (!string.Equals(content, rewritten, StringComparison.Ordinal))
+            {
                 File.WriteAllText(filePath, rewritten, UTF8NoBOM);
+            }
         }
     }
 
     private static void ResetDirectory(string path)
     {
         if (!Directory.Exists(path))
+        {
             return;
+        }
 
         try
         {
@@ -180,7 +188,9 @@ internal static class DatapackInstaller
     {
         FileAttributes attributes = item.Attributes;
         if ((attributes & FileAttributes.ReadOnly) == 0)
+        {
             return;
+        }
 
         item.Attributes = attributes & ~FileAttributes.ReadOnly;
     }

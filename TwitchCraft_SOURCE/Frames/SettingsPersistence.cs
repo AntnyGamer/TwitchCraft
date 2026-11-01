@@ -11,7 +11,9 @@ public partial class Settings
     {
         SettingsCategory category = _currentCategory;
         if (!ErrorHandling.ConfirmResetCategory(this, GetCategoryName(category)))
+        {
             return;
+        }
 
         StartingProfile defaults = new();
         ServerConfig defaultServer = new();
@@ -152,7 +154,9 @@ public partial class Settings
         try
         {
             if (AppHelpers.GetTwitchCraftWindow(this) is null || !ErrorHandling.ConfirmResetDefaults(this))
+            {
                 return;
+            }
 
             CancelRAMSave();
         }
@@ -181,7 +185,10 @@ public partial class Settings
             ? Task.CompletedTask
             : SaveConfigAsync(config => update(config, enabled), refreshMinigameLoops: refreshMinigameLoops);
 
-    private async Task SaveConfigAsync(Action<TwitchCraftConfig> update, Action<TwitchCraftConfig>? beforeSave = null, bool refreshMinigameLoops = false)
+    private async Task SaveConfigAsync(
+        Action<TwitchCraftConfig> update,
+        Action<TwitchCraftConfig>? beforeSave = null,
+        bool refreshMinigameLoops = false)
     {
         await _settingsSaveGate.WaitAsync();
         try

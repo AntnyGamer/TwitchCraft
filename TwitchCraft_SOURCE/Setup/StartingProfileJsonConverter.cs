@@ -6,7 +6,9 @@ using Newtonsoft.Json.Linq;
 
 namespace TwitchCraft_V1.Setup;
 
+/// <summary>
 /// Groups config.json settings to match the Settings UI.
+/// </summary>
 internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfile>
 {
     internal static readonly (string Category, string[] Properties)[] CategoryOrder =
@@ -123,7 +125,9 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
         JsonSerializer serializer)
     {
         if (reader.TokenType == JsonToken.Null)
+        {
             return existingValue ?? new StartingProfile();
+        }
 
         JObject root = JObject.Load(reader);
         JObject flattened = [];
@@ -131,13 +135,17 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
         foreach ((string categoryName, string[] propertyNames) in CategoryOrder)
         {
             if (root.GetValue(categoryName, StringComparison.OrdinalIgnoreCase) is not JObject category)
+            {
                 continue;
+            }
 
             foreach (string propertyName in propertyNames)
             {
                 JToken? token = category.GetValue(propertyName, StringComparison.OrdinalIgnoreCase);
                 if (token != null)
+                {
                     flattened[propertyName] = token.DeepClone();
+                }
             }
         }
 
@@ -150,7 +158,9 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
     private static JToken CreatePropertyToken(string propertyName, object? propertyValue, JsonSerializer serializer)
     {
         if (propertyValue == null)
+        {
             return JValue.CreateNull();
+        }
 
         if (propertyName == nameof(StartingProfile.CommandCustomizations) &&
             propertyValue is Dictionary<string, CommandCustomization> customizations)
@@ -159,7 +169,10 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
             string[] names = [.. customizations.Keys];
             Array.Sort(names, StringComparer.OrdinalIgnoreCase);
             foreach (string name in names)
+            {
                 ordered.Add(name, JToken.FromObject(customizations[name], serializer));
+            }
+
             return ordered;
         }
 
@@ -172,7 +185,9 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
         foreach (PropertyInfo property in typeof(StartingProfile).GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
             if (property.CanRead && property.CanWrite)
+            {
                 properties[property.Name] = property;
+            }
         }
 
         return properties;

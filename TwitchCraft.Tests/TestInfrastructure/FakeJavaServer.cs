@@ -67,13 +67,24 @@ internal static class FakeJavaServer
     {
         File.WriteAllText(jarPath + ".players", string.Join(",", players));
         if (spectators is { Count: > 0 })
+        {
             File.WriteAllText(jarPath + ".spectators", string.Join(",", spectators));
+        }
+
         if (maxHealth != 20)
+        {
             File.WriteAllText(jarPath + ".health", maxHealth.ToString(CultureInfo.InvariantCulture));
+        }
+
         if (selectedItem != null)
+        {
             File.WriteAllText(jarPath + ".item", selectedItem);
+        }
+
         if (attributes != null)
+        {
             File.WriteAllText(jarPath + ".attributes", attributes);
+        }
     }
 
     internal static string GetExecutable() => Executable.Value;
@@ -82,7 +93,9 @@ internal static class FakeJavaServer
     {
         DirectoryInfo? root = new(AppContext.BaseDirectory);
         while (root != null && !File.Exists(Path.Combine(root.FullName, "TwitchCraft.slnx")))
+        {
             root = root.Parent;
+        }
 
         Assert.NotNull(root);
         string configuration = AppContext.BaseDirectory.Contains(
@@ -145,7 +158,9 @@ internal static class FakeJavaServer
         try
         {
             while (!condition())
+            {
                 await Task.Delay(20, timeout.Token);
+            }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -166,7 +181,9 @@ internal static class FakeJavaServer
 
         string processIDPath = jarPath + ".pid";
         if (!File.Exists(processIDPath))
+        {
             return;
+        }
 
         int processID = int.Parse(
             await File.ReadAllTextAsync(processIDPath),
@@ -175,11 +192,15 @@ internal static class FakeJavaServer
         {
             using Process process = Process.GetProcessById(processID);
             if (process.HasExited)
+            {
                 return;
+            }
 
             string? executablePath = process.MainModule?.FileName;
             if (!string.Equals(executablePath, GetExecutable(), StringComparison.OrdinalIgnoreCase))
+            {
                 return;
+            }
 
             process.Kill(entireProcessTree: true);
 
@@ -195,20 +216,29 @@ internal static class FakeJavaServer
     internal static bool AnyLineShared(string path, Func<string, bool> matches)
     {
         if (!File.Exists(path))
+        {
             return false;
+        }
 
         using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         using StreamReader reader = new(stream);
         while (reader.ReadLine() is string line)
+        {
             if (matches(line))
+            {
                 return true;
+            }
+        }
+
         return false;
     }
 
     internal static List<string> ReadAllLinesShared(string path)
     {
         if (!File.Exists(path))
+        {
             return [];
+        }
 
         using FileStream stream = new(
             path,
@@ -218,7 +248,10 @@ internal static class FakeJavaServer
         using StreamReader reader = new(stream);
         List<string> lines = [];
         while (reader.ReadLine() is string line)
+        {
             lines.Add(line);
+        }
+
         return lines;
     }
 }

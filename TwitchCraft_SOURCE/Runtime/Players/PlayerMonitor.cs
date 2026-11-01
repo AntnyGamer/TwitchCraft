@@ -121,7 +121,9 @@ public sealed partial class MainHandler
             catch (Exception ex)
             {
                 if (!string.IsNullOrWhiteSpace(errorContext))
+                {
                     ErrorHandling.LogNonFatal(errorContext, ex);
+                }
             }
             finally
             {
@@ -133,8 +135,16 @@ public sealed partial class MainHandler
     private static bool TryQueueCoalesced(ref int queued)
     {
         int previous = Interlocked.CompareExchange(ref queued, 1, 0);
-        if (previous == 0) return true;
-        if (Interlocked.Exchange(ref queued, 2) != 0) return false;
+        if (previous == 0)
+        {
+            return true;
+        }
+
+        if (Interlocked.Exchange(ref queued, 2) != 0)
+        {
+            return false;
+        }
+
         Interlocked.Exchange(ref queued, 1);
         return true;
     }
@@ -164,13 +174,19 @@ public sealed partial class MainHandler
                 catch (Exception ex)
                 {
                     if (onError != null)
+                    {
                         onError(ex);
+                    }
                     else if (!string.IsNullOrWhiteSpace(errorContext))
+                    {
                         ErrorHandling.LogNonFatal(errorContext, ex);
+                    }
                 }
 
                 if (clearIfNoRerunRequested())
+                {
                     break;
+                }
 
                 markRunning();
             }
@@ -182,7 +198,10 @@ public sealed partial class MainHandler
 
     private bool IsKnownPlayer(string playerName)
     {
-        lock (_playerGate) return HasPlayer(_knownPlayers, playerName);
+        lock (_playerGate)
+        {
+            return HasPlayer(_knownPlayers, playerName);
+        }
     }
 
     internal bool HasOnlinePlayerSnapshot => Volatile.Read(ref _lastOnlinePlayersSnapshotTicks) != 0;
@@ -196,18 +215,27 @@ public sealed partial class MainHandler
         if (_minecraftSession.ServerReady && snapshotAge >= OnlinePlayersRefreshInterval.Ticks &&
             !await RefreshSnapshotAsync(cancellationToken).ConfigureAwait(false) &&
             DateTime.UtcNow.Ticks - snapshotTicks >= OnlinePlayersRefreshInterval.Ticks * 2)
+        {
             return [];
+        }
 
-        lock (_playerGate) return _knownPlayers;
+        lock (_playerGate)
+        {
+            return _knownPlayers;
+        }
     }
 
     private void QueueSnapshot()
     {
         if (!TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+        {
             return;
+        }
 
         if (!TryQueueCoalesced(ref _onlinePlayerSnapshotQueued))
+        {
             return;
+        }
 
         RunCoalescedWork(
             RefreshSnapshotAsync,
@@ -223,8 +251,10 @@ public sealed partial class MainHandler
         cancellationToken.ThrowIfCancellationRequested();
 
         if (CurrentSettings.RemoteControlEnabled)
+        {
             return await TryRefreshRCONAsync(cancellationToken).ConfigureAwait(false) ||
                 await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         return await TryRefreshQueryAsync(cancellationToken).ConfigureAwait(false) ||
             await RefreshListAsync(cancellationToken).ConfigureAwait(false);
@@ -234,7 +264,9 @@ public sealed partial class MainHandler
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config?.Server == null)
+        {
             return false;
+        }
 
         try
         {
@@ -255,7 +287,10 @@ public sealed partial class MainHandler
 
             _minecraftSession.RCONHealthy = true;
             if (!TryParseList(response, out List<string> players))
+            {
                 return false;
+            }
+
             ApplySnapshot(players);
             CompleteSnapshot(true);
             return true;
@@ -296,7 +331,9 @@ public sealed partial class MainHandler
         void ReleaseLine()
         {
             if (Interlocked.Exchange(ref suppressedLineReleasePending, 0) != 0)
+            {
                 _ = TryReleasePlayerList();
+            }
         }
 
         try
@@ -306,13 +343,13 @@ public sealed partial class MainHandler
                 Interlocked.Increment(ref _suppressedOnlinePlayersLogLines);
                 suppressedLineReleasePending = 1;
                 if (!await SendProbeAsync(
-                        "list",
-                        () =>
+                    "list",
+                    () =>
                         {
                             CompleteSnapshot(false, waiter);
                             ReleaseLine();
                         },
-                        cancellationToken).ConfigureAwait(false))
+                    cancellationToken).ConfigureAwait(false))
                 {
                     CompleteSnapshot(false, waiter);
                     ReleaseLine();
@@ -348,11 +385,15 @@ public sealed partial class MainHandler
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config?.Server == null)
+        {
             return false;
+        }
 
         long nowTicks = DateTime.UtcNow.Ticks;
         if (Volatile.Read(ref _minecraftQueryUnavailableUntilTicks) > nowTicks)
+        {
             return false;
+        }
 
         string host = GetQueryHost(config);
         int port = config.Server.Port;
@@ -384,14 +425,21 @@ public sealed partial class MainHandler
             ? GetRCONHost(config)
             : (config.Server.BindIP ?? string.Empty).Trim();
         if (host.Length == 0)
+        {
             return MinecraftQueryLoopbackHost;
+        }
 
         if (IPAddress.TryParse(host, out IPAddress? address))
         {
             if (IPAddress.IPv6Any.Equals(address))
+            {
                 return IPAddress.IPv6Loopback.ToString();
+            }
+
             if (IPAddress.Any.Equals(address))
+            {
                 return MinecraftQueryLoopbackHost;
+            }
         }
 
         return host;
@@ -417,12 +465,16 @@ public sealed partial class MainHandler
         {
             RecordRoster(previousPlayers, currentPlayers);
             if (MultiplayerEnabled)
+            {
                 QueueSidebarRefresh();
+            }
         }
 
         QueueGamemode();
         if (playersChanged)
+        {
             QueueDeathScore();
+        }
     }
 
     private void CompleteSnapshot(bool result, TaskCompletionSource<bool>? expectedWaiter = null)
@@ -432,7 +484,9 @@ public sealed partial class MainHandler
         {
             waiter = _onlinePlayerSnapshotRequest;
             if (waiter == null || (expectedWaiter != null && !ReferenceEquals(waiter, expectedWaiter)))
+            {
                 return;
+            }
 
             _onlinePlayerSnapshotRequest = null;
         }
@@ -448,10 +502,14 @@ public sealed partial class MainHandler
         bool isMinecraftCommandErrorContext)
     {
         if (string.IsNullOrEmpty(line) || isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
+        {
             return false;
+        }
 
         if (!flags.HasObjective && !flags.HasTcPlayerList && !flags.HasTcHealth && !flags.HasHealth)
+        {
             return false;
+        }
 
         return
             line.Contains("Unknown scoreboard objective 'tc_playerlist'", StringComparison.OrdinalIgnoreCase) ||

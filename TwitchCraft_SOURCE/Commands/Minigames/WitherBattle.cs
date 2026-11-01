@@ -11,7 +11,9 @@ public static partial class MinigameManager
     private static async Task RunWitherAsync(MainHandler runtime, CancellationToken cancellationToken)
     {
         if (!TryStart(runtime, "WitherBattle", out long runID))
+        {
             return;
+        }
 
         try
         {
@@ -32,10 +34,9 @@ public static partial class MinigameManager
             await SafeReplyAsync(
                 runtime,
                 "🔴 A Wither Battle has started! Use !damagewither <amount> for the next 5 minutes. Your token bet is your damage dealt. The Wither has " +
-                witherHealth.ToString(CultureInfo.InvariantCulture) +
-                " HP. Max " +
-                MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
-                " tokens per person. If the Wither dies in time, each player gets 1.2x their bet back. If it is not killed in 5 minutes, everyone loses half.",
+                    witherHealth.ToString(CultureInfo.InvariantCulture) + " HP. Max " +
+                    MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
+                    " tokens per person. If the Wither dies in time, each player gets 1.2x their bet back. If it is not killed in 5 minutes, everyone loses half.",
                 cancellationToken).ConfigureAwait(false);
 
             Task timerTask = Task.Delay(WitherBattleDuration, cancellationToken);
@@ -82,17 +83,31 @@ public static partial class MinigameManager
             bool witherDefeated = totalDamage >= witherHealth;
             bool witherFled = witherDefeated && CommandRandom.Next(10) == 0;
 
-            double payoutMultiplier = witherDefeated ? (witherFled ? 0.75 : 1.2) : 0.5;
+            double payoutMultiplier;
+            if (witherDefeated)
+            {
+                payoutMultiplier = witherFled ? 0.75 : 1.2;
+            }
+            else
+            {
+                payoutMultiplier = 0.5;
+            }
+
             List<KeyValuePair<string, int>> payouts = new(bets.Count);
             for (int i = 0; i < bets.Count; i++)
             {
                 WitherBattleBet bet = bets[i];
                 int payout = (int)Math.Round(bet.TokenAmount * payoutMultiplier, MidpointRounding.AwayFromZero);
                 if (payout > 0)
+                {
                     payouts.Add(new(bet.Viewer, payout));
+                }
             }
 
-            if (!SettleBets(runtime, state, "WitherBattle", runID, payouts)) return;
+            if (!SettleBets(runtime, state, "WitherBattle", runID, payouts))
+            {
+                return;
+            }
 
             if (witherDefeated)
             {
@@ -128,7 +143,10 @@ public static partial class MinigameManager
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             if (IsActive(runtime, "WitherBattle", runID))
+            {
                 RefundWitherBets(runtime);
+            }
+
             throw;
         }
         finally

@@ -39,9 +39,11 @@ public partial class TwitchCraft : Window
         Shell.PropertyChanged += OnShellPropertyChanged;
     }
 
-    public AppShellViewModel Shell { get; }
+    public AppShellViewModel Shell
+    { get; }
 
-    public MainHandler Runtime { get; }
+    public MainHandler Runtime
+    { get; }
 
     public void ShowStart() => Shell.Navigate(ShellPage.Start);
 
@@ -199,7 +201,9 @@ public partial class TwitchCraft : Window
     private void OnShellPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (!_shutdownAlreadyHandled && !_suppressPageStateUpdates)
+        {
             ApplyPageState();
+        }
     }
 
     private void ApplyPageState(TwitchCraftConfig? launchConfig = null)
@@ -235,7 +239,9 @@ public partial class TwitchCraft : Window
         if (page == null)
         {
             if (!isVisible)
+            {
                 return;
+            }
 
             page = new T { Visibility = Visibility.Collapsed };
             WindowContentHost.Children.Add(page);

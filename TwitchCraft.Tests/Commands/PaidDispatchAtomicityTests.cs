@@ -154,7 +154,10 @@ public sealed class PaidDispatchAtomicityTests
     [Fact]
     public async Task MissingCooldownReservation_DoesNotChargeOrDispatch()
     {
-        TransactionHarness harness = new() { NextReservation = null };
+        TransactionHarness harness = new()
+        {
+            NextReservation = null
+        };
 
         bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
 
@@ -217,20 +220,31 @@ public sealed class PaidDispatchAtomicityTests
     private sealed class TransactionHarness
     {
         internal int Balance { get; private set; } = 100;
-        internal int SpendCalls { get; private set; }
-        internal int RefundCalls { get; private set; }
+        internal int SpendCalls
+        { get; private set; }
+        internal int RefundCalls
+        { get; private set; }
         internal bool RefundSucceeds { get; set; } = true;
-        internal int DispatchCalls { get; private set; }
-        internal int StatisticsCalls { get; private set; }
+        internal int DispatchCalls
+        { get; private set; }
+        internal int StatisticsCalls
+        { get; private set; }
         internal List<int> RecordedCosts { get; } = [];
-        internal int DispatchFailureReports { get; private set; }
-        internal bool? LastReportedRefund { get; private set; }
-        internal int InsufficientTokenReports { get; private set; }
-        internal int FailureNotifications { get; private set; }
-        internal long CurrentReservation { get; set; }
+        internal int DispatchFailureReports
+        { get; private set; }
+        internal bool? LastReportedRefund
+        { get; private set; }
+        internal int InsufficientTokenReports
+        { get; private set; }
+        internal int FailureNotifications
+        { get; private set; }
+        internal long CurrentReservation
+        { get; set; }
         internal long? NextReservation { get; set; } = 101;
-        internal Func<CancellationToken, Task<bool>>? DispatchOverride { get; set; }
+        internal Func<CancellationToken, Task<bool>>? DispatchOverride
+        { get; set; }
         internal List<long> ReleasedReservations { get; } = [];
+
         internal Task<bool> ExecuteAsync(int cost, CancellationToken cancellationToken)
         {
             return PaidCommandTransaction.ExecuteAsync(
@@ -238,7 +252,9 @@ public sealed class PaidDispatchAtomicityTests
                 _ =>
                 {
                     if (NextReservation.HasValue)
+                    {
                         CurrentReservation = NextReservation.Value;
+                    }
 
                     return Task.FromResult(NextReservation);
                 },
@@ -246,13 +262,17 @@ public sealed class PaidDispatchAtomicityTests
                 {
                     ReleasedReservations.Add(reservation);
                     if (CurrentReservation == reservation)
+                    {
                         CurrentReservation = 0;
+                    }
                 },
                 amount =>
                 {
                     SpendCalls++;
                     if (Balance < amount)
+                    {
                         return false;
+                    }
 
                     Balance -= amount;
                     return true;
@@ -261,7 +281,10 @@ public sealed class PaidDispatchAtomicityTests
                 {
                     RefundCalls++;
                     if (RefundSucceeds)
+                    {
                         Balance += amount;
+                    }
+
                     return RefundSucceeds;
                 },
                 token =>

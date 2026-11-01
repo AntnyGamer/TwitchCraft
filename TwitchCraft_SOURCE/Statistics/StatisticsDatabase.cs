@@ -10,7 +10,9 @@ internal static partial class StatisticsStore
     private static SqliteConnection GetConnectionNoLock()
     {
         if (_connection != null)
+        {
             return _connection;
+        }
 
         ConfigurationStore.EnsureWorkDir();
 

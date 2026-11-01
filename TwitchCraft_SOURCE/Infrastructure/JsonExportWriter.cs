@@ -26,13 +26,10 @@ internal static class JsonExportWriter
     public static void WriteReadme(string exportDirectory)
     {
         string warningText =
-            ViewingOnlyWarning + Environment.NewLine +
-            EditingWarning + Environment.NewLine + Environment.NewLine +
-            "Real editable data files:" + Environment.NewLine +
-            "- viewer_tokens.db" + Environment.NewLine +
-            "- statistics.db" + Environment.NewLine + Environment.NewLine +
-            "SQLite viewer/editor download:" + Environment.NewLine +
-            SqliteEditorDownloadUrl + Environment.NewLine;
+            ViewingOnlyWarning + Environment.NewLine + EditingWarning + Environment.NewLine + Environment.NewLine +
+                "Real editable data files:" + Environment.NewLine + "- viewer_tokens.db" + Environment.NewLine +
+                "- statistics.db" + Environment.NewLine + Environment.NewLine + "SQLite viewer/editor download:" +
+                Environment.NewLine + SqliteEditorDownloadUrl + Environment.NewLine;
 
         string READMEPath = Path.Combine(exportDirectory, "READ_ME_FIRST.txt");
         string tempPath = FileSystemHelper.GetUniqueTempPath(READMEPath);
@@ -41,7 +38,11 @@ internal static class JsonExportWriter
             File.WriteAllText(tempPath, warningText, Encoding.UTF8);
             ReplaceFile(tempPath, READMEPath);
         }
-        catch { FileSystemHelper.DeleteFileSafe(tempPath); throw; }
+        catch
+        {
+            FileSystemHelper.DeleteFileSafe(tempPath);
+            throw;
+        }
     }
 
     public static void WriteJsonAtomic(string path, Action<JsonTextWriter> writeBody)
@@ -54,11 +55,21 @@ internal static class JsonExportWriter
         try
         {
             using (StreamWriter streamWriter = new(tempPath, false, Encoding.UTF8))
-            using (JsonTextWriter jsonWriter = new(streamWriter) { Formatting = Formatting.Indented })
+            using (JsonTextWriter jsonWriter = new(streamWriter)
+            {
+                Formatting = Formatting.Indented
+            })
+            {
                 writeBody(jsonWriter);
+            }
+
             ReplaceFile(tempPath, path);
         }
-        catch { FileSystemHelper.DeleteFileSafe(tempPath); throw; }
+        catch
+        {
+            FileSystemHelper.DeleteFileSafe(tempPath);
+            throw;
+        }
     }
 
     public static void WriteExportStart(JsonWriter writer)

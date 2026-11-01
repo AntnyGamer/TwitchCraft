@@ -11,7 +11,9 @@ public static partial class MinigameManager
     private static async Task RunChickenAsync(MainHandler runtime, CancellationToken cancellationToken)
     {
         if (!TryStart(runtime, "ChickenRun", out long runID))
+        {
             return;
+        }
 
         try
         {
@@ -38,17 +40,19 @@ public static partial class MinigameManager
             await SafeReplyAsync(
                 runtime,
                 "🔴 A Chicken Run is starting in 1 minute! You can bet between " +
-                minSeconds.ToString(CultureInfo.InvariantCulture) + "-" +
-                maxSeconds.ToString(CultureInfo.InvariantCulture) +
-                " seconds for how long the chicken survives! Max " +
-                MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
-                " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
+                    minSeconds.ToString(CultureInfo.InvariantCulture) + "-" +
+                    maxSeconds.ToString(CultureInfo.InvariantCulture) +
+                    " seconds for how long the chicken survives! Max " +
+                    MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
+                    " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
                 cancellationToken).ConfigureAwait(false);
 
             await Task.Delay(ChickenRunBettingDelay, cancellationToken).ConfigureAwait(false);
 
             if (!IsActive(runtime, "ChickenRun", runID))
+            {
                 return;
+            }
 
             bool hasBets;
             lock (MinigameGate)
@@ -81,7 +85,9 @@ public static partial class MinigameManager
             await Task.Delay(TimeSpan.FromSeconds(killAtSeconds), cancellationToken).ConfigureAwait(false);
 
             if (!IsActive(runtime, "ChickenRun", runID))
+            {
                 return;
+            }
 
             List<ChickenRunBet> bets;
             lock (MinigameGate)
@@ -103,15 +109,22 @@ public static partial class MinigameManager
                 ChickenRunBet bet = bets[i];
                 bool won = bet.BetSeconds <= killAtSeconds;
                 if (!won)
+                {
                     continue;
+                }
 
                 double multiplier = 1.02 + ((bet.BetSeconds - minSeconds) * multiplierPerSecond);
                 int payout = (int)Math.Round(bet.TokenAmount * multiplier, MidpointRounding.AwayFromZero);
                 if (payout > 0)
+                {
                     payouts.Add(new(bet.Viewer, payout)); //Chicken Run Win
+                }
             }
 
-            if (!SettleBets(runtime, state, "ChickenRun", runID, payouts)) return;
+            if (!SettleBets(runtime, state, "ChickenRun", runID, payouts))
+            {
+                return;
+            }
 
             await SafeReplyAsync(
                 runtime,
@@ -123,7 +136,9 @@ public static partial class MinigameManager
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             if (IsActive(runtime, "ChickenRun", runID))
+            {
                 RefundChickenBets(runtime);
+            }
 
             throw;
         }

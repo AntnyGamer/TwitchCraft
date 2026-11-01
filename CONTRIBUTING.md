@@ -16,6 +16,7 @@ From the repository root:
 ```powershell
 dotnet restore TwitchCraft.slnx
 dotnet build TwitchCraft.slnx -c Release --no-restore
+dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
 Push-Location TwitchCraft.Tests
 dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build
 Pop-Location
@@ -31,7 +32,7 @@ dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build --results-d
 Pop-Location
 ```
 
-CI enforces a 40% minimum line-coverage floor to prevent major coverage regressions.
+CI enforces a 50% minimum line-coverage floor to prevent major coverage regressions.
 
 ## Source layout
 
@@ -43,6 +44,19 @@ CI enforces a 40% minimum line-coverage floor to prevent major coverage regressi
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the runtime flow.
 
 ## Project rules
+
+### Code readability
+
+Follow [Microsoft's C# coding conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) and the repository's `.editorconfig`, while keeping established naming and compatibility contracts consistent.
+
+- Use four spaces, Allman braces, and explicit member access modifiers in C#.
+- Use braces for control-flow bodies and put executable block contents on separate lines.
+- Put independent declarations and statements on separate lines, and separate methods with blank lines.
+- Break dense registrations, argument lists, and compound expressions into readable groups.
+- Keep simple auto-properties, expression-bodied members, and lambdas concise when they are easy to read.
+- Preserve command text, serialization names, lock ordering, cancellation, and asynchronous behavior during cleanup.
+
+### Behavior and compatibility
 
 - Never commit Twitch tokens, RCON passwords, authorization headers, real `config.json` files, user databases, server worlds, logs, or public IP addresses.
 - Do not block network, database, or filesystem work on the WPF UI thread.

@@ -40,12 +40,16 @@ internal sealed class RollingJsonLogWriter : IDisposable
     internal bool TryWriteLine(string line)
     {
         if (line == null)
+        {
             return false;
+        }
 
         lock (_gate)
         {
             if (_disposed)
+            {
                 return false;
+            }
 
             try
             {
@@ -73,11 +77,15 @@ internal sealed class RollingJsonLogWriter : IDisposable
     private void EnsureWriter()
     {
         if (_writer != null)
+        {
             return;
+        }
 
         string? directory = Path.GetDirectoryName(_logPath);
         if (!string.IsNullOrWhiteSpace(directory))
+        {
             Directory.CreateDirectory(directory);
+        }
 
         if (!_retentionCleaned)
         {
@@ -91,12 +99,25 @@ internal sealed class RollingJsonLogWriter : IDisposable
             if (stream.Length > 0)
             {
                 stream.Position = stream.Length - 1;
-                if (stream.ReadByte() != '\n') RepairPartialLine(stream);
+                if (stream.ReadByte() != '\n')
+                {
+                    RepairPartialLine(stream);
+                }
             }
             stream.Position = _currentBytes = stream.Length;
             _writer = new StreamWriter(stream, _encoding) { AutoFlush = true };
         }
-        catch { try { stream.Dispose(); } catch { } throw; }
+        catch
+        {
+            try
+            {
+                stream.Dispose();
+            }
+            catch
+            {
+            }
+            throw;
+        }
     }
 
     private void RepairPartialLine(FileStream stream)
@@ -114,7 +135,10 @@ internal sealed class RollingJsonLogWriter : IDisposable
                 : Environment.NewLine;
             stream.Write(_encoding.GetBytes(missingNewline));
         }
-        catch (System.Text.Json.JsonException) { stream.SetLength(cut); }
+        catch (System.Text.Json.JsonException)
+        {
+            stream.SetLength(cut);
+        }
     }
 
     private void Rotate()
@@ -134,7 +158,9 @@ internal sealed class RollingJsonLogWriter : IDisposable
                 ? _logPath
                 : GetLogPath(index - 1);
             if (!File.Exists(source))
+            {
                 continue;
+            }
 
             File.Move(source, GetLogPath(index), true);
         }
@@ -196,7 +222,9 @@ internal sealed class RollingJsonLogWriter : IDisposable
         lock (_gate)
         {
             if (_disposed)
+            {
                 return;
+            }
 
             _disposed = true;
             CloseWriter();

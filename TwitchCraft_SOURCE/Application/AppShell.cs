@@ -19,9 +19,11 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ShellPage PreviousPage { get; private set; }
+    public ShellPage PreviousPage
+    { get; private set; }
 
-    public ShellPage CurrentPage { get; private set; }
+    public ShellPage CurrentPage
+    { get; private set; }
 
     public bool IsSetupVisible => CurrentPage == ShellPage.Setup;
     public bool IsLaunchVisible => CurrentPage == ShellPage.Start;

@@ -39,7 +39,9 @@ internal static partial class ErrorHandling
     public static void Initialize(Application? application)
     {
         if (_initialized || application == null)
+        {
             return;
+        }
 
         application.DispatcherUnhandledException += OnDispatcherException;
         application.Exit += OnExit;
@@ -83,12 +85,16 @@ internal static partial class ErrorHandling
         try
         {
             if (source is Window window)
+            {
                 return window;
+            }
 
             if (source is FrameworkElement element)
             {
                 if (element.Dispatcher.CheckAccess())
+                {
                     return Window.GetWindow(element);
+                }
 
                 return element.Dispatcher.Invoke(() => Window.GetWindow(element));
             }
@@ -96,10 +102,14 @@ internal static partial class ErrorHandling
             Application? application = Application.Current;
 
             if (application == null)
+            {
                 return null;
+            }
 
             if (application.Dispatcher.CheckAccess())
+            {
                 return application.MainWindow;
+            }
 
             return application.Dispatcher.Invoke(() => application.MainWindow);
         }
@@ -158,7 +168,9 @@ internal static partial class ErrorHandling
     private static void EnsureLogNoLock()
     {
         if (_logInitialized || Environment.TickCount64 < _nextLogRetryTicks)
+        {
             return;
+        }
 
         try
         {
@@ -220,16 +232,24 @@ internal static partial class ErrorHandling
 
     private sealed class StructuredLogEvent
     {
-        public required string Timestamp { get; init; }
-        public required string Level { get; init; }
-        public required string Event { get; init; }
-        public required string ApplicationVersion { get; init; }
+        public required string Timestamp
+        { get; init; }
+        public required string Level
+        { get; init; }
+        public required string Event
+        { get; init; }
+        public required string ApplicationVersion
+        { get; init; }
         [JsonPropertyName("sessionID")]
-        public required string SessionID { get; init; }
-        public string? ExceptionType { get; init; }
-        public string? Message { get; init; }
+        public required string SessionID
+        { get; init; }
+        public string? ExceptionType
+        { get; init; }
+        public string? Message
+        { get; init; }
         [JsonPropertyName("details")]
-        public string? OriginalError { get; init; }
+        public string? OriginalError
+        { get; init; }
     }
 }
 
@@ -243,7 +263,9 @@ internal static class ApplicationVersionProvider
     internal static string Resolve(Assembly? assembly)
     {
         if (assembly == null)
+        {
             return UnknownVersion;
+        }
 
         try
         {

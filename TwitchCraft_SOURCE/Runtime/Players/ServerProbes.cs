@@ -12,7 +12,9 @@ public sealed partial class MainHandler
     private void HandleReadyState(string line, CancellationToken cancellationToken)
     {
         if (_minecraftSession.ServerReady || string.IsNullOrEmpty(line))
+        {
             return;
+        }
 
         if (!line.Contains("Done (", StringComparison.OrdinalIgnoreCase) &&
             !line.Contains("For help, type \"help\"", StringComparison.OrdinalIgnoreCase))
@@ -25,7 +27,9 @@ public sealed partial class MainHandler
         try
         {
             if (_activeConfig is { } activeConfig && activeConfig.Settings?.RemoteControlEnabled != true && ServerPropsChanged(activeConfig))
+            {
                 ApplyProfile(activeConfig);
+            }
         }
         catch (Exception ex)
         {
@@ -45,11 +49,15 @@ public sealed partial class MainHandler
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config == null || config.Settings.RemoteControlEnabled || !config.Settings.MultiplayerEnabled)
+        {
             return Task.CompletedTask;
+        }
 
         MinecraftVersionSupport.MinecraftVersionInfo version = GetMinecraftVersion();
         if (!version.UsesServerSettingGameRules || !TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+        {
             return Task.CompletedTask;
+        }
 
         string pvp = (version.UsesNamespacedGameRules ? "gamerule minecraft:pvp " : "gamerule pvp ") + (config.Settings.MultiplayerPvPEnabled ? "true" : "false");
         return SendServerCommandAsync(pvp, token);
@@ -58,7 +66,9 @@ public sealed partial class MainHandler
     private void RestoreSidebar(bool isSidebarObjectiveIssue)
     {
         if (!isSidebarObjectiveIssue)
+        {
             return;
+        }
 
         bool hasOnlinePlayers;
         lock (_playerGate)
@@ -68,13 +78,17 @@ public sealed partial class MainHandler
         }
 
         if (hasOnlinePlayers)
+        {
             QueueSidebarRefresh();
+        }
     }
 
     private bool ShouldHidePlayerList(string line)
     {
         if (Volatile.Read(ref _suppressedOnlinePlayersLogLines) <= 0 || string.IsNullOrEmpty(line))
+        {
             return false;
+        }
 
         return (line.Contains("players online:", StringComparison.OrdinalIgnoreCase)
                 || line.Contains("player online:", StringComparison.OrdinalIgnoreCase))
@@ -87,10 +101,14 @@ public sealed partial class MainHandler
         {
             int pending = Volatile.Read(ref _suppressedOnlinePlayersLogLines);
             if (pending <= 0)
+            {
                 return false;
+            }
 
             if (Interlocked.CompareExchange(ref _suppressedOnlinePlayersLogLines, pending - 1, pending) == pending)
+            {
                 return true;
+            }
         }
     }
 
@@ -108,7 +126,9 @@ public sealed partial class MainHandler
             {
                 string? response = await ExecuteRCONQueryAsync(command, cancellationToken).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(response))
+                {
                     HandleRCONResponse(response);
+                }
 
                 return response != null;
             }
@@ -124,8 +144,8 @@ public sealed partial class MainHandler
         try
         {
             if (await SendServerCommandsAsync(
-                    [command, "data get storage " + ProbeMarkerNamespace + marker],
-                    cancellationToken).ConfigureAwait(false))
+                [command, "data get storage " + ProbeMarkerNamespace + marker],
+                cancellationToken).ConfigureAwait(false))
             {
                 QueueProbeFallback(marker, cancellationToken);
                 return true;
@@ -146,7 +166,9 @@ public sealed partial class MainHandler
     private async Task<bool> SendProbesAsync(string[] commands, Action onProbeCompleted, CancellationToken cancellationToken)
     {
         if (commands.Length == 0)
+        {
             return false;
+        }
 
         if (RemoteControlEnabled)
         {
@@ -154,18 +176,25 @@ public sealed partial class MainHandler
             {
                 List<string?>? responses = await ExecuteRCONQueriesAsync(commands, cancellationToken).ConfigureAwait(false);
                 if (responses == null)
+                {
                     return false;
+                }
 
                 bool delivered = false;
-                for (int i = 0, count = responses.Count; i < count; i++)
+                int count = responses.Count;
+                for (int i = 0; i < count; i++)
                 {
                     string? response = responses[i];
                     if (response == null)
+                    {
                         continue;
+                    }
 
                     delivered = true;
                     if (!string.IsNullOrWhiteSpace(response))
+                    {
                         HandleRCONResponse(response);
+                    }
                 }
 
                 return delivered;
@@ -178,8 +207,12 @@ public sealed partial class MainHandler
 
         List<string> probeCommands = new(commands.Length + 1);
         for (int i = 0; i < commands.Length; i++)
+        {
             if (!string.IsNullOrWhiteSpace(commands[i]))
+            {
                 probeCommands.Add(commands[i]);
+            }
+        }
 
         if (probeCommands.Count == 0)
         {
@@ -270,7 +303,9 @@ public sealed partial class MainHandler
     {
         string marker = GetProbeMarker(line);
         if (!marker.StartsWith(_serverProbeMarkerSessionPrefix, StringComparison.Ordinal))
+        {
             return false;
+        }
 
         CompleteProbe(marker);
         return true;
@@ -279,15 +314,21 @@ public sealed partial class MainHandler
     private static string GetProbeMarker(string line)
     {
         if (string.IsNullOrEmpty(line))
+        {
             return string.Empty;
+        }
 
         int markerIndex = line.IndexOf(ProbeMarkerPrefix, StringComparison.Ordinal);
         if (markerIndex < 0)
+        {
             return string.Empty;
+        }
 
         int end = markerIndex + ProbeMarkerPrefix.Length;
         while (end < line.Length && (char.IsAsciiLetterOrDigit(line[end]) || line[end] == '_'))
+        {
             end++;
+        }
 
         return line[markerIndex..end];
     }
@@ -313,14 +354,21 @@ public sealed partial class MainHandler
         bool isSidebarObjectiveIssue)
     {
         if (string.IsNullOrEmpty(line))
+        {
             return false;
+        }
 
         if (isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
+        {
             return false;
+        }
 
-        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) || line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
+        if (line.Contains("pvp is now set to", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("difficulty has been set to", StringComparison.OrdinalIgnoreCase) ||
             line.Contains("Set game difficulty to", StringComparison.OrdinalIgnoreCase) || isSidebarObjectiveIssue)
+        {
             return true;
+        }
 
         if (!flags.HasObjective &&
             !flags.HasPlayerList &&

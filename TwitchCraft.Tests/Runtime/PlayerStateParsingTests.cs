@@ -55,7 +55,15 @@ public sealed class PlayerStateParsingTests
         List<string> deathScoreRefreshes = [];
         StatisticsService statistics = new(new(
             _ => ChatCommandStatisticFlags.None, _ => true, _ => false,
-            () => { }, () => { }, () => { }, deathScoreRefreshes.Add, _ => { }));
+            () =>
+                {
+                }, () =>
+                {
+                }, () =>
+                {
+                }, deathScoreRefreshes.Add, _ =>
+                {
+                }));
         statistics.SetContext(true, "streamer", "Steve", "!");
         statistics.RecordLine("[Server thread/INFO]: System chat: SteveOther fell from a high place", false);
         statistics.RecordLine("[Server thread/INFO]: [System] [CHAT] Alex was slain by Steve", false);

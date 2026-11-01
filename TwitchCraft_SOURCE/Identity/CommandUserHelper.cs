@@ -8,20 +8,32 @@ internal static class CommandUserHelper
     internal static string NormalizeUser(string? user)
     {
         if (string.IsNullOrEmpty(user))
+        {
             return string.Empty;
+        }
 
         int start = 0;
         int end = user.Length - 1;
         while (start <= end && char.IsWhiteSpace(user[start]))
+        {
             start++;
+        }
+
         while (end >= start && char.IsWhiteSpace(user[end]))
+        {
             end--;
+        }
+
         while (start <= end && user[start] == '@')
+        {
             start++;
+        }
 
         int length = end - start + 1;
         if (length <= 0)
+        {
             return string.Empty;
+        }
 
         bool needsNewString = start != 0 || length != user.Length;
         for (int i = 0; i < length; i++)
@@ -34,12 +46,16 @@ internal static class CommandUserHelper
         }
 
         if (!needsNewString)
+        {
             return user;
+        }
 
         return string.Create(length, (User: user, Start: start), static (destination, state) =>
         {
             for (int i = 0; i < destination.Length; i++)
+            {
                 destination[i] = CommandUserHelper.LowerFast(state.User[state.Start + i]);
+            }
         });
     }
 

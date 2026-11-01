@@ -25,13 +25,20 @@ public sealed partial class MainHandler
 
     public Task SendTellrawAsync(string selector, string message, string color, bool bold, CancellationToken cancellationToken)
         => SendServerCommandAsync(
-            MinecraftCommandBuilder.Tellraw(string.IsNullOrWhiteSpace(selector) ? "@a" : selector, message, color, bold, UsesInlineTextComponentSyntax),
+            MinecraftCommandBuilder.Tellraw(
+                string.IsNullOrWhiteSpace(selector) ? "@a" : selector,
+                message,
+                color,
+                bold,
+                UsesInlineTextComponentSyntax),
             cancellationToken);
 
     public bool HasOtherPlayer(string excludedPlayerName)
     {
         if (!MinecraftNameHelper.TryNormalizePlayerName(excludedPlayerName, out string excludedName))
+        {
             return false;
+        }
 
         lock (_playerGate)
         {
@@ -44,13 +51,19 @@ public sealed partial class MainHandler
     public Task TellrawOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
     {
         if (!MultiTargetingEnabled || target == null || string.IsNullOrWhiteSpace(message) || target.PlayerCount != 1)
+        {
             return Task.CompletedTask;
+        }
 
         if (!MinecraftNameHelper.TryNormalizePlayerName(target.MinecraftName, out string excludedName))
+        {
             return Task.CompletedTask;
+        }
 
         if (!HasOtherPlayer(excludedName))
+        {
             return Task.CompletedTask;
+        }
 
         string selector = MinecraftCommandBuilder.EveryoneExceptSelector(excludedName);
         return SendTellrawAsync(selector, message, color, bold, cancellationToken);

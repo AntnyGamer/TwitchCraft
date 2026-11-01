@@ -60,7 +60,10 @@ public sealed class ShellNavigationTests
             ];
             Assert.Equal(page, shell.CurrentPage);
             if (page != previousPage)
+            {
                 Assert.Equal(previousPage, shell.PreviousPage);
+            }
+
             Assert.Single(visibility, visible => visible);
             Assert.True(visibility[(int)page]);
         }

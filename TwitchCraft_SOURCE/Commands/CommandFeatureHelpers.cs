@@ -20,11 +20,15 @@ internal static class ItemComponents
 
         if (!TryParseCompound(selectedItemData, out List<string> topEntries) ||
             !TryGetField(topEntries, "id", out string rawItemID))
+        {
             return false;
+        }
 
         string itemID = Unquote(rawItemID);
         if (string.IsNullOrWhiteSpace(itemID) || string.Equals(itemID, "minecraft:air", StringComparison.OrdinalIgnoreCase))
+        {
             return false;
+        }
 
         prettyItemName = GetItemName(itemID);
         string displayName = redeemerName + "'s " + prettyItemName;
@@ -33,16 +37,23 @@ internal static class ItemComponents
         List<string> componentEntries = [];
         if (TryGetField(topEntries, "components", out string componentsValue) &&
             !TryParseCompound(componentsValue, out componentEntries))
+        {
             return false;
+        }
 
         RemoveField(componentEntries, "minecraft:custom_name");
         if (usesInlineTextComponents)
+        {
             componentEntries.Add("\"minecraft:custom_name\":{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'}");
+        }
         else
+        {
             componentEntries.Add("\"minecraft:custom_name\":\"{\\\"text\\\":\\\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\\\"}\"");
+        }
 
         string componentSuffix = BuildComponentSuffix(componentEntries);
-        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " + count.ToString(CultureInfo.InvariantCulture);
+        command = "item replace entity " + selector + " weapon.mainhand with " + itemID + componentSuffix + " " +
+            count.ToString(CultureInfo.InvariantCulture);
         return true;
     }
 
@@ -67,7 +78,9 @@ internal static class ItemComponents
 
         string itemID = Unquote(rawItemID).Trim();
         if (itemID.Length == 0 || string.Equals(itemID, "minecraft:air", StringComparison.OrdinalIgnoreCase))
+        {
             return false;
+        }
 
         List<string> componentEntries = [];
         if (TryGetField(topEntries, "components", out string componentsValue) &&
@@ -78,9 +91,14 @@ internal static class ItemComponents
 
         string normalizedEnchantID = enchantID.Trim();
         if (normalizedEnchantID.StartsWith("minecraft:", StringComparison.OrdinalIgnoreCase))
+        {
             normalizedEnchantID = normalizedEnchantID["minecraft:".Length..];
+        }
+
         if (normalizedEnchantID.Length == 0)
+        {
             return false;
+        }
 
         string namespacedEnchantID = "minecraft:" + normalizedEnchantID;
         int enchantmentsIndex = FindFieldIndex(componentEntries, "minecraft:enchantments");
@@ -89,7 +107,9 @@ internal static class ItemComponents
         {
             string existingEnchantments = GetFieldValue(componentEntries[enchantmentsIndex]);
             if (!TryParseCompound(existingEnchantments, out enchantmentEntries))
+            {
                 return false;
+            }
         }
 
         if (usesFlattenedEnchantmentsComponent)
@@ -103,22 +123,32 @@ internal static class ItemComponents
             List<string> levelEntries = [];
             if (levelsIndex >= 0 &&
                 !TryParseCompound(GetFieldValue(enchantmentEntries[levelsIndex]), out levelEntries))
+            {
                 return false;
+            }
 
             RemoveField(levelEntries, namespacedEnchantID);
             levelEntries.Add("\"" + namespacedEnchantID + "\":" + level.ToString(CultureInfo.InvariantCulture));
             string levelsEntry = "levels:{" + string.Join(",", levelEntries) + "}";
             if (levelsIndex >= 0)
+            {
                 enchantmentEntries[levelsIndex] = levelsEntry;
+            }
             else
+            {
                 enchantmentEntries.Insert(0, levelsEntry);
+            }
         }
 
         string enchantmentsEntry = "\"minecraft:enchantments\":{" + string.Join(",", enchantmentEntries) + "}";
         if (enchantmentsIndex >= 0)
+        {
             componentEntries[enchantmentsIndex] = enchantmentsEntry;
+        }
         else
+        {
             componentEntries.Add(enchantmentsEntry);
+        }
 
         int count = ReadCount(topEntries);
         prettyItemName = GetItemName(itemID);
@@ -132,7 +162,9 @@ internal static class ItemComponents
         string normalized = itemID.Trim();
         int colonIndex = normalized.IndexOf(':');
         if (colonIndex >= 0 && colonIndex + 1 < normalized.Length)
+        {
             normalized = normalized[(colonIndex + 1)..];
+        }
 
         return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.Replace('_', ' '));
     }
@@ -143,7 +175,9 @@ internal static class ItemComponents
 
         ReadOnlySpan<char> trimmed = value.AsSpan().Trim();
         if (trimmed.Length < 2 || trimmed[0] != '{' || trimmed[^1] != '}')
+        {
             return false;
+        }
 
         return TrySplitTopLevel(trimmed[1..^1].Trim(), entries);
     }
@@ -151,7 +185,9 @@ internal static class ItemComponents
     private static bool TrySplitTopLevel(ReadOnlySpan<char> value, List<string> results)
     {
         if (value.IsWhiteSpace())
+        {
             return true;
+        }
 
         int start = 0;
         int braceDepth = 0;
@@ -164,13 +200,17 @@ internal static class ItemComponents
         {
             char c = value[i];
             if (UpdateState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
+            {
                 continue;
+            }
 
             if (c == ',' && braceDepth == 0 && bracketDepth == 0 && parenDepth == 0)
             {
                 ReadOnlySpan<char> part = value[start..i].Trim();
                 if (part.Length > 0)
+                {
                     results.Add(part.ToString());
+                }
 
                 start = i + 1;
             }
@@ -184,7 +224,9 @@ internal static class ItemComponents
 
         ReadOnlySpan<char> last = value[start..].Trim();
         if (last.Length > 0)
+        {
             results.Add(last.ToString());
+        }
 
         return true;
     }
@@ -201,10 +243,14 @@ internal static class ItemComponents
         {
             char c = value[i];
             if (UpdateState(c, ref braceDepth, ref bracketDepth, ref parenDepth, ref quote, ref escape))
+            {
                 continue;
+            }
 
             if (c == ':' && braceDepth == 0 && bracketDepth == 0 && parenDepth == 0)
+            {
                 return i;
+            }
         }
 
         return -1;
@@ -233,7 +279,9 @@ internal static class ItemComponents
             }
 
             if (c == quote)
+            {
                 quote = '\0';
+            }
 
             return true;
         }
@@ -251,21 +299,30 @@ internal static class ItemComponents
                 return true;
             case '}':
                 if (braceDepth > 0)
+                {
                     braceDepth--;
+                }
+
                 return true;
             case '[':
                 bracketDepth++;
                 return true;
             case ']':
                 if (bracketDepth > 0)
+                {
                     bracketDepth--;
+                }
+
                 return true;
             case '(':
                 parenDepth++;
                 return true;
             case ')':
                 if (parenDepth > 0)
+                {
                     parenDepth--;
+                }
+
                 return true;
             default:
                 return false;
@@ -290,7 +347,9 @@ internal static class ItemComponents
         for (int i = 0; i < entries.Count; i++)
         {
             if (NameMatches(entries[i], fieldName))
+            {
                 return i;
+            }
         }
 
         return -1;
@@ -300,14 +359,18 @@ internal static class ItemComponents
     {
         int index = FindFieldIndex(entries, fieldName);
         if (index >= 0)
+        {
             entries.RemoveAt(index);
+        }
     }
 
     private static bool NameMatches(string entry, string fieldName)
     {
         int colonIndex = FindTopLevelColon(entry);
         if (colonIndex <= 0)
+        {
             return false;
+        }
 
         ReadOnlySpan<char> actual = entry.AsSpan(0, colonIndex).Trim().Trim("\"'");
         return actual.Equals(fieldName, StringComparison.OrdinalIgnoreCase);
@@ -326,7 +389,9 @@ internal static class ItemComponents
         for (int i = 0; i < componentEntries.Count; i++)
         {
             if (i > 0)
+            {
                 builder.Append(',');
+            }
 
             string entry = componentEntries[i];
             int colonIndex = FindTopLevelColon(entry);
@@ -348,11 +413,15 @@ internal static class ItemComponents
     private static int ReadCount(List<string> entries)
     {
         if (!TryGetField(entries, "count", out string rawCount))
+        {
             return 1;
+        }
 
         ReadOnlySpan<char> trimmed = rawCount.AsSpan().Trim();
         while (trimmed.Length > 0 && char.IsLetter(trimmed[^1]))
+        {
             trimmed = trimmed[..^1];
+        }
 
         return int.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out int count) && count > 0
             ? count
@@ -363,7 +432,9 @@ internal static class ItemComponents
     {
         string trimmed = (value ?? string.Empty).Trim();
         if (trimmed.Length >= 2 && ((trimmed[0] == '"' && trimmed[^1] == '"') || (trimmed[0] == '\'' && trimmed[^1] == '\'')))
+        {
             return trimmed[1..^1];
+        }
 
         return trimmed;
     }
@@ -399,13 +470,14 @@ internal static class GameplayCommands
 
     public static string SlaughterRestoreCommand(string gameRule) =>
         "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + gameRule + " true";
+
     public static string[] BuildSlaughter(string selector, string mobLootGameRuleName) =>
-    [
-        "execute unless data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run gamerule " + mobLootGameRuleName,
-        "gamerule " + mobLootGameRuleName + " false",
-        "execute at " + selector + " as @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:armor_stand,distance=..30] if data entity @s Health run kill @s",
-        SlaughterRestoreCommand(mobLootGameRuleName)
-    ];
+        [
+            "execute unless data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 1 run gamerule " + mobLootGameRuleName,
+            "gamerule " + mobLootGameRuleName + " false",
+            "execute at " + selector + " as @e[type=!minecraft:player,type=!minecraft:wither,type=!minecraft:ender_dragon,type=!minecraft:armor_stand,distance=..30] if data entity @s Health run kill @s",
+            SlaughterRestoreCommand(mobLootGameRuleName)
+        ];
 
     public static string[] BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
         => BuildPursuer(
@@ -457,12 +529,18 @@ internal static class GameplayCommands
             ? "attributes:[{id:'minecraft:follow_range',base:80.0}]"
             : "Attributes:[{Name:\"generic.follow_range\",Base:80.0}]";
         string summonData = usesInlineTextComponents
-            ? "{CustomName:{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) + "'},CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:['" + entityTag + "','" + newEntityTag + "']," + followRangeData + "}"
-            : "{CustomName:'{\"text\":\"" + MinecraftCommandBuilder.EscapeJson(displayName) + "\"}',CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:[\"" + entityTag + "\",\"" + newEntityTag + "\"]," + followRangeData + "}";
+            ? "{CustomName:{text:'" + MinecraftCommandBuilder.EscapeSnbt(displayName) +
+                "'},CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt + "Tags:['" +
+                entityTag + "','" + newEntityTag + "']," + followRangeData + "}"
+            : "{CustomName:'{\"text\":\"" + MinecraftCommandBuilder.EscapeJson(displayName) +
+                "\"}',CustomNameVisible:1b,Invulnerable:1b,PersistenceRequired:1b,Glowing:1b," + additionalNbt +
+                "Tags:[\"" + entityTag + "\",\"" + newEntityTag + "\"]," + followRangeData + "}";
 
         return
         [
-            "execute at " + selector + " run summon minecraft:" + entityID + " ~" + offsetX.ToString(CultureInfo.InvariantCulture) + " ~100 ~" + offsetZ.ToString(CultureInfo.InvariantCulture) + " " + summonData,
+            "execute at " + selector + " run summon minecraft:" + entityID + " ~" +
+                offsetX.ToString(CultureInfo.InvariantCulture) + " ~100 ~" +
+                offsetZ.ToString(CultureInfo.InvariantCulture) + " " + summonData,
             "execute at " + selector + " as " + entitySelector + " run effect give @s minecraft:glowing 255 0 true",
             "execute at " + selector + " as " + entitySelector + " run tag @s remove " + newEntityTag,
             MinecraftCommandBuilder.TitleTimes(selector, 0, 100, 10),
@@ -474,7 +552,9 @@ internal static class GameplayCommands
     private static string FormatCoord(int value)
     {
         if (value == 0)
+        {
             return string.Empty;
+        }
 
         return value.ToString(CultureInfo.InvariantCulture);
     }

@@ -32,16 +32,22 @@ internal sealed class MinecraftSTDERRFilter
         {
             Flush(showLine);
             if (string.Equals(message, DeprecationHeader, StringComparison.Ordinal))
+            {
                 _candidateLines.Add(line);
+            }
             else
+            {
                 showLine(line);
+            }
 
             return;
         }
 
         _candidateLines.Add(line);
         if (_candidateLines.Count == 4)
+        {
             _candidateLines.Clear();
+        }
     }
 
     internal void Flush(Action<string> showLine)
@@ -49,7 +55,9 @@ internal sealed class MinecraftSTDERRFilter
         ArgumentNullException.ThrowIfNull(showLine);
 
         foreach (string line in _candidateLines)
+        {
             showLine(line);
+        }
 
         _candidateLines.Clear();
     }

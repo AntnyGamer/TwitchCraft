@@ -16,12 +16,18 @@ internal sealed class BackgroundTaskTracker
         if (task.IsCompleted)
         {
             if (task.IsFaulted)
+            {
                 ErrorHandling.LogNonFatal("Background task failed", task.Exception);
+            }
+
             return;
         }
 
         lock (_gate)
+        {
             _tasks.Add(task);
+        }
+
         _ = task.ContinueWith(
             static (completedTask, state) => ((BackgroundTaskTracker)state!).Complete(completedTask),
             this,
@@ -32,19 +38,30 @@ internal sealed class BackgroundTaskTracker
 
     private void Complete(Task task)
     {
-        if (task.IsFaulted) ErrorHandling.LogNonFatal("Background task failed", task.Exception);
-        lock (_gate) _tasks.Remove(task);
+        if (task.IsFaulted)
+        {
+            ErrorHandling.LogNonFatal("Background task failed", task.Exception);
+        }
+
+        lock (_gate)
+        {
+            _tasks.Remove(task);
+        }
     }
 
     internal Task[] Snapshot()
     {
         lock (_gate)
+        {
             return [.. _tasks];
+        }
     }
 
     internal void Clear()
     {
         lock (_gate)
+        {
             _tasks.Clear();
+        }
     }
 }
