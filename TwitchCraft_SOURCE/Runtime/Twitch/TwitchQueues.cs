@@ -261,7 +261,7 @@ public sealed partial class MainHandler
             Commands.BeginCommand(parsed.Name, isModerator);
             await handler(parsed.ArgumentArray, sender, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Command error in " + prefix + parsed.Name, ex));
         }
