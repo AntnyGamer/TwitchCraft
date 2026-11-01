@@ -146,12 +146,9 @@ internal sealed class DataMaintenance(
         try
         {
             StartingProfile? settings = _getConfig()?.Settings;
-            if (settings == null)
-            {
-                if (!ConfigurationStore.HasConfig())
-                    return;
-                settings = ConfigurationStore.Load().Settings;
-            }
+            if (settings == null && !ConfigurationStore.HasConfig())
+                return;
+            settings ??= ConfigurationStore.Load().Settings;
 
             if (settings.AutomaticBackupsEnabled)
                 CreateBackup(settings.AutomaticBackupRetentionCount);
@@ -229,7 +226,10 @@ internal sealed class DataMaintenance(
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
                 out timestampUtc))
+        {
             return false;
+        }
+
         return !requireCompleteBackup || IsBackupComplete(directory.FullName);
     }
 
