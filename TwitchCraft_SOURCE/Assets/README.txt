@@ -298,5 +298,6 @@
   - TwitchCraft creates backup config, token database, and statistics database files. These are for reference and are not normally used by TwitchCraft
   - Special thanks to Lil_KleinStein, whose Minecraft streams inspired TwitchCraft's theme and creation!
 
+
 TwitchCraft is an independent, community-created project by AntnyGamer and is not affiliated with Mojang or Microsoft
 README — October 17th, 2026 (for TwitchCraft v1.10.0.1)
