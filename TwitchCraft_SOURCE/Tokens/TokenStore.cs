@@ -16,7 +16,9 @@ internal enum FollowRewardResult
 internal readonly record struct TokenRankResult(string Username, int Balance, int Rank);
 internal enum TokenAdjustmentStatus
 {
-    Failed, Insufficient, Adjusted
+    Failed,
+    Insufficient,
+    Adjusted
 }
 
 internal sealed partial class TokenStore(string path)
