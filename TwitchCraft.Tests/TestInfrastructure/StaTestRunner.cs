@@ -27,9 +27,7 @@ internal static class StaTestRunner
                 Dispatcher.CurrentDispatcher.InvokeShutdown();
             }
         })
-        {
-            IsBackground = true
-        };
+        { IsBackground = true };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         Assert.True(thread.Join(timeout), timeoutMessage);
