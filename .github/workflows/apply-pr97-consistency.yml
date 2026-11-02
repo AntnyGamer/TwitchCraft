@@ -45,17 +45,27 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Whitespace check failed" }
           dotnet build TwitchCraft.slnx -c Release --no-restore -p:EnforceCodeStyleInBuild=true
           if ($LASTEXITCODE -ne 0) { throw "Release build failed" }
-          dotnet test --project TwitchCraft.Tests/TwitchCraft.Tests.csproj -c Release --no-build
-          if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
+          Push-Location TwitchCraft.Tests
+          try {
+            dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build
+            if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
+          }
+          finally { Pop-Location }
 
-      - name: Commit formatting and remove this one-time workflow
+      - name: Commit formatting only and remove temporary tools
         shell: pwsh
         run: |
-          git rm .github/workflows/apply-pr97-consistency.yml
-          git add .editorconfig CONTRIBUTING.md .github/workflows/build.yml TwitchCraft_SOURCE TwitchCraft.Tests tools/ConsistencyFixer
+          # Undo the temporary policy / CI changes from the bootstrap commit.
+          git restore --source=759db8ecc816875681c3f4675544008dad8c970e -- .editorconfig CONTRIBUTING.md .github/workflows/build.yml
+          if ($LASTEXITCODE -ne 0) { throw "Could not restore existing policies" }
+          git rm -r .github/workflows/apply-pr97-consistency.yml tools/ConsistencyFixer
+          if ($LASTEXITCODE -ne 0) { throw "Could not delete temporary tools" }
+          git add -A
+          git diff --cached --check
+          if ($LASTEXITCODE -ne 0) { throw "Staged whitespace check failed" }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Apply C# consistency formatting across application and tests"
+          git commit -m "Apply C# consistency formatting; remove temporary tooling"
           if ($LASTEXITCODE -ne 0) { throw "Commit failed" }
           git push origin HEAD:agent/repository-conventions-review
           if ($LASTEXITCODE -ne 0) { throw "Push failed" }
