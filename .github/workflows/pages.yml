@@ -3,38 +3,132 @@ name: Publish command page
 on:
   push:
     branches: [main]
+    paths:
+      - "docs/**"
+      - "TwitchCraft_SOURCE/Assets/server-icon.png"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "TwitchCraft_SOURCE/Assets/server-icon.png"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: false
+  group: github-pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
       - name: Keep /commands/ URL
         run: |
           cp -R docs site
           mv site/commands-page/landing.html site/index.html
           mv site/commands-page site/commands
           cp TwitchCraft_SOURCE/Assets/server-icon.png site/commands/server-icon.png
+
+      - name: Minify published HTML, CSS and JavaScript
+        run: |
+          for page in site/index.html site/commands/index.html; do
+            original_size=$(wc -c < "$page")
+            npx --yes --package=html-minifier-terser@7.2.0 html-minifier-terser \
+              --collapse-whitespace --conservative-collapse --remove-comments \
+              --minify-css true --minify-js '{"compress":false,"mangle":false}' \
+              --output "$page.min" "$page"
+            test -s "$page.min"
+            minified_size=$(wc -c < "$page.min")
+            if (( minified_size >= original_size )); then
+              echo "Minification did not reduce $page" >&2
+              exit 1
+            fi
+            mv "$page.min" "$page"
+            echo "$page: $original_size -> $minified_size bytes"
+          done
+
+      - name: Verify generated pages and JavaScript
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          import re
+          import subprocess
+
+          class Tags(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.tags = []
+                  self.references = []
+
+              def handle_starttag(self, tag, attrs):
+                  self.tags.append(tag)
+                  values = dict(attrs)
+                  self.references.append((tag, values.get("id"), values.get("href"), values.get("src")))
+
+              handle_startendtag = handle_starttag
+
+          for source, published in (
+              (Path("docs/commands-page/landing.html"), Path("site/index.html")),
+              (Path("docs/commands-page/index.html"), Path("site/commands/index.html")),
+          ):
+              before, after = Tags(), Tags()
+              before.feed(source.read_text(encoding="utf-8"))
+              after.feed(published.read_text(encoding="utf-8"))
+              if (before.tags, before.references) != (after.tags, after.references):
+                  raise SystemExit(f"HTML structure or important attributes changed: {published}")
+
+          assert Path("site/COMMANDS.md").is_file()
+          html = Path("site/commands/index.html").read_text(encoding="utf-8")
+          assert "COMMANDS.md" in html
+          script = re.search(r"<script\b[^>]*>(.*?)</script\s*>", html, re.I | re.S)
+          if not script:
+              raise SystemExit("Command page JavaScript missing")
+          with TemporaryDirectory() as directory:
+              path = Path(directory, "commands.js")
+              path.write_text(script.group(1), encoding="utf-8")
+              subprocess.run(["node", "--check", str(path)], check=True)
+          PY
+
       - name: Configure Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
       - name: Upload site
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
