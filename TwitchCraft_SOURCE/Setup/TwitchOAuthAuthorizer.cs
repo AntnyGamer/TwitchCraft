@@ -163,10 +163,7 @@ internal static class TwitchOAuthAuthorizer
             }
 
             TwitchOAuthResult validated = await ValidateTokenAsync(token, newRefreshToken, normalizedClientID, cancellationToken).ConfigureAwait(false);
-            return validated.IsSuccess ? validated : validated with
-            {
-                RefreshToken = newRefreshToken
-            };
+            return validated.IsSuccess ? validated : validated with { RefreshToken = newRefreshToken };
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -473,29 +470,19 @@ internal static class TwitchOAuthAuthorizer
         }
     }
 
-    private static string GetString(JsonElement root, string propertyName)
-    {
-        if (root.ValueKind == JsonValueKind.Object &&
+    private static string GetString(JsonElement root, string propertyName) =>
+        root.ValueKind == JsonValueKind.Object &&
         root.TryGetProperty(propertyName, out JsonElement value) &&
-        value.ValueKind == JsonValueKind.String)
-        {
-            return value.GetString() ?? string.Empty;
-        }
-
-        return string.Empty;
-    }
+        value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
 
     private static int GetPositiveInt(JsonElement root, string propertyName)
-    {
-        if (root.ValueKind == JsonValueKind.Object &&
+        => root.ValueKind == JsonValueKind.Object &&
             root.TryGetProperty(propertyName, out JsonElement value) &&
-            value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number) && number > 0)
-        {
-            return number;
-        }
-
-        return 0;
-    }
+            value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number) && number > 0
+                ? number
+                : 0;
 
     private static string Sanitize(string value)
         => (value ?? string.Empty).Replace('\r', ' ').Replace('\n', ' ').Trim();

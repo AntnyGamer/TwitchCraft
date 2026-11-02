@@ -275,9 +275,7 @@ public sealed class GameplayCommandIntegrationTests
     [Fact]
     public async Task AdminCommands_EnforcePermissionsAndStreamerProtection()
     {
-        await using MinecraftRuntimeScenario scenario = await StartAsync(
-            ["PlayerOne", "PlayerTwo"],
-            multiplayer: true);
+        await using MinecraftRuntimeScenario scenario = await StartAsync(["PlayerOne", "PlayerTwo"], multiplayer: true);
 
         int allowedCursor = scenario.CaptureCommandCursor();
         await scenario.DispatchAsync("!ban PlayerTwo griefing hard", "streamer");

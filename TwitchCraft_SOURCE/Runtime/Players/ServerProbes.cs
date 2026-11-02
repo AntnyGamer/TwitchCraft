@@ -181,8 +181,7 @@ public sealed partial class MainHandler
                 }
 
                 bool delivered = false;
-                int count = responses.Count;
-                for (int i = 0; i < count; i++)
+                for (int i = 0, count = responses.Count; i < count; i++)
                 {
                     string? response = responses[i];
                     if (response == null)
