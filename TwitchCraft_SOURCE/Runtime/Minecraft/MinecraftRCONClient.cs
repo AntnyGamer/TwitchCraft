@@ -30,30 +30,52 @@ internal static class MinecraftRCONClient
     private static int _nextRequestID = Environment.TickCount & 0x3FFFFFFF;
 
     public static Task<bool> ExecuteCommandAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
-        => IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command)
-            ? Task.FromResult(false)
-            : UseConnectionAsync(host.Trim(), port, password, async token =>
-            {
-                await WriteCommandAsync(command, token).ConfigureAwait(false);
-                return true;
-            }, cancellationToken);
+    {
+        if (IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command))
+        {
+            return Task.FromResult(false);
+        }
+
+        return UseConnectionAsync(host.Trim(), port, password, async token =>
+        {
+            await WriteCommandAsync(command, token).ConfigureAwait(false);
+            return true;
+        }, cancellationToken);
+    }
 
     public static Task<bool> ExecuteCommandsAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
-        => IsInvalidRequest(host, port, password) || commands.Count == 0
-            ? Task.FromResult(false)
-            : UseConnectionAsync(host.Trim(), port, password,
-                token => WriteCommandsAsync(commands, token), cancellationToken);
-
-    public static Task<string?> ExecuteQueryAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
-        => IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command)
-            ? Task.FromResult<string?>(null)
-            : UseConnectionAsync<string?>(host.Trim(), port, password,
-                token => QueryAsync(command, token)!, cancellationToken);
-
-    public static async Task<List<string?>?> ExecuteQueriesAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || commands.Count == 0)
+        {
+            return Task.FromResult(false);
+        }
+
+        return UseConnectionAsync(host.Trim(), port, password,
+            token => WriteCommandsAsync(commands, token), cancellationToken);
+    }
+
+    public static Task<string?> ExecuteQueryAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
+    {
+        if (IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        return UseConnectionAsync<string?>(host.Trim(), port, password,
+            token => QueryAsync(command, token)!, cancellationToken);
+    }
+
+    public static async Task<List<string?>?> ExecuteQueriesAsync(
+        string host,
+        int port,
+        string password,
+        IReadOnlyList<string> commands,
+        CancellationToken cancellationToken)
+    {
+        if (IsInvalidRequest(host, port, password) || commands.Count == 0)
+        {
             return null;
+        }
 
         string normalizedHost = host.Trim();
         await ConnectionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -113,13 +135,20 @@ internal static class MinecraftRCONClient
         }
     }
 
-    private static async Task<T> UseConnectionAsync<T>(string host, int port, string password, Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
+    private static async Task<T> UseConnectionAsync<T>(
+        string host,
+        int port,
+        string password,
+        Func<CancellationToken, Task<T>> action,
+        CancellationToken cancellationToken)
     {
         await ConnectionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (!await EnsureConnectedAsync(host, port, password, cancellationToken).ConfigureAwait(false))
+            {
                 return default!;
+            }
 
             return await action(cancellationToken).ConfigureAwait(false);
         }
@@ -189,9 +218,15 @@ internal static class MinecraftRCONClient
         {
             RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decodePayload: false).ConfigureAwait(false);
             if (packet.ID != requestID)
+            {
                 continue;
+            }
+
             if (packet.Type != ResponseValuePacketType)
+            {
                 throw new InvalidDataException("RCON returned an unexpected command response packet.");
+            }
+
             return;
         }
     }
@@ -205,7 +240,9 @@ internal static class MinecraftRCONClient
             foreach (string command in commands)
             {
                 if (string.IsNullOrWhiteSpace(command))
+                {
                     continue;
+                }
 
                 await WriteCommandAsync(command, cancellationToken).ConfigureAwait(false);
                 confirmedAny = true;
@@ -236,10 +273,14 @@ internal static class MinecraftRCONClient
             if (packet.ID == commandID)
             {
                 if (packet.Type != ResponseValuePacketType)
+                {
                     throw new InvalidDataException("RCON returned an unexpected query response packet.");
+                }
 
                 if (packet.Payload.Length > 0)
+                {
                     AppendResponse(response, packet.Payload);
+                }
 
                 if (!sentinelSent)
                 {
@@ -251,7 +292,10 @@ internal static class MinecraftRCONClient
             else if (packet.ID == sentinelID)
             {
                 if (!sentinelSent || packet.Type != ResponseValuePacketType)
+                {
                     throw new InvalidDataException("RCON returned an unexpected query delimiter packet.");
+                }
+
                 return response.ToString();
             }
         }
@@ -260,11 +304,19 @@ internal static class MinecraftRCONClient
     private static void AppendResponse(StringBuilder response, string payload)
     {
         if (response.Length > MaxResponseLength - payload.Length)
+        {
             throw new InvalidDataException("RCON response is too large.");
+        }
+
         response.Append(payload);
     }
 
-    private static async Task<bool> AuthenticateAsync(Stream stream, byte[] packetLengthBuffer, int requestID, string password, CancellationToken cancellationToken)
+    private static async Task<bool> AuthenticateAsync(
+        Stream stream,
+        byte[] packetLengthBuffer,
+        int requestID,
+        string password,
+        CancellationToken cancellationToken)
     {
         await WritePacketAsync(stream, requestID, AuthPacketType, password, cancellationToken).ConfigureAwait(false);
 
@@ -272,13 +324,19 @@ internal static class MinecraftRCONClient
         {
             RCONPacket packet = await ReadPacketAsync(stream, packetLengthBuffer, cancellationToken, decodePayload: false).ConfigureAwait(false);
             if (packet.ID == -1)
+            {
                 return false;
+            }
 
             if (packet.ID == requestID && packet.Type == AuthResponsePacketType)
+            {
                 return true;
+            }
 
             if (packet.ID != requestID || packet.Type != ResponseValuePacketType)
+            {
                 throw new InvalidDataException("RCON returned an unexpected authentication packet.");
+            }
         }
     }
 
@@ -287,7 +345,9 @@ internal static class MinecraftRCONClient
         int payloadLength = RCONEncoding.GetByteCount(payload);
         int length = payloadLength + 10;
         if (length > MaxPacketLength)
+        {
             throw new InvalidDataException("RCON command payload is too large.");
+        }
 
         int packetSize = 4 + length;
         byte[] packet = ArrayPool<byte>.Shared.Rent(packetSize);
@@ -309,19 +369,29 @@ internal static class MinecraftRCONClient
         }
     }
 
-    private static async Task<RCONPacket> ReadPacketAsync(Stream stream, byte[] packetLengthBuffer, CancellationToken cancellationToken, bool decodePayload = true, Decoder? decoder = null)
+    private static async Task<RCONPacket> ReadPacketAsync(
+        Stream stream,
+        byte[] packetLengthBuffer,
+        CancellationToken cancellationToken,
+        bool decodePayload = true,
+        Decoder? decoder = null)
     {
         await stream.ReadExactlyAsync(packetLengthBuffer.AsMemory(0, 4), cancellationToken).ConfigureAwait(false);
         int length = BinaryPrimitives.ReadInt32LittleEndian(packetLengthBuffer);
         if (length < 10 || length > MaxPacketLength)
+        {
             throw new InvalidDataException("RCON returned an invalid packet length.");
+        }
 
         byte[] payload = length == 10 ? packetLengthBuffer : ArrayPool<byte>.Shared.Rent(length);
         try
         {
             await stream.ReadExactlyAsync(payload.AsMemory(0, length), cancellationToken).ConfigureAwait(false);
             if (payload[length - 2] != 0 || payload[length - 1] != 0)
+            {
                 throw new InvalidDataException("RCON packet is missing its required null terminators.");
+            }
+
             string response = decodePayload && length > 10
                 ? DecodePayload(payload.AsSpan(8, length - 10), decoder)
                 : string.Empty;
@@ -335,14 +405,19 @@ internal static class MinecraftRCONClient
         {
             payload.AsSpan(0, length).Clear();
             if (length > 10)
+            {
                 ArrayPool<byte>.Shared.Return(payload);
+            }
         }
     }
 
     private static string DecodePayload(ReadOnlySpan<byte> payload, Decoder? decoder)
     {
         if (decoder == null)
+        {
             return RCONEncoding.GetString(payload);
+        }
+
         char[] chars = ArrayPool<char>.Shared.Rent(payload.Length);
         try
         {
@@ -358,7 +433,9 @@ internal static class MinecraftRCONClient
     {
         _nextRequestID = (_nextRequestID + 1) & 0x3FFFFFFF;
         if (_nextRequestID == 0)
+        {
             _nextRequestID = 1;
+        }
 
         return _nextRequestID;
     }

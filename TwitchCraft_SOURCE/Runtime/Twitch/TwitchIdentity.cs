@@ -24,14 +24,19 @@ public sealed partial class MainHandler
 
         string token = NormalizeToken(config.Twitch.BotToken);
         if (token.Length == 0)
+        {
             return config;
+        }
 
         _dataMaintenance.MarkTwitchValidated();
         try
         {
             string login = await ValidateBotAsync(token, config.Twitch.ClientID, cancellationToken).ConfigureAwait(false);
             if (login.Length > 0)
+            {
                 config.Twitch.BotName = login;
+            }
+
             return config;
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
@@ -41,7 +46,10 @@ public sealed partial class MainHandler
                 config.Twitch.RefreshToken,
                 cancellationToken).ConfigureAwait(false);
 
-            if (!refreshed.IsSuccess && refreshed.RefreshToken.Length > 0) SaveAuth(config.Twitch.ClientID, token, refreshed);
+            if (!refreshed.IsSuccess && refreshed.RefreshToken.Length > 0)
+            {
+                SaveAuth(config.Twitch.ClientID, token, refreshed);
+            }
 
             if (!refreshed.IsSuccess && TwitchOAuthAuthorizer.IsClientSecretFailure(refreshed.Error))
             {
@@ -81,7 +89,9 @@ public sealed partial class MainHandler
         {
             TwitchConfig? twitch = _activeConfig?.Twitch;
             if (twitch == null)
+            {
                 return false;
+            }
 
             string currentToken = NormalizeToken(twitch.BotToken);
             if (currentToken.Length > 0 &&
@@ -96,7 +106,11 @@ public sealed partial class MainHandler
                 cancellationToken).ConfigureAwait(false);
             if (!refreshed.IsSuccess)
             {
-                if (refreshed.RefreshToken.Length > 0) SaveAuth(twitch.ClientID, normalizedRejectedToken, refreshed);
+                if (refreshed.RefreshToken.Length > 0)
+                {
+                    SaveAuth(twitch.ClientID, normalizedRejectedToken, refreshed);
+                }
+
                 _shellWindow?.AddChatLogLine("Twitch authorization could not be renewed automatically: " + refreshed.Error);
                 return false;
             }
@@ -118,9 +132,15 @@ public sealed partial class MainHandler
             TwitchCraftConfig persisted = ConfigurationStore.Update(config =>
             {
                 if (!string.Equals(config.Twitch.ClientID, clientID, StringComparison.Ordinal) || !string.Equals(NormalizeToken(config.Twitch.BotToken), expectedToken, StringComparison.Ordinal))
+                {
                     return;
+                }
 
-                if (refreshed.RefreshToken.Length > 0) config.Twitch.RefreshToken = refreshed.RefreshToken;
+                if (refreshed.RefreshToken.Length > 0)
+                {
+                    config.Twitch.RefreshToken = refreshed.RefreshToken;
+                }
+
                 if (refreshed.IsSuccess)
                 {
                     config.Twitch.BotToken = refreshed.Token;
@@ -170,13 +190,17 @@ public sealed partial class MainHandler
             }
 
             if (resolvedBotName.Length == 0)
+            {
                 return string.Empty;
+            }
         }
 
         twitch = _activeConfig?.Twitch;
         if (!string.Equals(NormalizeUser(twitch?.BotName), resolvedBotName, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(NormalizeToken(twitch?.BotToken), normalizedToken, StringComparison.Ordinal))
+        {
             SaveBot(normalizedToken, resolvedBotName);
+        }
 
         return resolvedBotName;
     }
@@ -227,7 +251,10 @@ public sealed partial class MainHandler
         response.EnsureSuccessStatusCode();
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
         if (!TwitchOAuthAuthorizer.TryReadIdentity(document.RootElement, clientID, out string login, out string error))
+        {
             throw new InvalidOperationException(error);
+        }
+
         return login;
     }
 }

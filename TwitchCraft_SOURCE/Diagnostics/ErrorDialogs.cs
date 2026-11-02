@@ -72,7 +72,9 @@ internal static partial class ErrorHandling
     {
         string message = "Twitch authorization/setup did not complete.";
         if (!string.IsNullOrWhiteSpace(details))
+        {
             message += "\n\n" + details.Trim();
+        }
 
         ShowWarning(source, "Twitch Authorization", message);
     }

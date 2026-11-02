@@ -51,7 +51,10 @@ public sealed class EconomyBalanceTests
 
             Assert.Equal(liveRoster.Count, adjustedCount);
             foreach (string viewer in liveRoster)
+            {
                 Assert.Equal(25, store.GetBalance(viewer));
+            }
+
             Assert.Equal(5, store.AdjustBalance(" @RandomDudeReincarnatedX3 ", 5));
             Assert.Equal(30, store.GetBalance("randomdudereincarnatedx3"));
         }
@@ -64,7 +67,9 @@ public sealed class EconomyBalanceTests
         try
         {
             foreach (string viewer in liveRoster)
+            {
                 Assert.Equal(viewer == "randomdudereincarnatedx3" ? 30 : 25, reopened.GetBalance(viewer.ToUpperInvariant()));
+            }
         }
         finally
         {

@@ -14,7 +14,10 @@ internal enum FollowRewardResult
 }
 
 internal readonly record struct TokenRankResult(string Username, int Balance, int Rank);
-internal enum TokenAdjustmentStatus { Failed, Insufficient, Adjusted }
+internal enum TokenAdjustmentStatus
+{
+    Failed, Insufficient, Adjusted
+}
 
 internal sealed partial class TokenStore(string path)
 {
@@ -46,7 +49,10 @@ internal sealed partial class TokenStore(string path)
         try
         {
             lock (_gate)
+            {
                 FileSystemHelper.BackupSqliteDatabase(GetConnectionNoLock(), destinationPath);
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -78,13 +84,21 @@ internal sealed partial class TokenStore(string path)
 
     internal void ApplyMaximumBalance(int maximumBalance)
     {
-        if (maximumBalance <= 0) return;
+        if (maximumBalance <= 0)
+        {
+            return;
+        }
+
         lock (_gate)
         {
             using SqliteCommand command = GetConnectionNoLock().CreateCommand();
             command.CommandText = "UPDATE TokenBalances SET Balance = $maximum WHERE Balance > $maximum;";
             command.Parameters.AddWithValue("$maximum", maximumBalance);
-            if (command.ExecuteNonQuery() > 0) { _balances.Clear(); _loadedUsers.Clear(); }
+            if (command.ExecuteNonQuery() > 0)
+            {
+                _balances.Clear();
+                _loadedUsers.Clear();
+            }
         }
     }
 
@@ -95,11 +109,18 @@ internal sealed partial class TokenStore(string path)
     {
         balance = 0;
         string normalized = Normalize(user);
-        if (normalized.Length == 0) return true;
+        if (normalized.Length == 0)
+        {
+            return true;
+        }
 
         lock (_gate)
         {
-            if (!EnsureLoadedNoLock(normalized)) return false;
+            if (!EnsureLoadedNoLock(normalized))
+            {
+                return false;
+            }
+
             _balances.TryGetValue(normalized, out balance);
             return true;
         }
@@ -116,19 +137,30 @@ internal sealed partial class TokenStore(string path)
         balance = appliedDelta = 0;
         string normalized = Normalize(user);
         if (normalized.Length == 0 || requiredBalance < 0 || delta == 0)
+        {
             return TokenAdjustmentStatus.Failed;
+        }
 
         lock (_gate)
         {
             if (!EnsureLoadedNoLock(normalized))
+            {
                 return TokenAdjustmentStatus.Failed;
+            }
+
             _balances.TryGetValue(normalized, out int current);
             balance = current;
             if (current < requiredBalance)
+            {
                 return TokenAdjustmentStatus.Insufficient;
+            }
+
             int newBalance = ClampAdjusted(current, delta, maximumBalance);
             if (newBalance != current && !SaveChangedNoLock(normalized, newBalance))
+            {
                 return TokenAdjustmentStatus.Failed;
+            }
+
             SetCacheNoLock(normalized, newBalance);
             balance = newBalance;
             appliedDelta = newBalance - current;
@@ -140,20 +172,28 @@ internal sealed partial class TokenStore(string path)
     {
         string normalized = Normalize(user);
         if (normalized.Length == 0 || amount <= 0)
+        {
             return false;
+        }
 
         lock (_gate)
         {
             if (!EnsureLoadedNoLock(normalized))
+            {
                 return false;
+            }
 
             _balances.TryGetValue(normalized, out int current);
             if (current < amount)
+            {
                 return false;
+            }
 
             int newBalance = current - amount;
             if (!SaveChangedNoLock(normalized, newBalance))
+            {
                 return false;
+            }
 
             SetCacheNoLock(normalized, newBalance);
             return true;
@@ -164,20 +204,48 @@ internal sealed partial class TokenStore(string path)
     {
         from = Normalize(from);
         to = Normalize(to);
-        if (amount < 2 || from.Length == 0 || to.Length == 0 || from == to) return null;
+        if (amount < 2 || from.Length == 0 || to.Length == 0 || from == to)
+        {
+            return null;
+        }
+
         lock (_gate)
         {
-            if (!EnsureLoadedNoLock(from)) return null;
+            if (!EnsureLoadedNoLock(from))
+            {
+                return null;
+            }
+
             _balances.TryGetValue(from, out int fromBalance);
-            if (fromBalance < amount) return -1;
-            if (!EnsureLoadedNoLock(to)) return null;
+            if (fromBalance < amount)
+            {
+                return -1;
+            }
+
+            if (!EnsureLoadedNoLock(to))
+            {
+                return null;
+            }
+
             _balances.TryGetValue(to, out int toBalance);
             int newToBalance = ClampAdjusted(toBalance, amount / 2, maximumBalance);
             Dictionary<string, int> changes = new(2) { [from] = fromBalance - amount };
-            if (newToBalance != toBalance) changes[to] = newToBalance;
-            if (!SaveChangesNoLock(changes)) return null;
+            if (newToBalance != toBalance)
+            {
+                changes[to] = newToBalance;
+            }
+
+            if (!SaveChangesNoLock(changes))
+            {
+                return null;
+            }
+
             SetCacheNoLock(from, fromBalance - amount);
-            if (newToBalance != toBalance) SetCacheNoLock(to, newToBalance);
+            if (newToBalance != toBalance)
+            {
+                SetCacheNoLock(to, newToBalance);
+            }
+
             return newToBalance - toBalance;
         }
     }
@@ -186,7 +254,9 @@ internal sealed partial class TokenStore(string path)
     {
         string normalized = Normalize(user);
         if (normalized.Length != 0 && delta != 0)
+        {
             return AdjustBalanceCore(normalized, delta, maximumBalance);
+        }
 
         return 0;
     }
@@ -203,16 +273,24 @@ internal sealed partial class TokenStore(string path)
         string normalizedUserID = (twitchUserID ?? string.Empty).Trim();
         string normalizedUsername = Normalize(username);
         if (normalizedUserID.Length == 0 || normalizedUsername.Length == 0 || amount <= 0)
+        {
             return FollowRewardResult.Failed;
+        }
 
         for (int i = 0; i < normalizedUserID.Length; i++)
+        {
             if (!char.IsAsciiDigit(normalizedUserID[i]))
+            {
                 return FollowRewardResult.Failed;
+            }
+        }
 
         lock (_gate)
         {
             if (!EnsureLoadedNoLock(normalizedUsername))
+            {
                 return FollowRewardResult.Failed;
+            }
 
             try
             {
@@ -275,7 +353,9 @@ internal sealed partial class TokenStore(string path)
             }
 
             if (!SaveChangedNoLock(normalized, newBalance))
+            {
                 return 0;
+            }
 
             SetCacheNoLock(normalized, newBalance);
             return newBalance - current;
@@ -289,7 +369,10 @@ internal sealed partial class TokenStore(string path)
     {
         ArgumentNullException.ThrowIfNull(users);
         succeeded = true;
-        if (delta == 0) return 0;
+        if (delta == 0)
+        {
+            return 0;
+        }
 
         int capacity = System.Linq.Enumerable.TryGetNonEnumeratedCount(users, out int count) ? count : 0;
 
@@ -336,7 +419,9 @@ internal sealed partial class TokenStore(string path)
     {
         succeeded = true;
         if (normalizedDeltas.Count == 0)
+        {
             return 0;
+        }
 
         lock (_gate)
         {
@@ -344,12 +429,24 @@ internal sealed partial class TokenStore(string path)
             {
                 foreach (KeyValuePair<string, int> change in normalizedDeltas)
                 {
-                    if (!EnsureLoadedNoLock(change.Key)) { succeeded = false; return 0; }
+                    if (!EnsureLoadedNoLock(change.Key))
+                    {
+                        succeeded = false;
+                        return 0;
+                    }
                     _balances.TryGetValue(change.Key, out int current);
                     int newBalance = ClampAdjusted(current, change.Value, maximumBalance);
-                    if (newBalance == current) return 0;
+                    if (newBalance == current)
+                    {
+                        return 0;
+                    }
+
                     succeeded = SaveChangedNoLock(change.Key, newBalance);
-                    if (succeeded) SetCacheNoLock(change.Key, newBalance);
+                    if (succeeded)
+                    {
+                        SetCacheNoLock(change.Key, newBalance);
+                    }
+
                     return succeeded ? 1 : 0;
                 }
             }
@@ -366,11 +463,15 @@ internal sealed partial class TokenStore(string path)
                 _balances.TryGetValue(change.Key, out int current);
                 int newBalance = ClampAdjusted(current, change.Value, maximumBalance);
                 if (newBalance != current)
+                {
                     changedUsers[change.Key] = newBalance;
+                }
             }
 
             if (changedUsers.Count == 0)
+            {
                 return 0;
+            }
 
             if (!SaveChangesNoLock(changedUsers))
             {
@@ -379,7 +480,10 @@ internal sealed partial class TokenStore(string path)
             }
 
             foreach (KeyValuePair<string, int> pair in changedUsers)
+            {
                 SetCacheNoLock(pair.Key, pair.Value);
+            }
+
             return changedUsers.Count;
         }
     }
@@ -465,7 +569,9 @@ internal sealed partial class TokenStore(string path)
     {
         string[] names = new string[count];
         for (int i = 0; i < names.Length; i++)
+        {
             names[i] = string.Create(CultureInfo.InvariantCulture, $"$user{i}");
+        }
 
         return names;
     }

@@ -77,7 +77,9 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         catch
         {
             if (scenario != null)
+            {
                 await scenario.DisposeAsync();
+            }
             else
             {
                 cts?.Dispose();
@@ -95,8 +97,14 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
     internal void SetItemResponsesHeld(bool held)
     {
         string path = JarPath + ".hold-item-responses";
-        if (held) File.WriteAllText(path, string.Empty);
-        else File.Delete(path);
+        if (held)
+        {
+            File.WriteAllText(path, string.Empty);
+        }
+        else
+        {
+            File.Delete(path);
+        }
     }
 
     internal void SetSelectedItem(string playerName, string selectedItem)
@@ -109,7 +117,9 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
     {
         string barrier = "say tc_test_barrier_" + Interlocked.Increment(ref _barrierID).ToString(CultureInfo.InvariantCulture);
         if (!await Runtime.SendServerCommandAsync(barrier, Token))
+        {
             throw new InvalidOperationException("Could not send the test command barrier.");
+        }
 
         List<string> lines = [];
         int barrierIndex = -1;
@@ -118,7 +128,10 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
             {
                 lines = FakeJavaServer.ReadAllLinesShared(JarPath + ".stdin");
                 if (lines.Count <= cursor)
+                {
                     return false;
+                }
+
                 barrierIndex = lines.FindIndex(cursor, line => string.Equals(line, barrier, StringComparison.Ordinal));
                 return barrierIndex >= 0;
             },

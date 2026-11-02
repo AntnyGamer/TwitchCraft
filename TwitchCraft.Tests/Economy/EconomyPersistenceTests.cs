@@ -113,7 +113,10 @@ public sealed class EconomyPersistenceTests
             Assert.Equal(15, tokens.GetBalance("alice"));
             Assert.Equal(15, tokens.GetBalance("bob"));
         }
-        finally { tokens.Close(); }
+        finally
+        {
+            tokens.Close();
+        }
     }
 
     [Theory]

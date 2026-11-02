@@ -45,24 +45,30 @@ internal static class TwitchOAuthAuthorizer
     {
         string normalizedClientID = (clientID ?? string.Empty).Trim();
         if (normalizedClientID.Length == 0)
+        {
             return Fail("This TwitchCraft build is missing its public Twitch Client ID.");
+        }
 
         TwitchDeviceAuthorization device;
         try
         {
             using FormUrlEncodedContent content = new(
-            [
-                new KeyValuePair<string, string>("client_id", normalizedClientID),
-                new KeyValuePair<string, string>("scopes", RequiredScopes)
-            ]);
+                [
+                    new KeyValuePair<string, string>("client_id", normalizedClientID),
+                    new KeyValuePair<string, string>("scopes", RequiredScopes)
+                ]);
             using HttpResponseMessage response = await HttpClient.PostAsync(DeviceUri, content, cancellationToken).ConfigureAwait(false);
             string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
+            {
                 return Fail("Twitch could not start device authorization. " + ReadError(json));
+            }
 
             using JsonDocument document = JsonDocument.Parse(json);
             if (!TryReadDeviceAuth(document.RootElement, out device, out string error))
+            {
                 return Fail(error);
+            }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -86,7 +92,9 @@ internal static class TwitchOAuthAuthorizer
         TimeSpan pollDelay = TimeSpan.FromSeconds(Math.Max(device.IntervalSeconds, 1));
         TimeSpan allowedWait = TimeSpan.FromSeconds(device.ExpiresInSeconds);
         if (allowedWait > MaximumAuthorizationWait)
+        {
             allowedWait = MaximumAuthorizationWait;
+        }
 
         using CancellationTokenSource authorizationCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         authorizationCts.CancelAfter(allowedWait);
@@ -101,7 +109,9 @@ internal static class TwitchOAuthAuthorizer
                     authorizationCts.Token).ConfigureAwait(false);
 
                 if (poll.Status == DeviceTokenPollStatus.Pending)
+                {
                     continue;
+                }
 
                 if (poll.Status == DeviceTokenPollStatus.SlowDown)
                 {
@@ -112,7 +122,9 @@ internal static class TwitchOAuthAuthorizer
                 return poll.Result;
             }
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+        }
 
         return Fail("Timed out waiting for Twitch authorization. Click Authorize Twitch to try again.");
     }
@@ -125,24 +137,30 @@ internal static class TwitchOAuthAuthorizer
         string normalizedClientID = (clientID ?? string.Empty).Trim();
         string normalizedRefreshToken = (refreshToken ?? string.Empty).Trim();
         if (normalizedClientID.Length == 0 || normalizedRefreshToken.Length == 0)
+        {
             return Fail("The saved Twitch authorization cannot be renewed because its Client ID or refresh token is missing.");
+        }
 
         try
         {
             using FormUrlEncodedContent content = new(
-            [
-                new KeyValuePair<string, string>("client_id", normalizedClientID),
-                new KeyValuePair<string, string>("refresh_token", normalizedRefreshToken),
-                new KeyValuePair<string, string>("grant_type", "refresh_token")
-            ]);
+                [
+                    new KeyValuePair<string, string>("client_id", normalizedClientID),
+                    new KeyValuePair<string, string>("refresh_token", normalizedRefreshToken),
+                    new KeyValuePair<string, string>("grant_type", "refresh_token")
+                ]);
             using HttpResponseMessage response = await HttpClient.PostAsync(TokenUri, content, cancellationToken).ConfigureAwait(false);
             string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
+            {
                 return Fail("Twitch could not renew the saved authorization. " + ReadError(json));
+            }
 
             using JsonDocument document = JsonDocument.Parse(json);
             if (!TryReadTokens(document.RootElement, out string token, out string newRefreshToken, out string error))
+            {
                 return Fail(error);
+            }
 
             TwitchOAuthResult validated = await ValidateTokenAsync(token, newRefreshToken, normalizedClientID, cancellationToken).ConfigureAwait(false);
             return validated.IsSuccess ? validated : validated with { RefreshToken = newRefreshToken };
@@ -161,7 +179,9 @@ internal static class TwitchOAuthAuthorizer
     internal static bool ShouldUseDeviceAuth(string refreshError)
     {
         if (string.IsNullOrWhiteSpace(refreshError))
+        {
             return false;
+        }
 
         return refreshError.Contains("invalid refresh token", StringComparison.OrdinalIgnoreCase)
             || refreshError.Contains("expired refresh token", StringComparison.OrdinalIgnoreCase)
@@ -172,12 +192,16 @@ internal static class TwitchOAuthAuthorizer
     internal static bool IsClientSecretFailure(string refreshError)
     {
         if (string.IsNullOrWhiteSpace(refreshError))
+        {
             return false;
+        }
 
         bool mentionsClientSecret = refreshError.Contains("client secret", StringComparison.OrdinalIgnoreCase)
             || refreshError.Contains("client_secret", StringComparison.OrdinalIgnoreCase);
         if (!mentionsClientSecret)
+        {
             return false;
+        }
 
         return refreshError.Contains("missing", StringComparison.OrdinalIgnoreCase)
             || refreshError.Contains("invalid", StringComparison.OrdinalIgnoreCase)
@@ -299,12 +323,12 @@ internal static class TwitchOAuthAuthorizer
         try
         {
             using FormUrlEncodedContent content = new(
-            [
-                new KeyValuePair<string, string>("client_id", clientID),
-                new KeyValuePair<string, string>("scopes", RequiredScopes),
-                new KeyValuePair<string, string>("device_code", deviceCode),
-                new KeyValuePair<string, string>("grant_type", DeviceGrantType)
-            ]);
+                [
+                    new KeyValuePair<string, string>("client_id", clientID),
+                    new KeyValuePair<string, string>("scopes", RequiredScopes),
+                    new KeyValuePair<string, string>("device_code", deviceCode),
+                    new KeyValuePair<string, string>("grant_type", DeviceGrantType)
+                ]);
             using HttpResponseMessage response = await HttpClient.PostAsync(TokenUri, content, cancellationToken).ConfigureAwait(false);
             string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
@@ -327,7 +351,9 @@ internal static class TwitchOAuthAuthorizer
 
             using JsonDocument document = JsonDocument.Parse(json);
             if (!TryReadTokens(document.RootElement, out string token, out string refreshToken, out string error))
+            {
                 return new(DeviceTokenPollStatus.Complete, Fail(error));
+            }
 
             TwitchOAuthResult validated = await ValidateTokenAsync(
                 token,
@@ -380,7 +406,9 @@ internal static class TwitchOAuthAuthorizer
             request.Headers.Authorization = new AuthenticationHeaderValue("OAuth", token);
             using HttpResponseMessage response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
+            {
                 return Fail("Twitch rejected the access token.");
+            }
 
             await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -403,7 +431,9 @@ internal static class TwitchOAuthAuthorizer
     {
         string query = verificationUri.Query.TrimStart('?');
         if (query.Contains("device-code=", StringComparison.OrdinalIgnoreCase))
+        {
             return verificationUri;
+        }
 
         UriBuilder builder = new(verificationUri);
         string codeQuery = "public=true&device-code=" + Uri.EscapeDataString(userCode);
@@ -423,9 +453,15 @@ internal static class TwitchOAuthAuthorizer
             JsonElement root = document.RootElement;
             string error = GetString(root, "message");
             if (error.Length == 0)
+            {
                 error = GetString(root, "error_description");
+            }
+
             if (error.Length == 0)
+            {
                 error = GetString(root, "error");
+            }
+
             return Sanitize(error.Length == 0 ? "Twitch rejected the request." : error);
         }
         catch (JsonException)
@@ -434,12 +470,12 @@ internal static class TwitchOAuthAuthorizer
         }
     }
 
-    private static string GetString(JsonElement root, string propertyName) =>
-        root.ValueKind == JsonValueKind.Object &&
-        root.TryGetProperty(propertyName, out JsonElement value) &&
-        value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? string.Empty
-            : string.Empty;
+    private static string GetString(JsonElement root, string propertyName)
+        => root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty(propertyName, out JsonElement value) &&
+            value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
 
     private static int GetPositiveInt(JsonElement root, string propertyName)
         => root.ValueKind == JsonValueKind.Object &&

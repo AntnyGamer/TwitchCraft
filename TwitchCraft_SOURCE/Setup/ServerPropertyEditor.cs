@@ -39,7 +39,9 @@ public sealed class ServerPropertyEditor
     public static string GetPropertiesPath(TwitchCraftConfig config)
     {
         if (config?.Server == null || string.IsNullOrWhiteSpace(config.Server.ServerDirectory))
+        {
             return string.Empty;
+        }
 
         return Path.Combine(config.Server.ServerDirectory, "server.properties");
     }
@@ -48,17 +50,23 @@ public sealed class ServerPropertyEditor
     {
         string propsPath = GetPropertiesPath(config);
         if (!File.Exists(propsPath))
+        {
             return DefaultLevelName;
+        }
 
         string? levelName = null;
         foreach (string line in File.ReadLines(propsPath, Encoding.UTF8))
         {
             if (line.Length == 0 || line[0] == '#')
+            {
                 continue;
+            }
 
             int equals = line.IndexOf('=');
             if (equals >= 0 && MemoryExtensions.Equals(line.AsSpan(0, equals).Trim(), "level-name".AsSpan(), StringComparison.Ordinal))
+            {
                 levelName = UnescapeValue(line[(equals + 1)..]);
+            }
         }
 
         return NormalizeLevelName(levelName);
@@ -73,7 +81,9 @@ public sealed class ServerPropertyEditor
     public static string GetWorldDirectory(string? serverDirectory, string? levelName)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory))
+        {
             throw new InvalidOperationException("Server directory is missing.");
+        }
 
         string serverRoot = Path.GetFullPath(serverDirectory);
         string worldPath = Path.GetFullPath(Path.Combine(serverRoot, NormalizeLevelName(levelName)));
@@ -82,7 +92,9 @@ public sealed class ServerPropertyEditor
             : serverRoot + Path.DirectorySeparatorChar;
 
         if (!worldPath.StartsWith(serverRootWithSlash, StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidOperationException("Invalid world folder path.");
+        }
 
         return worldPath;
     }
@@ -91,7 +103,9 @@ public sealed class ServerPropertyEditor
     {
         string value = (levelName ?? string.Empty).Trim();
         if (value.Length == 0)
+        {
             return DefaultLevelName;
+        }
 
         if (value == "." || value == ".." || Path.IsPathRooted(value) || value.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
             value.AsSpan().IndexOfAny('/', '\\', ':') >= 0)
@@ -110,7 +124,9 @@ public sealed class ServerPropertyEditor
         config.Settings ??= new StartingProfile();
 
         if (string.IsNullOrWhiteSpace(config.Server.ServerDirectory))
+        {
             throw new InvalidOperationException("Server directory is missing.");
+        }
 
         Directory.CreateDirectory(config.Server.ServerDirectory);
 
@@ -123,14 +139,18 @@ public sealed class ServerPropertyEditor
     public static void CleanupServerJars(string serverDirectory, string currentJarPath)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory) || string.IsNullOrWhiteSpace(currentJarPath) || !Directory.Exists(serverDirectory))
+        {
             return;
+        }
 
         string keep = Path.GetFullPath(currentJarPath);
 
         foreach (string path in Directory.EnumerateFiles(serverDirectory, "twitchcraft-server-*.jar"))
         {
             if (string.Equals(Path.GetFullPath(path), keep, StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
+            }
 
             try
             {
@@ -145,7 +165,10 @@ public sealed class ServerPropertyEditor
 
     public static string ApplyProfile(TwitchCraftConfig config)
     {
-        lock (ProfileGate) return ApplyProfileCore(config);
+        lock (ProfileGate)
+        {
+            return ApplyProfileCore(config);
+        }
     }
 
     private static string ApplyProfileCore(TwitchCraftConfig config)
@@ -158,7 +181,9 @@ public sealed class ServerPropertyEditor
 
         string propsPath = GetPropertiesPath(config);
         if (string.IsNullOrWhiteSpace(propsPath))
+        {
             return string.Empty;
+        }
 
         Dictionary<string, string> props = LoadPropertiesForUpdate(propsPath, out string existingContent);
         MinecraftVersionSupport.MinecraftVersionInfo version = MinecraftVersionSupport.GetVersion(config.Server.MinecraftVersion);
@@ -277,7 +302,9 @@ public sealed class ServerPropertyEditor
         using StringReader reader = new(existingContent);
         string? line;
         while ((line = reader.ReadLine()) != null)
+        {
             AddProperty(props, line);
+        }
 
         return props;
     }
@@ -285,11 +312,15 @@ public sealed class ServerPropertyEditor
     private static void AddProperty(Dictionary<string, string> props, string line)
     {
         if (line.Length == 0 || line[0] == '#')
+        {
             return;
+        }
 
         int equals = line.IndexOf('=');
         if (equals < 0)
+        {
             return;
+        }
 
         string key = line[..equals].Trim();
         string value = UnescapeValue(line[(equals + 1)..]);
@@ -305,7 +336,9 @@ public sealed class ServerPropertyEditor
         foreach (string key in props.Keys)
         {
             if (!ManagedServerProperties.Contains(key))
+            {
                 editableKeys.Add(key);
+            }
         }
 
         editableKeys.Sort(StringComparer.OrdinalIgnoreCase);
@@ -314,7 +347,9 @@ public sealed class ServerPropertyEditor
             builder.AppendLine("# THESE SETTINGS CAN BE CHANGED DIRECTLY IN THIS FILE.");
             builder.AppendLine("# TWITCHCRAFT WILL PRESERVE YOUR CHANGES.");
             foreach (string key in editableKeys)
+            {
                 AppendProperty(builder, key, props[key]);
+            }
 
             builder.AppendLine();
         }
@@ -322,13 +357,25 @@ public sealed class ServerPropertyEditor
         builder.AppendLine("# THE SETTINGS BELOW ARE MANAGED BY TWITCHCRAFT.");
         builder.AppendLine("# IT IS RECOMMENDED TO CHANGE THEM IN TWITCHCRAFT AS DIRECT EDITS HERE MAY BE REPLACED.");
         foreach (string key in ManagedServerPropertyOrder)
-            if (props.TryGetValue(key, out string? value)) AppendProperty(builder, key, value);
-        builder.AppendLine().AppendLine("# RCON PASSWORD - MANAGED BY TWITCHCRAFT - KEEP SECURE").AppendLine("# IF LOCALLY HOSTING, CHANGE IT IN TWITCHCRAFT: SETTINGS > DANGEROUS");
-        if (props.TryGetValue("rcon.password", out string? RCONPassword)) AppendProperty(builder, "rcon.password", RCONPassword);
+        {
+            if (props.TryGetValue(key, out string? value))
+            {
+                AppendProperty(builder, key, value);
+            }
+        }
+
+        builder.AppendLine().AppendLine("# RCON PASSWORD - MANAGED BY TWITCHCRAFT - KEEP SECURE")
+            .AppendLine("# IF LOCALLY HOSTING, CHANGE IT IN TWITCHCRAFT: SETTINGS > DANGEROUS");
+        if (props.TryGetValue("rcon.password", out string? RCONPassword))
+        {
+            AppendProperty(builder, "rcon.password", RCONPassword);
+        }
 
         string content = builder.ToString();
         if (string.Equals(existingContent, content, StringComparison.Ordinal))
+        {
             return content;
+        }
 
         string tempPath = propsPath + ".tmp";
         string backupPath = propsPath + ".bak";
@@ -344,12 +391,28 @@ public sealed class ServerPropertyEditor
 
     private static string EscapeValue(string? value)
     {
-        if (string.IsNullOrEmpty(value)) return string.Empty;
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
         StringBuilder? builder = null;
         for (int i = 0; i < value.Length; i++)
         {
-            char c = value[i], escaped = c switch { '\t' => 't', '\n' => 'n', '\r' => 'r', '\f' => 'f', _ => '\0' };
-            if (escaped == '\0' && c != '\\' && c != '=' && c != ':' && (i != 0 || c is not (' ' or '#' or '!'))) { builder?.Append(c); continue; }
+            char c = value[i];
+            char escaped = c switch
+            {
+                '\t' => 't',
+                '\n' => 'n',
+                '\r' => 'r',
+                '\f' => 'f',
+                _ => '\0'
+            };
+            if (escaped == '\0' && c != '\\' && c != '=' && c != ':' && (i != 0 || c is not (' ' or '#' or '!')))
+            {
+                builder?.Append(c);
+                continue;
+            }
             builder ??= new StringBuilder(value.Length + 4).Append(value, 0, i);
             builder.Append('\\').Append(escaped == '\0' ? c : escaped);
         }
@@ -359,7 +422,11 @@ public sealed class ServerPropertyEditor
     private static string UnescapeValue(string value)
     {
         int slash = value.IndexOf('\\');
-        if (slash < 0) return value;
+        if (slash < 0)
+        {
+            return value;
+        }
+
         StringBuilder builder = new StringBuilder(value.Length).Append(value, 0, slash);
         for (int i = slash; i < value.Length; i++)
         {
@@ -386,7 +453,14 @@ public sealed class ServerPropertyEditor
                 }
                 else
                 {
-                    c = next switch { 't' => '\t', 'n' => '\n', 'r' => '\r', 'f' => '\f', _ => next };
+                    c = next switch
+                    {
+                        't' => '\t',
+                        'n' => '\n',
+                        'r' => '\r',
+                        'f' => '\f',
+                        _ => next
+                    };
                 }
             }
             builder.Append(c);

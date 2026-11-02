@@ -23,16 +23,27 @@ internal static class PaidCommandTransaction
 
         long? cooldownReservation = await reserveCooldownAsync(cancellationToken).ConfigureAwait(false);
         if (!cooldownReservation.HasValue)
+        {
             return false;
+        }
 
         bool dispatchSucceeded = false;
 
         bool Refund()
         {
-            if (cost <= 0) return true;
+            if (cost <= 0)
+            {
+                return true;
+            }
+
             bool refunded = refundTokens(cost);
             if (!refunded)
-                ErrorHandling.LogNonFatal("A paid command could not fully refund its token charge", new InvalidOperationException("The token refund amount did not match the original charge."));
+            {
+                ErrorHandling.LogNonFatal(
+                    "A paid command could not fully refund its token charge",
+                    new InvalidOperationException("The token refund amount did not match the original charge."));
+            }
+
             return refunded;
         }
 
@@ -70,7 +81,9 @@ internal static class PaidCommandTransaction
         finally
         {
             if (!dispatchSucceeded)
+            {
                 releaseCooldown(cooldownReservation.Value);
+            }
         }
     }
 }

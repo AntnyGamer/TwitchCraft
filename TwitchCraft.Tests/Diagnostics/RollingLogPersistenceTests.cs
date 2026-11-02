@@ -49,7 +49,9 @@ public sealed class RollingLogPersistenceTests
         File.WriteAllText(logPath, retained + System.Environment.NewLine + tail, UTF8NoBOM);
 
         using (RollingJsonLogWriter writer = new(logPath, 1024, 3, UTF8NoBOM))
+        {
             Assert.True(writer.TryWriteLine(pending));
+        }
 
         string[] expected = completeTail ? [retained, tail, pending] : [retained, pending];
         string[] lines = File.ReadAllLines(logPath);
@@ -70,7 +72,9 @@ public sealed class RollingLogPersistenceTests
         using (RollingJsonLogWriter writer = new(logPath, 40, 3, UTF8NoBOM))
         {
             for (int index = 0; index < 30; index++)
+            {
                 Assert.True(writer.TryWriteLine("{\"event\":" + index + ",\"value\":\"abcdefghij\"}"));
+            }
         }
 
         string[] files = Directory.GetFiles(directory.Path, "TwitchCraft.log*");

@@ -165,19 +165,28 @@ public sealed class TwitchMessagingPolicyTests
         session.ResetRelayRateLimit();
 
         for (int i = 0; i < 6; i++)
+        {
             Assert.True(session.TryUseRelaySlot(6, false, now + i));
+        }
+
         Assert.False(session.TryUseRelaySlot(6, false, now + 6));
 
         session.ResetRelayRateLimit();
 
         for (int i = 0; i < 5; i++)
+        {
             Assert.True(session.TryUseRelaySlot(0, true, now + i));
+        }
+
         Assert.False(session.TryUseRelaySlot(0, true, now + 5));
 
         session.ResetRelayRateLimit();
 
         for (int i = 0; i < 5; i++)
+        {
             Assert.True(session.TryUseRelaySlot(100, true, now + i));
+        }
+
         Assert.False(session.TryUseRelaySlot(100, true, now + 5));
     }
 

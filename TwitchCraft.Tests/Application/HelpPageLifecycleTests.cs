@@ -22,7 +22,9 @@ public sealed class HelpPageLifecycleTests
             DispatcherHookEventHandler onPosted = (_, e) =>
             {
                 if (e.Operation.Priority == DispatcherPriority.Inactive)
+                {
                     timerOperation = e.Operation;
+                }
             };
             dispatcher.Hooks.OperationPosted += onPosted;
             try

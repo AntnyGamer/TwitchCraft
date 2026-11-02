@@ -231,6 +231,7 @@ public sealed class PaidDispatchAtomicityTests
         internal long? NextReservation { get; set; } = 101;
         internal Func<CancellationToken, Task<bool>>? DispatchOverride { get; set; }
         internal List<long> ReleasedReservations { get; } = [];
+
         internal Task<bool> ExecuteAsync(int cost, CancellationToken cancellationToken)
         {
             return PaidCommandTransaction.ExecuteAsync(
@@ -238,7 +239,9 @@ public sealed class PaidDispatchAtomicityTests
                 _ =>
                 {
                     if (NextReservation.HasValue)
+                    {
                         CurrentReservation = NextReservation.Value;
+                    }
 
                     return Task.FromResult(NextReservation);
                 },
@@ -246,13 +249,17 @@ public sealed class PaidDispatchAtomicityTests
                 {
                     ReleasedReservations.Add(reservation);
                     if (CurrentReservation == reservation)
+                    {
                         CurrentReservation = 0;
+                    }
                 },
                 amount =>
                 {
                     SpendCalls++;
                     if (Balance < amount)
+                    {
                         return false;
+                    }
 
                     Balance -= amount;
                     return true;
@@ -261,7 +268,10 @@ public sealed class PaidDispatchAtomicityTests
                 {
                     RefundCalls++;
                     if (RefundSucceeds)
+                    {
                         Balance += amount;
+                    }
+
                     return RefundSucceeds;
                 },
                 token =>

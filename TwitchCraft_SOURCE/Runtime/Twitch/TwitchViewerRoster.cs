@@ -20,11 +20,15 @@ public sealed partial class MainHandler
         {
             _viewerRewardSchedule.Clear();
             if (_knownViewers.Count > 0)
+            {
                 _knownViewers = emptyViewers = [];
+            }
         }
 
         if (emptyViewers != null)
+        {
             _shellWindow?.UpdateViewers(emptyViewers);
+        }
     }
 
     private async Task RunPassiveRewardsAsync(CancellationToken cancellationToken)
@@ -44,7 +48,9 @@ public sealed partial class MainHandler
                         {
                             string viewer = _knownViewers[i];
                             if (string.IsNullOrWhiteSpace(viewer))
+                            {
                                 continue;
+                            }
 
                             if (!IsRewardEligibleNoLock(viewer, now))
                             {
@@ -67,9 +73,15 @@ public sealed partial class MainHandler
                     if (rewarded is { Count: > 0 } && !Tokens.TryAward(rewarded, PassiveTokensPerPayout))
                     {
                         lock (_viewerGate)
+                        {
                             foreach (string viewer in rewarded)
+                            {
                                 if (_viewerRewardSchedule.ContainsKey(viewer))
+                                {
                                     _viewerRewardSchedule[viewer] = now;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -187,7 +199,9 @@ public sealed partial class MainHandler
                         string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                         cursor = ParseRosterPage(json, viewers);
                         if (cursor is { Length: > 0 } && (!(cursors ??= new(StringComparer.Ordinal)).Add(cursor) || cursors.Count > 1000))
+                        {
                             throw new InvalidDataException("Twitch viewer pagination did not terminate safely.");
+                        }
                     }
                     while (cursor is { Length: > 0 });
 
@@ -219,7 +233,9 @@ public sealed partial class MainHandler
                 {
                     consecutiveFailures++;
                     if (consecutiveFailures >= 3)
+                    {
                         ClearRoster();
+                    }
 
                     _shellWindow?.AddChatLogLine("Viewer roster rate limited; retrying in " + Math.Ceiling(refreshDelay.TotalSeconds).ToString(CultureInfo.InvariantCulture) + "s.");
                 }
@@ -227,7 +243,9 @@ public sealed partial class MainHandler
                 {
                     consecutiveFailures++;
                     if (consecutiveFailures >= 3)
+                    {
                         ClearRoster();
+                    }
 
                     _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("Viewer roster refresh failed", ex));
                 }
@@ -248,19 +266,28 @@ public sealed partial class MainHandler
     private static TimeSpan GetRetryDelay(HttpResponseMessage response, TimeSpan fallback)
     {
         if (response.Headers.RetryAfter?.Delta is TimeSpan delta && delta > TimeSpan.Zero)
+        {
             return delta;
+        }
 
         if (response.Headers.RetryAfter?.Date is DateTimeOffset date)
         {
             TimeSpan delay = date - DateTimeOffset.UtcNow;
             if (delay > TimeSpan.Zero)
+            {
                 return delay;
+            }
         }
 
         return fallback;
     }
 
-    private static async Task<string[]> ResolveUsersAsync(string botName, string streamerName, string clientID, string token, CancellationToken cancellationToken)
+    private static async Task<string[]> ResolveUsersAsync(
+        string botName,
+        string streamerName,
+        string clientID,
+        string token,
+        CancellationToken cancellationToken)
     {
         string url = "https://api.twitch.tv/helix/users?login=" + Uri.EscapeDataString(botName) + "&login=" + Uri.EscapeDataString(streamerName);
         using HttpRequestMessage request = new(HttpMethod.Get, url);
@@ -282,7 +309,9 @@ public sealed partial class MainHandler
         while (reader.Read())
         {
             if (reader.TokenType != JsonToken.PropertyName || reader.Value is not string propertyName)
+            {
                 continue;
+            }
 
             if (string.Equals(propertyName, "data", StringComparison.Ordinal) && reader.Read() && reader.TokenType == JsonToken.StartArray)
             {
@@ -298,16 +327,24 @@ public sealed partial class MainHandler
                     while (reader.Read() && reader.TokenType != JsonToken.EndObject)
                     {
                         if (reader.TokenType != JsonToken.PropertyName || reader.Value is not string itemProperty || !reader.Read())
+                        {
                             continue;
+                        }
 
                         if (string.Equals(itemProperty, "user_login", StringComparison.Ordinal) && reader.TokenType == JsonToken.String)
+                        {
                             login = NormalizeUser(reader.Value as string);
+                        }
                         else if (reader.TokenType is JsonToken.StartArray or JsonToken.StartObject)
+                        {
                             reader.Skip();
+                        }
                     }
 
                     if (login.Length > 0)
+                    {
                         viewers.Add(login);
+                    }
                 }
             }
             else if (string.Equals(propertyName, "pagination", StringComparison.Ordinal) && reader.Read() && reader.TokenType == JsonToken.StartObject)
@@ -315,12 +352,18 @@ public sealed partial class MainHandler
                 while (reader.Read() && reader.TokenType != JsonToken.EndObject)
                 {
                     if (reader.TokenType != JsonToken.PropertyName || reader.Value is not string paginationProperty || !reader.Read())
+                    {
                         continue;
+                    }
 
                     if (string.Equals(paginationProperty, "cursor", StringComparison.Ordinal) && reader.TokenType == JsonToken.String)
+                    {
                         cursor = reader.Value as string;
+                    }
                     else if (reader.TokenType is JsonToken.StartArray or JsonToken.StartObject)
+                    {
                         reader.Skip();
+                    }
                 }
             }
             else if (reader.Read() && reader.TokenType is JsonToken.StartArray or JsonToken.StartObject)
@@ -362,20 +405,33 @@ public sealed partial class MainHandler
                 while (reader.Read() && reader.TokenType != JsonToken.EndObject)
                 {
                     if (reader.TokenType != JsonToken.PropertyName || reader.Value is not string propertyName || !reader.Read())
+                    {
                         continue;
+                    }
 
                     if (string.Equals(propertyName, "login", StringComparison.Ordinal) && reader.TokenType == JsonToken.String)
+                    {
                         login = NormalizeUser(reader.Value as string);
+                    }
                     else if (string.Equals(propertyName, "id", StringComparison.Ordinal) && reader.TokenType == JsonToken.String)
+                    {
                         ID = (reader.Value as string)?.Trim() ?? string.Empty;
+                    }
                     else if (reader.TokenType is JsonToken.StartArray or JsonToken.StartObject)
+                    {
                         reader.Skip();
+                    }
                 }
 
                 if (string.Equals(login, normalizedBotName, StringComparison.OrdinalIgnoreCase))
+                {
                     botID = ID;
+                }
+
                 if (string.Equals(login, normalizedStreamerName, StringComparison.OrdinalIgnoreCase))
+                {
                     broadcasterID = ID;
+                }
             }
 
             break;
@@ -397,24 +453,37 @@ public sealed partial class MainHandler
             }
 
             foreach (string viewer in _viewerRewardSchedule.Keys)
+            {
                 if (!SortedListHelper.Contains(viewers, viewer, StringComparer.OrdinalIgnoreCase))
+                {
                     _viewerRewardSchedule.Remove(viewer);
+                }
+            }
 
             if (_viewerLastChatActivity.Count > 0)
             {
                 long activityCutoff = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 120 * 60L;
                 foreach ((string viewer, long lastActive) in _viewerLastChatActivity)
-                    if (lastActive < activityCutoff) _viewerLastChatActivity.Remove(viewer);
+                {
+                    if (lastActive < activityCutoff)
+                    {
+                        _viewerLastChatActivity.Remove(viewer);
+                    }
+                }
             }
         }
 
         if (viewerList != null)
+        {
             _shellWindow?.UpdateViewers(viewerList);
+        }
     }
 
     public List<string> GetViewerRosterSnapshot()
     {
         lock (_viewerGate)
+        {
             return [.. _knownViewers];
+        }
     }
 }

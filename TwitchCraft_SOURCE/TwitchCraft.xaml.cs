@@ -199,7 +199,9 @@ public partial class TwitchCraft : Window
     private void OnShellPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (!_shutdownAlreadyHandled && !_suppressPageStateUpdates)
+        {
             ApplyPageState();
+        }
     }
 
     private void ApplyPageState(TwitchCraftConfig? launchConfig = null)
@@ -235,7 +237,9 @@ public partial class TwitchCraft : Window
         if (page == null)
         {
             if (!isVisible)
+            {
                 return;
+            }
 
             page = new T { Visibility = Visibility.Collapsed };
             WindowContentHost.Children.Add(page);

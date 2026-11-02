@@ -90,7 +90,9 @@ public static partial class MinigameManager
     private static ChickenRunState GetChickenState(MainHandler runtime)
     {
         lock (MinigameGate)
+        {
             return GetChickenStateNoLock(runtime);
+        }
     }
 
     private static TState GetStateNoLock<TState>(Dictionary<MainHandler, TState> states, MainHandler runtime)
@@ -114,7 +116,9 @@ public static partial class MinigameManager
     private static WitherBattleState GetWitherState(MainHandler runtime)
     {
         lock (MinigameGate)
+        {
             return GetWitherStateNoLock(runtime);
+        }
     }
 
     private static WitherBattleState GetWitherStateNoLock(MainHandler runtime)
@@ -128,7 +132,9 @@ public static partial class MinigameManager
         for (int i = 0; i < bets.Count; i++)
         {
             if (string.Equals(bets[i].Viewer, viewer, StringComparison.OrdinalIgnoreCase))
+            {
                 return bets[i];
+            }
         }
 
         return null;
@@ -141,7 +147,9 @@ public static partial class MinigameManager
         {
             TBet bet = bets[i];
             if (string.IsNullOrWhiteSpace(bet.Viewer) || bet.TokenAmount <= 0)
+            {
                 continue;
+            }
 
             cloned.Add(cloneBet(bet));
         }

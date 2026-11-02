@@ -10,10 +10,10 @@ public static partial class CommandList
 {
     private sealed partial class CommandBuildContext
     {
-        Task BanAsync(string[]? args, string sender, CancellationToken ct)
+        private Task BanAsync(string[]? args, string sender, CancellationToken ct)
             => ModerateAsync(args, sender, ban: true, ct);
 
-        async Task CommandStatsAsync(string[]? _, string sender, CancellationToken ct)
+        private async Task CommandStatsAsync(string[]? _, string sender, CancellationToken ct)
         {
             StatisticsSnapshot stats = runtime.Statistics.GetSnapshot(ct);
             if (!stats.StatisticsEnabled)
@@ -29,7 +29,8 @@ public static partial class CommandList
                     $"{sender}, this session: {stats.SessionGameCommandsRun} game commands, {stats.SessionDangerousCommandsRun} dangerous, {stats.SessionNiceCommandsRun} nice, and {stats.SessionTokensSpent} tokens spent. Most used: {mostUsed}."),
                 ct).ConfigureAwait(false);
         }
-        async Task FollowRewardAsync(string[]? _, string sender, CancellationToken ct)
+
+        private async Task FollowRewardAsync(string[]? _, string sender, CancellationToken ct)
         {
             if (!runtime.IsFollowRewardsRunning)
             {
@@ -43,14 +44,16 @@ public static partial class CommandList
                 " tokens once per Twitch account. Unfollowing and following again does not award more.",
                 ct).ConfigureAwait(false);
         }
-        async Task HelpAsync(string[]? _, string sender, CancellationToken ct)
+
+        private async Task HelpAsync(string[]? _, string sender, CancellationToken ct)
         {
             string details = runtime.MultiTargetingEnabled
                 ? "Most commands support targeting (!command player|all|random). Full list: https://antnygamer.github.io/TwitchCraft/commands/"
                 : "Use your tokens with these commands: https://antnygamer.github.io/TwitchCraft/commands/";
             await SuccessAsync(sender + ", welcome! Earn tokens by watching the stream. " + details, ct).ConfigureAwait(false);
         }
-        async Task PlayerListAsync(string[]? _, string sender, CancellationToken ct)
+
+        private async Task PlayerListAsync(string[]? _, string sender, CancellationToken ct)
         {
             List<string> players = await runtime.GetPlayersAsync(ct).ConfigureAwait(false);
             if (players.Count == 0)
@@ -60,16 +63,20 @@ public static partial class CommandList
             }
             await SuccessAsync(sender + ", active players (" + players.Count.ToString(CultureInfo.InvariantCulture) + "): " + string.Join(", ", players) + ".", ct).ConfigureAwait(false);
         }
-        Task KickAsync(string[]? args, string sender, CancellationToken ct)
+
+        private Task KickAsync(string[]? args, string sender, CancellationToken ct)
             => ModerateAsync(args, sender, ban: false, ct);
 
-        async Task ModerateAsync(string[]? args, string sender, bool ban, CancellationToken ct)
+        private async Task ModerateAsync(string[]? args, string sender, bool ban, CancellationToken ct)
         {
             string commandName = ban ? "ban" : "kick";
             string past = ban ? "banned" : "kicked";
             if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
                 !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
+            {
                 return;
+            }
+
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
                 await SayAsync(sender + ", please provide a valid Minecraft username to " + commandName + ".", ct).ConfigureAwait(false);
@@ -90,12 +97,15 @@ public static partial class CommandList
             await ConfirmAsync(sender + ", " + past + " " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
         }
 
-        async Task UnbanAsync(string[]? args, string sender, CancellationToken ct)
+        private async Task UnbanAsync(string[]? args, string sender, CancellationToken ct)
         {
             const string commandName = "unban";
             if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
                 !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
+            {
                 return;
+            }
+
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
                 await SayAsync(sender + ", please provide a valid Minecraft username to unban.", ct).ConfigureAwait(false);
@@ -108,19 +118,23 @@ public static partial class CommandList
             }
             await ConfirmAsync(sender + ", unbanned " + playerName + ".", ct).ConfigureAwait(false);
         }
-        Task WhitelistAddAsync(string[]? args, string sender, CancellationToken ct)
+
+        private Task WhitelistAddAsync(string[]? args, string sender, CancellationToken ct)
             => WhitelistAsync(args, sender, add: true, ct);
 
-        Task WhitelistRemoveAsync(string[]? args, string sender, CancellationToken ct)
+        private Task WhitelistRemoveAsync(string[]? args, string sender, CancellationToken ct)
             => WhitelistAsync(args, sender, add: false, ct);
 
-        async Task WhitelistAsync(string[]? args, string sender, bool add, CancellationToken ct)
+        private async Task WhitelistAsync(string[]? args, string sender, bool add, CancellationToken ct)
         {
             string commandName = add ? "whitelistadd" : "whitelistremove";
             string action = add ? "add" : "remove";
             if (!await RequirePermissionAsync(sender, commandName, ct).ConfigureAwait(false) ||
                 !await RequireAdminAsync(sender, commandName, ct).ConfigureAwait(false))
+            {
                 return;
+            }
+
             if (!MinecraftNameHelper.TryNormalizePlayerName(GetArg(args, 0), out string playerName))
             {
                 await SayAsync(sender + ", please provide a valid Minecraft username to " + action + " to the whitelist.", ct).ConfigureAwait(false);
@@ -142,7 +156,8 @@ public static partial class CommandList
             string result = add ? "added " + playerName + " to" : "removed " + playerName + " from";
             await ConfirmAsync(sender + ", " + result + " the whitelist.", ct).ConfigureAwait(false);
         }
-        async Task EffectAsync(string[]? args, string sender, CancellationToken ct)
+
+        private async Task EffectAsync(string[]? args, string sender, CancellationToken ct)
         {
             ResolvedTarget? target;
             int count = 1;
@@ -161,7 +176,10 @@ public static partial class CommandList
                 };
                 if (!await CheckEffectCountAsync(count, sender, ct).ConfigureAwait(false) ||
                     !await RequireTokensAsync(sender, count, ct).ConfigureAwait(false))
+                {
                     return;
+                }
+
                 target = await FilterSpectatorsAsync(target, ct).ConfigureAwait(false);
                 if (target is null || target.PlayerCount <= 0)
                 {
@@ -179,10 +197,15 @@ public static partial class CommandList
                 }
                 if (!await CheckEffectCountAsync(count, sender, ct).ConfigureAwait(false) ||
                     !await RequireTokensAsync(sender, count, ct).ConfigureAwait(false))
+                {
                     return;
+                }
+
                 target = await ResolveTargetAsync(args, argIndex, sender, ct).ConfigureAwait(false);
                 if (target == null)
+                {
                     return;
+                }
             }
             string channelTargetName = TargetName(target);
             int cost = runtime.Commands.ScaleCost(count, target.PlayerCount);
@@ -200,17 +223,24 @@ public static partial class CommandList
                 effectCommands[i] = MinecraftCommandBuilder.ApplyEffect(target.Selector, effect.ID, seconds, amplifier);
             }
             if (!await TrySendPricedAsync(sender, cost, () => effectCommands, ct).ConfigureAwait(false))
+            {
                 return;
+            }
+
             bool streamerReceivedEffect = await IncludesStreamerAsync(target, ct).ConfigureAwait(false);
             runtime.Statistics.RecordEffects(count, streamerReceivedEffect);
             foreach (string effectPretty in effectNames)
             {
                 await runtime.SendTellrawAsync(target.Selector, sender + " gave you " + effectPretty + ".", "yellow", true, ct).ConfigureAwait(false);
                 if (count == 1)
+                {
                     await ConfirmAsync(sender + ", you gave " + effectPretty + " to " + channelTargetName + ".", ct).ConfigureAwait(false);
+                }
             }
             if (count > 1)
+            {
                 await ConfirmAsync(sender + ", you gave " + count.ToString(CultureInfo.InvariantCulture) + " effects to " + channelTargetName + ".", ct).ConfigureAwait(false);
+            }
         }
     }
 }

@@ -16,12 +16,16 @@ public partial class Settings
         StringComparison comparison = StringComparison.Ordinal)
     {
         if (dropdown.SelectedItem is string selected)
+        {
             foreach ((T option, string label) in options)
+            {
                 if (string.Equals(selected, label, comparison))
                 {
                     value = option;
                     return true;
                 }
+            }
+        }
 
         value = default!;
         return false;
@@ -38,15 +42,19 @@ public partial class Settings
         // into the editable Text property. Prefer SelectedItem so preset clicks always use the
         // value the user actually chose instead of the previous/blank editor text.
         if (TryGetOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
+        {
             return value >= minimum && value <= maximum;
+        }
 
         ReadOnlySpan<char> text = dropdown.Text.AsSpan().Trim();
         foreach ((int option, string label) in options)
+        {
             if (text.Equals(label, StringComparison.OrdinalIgnoreCase))
             {
                 value = option;
                 return value >= minimum && value <= maximum;
             }
+        }
 
         return int.TryParse(text, NumberStyles.Integer | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value) &&
             value >= minimum && value <= maximum;
@@ -70,15 +78,19 @@ public partial class Settings
         out double value)
     {
         if (TryGetOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
+        {
             return value >= minimum && value <= maximum;
+        }
 
         ReadOnlySpan<char> text = dropdown.Text.AsSpan().Trim();
         foreach ((double option, string label) in options)
+        {
             if (text.Equals(label, StringComparison.OrdinalIgnoreCase))
             {
                 value = option;
                 return value >= minimum && value <= maximum;
             }
+        }
 
         return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) &&
             double.IsFinite(value) && value >= minimum && value <= maximum;
@@ -87,12 +99,16 @@ public partial class Settings
     private async void Prefix_Changed(object sender, RoutedEventArgs e)
     {
         if (_initializing)
+        {
             return;
+        }
 
         if (e is SelectionChangedEventArgs)
         {
             if (sender is not ComboBox { SelectedItem: string selected })
+            {
                 return;
+            }
 
             ((ComboBox)sender).Text = selected;
         }
@@ -100,7 +116,9 @@ public partial class Settings
         string primary = ConfigurationStore.NormalizeCommandPrefix(CommandPrefixTextBox.Text, "!");
         string secondary = ConfigurationStore.NormalizeCommandPrefix(SecondaryCommandPrefixTextBox.Text, string.Empty);
         if (string.Equals(primary, secondary, StringComparison.Ordinal))
+        {
             secondary = string.Empty;
+        }
 
         CommandPrefixTextBox.Text = primary;
         SecondaryCommandPrefixTextBox.Text = secondary;
@@ -115,7 +133,9 @@ public partial class Settings
         _savedCommandPrefix = primary;
         _savedSecondaryCommandPrefix = secondary;
         if (prefixChanged)
+        {
             UpdateCommandPrefixes(primary);
+        }
 
         await SaveConfigAsync(config =>
         {
@@ -124,16 +144,23 @@ public partial class Settings
         });
 
         if (saveVersion != _prefixSaveVersion)
+        {
             return;
+        }
 
         var runtime = AppHelpers.GetTwitchCraftWindow(this)?.Runtime;
         if (runtime == null)
+        {
             return;
+        }
 
         CommandPrefixTextBox.Text = runtime.CommandPrefix;
         SecondaryCommandPrefixTextBox.Text = runtime.SecondaryCommandPrefix;
         if (!string.Equals(runtime.CommandPrefix, _savedCommandPrefix, StringComparison.Ordinal))
+        {
             UpdateCommandPrefixes(runtime.CommandPrefix);
+        }
+
         _savedCommandPrefix = runtime.CommandPrefix;
         _savedSecondaryCommandPrefix = runtime.SecondaryCommandPrefix;
     }
@@ -171,7 +198,9 @@ public partial class Settings
     private Task SaveBoolAsync(CheckBox checkbox, Action<StartingProfile, bool> update)
     {
         if (_initializing)
+        {
             return Task.CompletedTask;
+        }
 
         // WPF controls belong to the UI thread. SaveConfigAsync runs its config mutation
         // inside Task.Run, so capture the DependencyProperty value before crossing threads.
@@ -182,7 +211,9 @@ public partial class Settings
     private async void PayoutAmount_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && PassivePayoutAmountDropdown.SelectedItem is string)
+        {
             await SavePayoutAmountAsync();
+        }
     }
 
     private async void PayoutAmount_LostFocus(object sender, RoutedEventArgs e)
@@ -191,7 +222,9 @@ public partial class Settings
     private async void PayoutRange_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && sender is ComboBox { SelectedItem: string })
+        {
             await SavePayoutRangeAsync(sender);
+        }
     }
 
     private async void PayoutRange_LostFocus(object sender, RoutedEventArgs e)
@@ -200,7 +233,9 @@ public partial class Settings
     private async void TokenLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaximumTokenBalanceDropdown.SelectedItem is string)
+        {
             await SaveTokenLimitAsync();
+        }
     }
 
     private async void TokenLimit_LostFocus(object sender, RoutedEventArgs e)
@@ -209,7 +244,9 @@ public partial class Settings
     private async void ChannelLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && ChannelCommandLimitDropdown.SelectedItem is string)
+        {
             await SaveChannelLimitAsync();
+        }
     }
 
     private async void ChannelLimit_LostFocus(object sender, RoutedEventArgs e)
@@ -224,7 +261,10 @@ public partial class Settings
     private async Task SavePayoutRangeAsync(object changedControl)
     {
         if (_initializing || _updatingCustomValueControls)
+        {
             return;
+        }
+
         if (!TryReadEditableInt(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, 10, 900, out int minimum) ||
             !TryReadEditableInt(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, 10, 900, out int maximum))
         {
@@ -235,9 +275,13 @@ public partial class Settings
         if (minimum > maximum)
         {
             if (ReferenceEquals(changedControl, PassivePayoutMinimumDropdown))
+            {
                 maximum = minimum;
+            }
             else
+            {
                 minimum = maximum;
+            }
         }
 
         SetIntValue(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, minimum);
@@ -288,7 +332,10 @@ public partial class Settings
                 System.Windows.Threading.DispatcherPriority.Background,
                 new Action(() =>
                 {
-                    if (Equals(dropdown.SelectedItem, selection) && string.Equals(dropdown.Text, originalText, StringComparison.Ordinal)) ApplyValue();
+                    if (Equals(dropdown.SelectedItem, selection) && string.Equals(dropdown.Text, originalText, StringComparison.Ordinal))
+                    {
+                        ApplyValue();
+                    }
                 }));
             return;
         }
@@ -356,13 +403,17 @@ public partial class Settings
     private async void RelayColor_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && TryGetOption(RelayTextColorDropdown, RelayTextColorOptions, out string value))
+        {
             await SaveConfigAsync(config => config.Settings.MinecraftRelayTextColor = value);
+        }
     }
 
     private async void SaveCommandRow(CommandSettingsRow row)
     {
         if (!_initializing)
+        {
             await SaveCommandSettingAsync(row.Name, row.Enabled, row.PerUserCooldown.Value, row.GlobalCooldown.Value);
+        }
     }
 
     private Task SaveCommandSettingAsync(string commandName, bool enabled, int? cooldown, double? globalCooldown)
@@ -385,7 +436,9 @@ public partial class Settings
     private async void ViewerLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && ViewerCommandLimitDropdown.SelectedItem is string)
+        {
             await SaveViewerLimitAsync();
+        }
     }
 
     private async void ViewerLimit_LostFocus(object sender, RoutedEventArgs e)
@@ -409,10 +462,12 @@ public partial class Settings
     private async void TwitchLogLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaxTwitchLogLinesDropdown.SelectedItem is string)
+        {
             await SaveEditableIntAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleTwitchLogLines,
                 static (settings, value) => settings.MaxVisibleTwitchLogLines = value,
                 refreshLowResourceSummary: true);
+        }
     }
 
     private async void TwitchLogLimit_LostFocus(object sender, RoutedEventArgs e)
@@ -424,10 +479,12 @@ public partial class Settings
     private async void MinecraftLogLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && MaxMinecraftLogLinesDropdown.SelectedItem is string)
+        {
             await SaveEditableIntAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleMinecraftLogLines,
                 static (settings, value) => settings.MaxVisibleMinecraftLogLines = value,
                 refreshLowResourceSummary: true);
+        }
     }
 
     private async void MinecraftLogLimit_LostFocus(object sender, RoutedEventArgs e)
@@ -440,16 +497,20 @@ public partial class Settings
     {
         await SaveOptionAsync(ViewerRosterIntervalDropdown, ViewerRosterIntervalOptions, static (settings, value) => settings.ViewerRosterRefreshIntervalSeconds = value);
         if (!_initializing)
+        {
             UpdateLowResource();
+        }
     }
 
     private async void RelayRate_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && RelayRateDropdown.SelectedItem is string)
+        {
             await SaveEditableIntAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
                 static settings => settings.MinecraftRelayMessagesPerSecond,
                 static (settings, value) => settings.MinecraftRelayMessagesPerSecond = value,
                 refreshLowResourceSummary: true);
+        }
     }
 
     private async void RelayRate_LostFocus(object sender, RoutedEventArgs e)
@@ -461,10 +522,12 @@ public partial class Settings
     private async void QueueLimit_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && GameplayQueueDropdown.SelectedItem is string)
+        {
             await SaveEditableIntAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
                 static settings => settings.MaxGameplayCommandQueue,
                 static (settings, value) => settings.MaxGameplayCommandQueue = value,
                 refreshLowResourceSummary: true);
+        }
     }
 
     private async void QueueLimit_LostFocus(object sender, RoutedEventArgs e)
@@ -476,9 +539,11 @@ public partial class Settings
     private async void RCONTimeout_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && RCONTimeoutDropdown.SelectedItem is string)
+        {
             await SaveEditableIntAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
                 static settings => settings.RCONTimeoutSeconds,
                 static (settings, value) => settings.RCONTimeoutSeconds = value);
+        }
     }
 
     private async void RCONTimeout_LostFocus(object sender, RoutedEventArgs e)
@@ -487,17 +552,23 @@ public partial class Settings
             static (settings, value) => settings.RCONTimeoutSeconds = value);
 
     private async void ShutdownTimeout_Changed(object sender, SelectionChangedEventArgs e)
-        => await SaveOptionAsync(GracefulShutdownTimeoutDropdown, GracefulShutdownTimeoutOptions, static (settings, value) => settings.GracefulShutdownTimeoutSeconds = value);
+        => await SaveOptionAsync(
+            GracefulShutdownTimeoutDropdown,
+            GracefulShutdownTimeoutOptions,
+            static (settings, value) => settings.GracefulShutdownTimeoutSeconds = value);
 
     private async void SqliteOptimize_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(SqliteOptimizeDropdown, SqliteOptimizeOptions, static (settings, value) => settings.SQLiteOptimizeIntervalHours = value);
+
     private async void EmptyShutdown_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(EmptyShutdownDropdown, EmptyShutdownOptions, static (settings, value) => settings.EmptyServerShutdownDelayMinutes = value);
 
     private async void Whitelist_Changed(object sender, RoutedEventArgs e)
     {
         if (_initializing)
+        {
             return;
+        }
 
         bool enabled = WhitelistCheckbox.IsChecked == true;
         await SaveConfigAsync(config => config.Settings.WhitelistEnabled = enabled, beforeSave: ApplyLocalProfile);
@@ -506,9 +577,11 @@ public partial class Settings
     private async void ViewDistance_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && ViewDistanceDropdown.SelectedItem is string)
+        {
             await SaveServerValueAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.ViewDistance,
                 static (settings, value) => settings.ViewDistance = value);
+        }
     }
 
     private async void ViewDistance_LostFocus(object sender, RoutedEventArgs e)
@@ -519,9 +592,11 @@ public partial class Settings
     private async void Simulation_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && SimulationDistanceDropdown.SelectedItem is string)
+        {
             await SaveServerValueAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.SimulationDistance,
                 static (settings, value) => settings.SimulationDistance = value);
+        }
     }
 
     private async void Simulation_LostFocus(object sender, RoutedEventArgs e)
@@ -532,9 +607,11 @@ public partial class Settings
     private async void EntityRange_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && EntityBroadcastRangeDropdown.SelectedItem is string)
+        {
             await SaveServerValueAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
                 static settings => settings.EntityBroadcastRangePercentage,
                 static (settings, value) => settings.EntityBroadcastRangePercentage = value);
+        }
     }
 
     private async void EntityRange_LostFocus(object sender, RoutedEventArgs e)
@@ -545,9 +622,11 @@ public partial class Settings
     private async void Compression_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_initializing && !_updatingCustomValueControls && NetworkCompressionDropdown.SelectedItem is string)
+        {
             await SaveServerValueAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
                 static settings => settings.NetworkCompressionThreshold,
                 static (settings, value) => settings.NetworkCompressionThreshold = value);
+        }
     }
 
     private async void Compression_LostFocus(object sender, RoutedEventArgs e)
@@ -559,7 +638,9 @@ public partial class Settings
     {
         await SaveBoolAsync(LowResourceModeCheckbox, static (settings, value) => settings.LowResourceModeEnabled = value);
         if (!_initializing)
+        {
             UpdateLowResource();
+        }
     }
 
     private async void PauseUI_Changed(object sender, RoutedEventArgs e)
@@ -589,20 +670,27 @@ public partial class Settings
         Action<TwitchCraftConfig>? beforeSave = null)
     {
         if (_initializing || _updatingCustomValueControls)
+        {
             return;
+        }
 
         if (!TryReadEditableInt(dropdown, options, minimum, maximum, out int value))
         {
             RestoreIntValue(dropdown, options, getValue);
             if (refreshLowResourceSummary)
+            {
                 UpdateLowResource();
+            }
+
             return;
         }
 
         SetIntValue(dropdown, options, value);
         await SaveConfigAsync(config => update(config.Settings, value), beforeSave: beforeSave);
         if (refreshLowResourceSummary)
+        {
             UpdateLowResource();
+        }
     }
 
     private Task SaveServerValueAsync(

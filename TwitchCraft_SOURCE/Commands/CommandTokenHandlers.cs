@@ -36,7 +36,10 @@ public static partial class CommandList
             }
             int risk = 5;
             if (args.Length >= 2 && int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedRisk))
+            {
                 risk = parsedRisk;
+            }
+
             risk = Math.Clamp(risk, 1, 10);
             if (runtime.Commands.IsGambleOnCooldown(who, out TimeSpan cooldownRemaining))
             {
@@ -50,7 +53,9 @@ public static partial class CommandList
             }
             if (balance < amount)
             {
-                await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who}, you must have at least {amount} tokens to gamble that amount. You currently have {balance}."), ct).ConfigureAwait(false);
+                await sayToChannel(
+                    string.Create(CultureInfo.InvariantCulture, $"{who}, you must have at least {amount} tokens to gamble that amount. You currently have {balance}."),
+                    ct).ConfigureAwait(false);
                 return;
             }
             double winChance = 0.9 - ((risk - 1) * 0.08888888888888889);
@@ -65,7 +70,9 @@ public static partial class CommandList
             }
             if (gambleStatus == TokenAdjustmentStatus.Insufficient)
             {
-                await sayToChannel(string.Create(CultureInfo.InvariantCulture, $"{who}, your balance changed before the gamble could be placed. You currently have {newBalance} tokens."), ct).ConfigureAwait(false);
+                await sayToChannel(
+                    string.Create(CultureInfo.InvariantCulture, $"{who}, your balance changed before the gamble could be placed. You currently have {newBalance} tokens."),
+                    ct).ConfigureAwait(false);
                 return;
             }
             runtime.Commands.StartGambleCooldown(who, GambleTokenCooldown);
@@ -95,7 +102,10 @@ public static partial class CommandList
         async Task AdjustTokensAsync(string[]? args, string sender, string commandName, bool isGive, CancellationToken ct)
         {
             if (!await requireAllowed(sender, commandName, ct).ConfigureAwait(false))
+            {
                 return;
+            }
+
             string usage = "Usage: !" + commandName + " [username|all|random] amount";
             if (args is null || args.Length < 1)
             {
@@ -114,7 +124,10 @@ public static partial class CommandList
             string action = isGive ? "give" : "remove";
             string direction = isGive ? "to" : "from";
             if (string.IsNullOrWhiteSpace(targetToken))
+            {
                 targetToken = who;
+            }
+
             int delta = isGive ? amount : -amount;
             if (targetToken.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
@@ -132,7 +145,9 @@ public static partial class CommandList
                     : amount.ToString(CultureInfo.InvariantCulture);
                 if (adjustedCount == viewers.Count)
                 {
-                    await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {amountDescription} {TokenLabel(amount)} {direction} all live viewers ({viewers.Count})."), ct).ConfigureAwait(false);
+                    await sayConfirmationToChannel(
+                        string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {amountDescription} {TokenLabel(amount)} {direction} all live viewers ({viewers.Count})."),
+                        ct).ConfigureAwait(false);
                 }
                 else
                 {
@@ -183,9 +198,13 @@ public static partial class CommandList
                 return;
             }
             if (args is { Length: > 0 })
+            {
                 await saySuccessfulToChannel(whoAsked + ", " + queryUser + " has " + balance.ToString(CultureInfo.InvariantCulture) + " " + TokenLabel(balance) + ".", ct).ConfigureAwait(false);
+            }
             else
+            {
                 await saySuccessfulToChannel(whoAsked + ", you have " + balance.ToString(CultureInfo.InvariantCulture) + " " + TokenLabel(balance) + ".", ct).ConfigureAwait(false);
+            }
         };
         handlers["tokenleaderboard"] = async (_, sender, ct) =>
         {

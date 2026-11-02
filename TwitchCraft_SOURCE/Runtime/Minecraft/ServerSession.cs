@@ -38,7 +38,11 @@ public sealed partial class MainHandler
 
         lock (_spectatorProbeGate)
         {
-            foreach (TaskCompletionSource<int?> waiter in _pendingGamemodeRequests.Values) waiter.TrySetResult(null);
+            foreach (TaskCompletionSource<int?> waiter in _pendingGamemodeRequests.Values)
+            {
+                waiter.TrySetResult(null);
+            }
+
             _pendingGamemodeRequests.Clear();
             _spectatorPlayers.Clear();
             _lastSpectatorRefreshUtc = DateTime.MinValue;
@@ -47,20 +51,36 @@ public sealed partial class MainHandler
 
         lock (_selectedItemProbeGate)
         {
-            foreach (TaskCompletionSource<string?> waiter in _pendingSelectedItemRequests.Values) waiter.TrySetResult(null);
+            foreach (TaskCompletionSource<string?> waiter in _pendingSelectedItemRequests.Values)
+            {
+                waiter.TrySetResult(null);
+            }
+
             _pendingSelectedItemRequests.Clear();
         }
 
         lock (_maxHealthProbeGate)
         {
-            foreach (TaskCompletionSource<double?> waiter in _pendingMaxHealthRequests.Values) waiter.TrySetResult(null);
-            foreach (TaskCompletionSource<string?> waiter in _pendingHeartAttributeRequests.Values) waiter.TrySetResult(null);
+            foreach (TaskCompletionSource<double?> waiter in _pendingMaxHealthRequests.Values)
+            {
+                waiter.TrySetResult(null);
+            }
+
+            foreach (TaskCompletionSource<string?> waiter in _pendingHeartAttributeRequests.Values)
+            {
+                waiter.TrySetResult(null);
+            }
+
             _pendingMaxHealthRequests.Clear();
             _pendingHeartAttributeRequests.Clear();
         }
         lock (_respawnProbeGate)
         {
-            foreach (TaskCompletionSource<bool> waiter in _pendingRespawnRequests.Values) waiter.TrySetResult(false);
+            foreach (TaskCompletionSource<bool> waiter in _pendingRespawnRequests.Values)
+            {
+                waiter.TrySetResult(false);
+            }
+
             _pendingRespawnRequests.Clear();
         }
 

@@ -41,7 +41,11 @@ internal static class JsonExportWriter
             File.WriteAllText(tempPath, warningText, Encoding.UTF8);
             ReplaceFile(tempPath, READMEPath);
         }
-        catch { FileSystemHelper.DeleteFileSafe(tempPath); throw; }
+        catch
+        {
+            FileSystemHelper.DeleteFileSafe(tempPath);
+            throw;
+        }
     }
 
     public static void WriteJsonAtomic(string path, Action<JsonTextWriter> writeBody)
@@ -55,10 +59,17 @@ internal static class JsonExportWriter
         {
             using (StreamWriter streamWriter = new(tempPath, false, Encoding.UTF8))
             using (JsonTextWriter jsonWriter = new(streamWriter) { Formatting = Formatting.Indented })
+            {
                 writeBody(jsonWriter);
+            }
+
             ReplaceFile(tempPath, path);
         }
-        catch { FileSystemHelper.DeleteFileSafe(tempPath); throw; }
+        catch
+        {
+            FileSystemHelper.DeleteFileSafe(tempPath);
+            throw;
+        }
     }
 
     public static void WriteExportStart(JsonWriter writer)

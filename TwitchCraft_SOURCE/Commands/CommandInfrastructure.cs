@@ -74,7 +74,9 @@ public sealed class ChatCommandRegistry(
         get
         {
             if (_commandNames != null)
+            {
                 return _commandNames;
+            }
 
             string[] names = [.. _handlers.Keys];
             Array.Sort(names, StringComparer.OrdinalIgnoreCase);
@@ -135,7 +137,9 @@ public static class MinecraftCommandBuilder
     private static string FormatCoordOffset(double value)
     {
         if (Math.Abs(value) < 0.0001)
+        {
             return string.Empty;
+        }
 
         return value.ToString("0.##", CultureInfo.InvariantCulture);
     }
@@ -182,7 +186,9 @@ public static class MinecraftCommandBuilder
     private static string CleanCommandArg(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return string.Empty;
+        }
 
         value = value.Trim();
         StringBuilder? builder = null;
@@ -234,7 +240,9 @@ public static class MinecraftCommandBuilder
     private static string EscapeMinecraft(string? value, bool escapeDoubleQuote, bool escapeSingleQuote, bool escapeControls)
     {
         if (string.IsNullOrEmpty(value))
+        {
             return string.Empty;
+        }
 
         StringBuilder? builder = null;
         for (int i = 0; i < value.Length; i++)

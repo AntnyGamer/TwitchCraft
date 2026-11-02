@@ -49,7 +49,9 @@ internal sealed class FakeRCONServer : IAsyncDisposable
         get
         {
             lock (_gate)
+            {
                 return [.. _commands];
+            }
         }
     }
 
@@ -128,14 +130,18 @@ internal sealed class FakeRCONServer : IAsyncDisposable
             }
 
             if (!authenticated)
+            {
                 continue;
+            }
 
             if (_rejectPipelinedRequests)
             {
                 // A compliant client waits for each response before issuing another request.
                 await Task.Delay(30, cancellationToken).ConfigureAwait(false);
                 if (stream.DataAvailable)
+                {
                     return;
+                }
             }
 
             if (packet.Type == 100)
@@ -145,12 +151,16 @@ internal sealed class FakeRCONServer : IAsyncDisposable
             }
 
             if (packet.Type != 2)
+            {
                 continue;
+            }
 
             if (packet.Payload.Length > 0)
             {
                 lock (_gate)
+                {
                     _commands.Add(packet.Payload);
+                }
             }
 
             if (string.Equals(packet.Payload, _malformedResponseCommand, StringComparison.Ordinal))
@@ -173,7 +183,9 @@ internal sealed class FakeRCONServer : IAsyncDisposable
         await stream.ReadExactlyAsync(lengthBytes, cancellationToken).ConfigureAwait(false);
         int length = BinaryPrimitives.ReadInt32LittleEndian(lengthBytes);
         if (length < 10 || length > 1_048_576)
+        {
             throw new InvalidDataException("Invalid test RCON packet length.");
+        }
 
         byte[] body = new byte[length];
         await stream.ReadExactlyAsync(body, cancellationToken).ConfigureAwait(false);
