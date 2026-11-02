@@ -15,8 +15,8 @@ From the repository root:
 
 ```powershell
 dotnet restore TwitchCraft.slnx
-dotnet build TwitchCraft.slnx -c Release --no-restore
 dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
+dotnet build TwitchCraft.slnx -c Release --no-restore
 Push-Location TwitchCraft.Tests
 dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build
 Pop-Location

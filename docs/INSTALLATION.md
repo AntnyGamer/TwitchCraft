@@ -44,6 +44,7 @@ Install the .NET 10 SDK and run from the repository root:
 
 ```powershell
 dotnet restore TwitchCraft.slnx
+dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
 dotnet build TwitchCraft.slnx -c Release --no-restore
 Push-Location TwitchCraft.Tests
 dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build
