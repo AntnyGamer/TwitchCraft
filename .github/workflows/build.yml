@@ -31,6 +31,9 @@ jobs:
       - name: Restore
         run: dotnet restore TwitchCraft.slnx
 
+      - name: Verify repository-wide C# consistency
+        run: dotnet run --project tools/ConsistencyFixer/ConsistencyFixer.csproj -- --root . --check
+
       - name: Verify formatting
         run: dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
 

@@ -1,0 +1,61 @@
+name: Apply PR97 consistency once
+
+on:
+  push:
+    branches:
+      - agent/repository-conventions-review
+
+permissions:
+  contents: write
+
+jobs:
+  format-and-commit:
+    if: github.repository == 'AntnyGamer/TwitchCraft'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the PR branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: agent/repository-conventions-review
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Run syntax-aware consistency formatting and validate
+        shell: pwsh
+        run: |
+          dotnet run --project tools/ConsistencyFixer/ConsistencyFixer.csproj -- --self-test
+          if ($LASTEXITCODE -ne 0) { throw "Formatter self-test failed" }
+          dotnet run --project tools/ConsistencyFixer/ConsistencyFixer.csproj -- --root . --write
+          if ($LASTEXITCODE -ne 0) { throw "Formatter write failed" }
+          dotnet restore TwitchCraft.slnx
+          if ($LASTEXITCODE -ne 0) { throw "Restore failed" }
+          dotnet format TwitchCraft.slnx --no-restore
+          if ($LASTEXITCODE -ne 0) { throw "dotnet format failed" }
+          dotnet run --project tools/ConsistencyFixer/ConsistencyFixer.csproj -- --root . --write
+          if ($LASTEXITCODE -ne 0) { throw "Final formatter pass failed" }
+          dotnet run --project tools/ConsistencyFixer/ConsistencyFixer.csproj -- --root . --check
+          if ($LASTEXITCODE -ne 0) { throw "Consistency verification failed" }
+          dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
+          if ($LASTEXITCODE -ne 0) { throw "SDK format verification failed" }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw "Whitespace check failed" }
+          dotnet build TwitchCraft.slnx -c Release --no-restore -p:EnforceCodeStyleInBuild=true
+          if ($LASTEXITCODE -ne 0) { throw "Release build failed" }
+          dotnet test --project TwitchCraft.Tests/TwitchCraft.Tests.csproj -c Release --no-build
+          if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
+
+      - name: Commit formatting and remove this one-time workflow
+        shell: pwsh
+        run: |
+          git rm .github/workflows/apply-pr97-consistency.yml
+          git add .editorconfig CONTRIBUTING.md .github/workflows/build.yml TwitchCraft_SOURCE TwitchCraft.Tests tools/ConsistencyFixer
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Apply C# consistency formatting across application and tests"
+          if ($LASTEXITCODE -ne 0) { throw "Commit failed" }
+          git push origin HEAD:agent/repository-conventions-review
+          if ($LASTEXITCODE -ne 0) { throw "Push failed" }

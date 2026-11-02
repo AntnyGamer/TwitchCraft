@@ -45,6 +45,14 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the runtime flow.
 
 ## Project rules
 
+### Code formatting
+
+- Use Allman braces, explicit member access modifiers, and the repository `.editorconfig`.
+- Keep adjacent field declarations together; put one blank line between other C# members and after file-scoped namespaces.
+- Keep method, constructor, delegate, and local-function parameter lists on one line if they fit within 120 columns; otherwise put each parameter on its own line.
+- Run `dotnet run --project tools/ConsistencyFixer/ConsistencyFixer.csproj -- --root . --check` to verify these rules across app and test code.
+
+
 - Never commit Twitch tokens, RCON passwords, authorization headers, real `config.json` files, user databases, server worlds, logs, or public IP addresses.
 - Do not block network, database, or filesystem work on the WPF UI thread.
 - Preserve command names, prices, permissions, targeting, cooldowns, messages, and statistics flags unless a behavior change is explicitly approved.
