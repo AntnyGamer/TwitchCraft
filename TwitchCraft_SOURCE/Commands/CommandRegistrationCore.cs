@@ -372,7 +372,8 @@ public static partial class CommandList
                 await SayAsync(failure, ct).ConfigureAwait(false);
                 return null;
             }
-            if (IsSingleplayer() && !string.IsNullOrEmpty(runtime.StreamerName) &&
+            if (IsSingleplayer() &&
+                !string.IsNullOrEmpty(runtime.StreamerName) &&
                 target.PlayerCount == 1 &&
                 !IsEveryone(target) &&
                 !string.Equals(target.DisplayName, "everyone", StringComparison.OrdinalIgnoreCase))

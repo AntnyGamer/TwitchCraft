@@ -141,7 +141,8 @@ public sealed partial class MainHandler
         await _lifecycleGate.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         try
         {
-            if (cancellationToken.IsCancellationRequested || _minecraftSession.ServerExitExpected
+            if (cancellationToken.IsCancellationRequested
+                || _minecraftSession.ServerExitExpected
                 || !ReferenceEquals(process, _minecraftSession.Process)
                 || _runtimeState != RuntimeState.Running)
             {

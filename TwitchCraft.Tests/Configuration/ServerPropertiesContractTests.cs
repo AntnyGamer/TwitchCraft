@@ -119,9 +119,9 @@ public sealed class ServerPropertiesContractTests
             AssertPropertyInSection(content, key, editableHeader, managedHeader));
 
         Assert.All([
-                "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
-                "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
-            ], key => AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader));
+            "difficulty", "hardcore", "view-distance", "simulation-distance", "entity-broadcast-range-percentage", "network-compression-threshold",
+            "white-list", "enforce-whitelist", "max-players", "motd", "online-mode", "server-ip", "server-port", "enable-query", "query.port", "enable-rcon", "rcon.port"
+        ], key => AssertPropertyInSection(content, key, managedHeader, RCONPasswordHeader));
 
         AssertPropertyInSection(content, "rcon.password", RCONPasswordHeader, content.Length);
 

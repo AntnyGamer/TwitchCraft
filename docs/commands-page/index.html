@@ -1221,7 +1221,7 @@ a:hover {
  * The command catalog is built from docs/COMMANDS.md, the project's existing
  * canonical command reference. Do not duplicate commands or prices here.
  */
-(function() {
+(function () {
   const sectionLabels = {
     gameplay: 'Game Commands',
     minigame: 'Minigame Commands',
@@ -1246,13 +1246,7 @@ a:hover {
   const initialCategory = params.get('category') || 'all';
 
   let commands = [];
-  const counts = {
-    all: 0,
-    gameplay: 0,
-    minigame: 0,
-    utility: 0,
-    streamer: 0
-  };
+  const counts = { all: 0, gameplay: 0, minigame: 0, utility: 0, streamer: 0 };
   let category = validCategories.has(initialCategory) ? initialCategory : 'all';
   let toastTimer = 0;
   const copyResetTimers = new WeakMap();
@@ -1338,15 +1332,15 @@ a:hover {
       }
       if (/^ {0,3}#{2,3} /.test(line)) {
         const title = line.replace(/^ {0,3}#{2,3} /, '').trim().toLowerCase();
-        section = title === 'gameplay commands' ?
-          'gameplay' :
-          title === 'minigame commands' ?
-          'minigame' :
-          title === 'utility and economy' ?
-          'utility' :
-          title === 'streamer commands' ?
-          'streamer' :
-          null;
+        section = title === 'gameplay commands'
+          ? 'gameplay'
+          : title === 'minigame commands'
+            ? 'minigame'
+            : title === 'utility and economy'
+              ? 'utility'
+              : title === 'streamer commands'
+                ? 'streamer'
+                : null;
       }
       if (!commandRow.test(line)) {
         continue;
@@ -1367,7 +1361,7 @@ a:hover {
       const lowerName = name.toLowerCase();
       const lowerSyntax = syntax.toLowerCase();
       if (!/^![a-z0-9_-]+$/i.test(name) ||
-        (lowerSyntax !== lowerName && !lowerSyntax.startsWith(lowerName + ' '))) {
+          (lowerSyntax !== lowerName && !lowerSyntax.startsWith(lowerName + ' '))) {
         throw new Error('Invalid command syntax for ' + name);
       }
       if (seen.has(lowerName)) {
@@ -1375,13 +1369,7 @@ a:hover {
       }
       seen.add(lowerName);
       parsed.push({
-        name,
-        syntax,
-        cost,
-        targeting,
-        permission,
-        description,
-        section,
+        name, syntax, cost, targeting, permission, description, section,
         searchText: [name, syntax, cost, targeting, permission, description, sectionLabels[section]]
           .join(' ').toLowerCase()
       });
@@ -1403,9 +1391,7 @@ a:hover {
     window.clearTimeout(toastTimer);
     toast.textContent = message;
     toast.hidden = false;
-    toastTimer = window.setTimeout(() => {
-      toast.hidden = true;
-    }, 2500);
+    toastTimer = window.setTimeout(() => { toast.hidden = true; }, 2500);
   }
 
   async function copyToClipboard(value) {
@@ -1448,8 +1434,8 @@ a:hover {
         value: String(Number(match[1])),
         label: match[2].replace(/x$/i, '×').replace(/^1×$/, '1× (default)')
       }));
-    if (!options.length || !options.some(item => item.value === '1') ||
-      options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
+    if (!options.length || !options.some(item => item.value === '1')
+        || options.some(item => Number(item.value) < 0 || Number(item.value) > 5)) {
       throw new Error('Multiplier preset values are invalid');
     }
     return options;
@@ -1467,21 +1453,18 @@ a:hover {
       const previousSelection = multiplierSelect.value;
       // Avoid resetting an open dropdown when the remote options are unchanged.
       if (presets.length !== multiplierSelect.options.length ||
-        presets.some((option, i) => option.value !== multiplierSelect.options[i].value ||
-          option.label !== multiplierSelect.options[i].textContent)) {
+          presets.some((option, i) => option.value !== multiplierSelect.options[i].value ||
+            option.label !== multiplierSelect.options[i].textContent)) {
         multiplierSelect.replaceChildren(
-          ...presets.map(({
-            label,
-            value
-          }) => new Option(label, value)));
+          ...presets.map(({ label, value }) => new Option(label, value)));
       }
       const values = presets.map(option => option.value);
       // Apply new presets from the URL, but never override a manual choice
       // made while the remote preset list was loading.
-      multiplierSelect.value = !multiplierChangedByUser && values.includes(requestedMultiplier) ?
-        requestedMultiplier :
-        values.includes(previousSelection) ? previousSelection :
-        values.includes('1') ? '1' : values[0];
+      multiplierSelect.value = !multiplierChangedByUser && values.includes(requestedMultiplier)
+        ? requestedMultiplier
+        : values.includes(previousSelection) ? previousSelection
+          : values.includes('1') ? '1' : values[0];
       // Updating the options alone does not change any displayed prices.
       if (commands.length && multiplierSelect.value !== previousSelection) {
         render();
@@ -1499,49 +1482,31 @@ a:hover {
     const baseCost = numeric ? Number(source) : perUnit ? Number(perUnit[1]) : null;
 
     if (free || baseCost === 0) {
-      return {
-        label: free ? source : 'Free (0 tokens)',
-        free: true
-      };
+      return { label: free ? source : 'Free (0 tokens)', free: true };
     }
     // Only gameplay charges are affected by the bot's multiplier.
     if (item.section !== 'gameplay') {
-      return {
-        label: numeric ? source + ' tokens' : source,
-        free: false
-      };
+      return { label: numeric ? source + ' tokens' : source, free: false };
     }
     // Unknown or viewer-entered prices must never be shown as free at 0×.
     if (baseCost === null) {
-      return {
-        label: source,
-        free: false
-      };
+      return { label: source, free: false };
     }
 
     const multiplier = Number(multiplierSelect.value);
     if (multiplier === 0) {
-      return {
-        label: 'Free (0 tokens)',
-        free: true
-      };
+      return { label: 'Free (0 tokens)', free: true };
     }
     const scale = amount => Math.ceil(amount * multiplier);
     if (numeric) {
-      return {
-        label: scale(baseCost) + ' tokens',
-        free: false
-      };
+      return { label: scale(baseCost) + ' tokens', free: false };
     }
 
     // Read the supported amount from the documented syntax instead of
     // embedding the heart/effect limits in the website.
     const quantity = item.syntax.match(/\b1-(\d+)\b/);
     if (!quantity) {
-      return {
-        label: scale(baseCost) + ' tokens per ' + perUnit[2].toLowerCase(),
-        free: false
-      };
+      return { label: scale(baseCost) + ' tokens per ' + perUnit[2].toLowerCase(), free: false };
     }
     const maximum = Number(quantity[1]);
     const unit = perUnit[2].toLowerCase() + 's';
@@ -1563,9 +1528,9 @@ a:hover {
       return null;
     }
     // Only gameplay prices use the multiplier; other fixed costs sort as listed.
-    return item.section === 'gameplay' ?
-      Math.ceil(Number(base[1]) * Number(multiplierSelect.value)) :
-      Number(base[1]);
+    return item.section === 'gameplay'
+      ? Math.ceil(Number(base[1]) * Number(multiplierSelect.value))
+      : Number(base[1]);
   }
 
   function sortCommands(items) {
@@ -1581,8 +1546,7 @@ a:hover {
       prices.set(item, sortablePrice(item));
     }
     return items.sort((a, b) => {
-      const aPrice = prices.get(a),
-        bPrice = prices.get(b);
+      const aPrice = prices.get(a), bPrice = prices.get(b);
       if (aPrice === null && bPrice !== null) {
         return 1;
       }
@@ -1704,14 +1668,15 @@ a:hover {
     // Keep the familiar category layout by default. Alternative sorts use
     // one ordered list so prices and A–Z order are genuinely global.
     const grouped = sortSelect.value === 'category' && category === 'all';
-    const sections = grouped ?
-      sectionOrder.map(section => ({
-        name: sectionLabels[section],
-        items: sorted.filter(item => item.section === section)
-      })) : [{
-        name: category === 'all' ? 'All commands' : sectionLabels[category],
-        items: sorted
-      }];
+    const sections = grouped
+      ? sectionOrder.map(section => ({
+          name: sectionLabels[section],
+          items: sorted.filter(item => item.section === section)
+        }))
+      : [{
+          name: category === 'all' ? 'All commands' : sectionLabels[category],
+          items: sorted
+        }];
     for (const section of sections) {
       if (!section.items.length) {
         continue;
@@ -1795,8 +1760,8 @@ a:hover {
     document.getElementById('empty-reset').addEventListener('click', clearFilters);
     document.addEventListener('keydown', event => {
       const element = document.activeElement;
-      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' ||
-        element.tagName === 'SELECT' || element.isContentEditable);
+      const typing = element && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA'
+        || element.tagName === 'SELECT' || element.isContentEditable);
       if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey && !typing) {
         event.preventDefault();
         searchInput.focus();
@@ -1816,9 +1781,7 @@ a:hover {
     // Never block the command catalog on an optional external preset lookup.
     void refreshMultiplierOptions();
     try {
-      const response = await fetch('../COMMANDS.md', {
-        cache: 'no-cache'
-      });
+      const response = await fetch('../COMMANDS.md', { cache: 'no-cache' });
       if (!response.ok) {
         throw new Error('HTTP ' + response.status);
       }
@@ -1852,6 +1815,7 @@ a:hover {
 
   initialize();
 })();
+
 </script>
 </body>
 </html>

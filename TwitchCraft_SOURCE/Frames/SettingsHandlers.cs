@@ -63,8 +63,11 @@ public partial class Settings
     private static bool TryReadInt(ComboBox dropdown, int minimum, int maximum, out int value)
     {
         ReadOnlySpan<char> text = (dropdown.SelectedItem as string ?? dropdown.Text).AsSpan().Trim();
-        return int.TryParse(text, NumberStyles.Integer | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value) &&
-            value >= minimum && value <= maximum;
+        return int.TryParse(
+            text,
+            NumberStyles.Integer | NumberStyles.AllowThousands,
+            CultureInfo.InvariantCulture,
+            out value) && value >= minimum && value <= maximum;
     }
 
     private static bool TryReadDouble(
