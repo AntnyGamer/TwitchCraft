@@ -1646,8 +1646,8 @@ a:hover {
 
   function render() {
     if (!commands.length) {
-      return;
-    } // Keep the loading/error state until a catalog is available.
+      return; // Keep the loading/error state until a catalog is available.
+    }
     const query = searchInput.value.toLowerCase().trim();
     const onlyFree = freeOnlyInput.checked;
     const filtered = commands.filter(item => {
