@@ -55,7 +55,7 @@ jobs:
               --output "$page.min" "$page"
             minified_size=$(wc -c < "$page.min")
             if (( minified_size == 0 || minified_size >= original_size )); then
-              echo "Minification did not reduce $page" >&2
+              echo "Minification produced empty or non-smaller output: $page" >&2
               exit 1
             fi
             mv "$page.min" "$page"
