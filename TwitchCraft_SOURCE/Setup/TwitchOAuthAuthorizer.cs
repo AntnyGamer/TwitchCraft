@@ -53,7 +53,7 @@ internal static class TwitchOAuthAuthorizer
         try
         {
             using FormUrlEncodedContent content = new(
-            [
+                [
                     new KeyValuePair<string, string>("client_id", normalizedClientID),
                     new KeyValuePair<string, string>("scopes", RequiredScopes)
                 ]);
@@ -144,7 +144,7 @@ internal static class TwitchOAuthAuthorizer
         try
         {
             using FormUrlEncodedContent content = new(
-            [
+                [
                     new KeyValuePair<string, string>("client_id", normalizedClientID),
                     new KeyValuePair<string, string>("refresh_token", normalizedRefreshToken),
                     new KeyValuePair<string, string>("grant_type", "refresh_token")
@@ -323,7 +323,7 @@ internal static class TwitchOAuthAuthorizer
         try
         {
             using FormUrlEncodedContent content = new(
-            [
+                [
                     new KeyValuePair<string, string>("client_id", clientID),
                     new KeyValuePair<string, string>("scopes", RequiredScopes),
                     new KeyValuePair<string, string>("device_code", deviceCode),
@@ -470,12 +470,12 @@ internal static class TwitchOAuthAuthorizer
         }
     }
 
-    private static string GetString(JsonElement root, string propertyName) =>
-        root.ValueKind == JsonValueKind.Object &&
-        root.TryGetProperty(propertyName, out JsonElement value) &&
-        value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? string.Empty
-            : string.Empty;
+    private static string GetString(JsonElement root, string propertyName)
+        => root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty(propertyName, out JsonElement value) &&
+            value.ValueKind == JsonValueKind.String
+                ? value.GetString() ?? string.Empty
+                : string.Empty;
 
     private static int GetPositiveInt(JsonElement root, string propertyName)
         => root.ValueKind == JsonValueKind.Object &&
