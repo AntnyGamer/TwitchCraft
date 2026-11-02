@@ -49,14 +49,13 @@ jobs:
         run: |
           for page in site/index.html site/commands/index.html; do
             original_size=$(wc -c < "$page")
-            npx --yes --package=html-minifier-terser@7.2.0 html-minifier-terser \
+            npx --yes html-minifier-terser@7.2.0 \
               --collapse-whitespace --conservative-collapse --remove-comments \
               --minify-css true --minify-js '{"compress":false,"mangle":false}' \
               --output "$page.min" "$page"
-            test -s "$page.min"
             minified_size=$(wc -c < "$page.min")
-            if (( minified_size >= original_size )); then
-              echo "Minification did not reduce $page" >&2
+            if (( minified_size == 0 || minified_size >= original_size )); then
+              echo "Minification produced empty or non-smaller output: $page" >&2
               exit 1
             fi
             mv "$page.min" "$page"
