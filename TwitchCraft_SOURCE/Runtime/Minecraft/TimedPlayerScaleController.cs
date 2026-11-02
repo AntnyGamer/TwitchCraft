@@ -54,11 +54,15 @@ internal sealed class TimedPlayerScaleController
         ArgumentNullException.ThrowIfNull(playerNames);
         ArgumentNullException.ThrowIfNull(dispatchInitialCommands);
         if (!double.IsFinite(scale) || scale <= 0 || duration <= TimeSpan.Zero)
+        {
             return false;
+        }
 
         List<string> players = SortedListHelper.NormalizePlayerNames(playerNames, StringComparer.OrdinalIgnoreCase);
         if (players.Count == 0)
+        {
             return false;
+        }
 
         SemaphoreSlim[] acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
         (string Player, ScaleState Applied, ScaleState? Previous)[] appliedStates = new (string, ScaleState, ScaleState?)[players.Count];
@@ -121,8 +125,13 @@ internal sealed class TimedPlayerScaleController
     {
         long maxGeneration = Volatile.Read(ref _recoveryGeneration);
         lock (_gate)
+        {
             if (!_states.TryGetValue(player, out ScaleState state) || state.Generation > maxGeneration)
+            {
                 return Task.CompletedTask;
+            }
+        }
+
         return ResetAllAsync(cancellationToken, maxGeneration, player);
     }
 
@@ -132,11 +141,19 @@ internal sealed class TimedPlayerScaleController
     {
         List<string> players;
         lock (_gate)
+        {
             players = playerName == null ? [.. _states.Keys] : _states.ContainsKey(playerName) ? [playerName] : [];
+        }
 
-        if (playerName == null) players.Sort(StringComparer.OrdinalIgnoreCase);
+        if (playerName == null)
+        {
+            players.Sort(StringComparer.OrdinalIgnoreCase);
+        }
+
         if (players.Count == 0)
+        {
             return;
+        }
 
         SemaphoreSlim[] acquiredGates = await LockPlayersAsync(players, cancellationToken).ConfigureAwait(false);
         try
@@ -147,12 +164,16 @@ internal sealed class TimedPlayerScaleController
                 lock (_gate)
                 {
                     if (!_states.TryGetValue(player, out state) || state.Generation > maxGeneration)
+                    {
                         continue;
+                    }
                 }
 
                 bool sent = await TryResetAsync(player, state, retryUntilCancelled: false, cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (sent)
+                {
                     RemoveIfCurrent(player, state);
+                }
             }
         }
         finally
@@ -174,7 +195,9 @@ internal sealed class TimedPlayerScaleController
             {
                 await _delay(warningDelay, cancellationToken).ConfigureAwait(false);
                 if (!await ShowRestoreWarningAsync(player, state, cancellationToken).ConfigureAwait(false))
+                {
                     return;
+                }
 
                 await _delay(RestoreWarningLeadTime, cancellationToken).ConfigureAwait(false);
             }
@@ -188,10 +211,14 @@ internal sealed class TimedPlayerScaleController
             try
             {
                 if (!IsCurrent(player, state))
+                {
                     return;
+                }
 
                 if (await TryResetAsync(player, state, retryUntilCancelled: true, cancellationToken: cancellationToken).ConfigureAwait(false))
+                {
                     RemoveIfCurrent(player, state);
+                }
             }
             finally
             {
@@ -217,7 +244,9 @@ internal sealed class TimedPlayerScaleController
         try
         {
             if (!IsCurrent(player, state))
+            {
                 return false;
+            }
 
             string selector = MinecraftCommandBuilder.SinglePlayerSelector(player);
             string[] commands =
@@ -264,12 +293,20 @@ internal sealed class TimedPlayerScaleController
         {
             if (!_isPlayerOnline(player))
             {
-                if (!retryUntilCancelled) return false;
+                if (!retryUntilCancelled)
+                {
+                    return false;
+                }
             }
             else if (await _sendCommand(command, cancellationToken).ConfigureAwait(false))
+            {
                 return true;
+            }
+
             if (!retryUntilCancelled)
+            {
                 break;
+            }
 
             await _delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
         }
@@ -299,7 +336,10 @@ internal sealed class TimedPlayerScaleController
         catch
         {
             for (int i = acquiredCount - 1; i >= 0; i--)
+            {
                 acquired[i].Release();
+            }
+
             throw;
         }
     }
@@ -331,7 +371,9 @@ internal sealed class TimedPlayerScaleController
         lock (_gate)
         {
             if (_states.TryGetValue(player, out ScaleState current) && current == state)
+            {
                 _states.Remove(player);
+            }
         }
     }
 
@@ -345,12 +387,18 @@ internal sealed class TimedPlayerScaleController
             {
                 (string player, ScaleState applied, ScaleState? previous) = appliedStates[i];
                 if (!_states.TryGetValue(player, out ScaleState current) || current != applied)
+                {
                     continue;
+                }
 
                 if (previous.HasValue)
+                {
                     _states[player] = previous.Value;
+                }
                 else
+                {
                     _states.Remove(player);
+                }
             }
         }
     }
@@ -358,6 +406,8 @@ internal sealed class TimedPlayerScaleController
     private static void UnlockPlayers(SemaphoreSlim[] acquiredGates)
     {
         for (int i = acquiredGates.Length - 1; i >= 0; i--)
+        {
             acquiredGates[i].Release();
+        }
     }
 }

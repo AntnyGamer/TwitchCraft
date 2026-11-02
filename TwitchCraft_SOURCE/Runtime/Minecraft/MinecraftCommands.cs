@@ -55,11 +55,15 @@ public sealed partial class MainHandler
         ArgumentNullException.ThrowIfNull(command);
         string commandText = CleanServerCommand(command);
         if (commandText.Length == 0)
+        {
             return false;
+        }
 
         TwitchCraftConfig? activeConfig = _activeConfig;
         if (activeConfig?.Settings.RemoteControlEnabled == true)
+        {
             return await SendRCONCommandAsync(activeConfig, commandText, cancellationToken, applyRemoteTimeout).ConfigureAwait(false);
+        }
 
         Process? process = _minecraftSession.Process;
         if (process == null)
@@ -112,14 +116,20 @@ public sealed partial class MainHandler
 
         List<string> snapshot = SnapshotCommands(commands);
         if (snapshot.Count == 0)
+        {
             return false;
+        }
 
         if (snapshot.Count == 1)
+        {
             return await SendServerCommandAsync(snapshot[0], cancellationToken).ConfigureAwait(false);
+        }
 
         TwitchCraftConfig? activeConfig = _activeConfig;
         if (activeConfig?.Settings.RemoteControlEnabled == true)
+        {
             return await SendRCONCommandsAsync(activeConfig, snapshot, cancellationToken).ConfigureAwait(false);
+        }
 
         Process? process = _minecraftSession.Process;
         if (process == null)
@@ -207,7 +217,10 @@ public sealed partial class MainHandler
         catch (RCONPartialResponseException ex)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 throw new OperationCanceledException(null, ex, cancellationToken);
+            }
+
             _shellWindow?.AddServerLogLine("At least one RCON command response was confirmed before the batch was interrupted.");
             return true;
         }
@@ -231,11 +244,15 @@ public sealed partial class MainHandler
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config?.Settings.RemoteControlEnabled != true)
+        {
             return null;
+        }
 
         string commandText = CleanServerCommand(command);
         if (commandText.Length == 0)
+        {
             return null;
+        }
 
         await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -269,18 +286,24 @@ public sealed partial class MainHandler
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config?.Settings.RemoteControlEnabled != true || commands.Count == 0)
+        {
             return null;
+        }
 
         List<string> commandTexts = new(commands.Count);
         for (int i = 0; i < commands.Count; i++)
         {
             string commandText = CleanServerCommand(commands[i]);
             if (commandText.Length > 0)
+            {
                 commandTexts.Add(commandText);
+            }
         }
 
         if (commandTexts.Count == 0)
+        {
             return null;
+        }
 
         await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -316,7 +339,9 @@ public sealed partial class MainHandler
     internal static TimeSpan GetRCONTimeout(int commandCount, TimeSpan baseTimeout)
     {
         if (commandCount <= 1)
+        {
             return baseTimeout;
+        }
 
         double milliseconds = baseTimeout.TotalMilliseconds + Math.Min(commandCount - 1, 50) * 200.0;
         return TimeSpan.FromMilliseconds(milliseconds);
@@ -344,7 +369,9 @@ public sealed partial class MainHandler
     {
         ReadOnlySpan<char> trimmed = TrimCommand(command.AsSpan());
         if (trimmed.IsEmpty || HasLineBreak(trimmed))
+        {
             return string.Empty;
+        }
 
         return trimmed.Length == command.Length ? command : trimmed.ToString();
     }
@@ -354,10 +381,14 @@ public sealed partial class MainHandler
         int start = 0;
         int end = command.Length - 1;
         while (start <= end && IsCommandBoundary(command[start]))
+        {
             start++;
+        }
 
         while (end >= start && IsCommandBoundary(command[end]))
+        {
             end--;
+        }
 
         return start > end ? [] : command.Slice(start, end - start + 1);
     }
@@ -396,7 +427,9 @@ public sealed partial class MainHandler
             string raw = command ?? string.Empty;
             ReadOnlySpan<char> trimmed = TrimCommand(raw.AsSpan());
             if (!trimmed.IsEmpty && !HasLineBreak(trimmed))
+            {
                 snapshot.Add(trimmed.Length == raw.Length ? raw : trimmed.ToString());
+            }
         }
 
         return snapshot;
@@ -407,7 +440,9 @@ public sealed partial class MainHandler
         int count = commands.Count;
         int byteCount = 0;
         for (int i = 0; i < count; i++)
+        {
             byteCount += ServerCommandEncoding.GetByteCount(commands[i]) + ServerCommandNewLineBytes.Length;
+        }
 
         byte[] rented = ArrayPool<byte>.Shared.Rent(byteCount);
         try

@@ -19,7 +19,9 @@ internal static class AppHelpers
     {
         string? executablePath = Environment.ProcessPath;
         if (!string.IsNullOrWhiteSpace(executablePath))
+        {
             return executablePath;
+        }
 
         try
         {
@@ -34,12 +36,18 @@ internal static class AppHelpers
     public static void NavigateBack(DependencyObject source)
     {
         if (GetTwitchCraftWindow(source) is TwitchCraft parent)
+        {
             parent.Shell.Navigate(parent.Shell.PreviousPage);
+        }
     }
 
     public static void NavigateBackOnEscape(DependencyObject source, KeyEventArgs e)
     {
-        if (e.Key != Key.Escape) return;
+        if (e.Key != Key.Escape)
+        {
+            return;
+        }
+
         e.Handled = true;
         NavigateBack(source);
     }
@@ -53,7 +61,9 @@ internal static class AppHelpers
         };
 
         if (!string.IsNullOrWhiteSpace(workingDirectory))
+        {
             processStartInfo.WorkingDirectory = workingDirectory;
+        }
 
         Process.Start(processStartInfo)?.Dispose();
     }
@@ -79,7 +89,9 @@ internal static class AppHelpers
         };
 
         if (dialog.ShowDialog() != true)
+        {
             return null;
+        }
 
         string selectedPath = dialog.FolderName ?? string.Empty;
         return string.IsNullOrWhiteSpace(selectedPath) ? null : selectedPath;
@@ -93,7 +105,9 @@ internal static class AppHelpers
             "saves");
 
         if (Directory.Exists(minecraftSavesPath))
+        {
             return minecraftSavesPath;
+        }
 
         string downloadsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),

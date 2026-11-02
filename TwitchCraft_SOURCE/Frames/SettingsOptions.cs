@@ -58,8 +58,12 @@ public partial class Settings
     private static void AddStringOptions(ComboBox dropdown, ReadOnlySpan<string> options)
     {
         if (dropdown.Items.Count == 0)
+        {
             foreach (string option in options)
+            {
                 dropdown.Items.Add(option);
+            }
+        }
     }
 
     private static void AddPrefixOptions(ComboBox dropdown)
@@ -74,21 +78,29 @@ public partial class Settings
     private static void Prefix_Loaded(object sender, RoutedEventArgs e)
     {
         if (sender is ComboBox dropdown)
+        {
             SetupPrefixBox(dropdown);
+        }
     }
 
     private static void SetupPrefixBox(ComboBox dropdown)
     {
         dropdown.ApplyTemplate();
         if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is TextBox editor)
+        {
             editor.MaxLength = 2;
+        }
     }
 
     private static void AddOptions<T>(ComboBox dropdown, (T Value, string Label)[] options)
     {
         if (dropdown.Items.Count == 0)
+        {
             foreach ((T _, string label) in options)
+            {
                 dropdown.Items.Add(label);
+            }
+        }
     }
 
     private void LoadMainSettings(StartingProfile settings)
@@ -126,11 +138,13 @@ public partial class Settings
         }
 
         foreach ((int option, string label) in options)
+        {
             if (option == fallback)
             {
                 dropdown.SelectedItem = label;
                 return;
             }
+        }
     }
 
     private static void SetEditableInt(ComboBox dropdown, (int Value, string Label)[] options, int value)
@@ -152,11 +166,13 @@ public partial class Settings
     {
         string normalized = ConfigurationStore.NormalizeColor(color);
         foreach ((string value, string label) in RelayTextColorOptions)
+        {
             if (string.Equals(value, normalized, StringComparison.Ordinal))
             {
                 RelayTextColorDropdown.SelectedItem = label;
                 return;
             }
+        }
 
         RelayTextColorDropdown.SelectedItem = "White";
     }
@@ -192,9 +208,35 @@ public partial class Settings
     private static readonly (int Value, string Label)[] EmptyShutdownOptions =
         [(0, "Off"), (5, "5 minutes"), (10, "10 minutes"), (15, "15 minutes"), (30, "30 minutes"), (60, "1 hour"), (120, "2 hours")];
     private static readonly CooldownOption<int>[] CommandCooldownOptions =
-        [new(null, "Default"), new(0, "None"), new(1, "1 second"), new(3, "3 seconds"), new(5, "5 seconds"), new(10, "10 seconds"), new(15, "15 seconds"), new(30, "30 seconds"), new(60, "1 minute"), new(300, "5 minutes"), new(600, "10 minutes")];
+    [
+        new(null, "Default"),
+        new(0, "None"),
+        new(1, "1 second"),
+        new(3, "3 seconds"),
+        new(5, "5 seconds"),
+        new(10, "10 seconds"),
+        new(15, "15 seconds"),
+        new(30, "30 seconds"),
+        new(60, "1 minute"),
+        new(300, "5 minutes"),
+        new(600, "10 minutes")
+    ];
     private static readonly CooldownOption<double>[] CommandGlobalCooldownOptions =
-        [new(null, "Default"), new(0, "None"), new(0.1, "0.1 second"), new(0.5, "0.5 seconds"), new(1, "1 second"), new(3, "3 seconds"), new(5, "5 seconds"), new(10, "10 seconds"), new(15, "15 seconds"), new(30, "30 seconds"), new(60, "1 minute"), new(300, "5 minutes"), new(600, "10 minutes")];
+    [
+        new(null, "Default"),
+        new(0, "None"),
+        new(0.1, "0.1 second"),
+        new(0.5, "0.5 seconds"),
+        new(1, "1 second"),
+        new(3, "3 seconds"),
+        new(5, "5 seconds"),
+        new(10, "10 seconds"),
+        new(15, "15 seconds"),
+        new(30, "30 seconds"),
+        new(60, "1 minute"),
+        new(300, "5 minutes"),
+        new(600, "10 minutes")
+    ];
 
     private void AddExtraOptions()
     {
@@ -224,7 +266,11 @@ public partial class Settings
         ActivityWindowDropdown.IsEnabled = settings.PassiveRewardsRequireActivity;
         AutomaticBackupsCheckbox.IsChecked = settings.AutomaticBackupsEnabled;
         SetIntOption(BackupIntervalDropdown, BackupIntervalOptions, settings.AutomaticBackupIntervalHours, 24);
-        SetIntOption(BackupRetentionDropdown, BackupRetentionOptions, settings.AutomaticBackupRetentionCount, StartingProfile.DefaultAutomaticBackupRetentionCount);
+        SetIntOption(
+            BackupRetentionDropdown,
+            BackupRetentionOptions,
+            settings.AutomaticBackupRetentionCount,
+            StartingProfile.DefaultAutomaticBackupRetentionCount);
         BackupIntervalDropdown.IsEnabled = settings.AutomaticBackupsEnabled;
         BackupRetentionDropdown.IsEnabled = settings.AutomaticBackupsEnabled;
         LowResourceModeCheckbox.IsChecked = settings.LowResourceModeEnabled;
@@ -253,16 +299,20 @@ public partial class Settings
         MainHandler? runtime = AppHelpers.GetTwitchCraftWindow(this)?.Runtime;
         List<object> rows = [FindResource("CommandCustomizationHeader")];
         if (runtime != null)
+        {
             foreach (string name in runtime.RegisteredCommandNames)
             {
                 settings.CommandCustomizations.TryGetValue(name, out CommandCustomization? customization);
                 rows.Add(new CommandSettingsRow(name, customization, SaveCommandRow));
             }
+        }
+
         rows.Add(FindResource("CommandCustomizationFooter"));
         CommandCustomizationList.ItemsSource = rows;
     }
 
     private void UpdateCommandPrefixes(string prefix) => Resources["CommandSettingsPrefix"] = prefix;
+
     internal sealed record CooldownOption<T>(T? Value, string Label) where T : struct;
 
     internal sealed class CommandSettingsRow : INotifyPropertyChanged
@@ -279,8 +329,16 @@ public partial class Settings
             _enabled = customization?.Enabled ?? true;
             int? perUser = customization?.CooldownSeconds;
             double? global = customization?.GlobalCooldownSeconds;
-            if (perUser is < 0 or > 86400) perUser = null;
-            if (global.HasValue && (!double.IsFinite(global.Value) || global is < 0 or > 86400)) global = null;
+            if (perUser is < 0 or > 86400)
+            {
+                perUser = null;
+            }
+
+            if (global.HasValue && (!double.IsFinite(global.Value) || global is < 0 or > 86400))
+            {
+                global = null;
+            }
+
             (PerUserOptions, _perUserCooldown) = OptionsFor(CommandCooldownOptions, perUser);
             (GlobalOptions, _globalCooldown) = OptionsFor(CommandGlobalCooldownOptions, global);
         }
@@ -295,17 +353,33 @@ public partial class Settings
         public CooldownOption<int> PerUserCooldown
         {
             get => _perUserCooldown;
-            set { if (value != null) Change(ref _perUserCooldown, value); }
+            set
+            {
+                if (value != null)
+                {
+                    Change(ref _perUserCooldown, value);
+                }
+            }
         }
         public CooldownOption<double> GlobalCooldown
         {
             get => _globalCooldown;
-            set { if (value != null) Change(ref _globalCooldown, value); }
+            set
+            {
+                if (value != null)
+                {
+                    Change(ref _globalCooldown, value);
+                }
+            }
         }
 
         private void Change<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return;
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return;
+            }
+
             field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             _save(this);
@@ -315,7 +389,13 @@ public partial class Settings
             CooldownOption<T>[] presets, T? value) where T : struct, IFormattable
         {
             foreach (CooldownOption<T> option in presets)
-                if (EqualityComparer<T?>.Default.Equals(option.Value, value)) return (presets, option);
+            {
+                if (EqualityComparer<T?>.Default.Equals(option.Value, value))
+                {
+                    return (presets, option);
+                }
+            }
+
             CooldownOption<T> selected = new(value, value?.ToString(null, CultureInfo.InvariantCulture) + " seconds");
             return ([.. presets, selected], selected);
         }

@@ -25,7 +25,10 @@ public sealed class MinigameBetDurabilityTests
             Assert.True(first.TrySpendForMinigameBet("@VIEWER", 10));
             Assert.Equal(65, first.GetBalance("viewer"));
         }
-        finally { first.Close(); }
+        finally
+        {
+            first.Close();
+        }
 
         TokenService recovered = new(path, static () => 0);
         try
@@ -34,7 +37,10 @@ public sealed class MinigameBetDurabilityTests
             Assert.Equal(100, recovered.GetBalance("viewer"));
             Assert.False(recovered.TryCompleteMinigameBets([new("viewer", 35)]));
         }
-        finally { recovered.Close(); }
+        finally
+        {
+            recovered.Close();
+        }
 
         TokenService reopened = new(path, static () => 0);
         try
@@ -42,7 +48,10 @@ public sealed class MinigameBetDurabilityTests
             reopened.Load(0);
             Assert.Equal(100, reopened.GetBalance("viewer"));
         }
-        finally { reopened.Close(); }
+        finally
+        {
+            reopened.Close();
+        }
     }
 
     [Fact]
@@ -62,7 +71,10 @@ public sealed class MinigameBetDurabilityTests
             Assert.False(tokens.TryCompleteMinigameBets([new("alice", 50)]));
             Assert.Equal(125, tokens.GetBalance("alice"));
         }
-        finally { tokens.Close(); }
+        finally
+        {
+            tokens.Close();
+        }
     }
 
     [Fact]
@@ -96,7 +108,10 @@ public sealed class MinigameBetDurabilityTests
             Assert.True(tokens.TryCompleteMinigameBets([new("viewer", 50)]));
             Assert.Equal(125, tokens.GetBalance("viewer"));
         }
-        finally { tokens.Close(); }
+        finally
+        {
+            tokens.Close();
+        }
     }
 
     [Fact]
@@ -127,7 +142,10 @@ public sealed class MinigameBetDurabilityTests
             Assert.Equal(125, tokens.GetBalance("winner"));
             Assert.False(tokens.TryCompleteMinigameBets([new("winner", 50)]));
         }
-        finally { tokens.Close(); }
+        finally
+        {
+            tokens.Close();
+        }
     }
 
     [Fact]
@@ -157,7 +175,10 @@ public sealed class MinigameBetDurabilityTests
             Assert.True(tokens.TryCompleteMinigameBets([]));
             Assert.False(tokens.TryCompleteMinigameBets([]));
         }
-        finally { tokens.Close(); }
+        finally
+        {
+            tokens.Close();
+        }
 
         TokenService reopened = new(path, static () => 0);
         try
@@ -166,7 +187,10 @@ public sealed class MinigameBetDurabilityTests
             Assert.Equal(75, reopened.GetBalance("alice"));
             Assert.Equal(70, reopened.GetBalance("bob"));
         }
-        finally { reopened.Close(); }
+        finally
+        {
+            reopened.Close();
+        }
     }
 
     [Fact]
@@ -196,6 +220,9 @@ public sealed class MinigameBetDurabilityTests
             recovered.Load(0);
             Assert.Equal(100, recovered.GetBalance("viewer"));
         }
-        finally { recovered.Close(); }
+        finally
+        {
+            recovered.Close();
+        }
     }
 }

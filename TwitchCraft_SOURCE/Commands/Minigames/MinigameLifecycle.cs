@@ -9,7 +9,9 @@ public static partial class MinigameManager
     public static void StartLoops(MainHandler runtime, CancellationToken sessionToken)
     {
         if (runtime == null || !runtime.MinigamesEnabled)
+        {
             return;
+        }
 
         LoopState loop;
         lock (MinigameGate)
@@ -17,7 +19,9 @@ public static partial class MinigameManager
             if (MinigameLoops.TryGetValue(runtime, out LoopState? existing)
                 && !existing.Cts.IsCancellationRequested
                 && existing.Task is not { IsCompleted: true })
+            {
                 return;
+            }
 
             loop = new(runtime, CancellationTokenSource.CreateLinkedTokenSource(sessionToken), TakeNextTimeNoLock(runtime));
             MinigameLoops[runtime] = loop;
@@ -37,7 +41,9 @@ public static partial class MinigameManager
         lock (MinigameGate)
         {
             if (MinigameLoops.TryGetValue(runtime, out LoopState? current) && ReferenceEquals(current, loop))
+            {
                 loop.Task = loopTask;
+            }
         }
 
         _ = loopTask.ContinueWith(
@@ -51,7 +57,9 @@ public static partial class MinigameManager
     public static void StopLoops(MainHandler runtime, bool preserveSchedule = false)
     {
         if (runtime == null)
+        {
             return;
+        }
 
         _ = StopLoopsCore(runtime, preserveSchedule);
     }
@@ -59,11 +67,15 @@ public static partial class MinigameManager
     public static async Task StopLoopsAsync(MainHandler runtime, bool preserveSchedule = false)
     {
         if (runtime == null)
+        {
             return;
+        }
 
         Task? loopTask = StopLoopsCore(runtime, preserveSchedule);
         if (loopTask == null)
+        {
             return;
+        }
 
         try
         {
@@ -89,7 +101,9 @@ public static partial class MinigameManager
         {
             MinigameLoops.Remove(runtime, out loop);
             if (loop != null && preserveSchedule)
+            {
                 (PreservedNextAtUtc ??= [])[runtime] = loop.NextAtUtc;
+            }
             else if (!preserveSchedule)
             {
                 PreservedNextAtUtc?.Remove(runtime);
@@ -99,7 +113,13 @@ public static partial class MinigameManager
             ResetStatesNoLock(runtime);
         }
 
-        try { loop?.Cts.Cancel(); } catch { }
+        try
+        {
+            loop?.Cts.Cancel();
+        }
+        catch
+        {
+        }
 
         RefundChickenBets(runtime);
         RefundWitherBets(runtime);
@@ -112,19 +132,35 @@ public static partial class MinigameManager
         lock (MinigameGate)
         {
             if (MinigameLoops.TryGetValue(loop.Runtime, out LoopState? current) && ReferenceEquals(current, loop))
+            {
                 MinigameLoops.Remove(loop.Runtime);
+            }
         }
 
-        try { loop.Cts.Dispose(); } catch { }
+        try
+        {
+            loop.Cts.Dispose();
+        }
+        catch
+        {
+        }
     }
 
     private static void RemoveState(MainHandler runtime)
     {
         lock (MinigameGate)
         {
-            if (ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) && chicken.Bets.Count == 0) ChickenRunStates.Remove(runtime);
+            if (ChickenRunStates.TryGetValue(runtime, out ChickenRunState? chicken) && chicken.Bets.Count == 0)
+            {
+                ChickenRunStates.Remove(runtime);
+            }
+
             GuessNumberStates.Remove(runtime);
-            if (WitherBattleStates.TryGetValue(runtime, out WitherBattleState? wither) && wither.Bets.Count == 0) WitherBattleStates.Remove(runtime);
+            if (WitherBattleStates.TryGetValue(runtime, out WitherBattleState? wither) && wither.Bets.Count == 0)
+            {
+                WitherBattleStates.Remove(runtime);
+            }
+
             ActiveMinigames.Remove(runtime);
         }
     }
@@ -148,7 +184,10 @@ public static partial class MinigameManager
                 lock (MinigameGate)
                 {
                     if (!MinigameLoops.TryGetValue(runtime, out LoopState? current) || !ReferenceEquals(current, loop))
+                    {
                         break;
+                    }
+
                     nextAtUtc = loop.NextAtUtc;
                 }
 
@@ -175,7 +214,9 @@ public static partial class MinigameManager
                 }
 
                 if (cancellationToken.IsCancellationRequested || !IsCurrentLoop(runtime, loop))
+                {
                     break;
+                }
 
                 SetNextTime(runtime, runtime.MinigameCooldown);
             }
@@ -186,7 +227,9 @@ public static partial class MinigameManager
             catch (Exception ex)
             {
                 if (cancellationToken.IsCancellationRequested || !IsCurrentLoop(runtime, loop))
+                {
                     break;
+                }
 
                 runtime.AddChatLogLine(ErrorHandling.FormatLog("Minigame loop error", ex));
                 RefundChickenBets(runtime);
@@ -221,7 +264,9 @@ public static partial class MinigameManager
     private static void ClearScheduleNoLock()
     {
         if (PreservedNextAtUtc?.Count == 0)
+        {
             PreservedNextAtUtc = null;
+        }
     }
 
     internal static void SetNextTime(MainHandler runtime, double minutesFromNow)
@@ -229,7 +274,9 @@ public static partial class MinigameManager
         lock (MinigameGate)
         {
             if (MinigameLoops.TryGetValue(runtime, out LoopState? loop))
+            {
                 loop.NextAtUtc = DateTime.UtcNow.AddMinutes(minutesFromNow);
+            }
         }
     }
 
@@ -239,12 +286,16 @@ public static partial class MinigameManager
         lock (MinigameGate)
         {
             if (!MinigameLoops.TryGetValue(runtime, out LoopState? loop) || !ReferenceEquals(loop, expectedLoop))
+            {
                 return;
+            }
 
             delay = loop.NextAtUtc - DateTime.UtcNow;
         }
 
         if (delay > TimeSpan.Zero)
+        {
             await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+        }
     }
 }

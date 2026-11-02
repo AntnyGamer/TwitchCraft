@@ -19,18 +19,29 @@ public sealed partial class MainHandler
     private async Task SendIRCLineAsync(StreamWriter writer, string line, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(line) || !ReferenceEquals(writer, _twitchSession.Writer))
+        {
             return;
+        }
 
         bool rateLimited = line.StartsWith("PRIVMSG ", StringComparison.Ordinal);
-        if (rateLimited) await _twitchSession.ChatRateGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (rateLimited)
+        {
+            await _twitchSession.ChatRateGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         try
         {
             long sendDelay = 0;
             if (rateLimited && _twitchSession.ChatSendTimes.Count >= 100)
+            {
                 sendDelay = Math.Max(0, _twitchSession.ChatSendTimes.Peek() + 30_000 - Environment.TickCount64);
+            }
 
             if (sendDelay > 0)
+            {
                 await Task.Delay(TimeSpan.FromMilliseconds(sendDelay), cancellationToken).ConfigureAwait(false);
+            }
+
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(TwitchSession.OperationTimeout);
             CancellationToken writeToken = timeoutCts.Token;
@@ -38,13 +49,19 @@ public sealed partial class MainHandler
             try
             {
                 if (!ReferenceEquals(writer, _twitchSession.Writer))
+                {
                     return;
+                }
 
                 await writer.WriteLineAsync(line.AsMemory(), writeToken).ConfigureAwait(false);
                 await writer.FlushAsync(writeToken).ConfigureAwait(false);
                 if (rateLimited)
                 {
-                    if (_twitchSession.ChatSendTimes.Count >= 100) _twitchSession.ChatSendTimes.Dequeue();
+                    if (_twitchSession.ChatSendTimes.Count >= 100)
+                    {
+                        _twitchSession.ChatSendTimes.Dequeue();
+                    }
+
                     _twitchSession.ChatSendTimes.Enqueue(Environment.TickCount64);
                 }
             }
@@ -55,14 +72,19 @@ public sealed partial class MainHandler
         }
         finally
         {
-            if (rateLimited) _twitchSession.ChatRateGate.Release();
+            if (rateLimited)
+            {
+                _twitchSession.ChatRateGate.Release();
+            }
         }
     }
 
     private async Task SendIRCLinesAsync(StreamWriter writer, IReadOnlyList<string> lines, CancellationToken cancellationToken)
     {
         if (lines.Count == 0)
+        {
             return;
+        }
 
         using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(TwitchSession.OperationTimeout);
@@ -71,13 +93,17 @@ public sealed partial class MainHandler
         try
         {
             if (!ReferenceEquals(writer, _twitchSession.Writer))
+            {
                 return;
+            }
 
             for (int i = 0; i < lines.Count; i++)
             {
                 string line = lines[i];
                 if (!string.IsNullOrWhiteSpace(line))
+                {
                     await writer.WriteLineAsync(line.AsMemory(), writeToken).ConfigureAwait(false);
+                }
             }
 
             await writer.FlushAsync(writeToken).ConfigureAwait(false);
@@ -92,16 +118,22 @@ public sealed partial class MainHandler
     {
         StreamWriter? writer = _twitchSession.Writer;
         if (writer == null || !_twitchSession.WriteGate.Wait(0, CancellationToken.None))
+        {
             return;
+        }
 
         try
         {
             if (!ReferenceEquals(writer, _twitchSession.Writer))
+            {
                 return;
+            }
 
             string channel = StreamerName;
             if (channel.Length == 0)
+            {
                 return;
+            }
 
             using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(TwitchSession.ShutdownPartTimeout);
@@ -136,7 +168,9 @@ public sealed partial class MainHandler
         {
             string botToken = NormalizeToken(_activeConfig?.Twitch.BotToken);
             if (botToken.Length == 0)
+            {
                 return;
+            }
 
             const string IRCHost = "IRC.chat.twitch.tv";
             const int IRCPort = 6697;
@@ -263,9 +297,14 @@ public sealed partial class MainHandler
                     if (string.Equals(message.Command, "NOTICE", StringComparison.OrdinalIgnoreCase))
                     {
                         if (!string.IsNullOrWhiteSpace(message.Trailing))
+                        {
                             _shellWindow?.AddChatLogLine("[NOTICE] " + message.Trailing);
+                        }
                         else
+                        {
                             _shellWindow?.AddChatLogLine(IRCMessage.StripIRCTags(line));
+                        }
+
                         if (message.Trailing.Contains("authentication failed", StringComparison.OrdinalIgnoreCase))
                         {
                             SaveBot(botToken, await ValidateBotAsync(botToken, twitch.ClientID, cancellationToken).ConfigureAwait(false));
@@ -284,7 +323,10 @@ public sealed partial class MainHandler
                             _shellWindow?.AddChatLogLine("[IRC] Connected to #" + channelLogin + ".");
                         }
                         else
+                        {
                             _shellWindow?.AddChatLogLine(IRCMessage.StripIRCTags(line));
+                        }
+
                         continue;
                     }
 
@@ -293,11 +335,15 @@ public sealed partial class MainHandler
                     if (message.ID.Length > 0)
                     {
                         if (!_twitchSession.MessageIDs.Add(message.ID))
+                        {
                             continue;
+                        }
 
                         _twitchSession.MessageIDOrder.Enqueue(message.ID);
                         if (_twitchSession.MessageIDOrder.Count > 4096)
+                        {
                             _twitchSession.MessageIDs.Remove(_twitchSession.MessageIDOrder.Dequeue());
+                        }
                     }
 
                     bool hasChatMessage = sender.Length > 0 && payload.Length > 0;
@@ -307,7 +353,9 @@ public sealed partial class MainHandler
                             : IRCMessage.StripIRCTags(line));
 
                     if (!hasChatMessage || IsIgnoredUser(sender, botName, separateBotAccount))
+                    {
                         continue;
+                    }
 
                     RecordChatActivity(sender);
 
@@ -332,19 +380,30 @@ public sealed partial class MainHandler
                             ct => DispatchAsync(payload, matchedPrefix, sender, isModerator, ct),
                             payload,
                             cancellationToken))
+                        {
                             TrackTask(WarnQueueOverloadAsync(cancellationToken));
+                        }
                     }
                     else
                     {
                         var settings = CurrentSettings;
                         if (!settings.NonCommandChatRelayEnabled)
+                        {
                             continue;
+                        }
+
                         bool hasOnlinePlayers;
                         lock (_playerGate)
+                        {
                             hasOnlinePlayers = _knownPlayers.Count > 0;
+                        }
+
                         if ((!hasOnlinePlayers && HasOnlinePlayerSnapshot) ||
                             !_twitchSession.TryUseRelaySlot(settings.MinecraftRelayMessagesPerSecond, settings.LowResourceModeEnabled))
+                        {
                             continue;
+                        }
+
                         bool includeTimestamp = settings.IncludeRelayTimestamps;
                         string relayColor = settings.MinecraftRelayTextColor;
                         string relayMessage = TwitchSession.FormatRelay(
@@ -363,7 +422,9 @@ public sealed partial class MainHandler
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
             {
                 if (!await TryRefreshAuthAsync(botToken, cancellationToken).ConfigureAwait(false))
+                {
                     _shellWindow?.AddChatLogLine(ErrorHandling.FormatLog("IRC authorization failed", ex));
+                }
             }
             catch (SocketException ex)
             {
@@ -384,7 +445,9 @@ public sealed partial class MainHandler
             finally
             {
                 if (_twitchSession.TryClearWriter(writer))
+                {
                     _twitchSession.ChatConnected = false;
+                }
 
                 try
                 {
@@ -396,7 +459,10 @@ public sealed partial class MainHandler
 
                 try
                 {
-                    if (writer != null) await writer.DisposeAsync().ConfigureAwait(false);
+                    if (writer != null)
+                    {
+                        await writer.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
                 catch
                 {
@@ -412,7 +478,10 @@ public sealed partial class MainHandler
 
                 try
                 {
-                    if (stream != null) await stream.DisposeAsync().ConfigureAwait(false);
+                    if (stream != null)
+                    {
+                        await stream.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
                 catch
                 {
@@ -422,7 +491,9 @@ public sealed partial class MainHandler
             }
 
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             _shellWindow?.AddChatLogLine(
                 string.Create(CultureInfo.InvariantCulture, $"[IRC] Reconnecting in {reconnectDelayMs / 1000.0:0.#} second(s)..."));
@@ -502,16 +573,24 @@ internal sealed class TwitchSession
             ? configuredLimit <= 0 ? 5 : Math.Min(configuredLimit, 5)
             : configuredLimit;
         if (limit <= 0)
+        {
             return true;
+        }
 
         long now = nowMilliseconds ?? Environment.TickCount64;
         lock (_relayGate)
         {
             long cutoff = now - 1000;
             while (_relayMessageTimestamps.TryPeek(out long timestamp) && timestamp <= cutoff)
+            {
                 _relayMessageTimestamps.Dequeue();
+            }
+
             if (_relayMessageTimestamps.Count >= limit)
+            {
                 return false;
+            }
+
             _relayMessageTimestamps.Enqueue(now);
             return true;
         }
@@ -520,7 +599,9 @@ internal sealed class TwitchSession
     internal void ResetRelayRateLimit()
     {
         lock (_relayGate)
+        {
             _relayMessageTimestamps.Clear();
+        }
     }
 
     internal static string FormatRelay(string sender, string payload, bool includeTimestamp, DateTime localTime)
@@ -535,7 +616,9 @@ internal sealed class TwitchSession
     {
         TcpClient? socket = socketToClose ?? _socket;
         if (socket == null)
+        {
             return;
+        }
 
         Interlocked.CompareExchange(ref _socket, null, socket);
 

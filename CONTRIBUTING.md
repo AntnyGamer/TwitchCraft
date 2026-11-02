@@ -15,6 +15,7 @@ From the repository root:
 
 ```powershell
 dotnet restore TwitchCraft.slnx
+dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
 dotnet build TwitchCraft.slnx -c Release --no-restore
 Push-Location TwitchCraft.Tests
 dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build
@@ -31,7 +32,7 @@ dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build --results-d
 Pop-Location
 ```
 
-CI enforces a 40% minimum line-coverage floor to prevent major coverage regressions.
+CI enforces a 50% minimum line-coverage floor to prevent major coverage regressions.
 
 ## Source layout
 

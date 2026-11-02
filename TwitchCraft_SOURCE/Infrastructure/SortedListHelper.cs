@@ -11,16 +11,22 @@ internal static class SortedListHelper
     public static bool EqualInOrder(IReadOnlyList<string> left, IReadOnlyList<string> right, StringComparer comparer)
     {
         if (ReferenceEquals(left, right))
+        {
             return true;
+        }
 
         int count = left.Count;
         if (count != right.Count)
+        {
             return false;
+        }
 
         for (int i = 0; i < count; i++)
         {
             if (!comparer.Equals(left[i], right[i]))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -30,27 +36,37 @@ internal static class SortedListHelper
     {
         int count = values.Count;
         if (count <= 1)
+        {
             return;
+        }
 
         values.Sort(comparer);
         int writeIndex = 1;
         for (int readIndex = 1; readIndex < count; readIndex++)
         {
             if (!comparer.Equals(values[readIndex], values[writeIndex - 1]))
+            {
                 values[writeIndex++] = values[readIndex];
+            }
         }
 
         if (writeIndex < count)
+        {
             values.RemoveRange(writeIndex, count - writeIndex);
+        }
     }
 
     public static List<string> NormalizePlayerNames(List<string>? players, StringComparer comparer)
     {
         if (players is null)
+        {
             return [];
+        }
 
         if (players.Count == 0 || IsNormalizedList(players, comparer))
+        {
             return players;
+        }
 
         return NormalizePlayerNames((IEnumerable<string>)players, comparer);
     }
@@ -65,7 +81,9 @@ internal static class SortedListHelper
         foreach (string player in players)
         {
             if (MinecraftNameHelper.TryNormalizePlayerName(player, out string normalizedPlayer))
+            {
                 normalized.Add(normalizedPlayer);
+            }
         }
 
         SortAndDeduplicate(normalized, comparer);

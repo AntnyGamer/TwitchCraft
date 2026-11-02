@@ -26,23 +26,33 @@ public sealed partial class ConfigurationStore
     {
         normalizedHost = string.Empty;
         if (host.Length is 0 or > 300)
+        {
             return false;
+        }
 
         for (int i = 0; i < host.Length; i++)
         {
             char c = host[i];
             if (char.IsControl(c) || char.IsWhiteSpace(c) || c is '/' or '\\')
+            {
                 return false;
+            }
         }
 
         if (!TryStripRemotePort(host, out string hostOnly))
+        {
             return false;
+        }
 
         if (hostOnly.EndsWith('.'))
+        {
             hostOnly = hostOnly[..^1];
+        }
 
         if (hostOnly.Length is 0 or > 253)
+        {
             return false;
+        }
 
         if (IPAddress.TryParse(hostOnly, out _))
         {
@@ -51,7 +61,9 @@ public sealed partial class ConfigurationStore
         }
 
         if (hostOnly.Contains(':'))
+        {
             return false;
+        }
 
         int labelLength = 0;
         for (int i = 0; i < hostOnly.Length; i++)
@@ -60,20 +72,26 @@ public sealed partial class ConfigurationStore
             if (c == '.')
             {
                 if (labelLength is 0 or > 63)
+                {
                     return false;
+                }
 
                 labelLength = 0;
                 continue;
             }
 
             if (c != '-' && c != '_' && !char.IsAsciiLetterOrDigit(c))
+            {
                 return false;
+            }
 
             labelLength++;
         }
 
         if (labelLength is 0 or > 63)
+        {
             return false;
+        }
 
         normalizedHost = hostOnly;
         return true;
@@ -87,13 +105,17 @@ public sealed partial class ConfigurationStore
         {
             int bracketEnd = host.IndexOf(']');
             if (bracketEnd <= 1)
+            {
                 return false;
+            }
 
             string address = host[1..bracketEnd];
             string remainder = host[(bracketEnd + 1)..];
             if (remainder.Length > 0 &&
                 (!remainder.StartsWith(':') || !IsValidPortText(remainder.AsSpan(1))))
+            {
                 return false;
+            }
 
             hostOnly = address;
             return IPAddress.TryParse(hostOnly, out _);
@@ -104,7 +126,9 @@ public sealed partial class ConfigurationStore
         {
             ReadOnlySpan<char> portText = host.AsSpan(colonIndex + 1);
             if (IsValidPortText(portText))
+            {
                 hostOnly = host[..colonIndex];
+            }
         }
 
         return true;
@@ -116,7 +140,9 @@ public sealed partial class ConfigurationStore
     public static bool ShouldWarnAboutBindIP(string? value)
     {
         if (!IPAddress.TryParse(CleanText(value), out IPAddress? IP))
+        {
             return true;
+        }
 
         byte[] bytes = IP.GetAddressBytes();
         return bytes.Length != 4 || bytes[0] == 25 || bytes[0] == 26 || (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127);
@@ -140,27 +166,41 @@ public sealed partial class ConfigurationStore
 
         config.Server.BindIP = NormalizeBindIP(config.Server.BindIP);
         if (!IsValidBindIP(config.Server.BindIP))
+        {
             config.Server.BindIP = DefaultBindIP;
+        }
 
         if (!IsValidPort(config.Server.Port))
+        {
             config.Server.Port = DefaultServerPort;
+        }
 
         if (config.Server.MaxPlayers <= 0)
+        {
             config.Server.MaxPlayers = DefaultMaxPlayers;
+        }
 
         if (config.Server.MemoryMinGB <= 0)
+        {
             config.Server.MemoryMinGB = DefaultMemoryGB;
+        }
 
         if (config.Server.MemoryMaxGB <= 0)
+        {
             config.Server.MemoryMaxGB = DefaultMemoryGB;
+        }
 
         if (!IsValidPort(config.Server.RCON.Port))
+        {
             config.Server.RCON.Port = DefaultRCONPort;
+        }
 
         NormalizeEndpoint(config.Server);
 
         if (config.Settings.MinigameCooldown is < 2 or > 30)
+        {
             config.Settings.MinigameCooldown = DefaultMinigameCooldown;
+        }
 
         if (double.IsNaN(config.Settings.GlobalGameCommandCooldownSeconds) ||
             config.Settings.GlobalGameCommandCooldownSeconds is < 0.1 or > 120.0)
@@ -169,7 +209,9 @@ public sealed partial class ConfigurationStore
         }
 
         if (config.Settings.FollowRewardAmount is < 1 or > 1_000_000)
+        {
             config.Settings.FollowRewardAmount = StartingProfile.DefaultFollowRewardAmount;
+        }
 
         if (!double.IsFinite(config.Settings.CommandCostMultiplier) ||
             config.Settings.CommandCostMultiplier is < 0.0 or > 5.0)
@@ -182,17 +224,31 @@ public sealed partial class ConfigurationStore
         config.Settings.CommandPrefix = NormalizeCommandPrefix(config.Settings.CommandPrefix, "!");
         config.Settings.SecondaryCommandPrefix = NormalizeCommandPrefix(config.Settings.SecondaryCommandPrefix, string.Empty);
         if (string.Equals(config.Settings.CommandPrefix, config.Settings.SecondaryCommandPrefix, StringComparison.Ordinal))
+        {
             config.Settings.SecondaryCommandPrefix = string.Empty;
+        }
 
         if (config.Settings.PassiveTokensPerPayout is < 1 or > 1_000_000)
+        {
             config.Settings.PassiveTokensPerPayout = DefaultPassiveTokensPerPayout;
+        }
+
         NormalizePayout(config.Settings);
         if (config.Settings.MaximumTokenBalance < 0)
+        {
             config.Settings.MaximumTokenBalance = 0;
+        }
+
         if (config.Settings.ChannelCommandLimitPerMinute is < 0 or > 1000)
+        {
             config.Settings.ChannelCommandLimitPerMinute = 0;
+        }
+
         if (config.Settings.ViewerCommandLimitPerMinute is < 0 or > 1000)
+        {
             config.Settings.ViewerCommandLimitPerMinute = 0;
+        }
+
         config.Settings.PassiveActivityWindowMinutes = NormalizeChoice(
             config.Settings.PassiveActivityWindowMinutes, 10, 1, 2, 5, 10, 15, 30, 60, 120);
         config.Settings.AutomaticBackupIntervalHours = NormalizeChoice(config.Settings.AutomaticBackupIntervalHours, 24, 1, 6, 12, 24, 48, 168);
@@ -220,11 +276,17 @@ public sealed partial class ConfigurationStore
         config.Server.RCON.Password = NormalizeRCONPassword(config.Server.RCON.Password);
         config.Server.MinecraftVersion = CleanText(config.Server.MinecraftVersion);
         if (MinecraftVersionSupport.TryGetVersion(config.Server.MinecraftVersion, out MinecraftVersionSupport.MinecraftVersionInfo normalizedVersion))
+        {
             config.Server.MinecraftVersion = normalizedVersion.ID;
+        }
+
         config.Server.ServerDirectory = CleanText(config.Server.ServerDirectory);
         config.Server.PreviousBindIP = NormalizeBindIP(config.Server.PreviousBindIP);
         if (config.Server.PreviousBindIP.Length > 0 && !IsValidBindIP(config.Server.PreviousBindIP))
+        {
             config.Server.PreviousBindIP = string.Empty;
+        }
+
         config.Server.JarPath = CleanText(config.Server.JarPath);
         config.Twitch.StreamerName = CleanText(config.Twitch.StreamerName);
         config.Twitch.BotName = CleanText(config.Twitch.BotName);
@@ -288,11 +350,17 @@ public sealed partial class ConfigurationStore
     {
         string value = (prefix ?? string.Empty).Trim();
         if (value.Length is 0 or > 2)
+        {
             return fallback;
+        }
 
         for (int i = 0; i < value.Length; i++)
+        {
             if (char.IsWhiteSpace(value[i]) || char.IsControl(value[i]))
+            {
                 return fallback;
+            }
+        }
 
         return value;
     }
@@ -339,15 +407,21 @@ public sealed partial class ConfigurationStore
             {
                 string name = (rawName ?? string.Empty).Trim().ToLowerInvariant();
                 if (name.Length is < 1 or > 32 || value == null || !IsSimpleCommandName(name))
+                {
                     continue;
+                }
 
                 int? cooldown = value.CooldownSeconds;
                 if (cooldown is < 0 or > 86400)
+                {
                     cooldown = null;
+                }
 
                 double? globalCooldown = value.GlobalCooldownSeconds;
                 if (globalCooldown.HasValue && (!double.IsFinite(globalCooldown.Value) || globalCooldown.Value is < 0.0 or > 86400.0))
+                {
                     globalCooldown = null;
+                }
 
                 if (!value.Enabled || cooldown.HasValue || globalCooldown.HasValue)
                 {
@@ -372,19 +446,32 @@ public sealed partial class ConfigurationStore
         const int MaximumAllowed = 15 * 60;
 
         if (settings.PassiveTokenPayoutMinimumSeconds is < MinimumAllowed or > MaximumAllowed)
+        {
             settings.PassiveTokenPayoutMinimumSeconds = DefaultMinimum;
+        }
+
         if (settings.PassiveTokenPayoutMaximumSeconds is < MinimumAllowed or > MaximumAllowed)
+        {
             settings.PassiveTokenPayoutMaximumSeconds = DefaultMaximum;
+        }
+
         if (settings.PassiveTokenPayoutMinimumSeconds > settings.PassiveTokenPayoutMaximumSeconds)
+        {
             (settings.PassiveTokenPayoutMinimumSeconds, settings.PassiveTokenPayoutMaximumSeconds) =
                 (settings.PassiveTokenPayoutMaximumSeconds, settings.PassiveTokenPayoutMinimumSeconds);
+        }
     }
 
     private static bool IsSimpleCommandName(string value)
     {
         foreach (char c in value)
+        {
             if (!char.IsAsciiLetterOrDigit(c) && c != '_')
+            {
                 return false;
+            }
+        }
+
         return true;
     }
 

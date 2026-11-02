@@ -34,20 +34,29 @@ internal static class StatisticNameHelper
     public static string CleanCommandName(string? commandName)
     {
         if (string.IsNullOrEmpty(commandName))
+        {
             return string.Empty;
+        }
 
         int start = 0;
         int end = commandName.Length - 1;
         while (start <= end && char.IsWhiteSpace(commandName[start]))
+        {
             start++;
+        }
+
         while (end >= start && char.IsWhiteSpace(commandName[end]))
+        {
             end--;
+        }
 
         if (start <= end && commandName[start] == '!')
         {
             start++;
             while (start <= end && char.IsWhiteSpace(commandName[start]))
+            {
                 start++;
+            }
         }
 
         return start > end

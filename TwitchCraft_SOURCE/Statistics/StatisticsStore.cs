@@ -94,7 +94,10 @@ internal static partial class StatisticsStore
         try
         {
             lock (IOGate)
+            {
                 FileSystemHelper.BackupSqliteDatabase(GetConnectionNoLock(), destinationPath);
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -124,10 +127,14 @@ internal static partial class StatisticsStore
 
                 AddCommandTotalsNoLock(transaction, safeTokensSpent);
                 if (command.Length > 0)
+                {
                     AddCommandUseNoLock(transaction, command);
+                }
 
                 if (safeViewer.Length > 0)
+                {
                     SaveViewerScoreNoLock(transaction, safeViewer, safeDangerousScore, safeNiceScore);
+                }
 
                 transaction.Commit();
             }
@@ -277,7 +284,9 @@ internal static partial class StatisticsStore
                         (SELECT Username FROM ViewerScores WHERE NiceScore > 0 {excludedClause} ORDER BY NiceScore DESC, Username COLLATE NOCASE ASC LIMIT 1);
                     """;
                 if (normalizedExcludedViewer.Length > 0)
+                {
                     command.Parameters.Add("$excludedViewer", SqliteType.Text).Value = normalizedExcludedViewer;
+                }
 
                 using SqliteDataReader reader = command.ExecuteReader();
                 return reader.Read()

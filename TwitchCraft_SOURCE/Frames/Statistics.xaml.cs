@@ -23,13 +23,25 @@ public partial class Statistics : UserControl
         _refreshTimer.Tick += Refresh_Tick;
         Loaded += (_, _) => StartRefreshTimer();
         Unloaded += (_, _) => StopRefreshTimer(clearParent: true);
-        IsVisibleChanged += (_, _) => { if (IsVisible) StartRefreshTimer(); else StopRefreshTimer(clearParent: false); };
+        IsVisibleChanged += (_, _) =>
+        {
+            if (IsVisible)
+            {
+                StartRefreshTimer();
+            }
+            else
+            {
+                StopRefreshTimer(clearParent: false);
+            }
+        };
     }
 
     private void StartRefreshTimer()
     {
         if (!IsVisible || _refreshTimer.IsEnabled || _refreshing)
+        {
             return;
+        }
 
         _refreshTimer.Start();
         Refresh_Tick(this, EventArgs.Empty);
@@ -41,15 +53,22 @@ public partial class Statistics : UserControl
         _disabledSnapshotShown = false;
         _refreshCancellation?.Cancel();
         if (!_refreshing)
+        {
             Interlocked.Exchange(ref _refreshCancellation, null)?.Dispose();
+        }
+
         if (clearParent)
+        {
             _parent = null;
+        }
     }
 
     private async void Refresh_Tick(object? sender, EventArgs e)
     {
         if (_refreshing)
+        {
             return;
+        }
 
         _refreshTimer.Stop();
         _refreshing = true;
@@ -61,11 +80,15 @@ public partial class Statistics : UserControl
             _parent ??= AppHelpers.GetTwitchCraftWindow(this);
             if (_parent is not TwitchCraft parent || !IsVisible ||
                 (_disabledSnapshotShown && !parent.Runtime.Statistics.Enabled))
+            {
                 return;
+            }
 
             StatisticsSnapshot? stats = await Task.Run(() => parent.Runtime.Statistics.GetSnapshot(refreshToken), refreshToken);
             if (stats != null && IsVisible && !refreshToken.IsCancellationRequested)
+            {
                 UpdateStats(stats);
+            }
         }
         catch (OperationCanceledException) when (refreshToken.IsCancellationRequested)
         {
@@ -77,10 +100,15 @@ public partial class Statistics : UserControl
         finally
         {
             if (refreshToken.IsCancellationRequested)
+            {
                 Interlocked.Exchange(ref _refreshCancellation, null)?.Dispose();
+            }
+
             _refreshing = false;
             if (IsVisible)
+            {
                 _refreshTimer.Start();
+            }
         }
     }
 
@@ -89,7 +117,9 @@ public partial class Statistics : UserControl
         _disabledSnapshotShown = !stats.StatisticsEnabled;
         Visibility disabledVisibility = stats.StatisticsEnabled ? Visibility.Collapsed : Visibility.Visible;
         if (StatisticsDisabledBox.Visibility != disabledVisibility)
+        {
             StatisticsDisabledBox.Visibility = disabledVisibility;
+        }
 
         SetText(SessionCommandsText, FormatNumber(stats.SessionGameCommandsRun));
         SetText(SessionMostUsedCommandText, FormatName(stats.SessionMostUsedCommand));
@@ -115,7 +145,9 @@ public partial class Statistics : UserControl
     private static void SetText(TextBlock textBlock, string value)
     {
         if (!string.Equals(textBlock.Text, value, StringComparison.Ordinal))
+        {
             textBlock.Text = value;
+        }
     }
 
     private void Back_Click(object sender, RoutedEventArgs e) => AppHelpers.NavigateBack(this);
@@ -130,12 +162,19 @@ public partial class Statistics : UserControl
     private static string FormatDuration(TimeSpan? duration, string fallback)
     {
         if (duration is not TimeSpan value)
+        {
             return fallback;
+        }
+
         if (value == TimeSpan.MinValue)
+        {
             return "N/A until next life";
+        }
 
         if (value < TimeSpan.Zero)
+        {
             value = TimeSpan.Zero;
+        }
 
         long totalSeconds = value.Ticks / TimeSpan.TicksPerSecond;
         long hours = totalSeconds / 3600;
@@ -143,10 +182,14 @@ public partial class Statistics : UserControl
         long seconds = totalSeconds % 60;
 
         if (hours > 0)
+        {
             return string.Create(CultureInfo.InvariantCulture, $"{hours}h {minutes}m {seconds}s");
+        }
 
         if (minutes > 0)
+        {
             return string.Create(CultureInfo.InvariantCulture, $"{minutes}m {seconds}s");
+        }
 
         return string.Create(CultureInfo.InvariantCulture, $"{seconds}s");
     }

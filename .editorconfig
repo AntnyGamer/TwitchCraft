@@ -53,7 +53,8 @@ csharp_space_between_parentheses = false
 csharp_space_between_square_brackets = false
 
 csharp_preserve_single_line_blocks = true
-csharp_preserve_single_line_statements = true
+csharp_preserve_single_line_statements = false
+csharp_prefer_braces = true:warning
 csharp_style_namespace_declarations = file_scoped:suggestion
 
 dotnet_diagnostic.IDE0130.severity = none

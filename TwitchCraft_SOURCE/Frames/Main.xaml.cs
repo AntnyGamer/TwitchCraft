@@ -56,7 +56,10 @@ public partial class Main : UserControl
                 Volatile.Write(ref _windowMinimized, _parentWindow.WindowState == WindowState.Minimized ? 1 : 0);
             }
             if (IsVisible)
+            {
                 FlushDeferredUpdates();
+            }
+
             RefreshHealth();
         };
         Unloaded += (_, _) =>
@@ -73,7 +76,9 @@ public partial class Main : UserControl
     {
         Volatile.Write(ref _windowMinimized, _parentWindow?.WindowState == WindowState.Minimized ? 1 : 0);
         if (ShouldPauseUIUpdates())
+        {
             return;
+        }
 
         FlushDeferredUpdates();
     }
@@ -82,7 +87,10 @@ public partial class Main : UserControl
     {
         Volatile.Write(ref _mainVisible, IsVisible ? 1 : 0);
         if (IsVisible)
+        {
             FlushDeferredUpdates();
+        }
+
         RefreshHealth();
     }
 
@@ -92,9 +100,13 @@ public partial class Main : UserControl
     {
         UpdateHealth();
         if (IsVisible && _runtime?.ShowConnectionHealth == true)
+        {
             _connectionHealthTimer.Start();
+        }
         else
+        {
             _connectionHealthTimer.Stop();
+        }
     }
 
     private void UpdateHealth()
@@ -102,14 +114,21 @@ public partial class Main : UserControl
         MainHandler? runtime = _runtime;
         TimeSpan desiredInterval = runtime?.LowResourceModeEnabled == true ? TimeSpan.FromSeconds(3) : TimeSpan.FromSeconds(1);
         if (_connectionHealthTimer.Interval != desiredInterval)
+        {
             _connectionHealthTimer.Interval = desiredInterval;
+        }
+
         bool visible = runtime?.ShowConnectionHealth ?? false;
         Visibility desiredVisibility = visible ? Visibility.Visible : Visibility.Collapsed;
         if (ConnectionHealthPanel.Visibility != desiredVisibility)
+        {
             ConnectionHealthPanel.Visibility = desiredVisibility;
+        }
 
         if (!visible || runtime == null)
+        {
             return;
+        }
 
         SetHealth(TwitchConnectionHealth, runtime.TwitchChatConnected, TwitchConnectedText, TwitchDisconnectedText);
         SetHealth(MinecraftConnectionHealth, runtime.MinecraftServerReady, MinecraftConnectedText, MinecraftDisconnectedText);
@@ -122,12 +141,16 @@ public partial class Main : UserControl
         {
             label.Text = text;
             if (AutomationPeer.ListenerExists(AutomationEvents.LiveRegionChanged))
+            {
                 UIElementAutomationPeer.CreatePeerForElement(label)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+            }
         }
 
         Brush foreground = connected ? Brushes.LightGreen : Brushes.IndianRed;
         if (!ReferenceEquals(label.Foreground, foreground))
+        {
             label.Foreground = foreground;
+        }
     }
 
     public void AddServerLogLine(string line)
@@ -157,7 +180,10 @@ public partial class Main : UserControl
         if (ShouldPauseUIUpdates())
         {
             lock (_logGate)
+            {
                 _deferredViewerList = [.. viewers];
+            }
+
             return;
         }
 
@@ -166,10 +192,14 @@ public partial class Main : UserControl
             string countText = $"You have {viewers.Count} viewer{(viewers.Count == 1 ? string.Empty : "s")}.";
 
             if (BotViewerList.ItemsSource is not List<string> currentViewers || !SortedListHelper.EqualInOrder(currentViewers, viewers, ViewerNameComparer))
+            {
                 BotViewerList.ItemsSource = viewers;
+            }
 
             if (!string.Equals(BotViewerCount.Text, countText, StringComparison.Ordinal))
+            {
                 BotViewerCount.Text = countText;
+            }
         });
     }
 
@@ -190,7 +220,9 @@ public partial class Main : UserControl
         }
 
         if (shouldSchedule)
+        {
             SafeInvoke(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
+        }
     }
 
     private void FlushLogs(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
@@ -198,7 +230,10 @@ public partial class Main : UserControl
         if (ShouldPauseUIUpdates())
         {
             lock (_logGate)
+            {
                 CancelQueuedFlush(isMinecraftLog);
+            }
+
             return;
         }
 
@@ -223,7 +258,9 @@ public partial class Main : UserControl
         }
 
         if (batchCount == 0)
+        {
             return;
+        }
 
         int maxLines = GetMaxLogLines(isMinecraftLog);
         double scrollOffset = box.VerticalOffset;
@@ -241,9 +278,13 @@ public partial class Main : UserControl
 
             lines.Enqueue(singleLine!);
             if (rebuild)
+            {
                 box.Text = string.Join(newLine, lines) + newLine;
+            }
             else
+            {
                 box.AppendText(singleLine + newLine);
+            }
         }
         else
         {
@@ -261,23 +302,37 @@ public partial class Main : UserControl
             }
 
             if (rebuild)
+            {
                 box.Text = string.Join(newLine, lines) + newLine;
+            }
             else if (appended is { Length: > 0 })
+            {
                 box.AppendText(appended.ToString());
+            }
         }
 
-        if (followTail) box.ScrollToEnd();
-        else box.ScrollToVerticalOffset(scrollOffset);
+        if (followTail)
+        {
+            box.ScrollToEnd();
+        }
+        else
+        {
+            box.ScrollToVerticalOffset(scrollOffset);
+        }
 
         bool shouldSchedule = false;
         lock (_logGate)
         {
             if (pendingLines.Count > 0)
+            {
                 shouldSchedule = TryQueueFlush(isMinecraftLog);
+            }
         }
 
         if (shouldSchedule)
+        {
             SafeInvoke(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
+        }
     }
 
     private void ClearLog(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
@@ -300,7 +355,9 @@ public partial class Main : UserControl
     {
         ref bool flushQueued = ref (isMinecraftLog ? ref _minecraftFlushQueued : ref _twitchFlushQueued);
         if (flushQueued)
+        {
             return false;
+        }
 
         flushQueued = true;
         return true;
@@ -309,9 +366,13 @@ public partial class Main : UserControl
     private void CancelQueuedFlush(bool isMinecraftLog)
     {
         if (isMinecraftLog)
+        {
             _minecraftFlushQueued = false;
+        }
         else
+        {
             _twitchFlushQueued = false;
+        }
     }
 
     private int GetMaxLogLines(bool isMinecraftLog)
@@ -340,11 +401,20 @@ public partial class Main : UserControl
         }
 
         if (viewers != null)
+        {
             UpdateViewers(viewers);
+        }
+
         if (flushMinecraft)
+        {
             SafeInvoke(_flushMinecraftLogs);
+        }
+
         if (flushTwitch)
+        {
             SafeInvoke(_flushTwitchLogs);
+        }
+
         UpdateHealth();
     }
 
@@ -424,7 +494,9 @@ public partial class Main : UserControl
     private async Task RunServerActionAsync(Func<TwitchCraft, Task> action, Action parentMissingAction, string errorContext)
     {
         if (Interlocked.Exchange(ref _serverActionRunning, 1) != 0)
+        {
             return;
+        }
 
         SetServerControls(false);
         try
@@ -476,7 +548,9 @@ public partial class Main : UserControl
     {
         string command = CommandTextBox.Text;
         if (string.IsNullOrWhiteSpace(command))
+        {
             return;
+        }
 
         TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
         if (parent == null)
@@ -487,14 +561,18 @@ public partial class Main : UserControl
 
         CommandTextBox.Clear();
         if (!await parent.RunMinecraftCommandAsync(command) && CommandTextBox.Text.Length == 0)
+        {
             CommandTextBox.Text = command;
+        }
     }
 
     private void WithTwitchCraft(Action<TwitchCraft> action)
     {
         TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
         if (parent != null)
+        {
             action(parent);
+        }
     }
 
     private async Task WithTwitchCraftAsync(Func<TwitchCraft, Task> action, Action? onFailure)

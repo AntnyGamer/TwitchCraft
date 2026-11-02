@@ -75,9 +75,15 @@ public sealed class CommandService
     internal static int GetCommandCost(long cost, double multiplier)
     {
         if (cost <= 0)
+        {
             return 0;
+        }
+
         if (!double.IsFinite(multiplier) || multiplier < 0.0 || multiplier > 5.0)
+        {
             multiplier = 1.0;
+        }
+
         double scaled = Math.Ceiling(cost * multiplier);
         return scaled >= int.MaxValue ? int.MaxValue : (int)scaled;
     }
@@ -115,7 +121,9 @@ public sealed class CommandService
     internal void MarkCommandSuccess()
     {
         if (_currentCommandExecution.Value is CommandExecutionState state)
+        {
             state.Succeeded = true;
+        }
     }
 
     internal bool CommandSucceeded => _currentCommandExecution.Value?.Succeeded == true;
@@ -135,11 +143,15 @@ public sealed class CommandService
         customization = null!;
         Dictionary<string, CommandCustomization>? customizations = _config?.Settings.CommandCustomizations;
         if (customizations == null || customizations.Count == 0)
+        {
             return false;
+        }
 
         string name = (commandName ?? string.Empty).Trim();
         if (name.Length == 0 || !customizations.TryGetValue(name, out CommandCustomization? found) || found == null)
+        {
             return false;
+        }
 
         customization = found;
         return true;
@@ -151,9 +163,12 @@ public sealed class CommandService
         int channelLimit = _config?.Settings.ChannelCommandLimitPerMinute ?? 0;
         viewerLimited = false;
         if (viewerLimit <= 0 && channelLimit <= 0)
+        {
             return true;
+        }
 
-        long now = nowTimestamp ?? Stopwatch.GetTimestamp(), cutoff = now - 60 * Stopwatch.Frequency;
+        long now = nowTimestamp ?? Stopwatch.GetTimestamp();
+        long cutoff = now - 60 * Stopwatch.Frequency;
         lock (_commandStateGate)
         {
             PruneCommandStateNoLock(now);
@@ -161,7 +176,10 @@ public sealed class CommandService
             if (viewerLimit > 0 && viewer.Length > 0 && _viewerCommandTimestamps.TryGetValue(viewer, out viewerTimestamps))
             {
                 while (viewerTimestamps.Count > 0 && viewerTimestamps.Peek() <= cutoff)
+                {
                     viewerTimestamps.Dequeue();
+                }
+
                 if (viewerTimestamps.Count >= viewerLimit)
                 {
                     viewerLimited = true;
@@ -172,19 +190,30 @@ public sealed class CommandService
             if (channelLimit > 0)
             {
                 while (_channelCommandTimestamps.Count > 0 && _channelCommandTimestamps.Peek() <= cutoff)
+                {
                     _channelCommandTimestamps.Dequeue();
+                }
+
                 if (_channelCommandTimestamps.Count >= channelLimit)
+                {
                     return false;
+                }
             }
 
             if (viewerLimit > 0 && viewer.Length > 0)
             {
                 if (viewerTimestamps == null)
+                {
                     _viewerCommandTimestamps[viewer] = viewerTimestamps = new();
+                }
+
                 viewerTimestamps.Enqueue(now);
             }
             if (channelLimit > 0)
+            {
                 _channelCommandTimestamps.Enqueue(now);
+            }
+
             return true;
         }
     }
@@ -194,7 +223,10 @@ public sealed class CommandService
         long now = nowTimestamp ?? Stopwatch.GetTimestamp();
         long previous = Volatile.Read(ref _lastChannelLimitNoticeTimestamp);
         if (previous != 0 && now - previous < 10 * Stopwatch.Frequency)
+        {
             return false;
+        }
+
         return Interlocked.CompareExchange(ref _lastChannelLimitNoticeTimestamp, now, previous) == previous;
     }
 
@@ -206,7 +238,10 @@ public sealed class CommandService
         {
             _viewerCommandLimitNotices.TryGetValue(viewer, out long previous);
             if (previous != 0 && now - previous < 10 * Stopwatch.Frequency)
+            {
                 return false;
+            }
+
             _viewerCommandLimitNotices[viewer] = now;
             return true;
         }
@@ -222,7 +257,9 @@ public sealed class CommandService
         remaining = TimeSpan.Zero;
         reservation = default;
         if (cooldownSeconds is not double seconds || seconds <= 0.0)
+        {
             return true;
+        }
 
         long nowTimestamp = Stopwatch.GetTimestamp();
         long cooldownTicks = (long)(seconds * Stopwatch.Frequency);
@@ -247,7 +284,9 @@ public sealed class CommandService
     internal void FinishCustomCooldown(CooldownReservation reservation, bool succeeded)
     {
         if (!reservation.IsActive)
+        {
             return;
+        }
 
         lock (_commandStateGate)
         {
@@ -258,27 +297,48 @@ public sealed class CommandService
             }
 
             if (succeeded)
+            {
                 _customCommandCooldownUntil[reservation.Key] = Stopwatch.GetTimestamp() + reservation.CooldownTicks;
+            }
             else
+            {
                 _customCommandCooldownUntil.Remove(reservation.Key);
+            }
         }
     }
 
     private void PruneCommandStateNoLock(long nowTimestamp)
     {
         if ((_viewerCommandTimestamps.Count <= 4096 && _customCommandCooldownUntil.Count <= 4096) ||
-            nowTimestamp - _lastCommandStatePruneTimestamp < 60 * Stopwatch.Frequency) return;
+            nowTimestamp - _lastCommandStatePruneTimestamp < 60 * Stopwatch.Frequency)
+        {
+            return;
+        }
+
         _lastCommandStatePruneTimestamp = nowTimestamp;
         long cutoff = nowTimestamp - 60 * Stopwatch.Frequency;
         foreach ((string viewer, Queue<long> timestamps) in _viewerCommandTimestamps)
         {
-            while (timestamps.Count > 0 && timestamps.Peek() <= cutoff) timestamps.Dequeue();
-            if (timestamps.Count != 0) continue;
+            while (timestamps.Count > 0 && timestamps.Peek() <= cutoff)
+            {
+                timestamps.Dequeue();
+            }
+
+            if (timestamps.Count != 0)
+            {
+                continue;
+            }
+
             _viewerCommandTimestamps.Remove(viewer);
             _viewerCommandLimitNotices.Remove(viewer);
         }
         foreach (var pair in _customCommandCooldownUntil)
-            if (pair.Value <= nowTimestamp) _customCommandCooldownUntil.Remove(pair.Key);
+        {
+            if (pair.Value <= nowTimestamp)
+            {
+                _customCommandCooldownUntil.Remove(pair.Key);
+            }
+        }
     }
 
     internal void ResetCommandState()
@@ -292,7 +352,10 @@ public sealed class CommandService
         }
 
         lock (_cooldownGate)
+        {
             _timedCommandCooldowns.Clear();
+        }
+
         ClearGlobalCooldown();
     }
 
@@ -309,7 +372,10 @@ public sealed class CommandService
         {
             double seconds = _config?.Settings.GlobalGameCommandCooldownSeconds ?? DefaultGlobalGameCommandCooldownSeconds;
             if (double.IsNaN(seconds) || seconds < 0.1 || seconds > 120.0)
+            {
                 seconds = DefaultGlobalGameCommandCooldownSeconds;
+            }
+
             return (long)(seconds * Stopwatch.Frequency);
         }
     }
@@ -374,14 +440,19 @@ public sealed class CommandService
     public void ClearGlobalCooldown(long reservationTimestamp)
     {
         if (reservationTimestamp >= 0)
+        {
             Interlocked.CompareExchange(ref _lastGlobalCooldownTimestamp, -1, reservationTimestamp);
+        }
     }
 
     internal bool TryUseTimedCommand(string commandName, out TimeSpan remaining, out long reservationTimestamp, long? nowTimestamp = null)
     {
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0)
+        {
             throw new ArgumentException("A command name is required.", nameof(commandName));
+        }
+
         string settingsCommand = CurrentCommandName;
         if (HasGlobalCooldownOverride(settingsCommand.Length == 0 ? normalizedCommand : settingsCommand))
         {
@@ -415,11 +486,16 @@ public sealed class CommandService
     {
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0)
+        {
             return;
+        }
+
         lock (_cooldownGate)
         {
             if (_timedCommandCooldowns.TryGetValue(normalizedCommand, out long current) && current == reservationTimestamp)
+            {
                 _timedCommandCooldowns.Remove(normalizedCommand);
+            }
         }
     }
 
@@ -454,7 +530,10 @@ public sealed class CommandService
     public void StartGambleCooldown(string user, TimeSpan duration)
     {
         if (HasPerUserCooldownOverride("gambletokens"))
+        {
             return;
+        }
+
         string normalized = CommandUserHelper.NormalizeUser(user);
         lock (_cooldownGate)
         {
@@ -463,7 +542,12 @@ public sealed class CommandService
             {
                 _lastGamblePruneTimestamp = now;
                 foreach (KeyValuePair<string, long> pair in _gambleCooldowns)
-                    if (pair.Value <= now) _gambleCooldowns.Remove(pair.Key);
+                {
+                    if (pair.Value <= now)
+                    {
+                        _gambleCooldowns.Remove(pair.Key);
+                    }
+                }
             }
             _gambleCooldowns[normalized] = now + (long)(duration.TotalSeconds * Stopwatch.Frequency);
         }
@@ -473,7 +557,10 @@ public sealed class CommandService
     {
         TwitchCraftConfig? config = _config;
         if (config == null)
+        {
             return false;
+        }
+
         string normalized = CommandUserHelper.NormalizeUser(user);
         return string.Equals(normalized, config.Twitch.StreamerName, StringComparison.OrdinalIgnoreCase)
             || string.Equals(normalized, config.Twitch.BotName, StringComparison.OrdinalIgnoreCase)

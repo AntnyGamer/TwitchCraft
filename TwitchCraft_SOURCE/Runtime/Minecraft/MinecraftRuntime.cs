@@ -28,7 +28,9 @@ public sealed partial class MainHandler
         {
             await SendServerCommandAsync("stop", timeoutCts.Token).ConfigureAwait(false);
             if (_minecraftSession.Process is { HasExited: false })
+            {
                 await Task.Delay(500, timeoutCts.Token).ConfigureAwait(false);
+            }
         }
         catch
         {
@@ -51,7 +53,10 @@ public sealed partial class MainHandler
         _minecraftSession.RCONHealthy = true;
         await RecoverSlaughterGameRuleAsync(cancellationToken).ConfigureAwait(false);
         if (!MultiplayerEnabled)
+        {
             await ClearSidebarAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         _shellWindow?.AddServerLogLine("Remote controller connected to " + host + ":" + config.Server.RCON.Port.ToString(CultureInfo.InvariantCulture) + ".");
         QueueFirstSnapshot();
         QueueSnapshot();
@@ -62,18 +67,25 @@ public sealed partial class MainHandler
     private async Task RecoverSlaughterGameRuleAsync(CancellationToken cancellationToken)
     {
         if (!await SendServerCommandAsync(GameplayCommands.SlaughterRestoreCommand(MobLootGameRuleName), cancellationToken).ConfigureAwait(false))
+        {
             AddServerLogLine("Mob loot gamerule recovery could not be confirmed.");
+        }
     }
 
     internal async Task StartServerAsync(TwitchCraftConfig config, CancellationToken cancellationToken)
     {
         if (_minecraftSession.Process is { HasExited: false })
+        {
             throw new InvalidOperationException("The previous Minecraft server process is still running.");
+        }
+
         string jarPath = string.IsNullOrWhiteSpace(config.Server.JarPath)
             ? Path.Combine(config.Server.ServerDirectory, "server.jar")
             : config.Server.JarPath;
         if (!File.Exists(jarPath))
+        {
             throw new FileNotFoundException("Minecraft server jar was not found.", jarPath);
+        }
 
         Directory.CreateDirectory(config.Server.ServerDirectory);
         ServerPropertyEditor.CleanupServerJars(config.Server.ServerDirectory, jarPath);
@@ -108,7 +120,9 @@ public sealed partial class MainHandler
     {
         Process? process = _minecraftSession.Process;
         if (process == null)
+        {
             return;
+        }
 
         try
         {
@@ -155,7 +169,9 @@ public sealed partial class MainHandler
             try
             {
                 if (Commands.ResetHeartEffectsAsync != null)
+                {
                     await Commands.ResetHeartEffectsAsync(null, true, CancellationToken.None).ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {
@@ -198,7 +214,10 @@ public sealed partial class MainHandler
         startInfo.ArgumentList.Add("-Xms" + config.Server.MemoryMinGB.ToString(CultureInfo.InvariantCulture) + "G");
 
         if (enableNativeAccess)
+        {
             startInfo.ArgumentList.Add("--enable-native-access=ALL-UNNAMED");
+        }
+
         startInfo.ArgumentList.Add("-jar");
         startInfo.ArgumentList.Add(jarPath);
         startInfo.ArgumentList.Add("nogui");
@@ -207,17 +226,24 @@ public sealed partial class MainHandler
     private static void CopyServerIcon(string serverDirectory)
     {
         if (string.IsNullOrWhiteSpace(serverDirectory))
+        {
             return;
+        }
+
         try
         {
             using Stream? source = typeof(MainHandler).Assembly.GetManifestResourceStream("TwitchCraft.server-icon.png");
             if (source == null)
+            {
                 return;
+            }
 
             Directory.CreateDirectory(serverDirectory);
             string destinationPath = Path.Combine(serverDirectory, "server-icon.png");
             if (File.Exists(destinationPath) && FilesMatch(source, destinationPath))
+            {
                 return;
+            }
 
             source.Position = 0;
             using FileStream destination = File.Create(destinationPath);
@@ -232,7 +258,9 @@ public sealed partial class MainHandler
     {
         FileInfo secondInfo = new(secondPath);
         if (firstStream.Length != secondInfo.Length)
+        {
             return false;
+        }
 
         byte[] firstBuffer = ArrayPool<byte>.Shared.Rent(8192);
         byte[] secondBuffer = ArrayPool<byte>.Shared.Rent(8192);
@@ -244,10 +272,14 @@ public sealed partial class MainHandler
                 int firstRead = firstStream.Read(firstBuffer, 0, 8192);
                 int secondRead = secondStream.ReadAtLeast(secondBuffer.AsSpan(0, firstRead), firstRead, throwOnEndOfStream: false);
                 if (firstRead == 0)
+                {
                     return secondStream.ReadByte() == -1;
+                }
 
                 if (!firstBuffer.AsSpan(0, firstRead).SequenceEqual(secondBuffer.AsSpan(0, secondRead)))
+                {
                     return false;
+                }
             }
         }
         finally
@@ -311,7 +343,9 @@ internal sealed class MinecraftSession
     {
         Process? process = _process;
         if (process == null)
+        {
             return;
+        }
 
         try
         {
@@ -327,7 +361,9 @@ internal sealed class MinecraftSession
         }
 
         if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
+        {
             return;
+        }
 
         ClearProcessIfCurrent(process);
         DisposeProcessSafe(process);
@@ -337,10 +373,14 @@ internal sealed class MinecraftSession
     {
         Process? process = _process;
         if (process == null)
+        {
             return;
+        }
 
         if (waitBriefly)
+        {
             await WaitForProcessExitAsync(process, gracefulShutdownTimeout).ConfigureAwait(false);
+        }
 
         try
         {
@@ -356,7 +396,9 @@ internal sealed class MinecraftSession
         }
 
         if (!TryGetProcessRunning(process, out bool stillRunning) || stillRunning)
+        {
             return;
+        }
 
         ClearProcessIfCurrent(process);
         DisposeProcessSafe(process);
@@ -367,12 +409,16 @@ internal sealed class MinecraftSession
         try
         {
             if (process.HasExited)
+            {
                 return;
+            }
 
             Task exitTask = process.WaitForExitAsync();
             Task completed = await Task.WhenAny(exitTask, Task.Delay(timeout)).ConfigureAwait(false);
             if (ReferenceEquals(completed, exitTask))
+            {
                 await exitTask.ConfigureAwait(false);
+            }
         }
         catch
         {

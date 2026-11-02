@@ -50,7 +50,14 @@
                     <ControlTemplate TargetType="Button">
                         <Grid Width="34" Height="34" Background="Transparent">
                             <Ellipse Margin="2" Stroke="#595959" StrokeThickness="3" />
-                            <TextBlock Text="?" FontFamily="Arial Rounded MT Bold" FontSize="23" FontWeight="Bold" Foreground="#595959" HorizontalAlignment="Center" VerticalAlignment="Center" TextOptions.TextRenderingMode="Grayscale">
+                            <TextBlock Text="?"
+                                       FontFamily="Arial Rounded MT Bold"
+                                       FontSize="23"
+                                       FontWeight="Bold"
+                                       Foreground="#595959"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextOptions.TextRenderingMode="Grayscale">
                                 <TextBlock.RenderTransform>
                                     <TranslateTransform X="-0.5" Y="-0.5" />
                                 </TextBlock.RenderTransform>

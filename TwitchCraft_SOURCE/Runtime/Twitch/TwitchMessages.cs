@@ -11,22 +11,33 @@ public sealed partial class MainHandler
     internal static string CleanChannelMessage(string message)
     {
         if (string.IsNullOrEmpty(message))
+        {
             return string.Empty;
+        }
 
         int start = 0;
         int end = message.Length - 1;
         while (start <= end && char.IsWhiteSpace(message[start]))
+        {
             start++;
+        }
+
         while (end >= start && char.IsWhiteSpace(message[end]))
+        {
             end--;
+        }
 
         if (start > end)
+        {
             return string.Empty;
+        }
 
         int length = end - start + 1;
         bool hasLineBreak = message.AsSpan(start, length).IndexOfAny('\r', '\n') >= 0;
         if (!hasLineBreak)
+        {
             return start == 0 && length == message.Length ? message : message.Substring(start, length);
+        }
 
         return string.Create(length, (Message: message, Start: start), static (destination, state) =>
         {
@@ -41,13 +52,17 @@ public sealed partial class MainHandler
     internal static string TruncateUTF8(string message, int maxBytes)
     {
         if (maxBytes <= 0 || message.Length == 0)
+        {
             return string.Empty;
+        }
 
         // Every UTF-16 code unit requires at least one UTF-8 byte. Avoid
         // counting an entire oversized message before truncating its prefix.
         if (message.Length <= maxBytes &&
             (Ascii.IsValid(message) || TwitchSession.UTF8NoBOM.GetByteCount(message) <= maxBytes))
+        {
             return message;
+        }
 
         int usedBytes = 0;
         int length = 0;
@@ -56,7 +71,9 @@ public sealed partial class MainHandler
             int charCount = char.IsHighSurrogate(message[length]) && length + 1 < message.Length && char.IsLowSurrogate(message[length + 1]) ? 2 : 1;
             int nextBytes = TwitchSession.UTF8NoBOM.GetByteCount(message.AsSpan(length, charCount));
             if (usedBytes + nextBytes > maxBytes)
+            {
                 break;
+            }
 
             usedBytes += nextBytes;
             length += charCount;

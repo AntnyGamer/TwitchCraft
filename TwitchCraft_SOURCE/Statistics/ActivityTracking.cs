@@ -120,7 +120,9 @@ public sealed partial class StatisticsService
     internal void RecordPlayerJoin(string playerName)
     {
         if (!Enabled || !ShouldTrackPlayer(playerName))
+        {
             return;
+        }
 
         DateTime now = DateTime.UtcNow;
         lock (_statisticsGate)
@@ -138,7 +140,9 @@ public sealed partial class StatisticsService
     internal void RecordPlayerLeave(string playerName)
     {
         if (!Enabled || !ShouldTrackPlayer(playerName))
+        {
             return;
+        }
 
         DateTime now = DateTime.UtcNow;
         lock (_statisticsGate)
@@ -151,7 +155,9 @@ public sealed partial class StatisticsService
     internal void RecordGamemode(string playerName, int gameType)
     {
         if (!Enabled || !ShouldTrackPlayer(playerName))
+        {
             return;
+        }
 
         DateTime now = DateTime.UtcNow;
         bool shouldRefreshRespawnPosition;
@@ -175,7 +181,9 @@ public sealed partial class StatisticsService
         }
 
         if (shouldRefreshRespawnPosition)
+        {
             _dependencies.QueueRespawn(playerName);
+        }
     }
 
     internal void RecordRespawn(string playerName)

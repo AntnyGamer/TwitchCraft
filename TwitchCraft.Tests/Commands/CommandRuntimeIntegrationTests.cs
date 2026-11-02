@@ -162,7 +162,10 @@ public sealed class CommandRuntimeIntegrationTests
             responseFactory: command =>
             {
                 if (command.StartsWith("attribute ", StringComparison.Ordinal))
+                {
                     return "Value of attribute Max Health for entity PlayerOne is 36";
+                }
+
                 if (command.EndsWith(" SelectedItem", StringComparison.Ordinal))
                 {
                     string player = command.Contains("PlayerTwo", StringComparison.Ordinal) ? "PlayerTwo" : "PlayerOne";
@@ -170,7 +173,10 @@ public sealed class CommandRuntimeIntegrationTests
                 }
                 if (command.EndsWith(" attributes", StringComparison.Ordinal) ||
                     command.EndsWith(" Attributes", StringComparison.Ordinal))
+                {
                     return "PlayerOne has the following entity data: " + attributes;
+                }
+
                 return "OK";
             });
         TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path);
@@ -317,7 +323,10 @@ public sealed class CommandRuntimeIntegrationTests
             responseFactory: command =>
             {
                 if (command == "time set night")
+                {
                     balancesAtDispatch.Enqueue(runtime.Tokens.GetBalance("viewer"));
+                }
+
                 return "OK";
             });
         TwitchCraftConfig config = FakeJavaServer.CreateConfig(directory.Path);

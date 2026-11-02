@@ -15,29 +15,39 @@ public sealed partial class MainHandler
     {
         string latestLogPath = Path.Combine(config.Server.ServerDirectory, "logs", "latest.log");
         if (!IsFileLocked(latestLogPath))
+        {
             return;
+        }
 
         if (!ErrorHandling.ConfirmCloseJava(_shellWindow))
+        {
             return;
+        }
 
         CloseLockingApps(latestLogPath);
         Stopwatch stopwatch = Stopwatch.StartNew();
         while (stopwatch.Elapsed < ServerLogUnlockWaitTimeout)
         {
             if (!IsFileLocked(latestLogPath))
+            {
                 break;
+            }
 
             await Task.Delay(50, cancellationToken).ConfigureAwait(false);
         }
 
         if (IsFileLocked(latestLogPath))
+        {
             throw new IOException("The Minecraft server log is still locked after attempting to close the locking Java process. Please close it manually and try again.");
+        }
     }
 
     private static bool IsFileLocked(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
             return false;
+        }
 
         try
         {
@@ -58,7 +68,9 @@ public sealed partial class MainHandler
             {
                 using Process process = Process.GetProcessById(processID);
                 if (process.ProcessName.Equals("javaw", StringComparison.OrdinalIgnoreCase))
+                {
                     process.Kill(entireProcessTree: true);
+                }
             }
             catch
             {
@@ -69,13 +81,17 @@ public sealed partial class MainHandler
     private static unsafe IEnumerable<int> GetLockingPIDs(string path)
     {
         if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
             return [];
+        }
 
         Span<char> sessionKeyBuffer = stackalloc char[CchRmSessionKey + 1];
         fixed (char* sessionKey = sessionKeyBuffer)
         {
             if (RMStartSession(out uint sessionHandle, 0, sessionKey) != 0)
+            {
                 return [];
+            }
 
             try
             {
@@ -86,7 +102,9 @@ public sealed partial class MainHandler
                     fileNames[0] = fileName;
 
                     if (RMRegisterResources(sessionHandle, 1, fileNames, 0, null, 0, null) != 0)
+                    {
                         return [];
+                    }
                 }
 
                 uint processInfoCount = 0;
@@ -94,10 +112,14 @@ public sealed partial class MainHandler
 
                 int firstGetListResult = RMGetList(sessionHandle, out uint processInfoNeeded, ref processInfoCount, null, ref rebootReasons);
                 if (firstGetListResult != ErrorMoreData || processInfoNeeded == 0)
+                {
                     return [];
+                }
 
                 if (processInfoNeeded > int.MaxValue)
+                {
                     return [];
+                }
 
                 RM_PROCESS_INFO[] processes = new RM_PROCESS_INFO[(int)processInfoNeeded];
                 processInfoCount = processInfoNeeded;
@@ -106,7 +128,9 @@ public sealed partial class MainHandler
                 {
                     int secondGetListResult = RMGetList(sessionHandle, out _, ref processInfoCount, processInfo, ref rebootReasons);
                     if (secondGetListResult != 0 || processInfoCount == 0)
+                    {
                         return [];
+                    }
                 }
 
                 int actualProcessCount = (int)Math.Min(processInfoCount, (uint)processes.Length);
@@ -115,7 +139,9 @@ public sealed partial class MainHandler
                 {
                     RM_UNIQUE_PROCESS uniqueProcess = processes[i].Process;
                     if (MatchesProcess(uniqueProcess))
+                    {
                         processIDs.Add(uniqueProcess.dwProcessID);
+                    }
                 }
 
                 return processIDs;
@@ -130,13 +156,17 @@ public sealed partial class MainHandler
     private static bool MatchesProcess(RM_UNIQUE_PROCESS uniqueProcess)
     {
         if (uniqueProcess.dwProcessID <= 0)
+        {
             return false;
+        }
 
         try
         {
             using Process process = Process.GetProcessById(uniqueProcess.dwProcessID);
             if (process.HasExited)
+            {
                 return false;
+            }
 
             long fileTimeValue = ((long)uniqueProcess.ProcessStartTime.dwHighDateTime << 32) | uniqueProcess.ProcessStartTime.dwLowDateTime;
             DateTime processStartTimeUtc = process.StartTime.ToUniversalTime();

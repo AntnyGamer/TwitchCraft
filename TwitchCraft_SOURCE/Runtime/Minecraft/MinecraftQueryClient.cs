@@ -21,7 +21,9 @@ internal static class MinecraftQueryClient
     public static async Task<List<string>> GetPlayersAsync(string host, int port, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(host) || port is < 1 or > 65535)
+        {
             return [];
+        }
 
         int sessionID = Environment.TickCount & 0x7FFFFFFF;
         using UdpClient client = IPAddress.TryParse(host, out IPAddress? IP) ? new(IP.AddressFamily) : new();
@@ -50,16 +52,25 @@ internal static class MinecraftQueryClient
     internal static int ParseChallenge(byte[] buffer, int sessionID)
     {
         if (buffer.Length < 6 || buffer[0] != HandshakeType || ReadInt32BE(buffer) != sessionID)
+        {
             throw new InvalidOperationException("Minecraft query handshake returned an invalid response.");
+        }
 
         int end = 5;
         while (end < buffer.Length && buffer[end] != 0)
+        {
             end++;
+        }
+
         if (end == buffer.Length)
+        {
             throw new InvalidOperationException("Minecraft query handshake was truncated.");
+        }
 
         if (!int.TryParse(buffer.AsSpan(5, end - 5), NumberStyles.Integer, CultureInfo.InvariantCulture, out int token))
+        {
             throw new InvalidOperationException("Minecraft query handshake did not include a valid challenge token.");
+        }
 
         return token;
     }
@@ -67,32 +78,46 @@ internal static class MinecraftQueryClient
     internal static List<string> ParsePlayers(byte[] buffer, int sessionID)
     {
         if (buffer.Length < 5 || buffer[0] != StatType || ReadInt32BE(buffer) != sessionID)
+        {
             throw new InvalidOperationException("Minecraft query stats returned an invalid response.");
+        }
 
         int playerSection = buffer.AsSpan(5).IndexOf(PlayerSectionMarker);
         if (playerSection < 0)
+        {
             throw new InvalidOperationException("Minecraft query stats did not include a player section.");
+        }
 
         int start = 5 + playerSection + PlayerSectionMarker.Length;
         if (start >= buffer.Length || buffer[^1] != 0 || buffer[^2] != 0)
+        {
             throw new InvalidOperationException("Minecraft query player section was truncated.");
+        }
 
         List<string> players = [];
         for (int i = start; i < buffer.Length; i++)
         {
             if (buffer[i] != 0)
+            {
                 continue;
+            }
 
             if (i == start)
+            {
                 break;
+            }
 
             string name = Encoding.UTF8.GetString(buffer, start, i - start);
             if (MinecraftNameHelper.TryNormalizePlayerName(name, out string normalizedPlayer))
+            {
                 players.Add(normalizedPlayer);
+            }
 
             start = i + 1;
             if (start >= buffer.Length || buffer[start] == 0)
+            {
                 break;
+            }
         }
 
         SortedListHelper.SortAndDeduplicate(players, StringComparer.OrdinalIgnoreCase);

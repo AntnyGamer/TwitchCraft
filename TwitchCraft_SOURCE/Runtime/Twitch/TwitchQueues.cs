@@ -13,10 +13,14 @@ public sealed partial class MainHandler
         long nowMilliseconds = Environment.TickCount64;
         long previousMilliseconds = Volatile.Read(ref _twitchSession.LastCommandOverflowNoticeMilliseconds);
         if (previousMilliseconds != 0 && nowMilliseconds - previousMilliseconds < TwitchSession.CommandOverflowNoticeIntervalMilliseconds)
+        {
             return;
+        }
 
         if (Interlocked.CompareExchange(ref _twitchSession.LastCommandOverflowNoticeMilliseconds, nowMilliseconds, previousMilliseconds) != previousMilliseconds)
+        {
             return;
+        }
 
         _shellWindow?.AddChatLogLine("[IRC] Command queue overloaded; skipped commands temporarily.");
         await SendChatAsync("The bot is backed up, so commands are being skipped for a moment. Try again in a few seconds.", cancellationToken).ConfigureAwait(false);
@@ -29,7 +33,9 @@ public sealed partial class MainHandler
         CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
+        {
             return false;
+        }
 
         Queue<TwitchSession.QueuedWork> queueToRun;
         bool startProcessor;
@@ -40,7 +46,9 @@ public sealed partial class MainHandler
         {
             generation = Volatile.Read(ref _twitchSession.QueueGeneration);
             if (cancellationToken.IsCancellationRequested)
+            {
                 return false;
+            }
 
             int depth = Interlocked.Increment(ref state.Depth);
             int maxDepth = quick ? state.MaxDepth : MaxGameplayCommandQueue;
@@ -54,11 +62,15 @@ public sealed partial class MainHandler
             queueToRun = state.Queue;
             startProcessor = state.Active == 0;
             if (startProcessor)
+            {
                 state.Active = 1;
+            }
         }
 
         if (startProcessor)
+        {
             TrackTask(Task.Run(() => RunQueueAsync(state, queueToRun, quick), CancellationToken.None));
+        }
 
         return true;
     }
@@ -83,7 +95,9 @@ public sealed partial class MainHandler
                 lock (state.Gate)
                 {
                     if (!ReferenceEquals(queue, state.Queue) || queue.Count == 0)
+                    {
                         return;
+                    }
 
                     item = queue.Dequeue();
                 }
@@ -120,7 +134,9 @@ public sealed partial class MainHandler
         try
         {
             if (item.Generation == Volatile.Read(ref _twitchSession.QueueGeneration) && !cancellationToken.IsCancellationRequested)
+            {
                 await item.Work(cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -134,19 +150,23 @@ public sealed partial class MainHandler
         finally
         {
             if (item.Generation == Volatile.Read(ref _twitchSession.QueueGeneration))
+            {
                 Interlocked.Decrement(ref state.Depth);
+            }
         }
     }
 
     internal void ResetQueues()
     {
         lock (_twitchSession.CommandQueue.Gate)
+        {
             lock (_twitchSession.QuickQueue.Gate)
             {
                 Interlocked.Increment(ref _twitchSession.QueueGeneration);
                 ResetQueueNoLock(_twitchSession.CommandQueue);
                 ResetQueueNoLock(_twitchSession.QuickQueue);
             }
+        }
     }
 
     private static void ResetQueueNoLock(TwitchSession.WorkQueueState state)
@@ -159,7 +179,9 @@ public sealed partial class MainHandler
     {
         if (separateBotAccount &&
             string.Equals(sender, botName, StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         return string.Equals(sender, "nightbot", StringComparison.OrdinalIgnoreCase)
             || string.Equals(sender, "streamlabs", StringComparison.OrdinalIgnoreCase)
@@ -179,7 +201,9 @@ public sealed partial class MainHandler
     {
         ParsedCommand parsed = ParsedCommand.Parse(payload, prefix);
         if (parsed.Name.Length == 0)
+        {
             return;
+        }
 
         CommandService.CooldownReservation customCooldownReservation = default;
         CommandService.CooldownReservation globalCooldownReservation = default;
@@ -249,12 +273,17 @@ public sealed partial class MainHandler
             if (!Commands.TryUseCommandSlots(sender, out bool viewerLimited))
             {
                 if (viewerLimited && Commands.ShouldWarnViewerLimit(sender))
+                {
                     await SendReplyAsync(sender + ", you have reached your command limit. Try again shortly.", BotResponseKind.Essential, cancellationToken).ConfigureAwait(false);
+                }
                 else if (!viewerLimited && Commands.ShouldWarnChannelLimit())
+                {
                     await SendReplyAsync(
                         sender + ", the channel command limit has been reached. Try again shortly.",
                         BotResponseKind.Essential,
                         cancellationToken).ConfigureAwait(false);
+                }
+
                 return;
             }
 

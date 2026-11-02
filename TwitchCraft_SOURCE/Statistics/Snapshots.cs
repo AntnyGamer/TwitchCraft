@@ -96,12 +96,20 @@ public sealed partial class StatisticsService
         foreach (KeyValuePair<string, long> pair in commandUseCounts)
         {
             if (pair.Value <= 0)
+            {
                 continue;
+            }
+
             ChatCommandStatisticFlags flags = _dependencies.GetCommandFlags(pair.Key);
             if ((flags & ChatCommandStatisticFlags.Dangerous) != 0)
+            {
                 dangerous += pair.Value;
+            }
+
             if ((flags & ChatCommandStatisticFlags.Nice) != 0)
+            {
                 nice += pair.Value;
+            }
         }
 
         return (dangerous, nice);
@@ -112,7 +120,9 @@ public sealed partial class StatisticsService
     private static TimeSpan? ToDuration(long seconds)
     {
         if (seconds <= 0)
+        {
             return null;
+        }
 
         return TimeSpan.FromSeconds(Math.Min(seconds, TimeSpan.MaxValue.TotalSeconds));
     }
@@ -130,7 +140,11 @@ public sealed partial class StatisticsService
 
     private static TimeSpan? GetSessionSurvival(SessionStatistics session, DateTime now)
     {
-        if (session.CurrentLifeWaitingForRespawn && !session.CurrentLifeHasStarted) return TimeSpan.MinValue;
+        if (session.CurrentLifeWaitingForRespawn && !session.CurrentLifeHasStarted)
+        {
+            return TimeSpan.MinValue;
+        }
+
         long seconds = GetLifeSeconds(session, now);
         bool hasStartedLife = session.CurrentLifeHasStarted || session.CurrentLifeStartedUtc != null || session.CurrentLifeAccumulatedSeconds > 0;
         return hasStartedLife ? ToDuration(seconds) ?? TimeSpan.Zero : null;
@@ -292,16 +306,24 @@ public sealed partial class StatisticsService
     {
         playerName = string.Empty;
         if (string.IsNullOrEmpty(message) || message[0] == '<')
+        {
             return false;
+        }
+
         int firstSpace = message.IndexOf(' ');
         if (firstSpace <= 0)
+        {
             return false;
+        }
 
         ReadOnlySpan<char> suffix = message.AsSpan(firstSpace);
         foreach (string phrase in DeathMessagePhrases)
         {
             if (!suffix.StartsWith(phrase.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
+            }
+
             return MinecraftNameHelper.TryNormalizePlayerName(message.AsSpan(0, firstSpace), out playerName);
         }
 
@@ -314,16 +336,24 @@ public sealed partial class StatisticsService
         ReadOnlySpan<char> message = source.AsSpan().Trim();
         int separator = message.IndexOf("]: ".AsSpan(), StringComparison.Ordinal);
         if (separator >= 0)
+        {
             message = message[(separator + 3)..].Trim();
+        }
         else if ((separator = message.IndexOf(':')) >= 0 && separator + 1 < message.Length)
+        {
             message = message[(separator + 1)..].Trim();
+        }
 
         if (message.Length > 0 && (message[0] is 'S' or 's') &&
             message.StartsWith("System chat: ".AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
             message = message["System chat: ".Length..].TrimStart();
+        }
         else if (message.Length > 0 && message[0] == '[' &&
             message.StartsWith("[System] [CHAT] ".AsSpan(), StringComparison.OrdinalIgnoreCase))
+        {
             message = message["[System] [CHAT] ".Length..].TrimStart();
+        }
 
         return message.Length == source.Length ? source : message.ToString();
     }

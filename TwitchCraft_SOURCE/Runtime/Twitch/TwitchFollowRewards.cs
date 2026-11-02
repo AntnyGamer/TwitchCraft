@@ -21,23 +21,38 @@ public sealed partial class MainHandler
     private async Task RunFollowRewardsAsync(CancellationToken cancellationToken)
     {
         TwitchConfig? twitch = _activeConfig?.Twitch;
-        if (twitch == null) return;
+        if (twitch == null)
+        {
+            return;
+        }
+
         string clientID = (twitch.ClientID ?? string.Empty).Trim();
         string botToken;
         string streamerName = NormalizeUser(twitch.StreamerName);
-        if (clientID.Length == 0 || streamerName.Length == 0) return;
+        if (clientID.Length == 0 || streamerName.Length == 0)
+        {
+            return;
+        }
+
         try
         {
             string[] userIDs = [];
             int setupRetrySeconds = 5;
         ResolveFollowUsers:
             botToken = NormalizeToken(_activeConfig?.Twitch.BotToken);
-            if (botToken.Length == 0) return;
+            if (botToken.Length == 0)
+            {
+                return;
+            }
+
             try
             {
                 string botName = await ResolveBotAsync(botToken, cancellationToken).ConfigureAwait(false);
                 if (botName.Length == 0)
+                {
                     throw new InvalidOperationException("The bot Twitch account was not resolved.");
+                }
+
                 userIDs = await ResolveUsersAsync(
                     botName,
                     streamerName,
@@ -45,7 +60,9 @@ public sealed partial class MainHandler
                     botToken,
                     cancellationToken).ConfigureAwait(false);
                 if (userIDs.Length != 2)
+                {
                     throw new InvalidOperationException("The bot/channel Twitch IDs were not resolved.");
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -62,7 +79,11 @@ public sealed partial class MainHandler
             setupRetrySeconds = 5;
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (!string.Equals(botToken, NormalizeToken(_activeConfig?.Twitch.BotToken), StringComparison.Ordinal)) goto ResolveFollowUsers;
+                if (!string.Equals(botToken, NormalizeToken(_activeConfig?.Twitch.BotToken), StringComparison.Ordinal))
+                {
+                    goto ResolveFollowUsers;
+                }
+
                 FollowSocketOutcome outcome;
                 ClientWebSocket socket = new();
                 try
@@ -101,7 +122,11 @@ public sealed partial class MainHandler
                             if (!welcomed.Task.IsCompleted)
                             {
                                 outcome = await replacementListener.ConfigureAwait(false);
-                                if (outcome == default) throw new WebSocketException();
+                                if (outcome == default)
+                                {
+                                    throw new WebSocketException();
+                                }
+
                                 break;
                             }
 
@@ -115,14 +140,20 @@ public sealed partial class MainHandler
                         catch (Exception ex) when (!cancellationToken.IsCancellationRequested && socket.State == WebSocketState.Open)
                         {
                             if (ex is not WebSocketException and not OperationCanceledException)
+                            {
                                 ErrorHandling.LogNonFatal("Twitch EventSub reconnect handoff failed; retrying", ex);
+                            }
 
                             await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
                             continue;
                         }
                         finally
                         {
-                            if (!replacementAdopted) replacement.Dispose();
+                            if (!replacementAdopted)
+                            {
+                                replacement.Dispose();
+                            }
+
                             handoff.Cancel();
                             await drain.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
                         }
@@ -143,11 +174,16 @@ public sealed partial class MainHandler
                 }
 
                 if (outcome.Stop)
+                {
                     return;
+                }
+
                 if (outcome.AuthorizationRejected)
                 {
                     if (await TryRefreshAuthAsync(botToken, cancellationToken).ConfigureAwait(false))
+                    {
                         continue;
+                    }
 
                     _shellWindow?.AddChatLogLine(
                         "Follow rewards are off because Twitch authorization could not be renewed or lacks follower permission. Open Settings --> Dangerous --> Authorize Twitch once to update it.");
@@ -182,7 +218,10 @@ public sealed partial class MainHandler
         {
             string? message = await ReceiveEventAsync(socket, messageTimeout, cancellationToken).ConfigureAwait(false);
             if (message == null)
+            {
                 return default;
+            }
+
             JObject root;
             try
             {
@@ -199,7 +238,10 @@ public sealed partial class MainHandler
             {
                 case "session_welcome":
                     if (welcomeReceived)
+                    {
                         continue;
+                    }
+
                     welcomeReceived = true;
                     welcomeSignal?.TrySetResult(true);
                     int keepaliveSeconds = (int?)root["payload"]?["session"]?["keepalive_timeout_seconds"] ?? 10;
@@ -208,7 +250,9 @@ public sealed partial class MainHandler
                     {
                         string sessionID = (string?)root["payload"]?["session"]?["id"] ?? string.Empty;
                         if (sessionID.Length == 0)
+                        {
                             return default;
+                        }
 
                         HttpStatusCode status = await SubscribeToFollowsAsync(
                             sessionID,
@@ -218,7 +262,9 @@ public sealed partial class MainHandler
                             botToken,
                             cancellationToken).ConfigureAwait(false);
                         if (status == HttpStatusCode.Unauthorized)
+                        {
                             return new(null, AuthorizationRejected: true);
+                        }
 
                         if (status == HttpStatusCode.Forbidden)
                         {
@@ -230,7 +276,10 @@ public sealed partial class MainHandler
                     break;
                 case "notification":
                     if (TryParseFollow(root, out FollowNotification notification))
+                    {
                         RewardFollower(notification, cancellationToken);
+                    }
+
                     break;
 
                 case "session_reconnect":
@@ -254,7 +303,9 @@ public sealed partial class MainHandler
         {
             string? message = await ReceiveEventAsync(socket, TimeSpan.FromSeconds(40), cancellationToken).ConfigureAwait(false);
             if (message == null)
+            {
                 return;
+            }
 
             try
             {
@@ -275,7 +326,9 @@ public sealed partial class MainHandler
     private void RewardFollower(FollowNotification notification, CancellationToken cancellationToken)
     {
         if (!AutomaticFollowRewardsEnabled)
+        {
             return;
+        }
 
         int rewardAmount = FollowRewardAmount;
         FollowRewardResult result = Tokens.TryRewardFollower(
@@ -284,7 +337,10 @@ public sealed partial class MainHandler
             notification.FollowedAt,
             rewardAmount,
             out int awardedAmount);
-        if (result != FollowRewardResult.Rewarded) return;
+        if (result != FollowRewardResult.Rewarded)
+        {
+            return;
+        }
 
         string rewardText = awardedAmount > 0
             ? " received " + awardedAmount.ToString(CultureInfo.InvariantCulture) + " tokens."
@@ -337,7 +393,9 @@ public sealed partial class MainHandler
         request.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await SharedHttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
             return response.StatusCode;
+        }
 
         response.EnsureSuccessStatusCode();
         return response.StatusCode;
@@ -358,16 +416,25 @@ public sealed partial class MainHandler
             {
                 ValueWebSocketReceiveResult result = await socket.ReceiveAsync(buffer.AsMemory(), receiveTimeout.Token).ConfigureAwait(false);
                 if (result.MessageType == WebSocketMessageType.Close)
+                {
                     return null;
+                }
 
                 if (result.MessageType != WebSocketMessageType.Text)
+                {
                     throw new WebSocketException("Twitch EventSub sent a non-text message.");
+                }
+
                 if (message.Length + result.Count > MaxEventSubMessageBytes)
+                {
                     throw new WebSocketException("Twitch EventSub message exceeded the safe size limit.");
+                }
 
                 message.Write(buffer, 0, result.Count);
                 if (result.EndOfMessage)
+                {
                     return Encoding.UTF8.GetString(message.GetBuffer(), 0, checked((int)message.Length));
+                }
             }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -387,7 +454,9 @@ public sealed partial class MainHandler
             ?? (string?)root["payload"]?["subscription"]?["type"]
             ?? string.Empty;
         if (!string.Equals(subscriptionType, "channel.follow", StringComparison.Ordinal))
+        {
             return false;
+        }
 
         JToken? eventData = root["payload"]?["event"];
         string userID = ((string?)eventData?["user_id"] ?? string.Empty).Trim();

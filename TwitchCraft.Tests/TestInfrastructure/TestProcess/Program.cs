@@ -16,7 +16,9 @@ static string[] ReadNames(string jarPath, string suffix)
 static bool ConsumeCount(string path)
 {
     if (!int.TryParse(ReadState(path, string.Empty, "0"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int count) || count <= 0)
+    {
         return false;
+    }
 
     File.WriteAllText(path, (count - 1).ToString(CultureInfo.InvariantCulture));
     return true;
@@ -27,7 +29,10 @@ static string GetTargetPlayer(string command)
     const string marker = "name=\"";
     int start = command.IndexOf(marker, StringComparison.Ordinal);
     if (start < 0)
+    {
         return string.Empty;
+    }
+
     start += marker.Length;
     int end = command.IndexOf('"', start);
     return end > start ? command[start..end] : string.Empty;
@@ -50,7 +55,9 @@ for (int i = 0; i + 1 < args.Length; i++)
 }
 
 if (string.IsNullOrWhiteSpace(jarPath))
+{
     return 2;
+}
 
 string mode = File.Exists(jarPath)
     ? (await File.ReadAllTextAsync(jarPath)).Trim()
@@ -60,13 +67,18 @@ await File.WriteAllLinesAsync(jarPath + ".args", args);
 await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString(CultureInfo.InvariantCulture));
 
 if (string.Equals(mode, "exit-immediately", StringComparison.Ordinal))
+{
     return 42;
+}
 
 if (mode.StartsWith("ready", StringComparison.Ordinal))
 {
     await Console.Out.WriteLineAsync("[Server thread/INFO]: Done (0.500s)! For help, type \"help\"");
     if (string.Equals(mode, "ready-rcon", StringComparison.Ordinal))
+    {
         await Console.Out.WriteLineAsync("[Server thread/INFO]: RCON running on 127.0.0.1:25575");
+    }
+
     if (responsive)
     {
         string[] players = ReadNames(jarPath, ".players");
@@ -96,12 +108,17 @@ while (await Console.In.ReadLineAsync() is string line)
     }
 
     if (!responsive)
+    {
         continue;
+    }
 
     if (line.StartsWith("data get storage twitchcraft:tc_probe_", StringComparison.Ordinal))
     {
         if (!ConsumeCount(jarPath + ".drop-responses"))
+        {
             await WriteOutputAsync("Storage " + line["data get storage ".Length..] + " has the following contents: {}");
+        }
+
         continue;
     }
 
@@ -128,7 +145,9 @@ while (await Console.In.ReadLineAsync() is string line)
 
     string targetPlayer = GetTargetPlayer(line);
     if (targetPlayer.Length == 0)
+    {
         continue;
+    }
 
     if (line.StartsWith("attribute ", StringComparison.Ordinal) && line.EndsWith(" get", StringComparison.Ordinal))
     {
@@ -143,7 +162,10 @@ while (await Console.In.ReadLineAsync() is string line)
     if (line.EndsWith(" SelectedItem", StringComparison.Ordinal))
     {
         while (File.Exists(jarPath + ".hold-item-responses"))
+        {
             await Task.Delay(5);
+        }
+
         if (!ConsumeCount(jarPath + ".drop-responses"))
         {
             string item = ReadState(

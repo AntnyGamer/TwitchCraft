@@ -19,7 +19,9 @@ internal static partial class JavaInstallationFinder
         {
             string javaHome = CleanJavaHome(candidate);
             if (javaHome.Length == 0 || !seenJavaHomes.Add(javaHome))
+            {
                 continue;
+            }
 
             if (TryGetJavaExecutable(javaHome, out string javaExe)
                 && TryGetJavaVersion(javaExe, out int major)
@@ -35,7 +37,9 @@ internal static partial class JavaInstallationFinder
     private static string CleanJavaHome(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
+        {
             return string.Empty;
+        }
 
         string trimmed = path.Trim();
         try
@@ -59,10 +63,14 @@ internal static partial class JavaInstallationFinder
         yield return Environment.GetEnvironmentVariable("JAVA_HOME", EnvironmentVariableTarget.Machine);
 
         foreach (string? home in GetPathHomes())
+        {
             yield return home;
+        }
 
         foreach (string? home in GetCommonHomes())
+        {
             yield return home;
+        }
     }
 
     private static IEnumerable<string?> GetPathHomes()
@@ -77,7 +85,9 @@ internal static partial class JavaInstallationFinder
         foreach (string? pathValue in pathValues)
         {
             if (string.IsNullOrWhiteSpace(pathValue))
+            {
                 continue;
+            }
 
             foreach (string segment in pathValue.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
@@ -85,7 +95,9 @@ internal static partial class JavaInstallationFinder
                 try
                 {
                     if (!File.Exists(Path.Combine(segment, "java.exe")) && !File.Exists(Path.Combine(segment, "javaw.exe")))
+                    {
                         continue;
+                    }
 
                     DirectoryInfo directory = new(segment);
                     javaHome = string.Equals(directory.Name, "bin", StringComparison.OrdinalIgnoreCase)
@@ -98,7 +110,9 @@ internal static partial class JavaInstallationFinder
                 }
 
                 if (javaHome.Length > 0)
+                {
                     yield return javaHome;
+                }
             }
         }
     }
@@ -117,13 +131,17 @@ internal static partial class JavaInstallationFinder
         foreach (string root in roots)
         {
             if (string.IsNullOrWhiteSpace(root))
+            {
                 continue;
+            }
 
             foreach (string vendor in vendors)
             {
                 string vendorRoot = Path.Combine(root, vendor);
                 if (!Directory.Exists(vendorRoot))
+                {
                     continue;
+                }
 
                 yield return vendorRoot;
 
@@ -138,7 +156,9 @@ internal static partial class JavaInstallationFinder
                 }
 
                 foreach (string home in homes)
+                {
                     yield return home;
+                }
             }
         }
     }
@@ -147,7 +167,9 @@ internal static partial class JavaInstallationFinder
     {
         javaExe = string.Empty;
         if (string.IsNullOrWhiteSpace(path))
+        {
             return false;
+        }
 
         try
         {
@@ -194,24 +216,37 @@ internal static partial class JavaInstallationFinder
 
             using Process? process = Process.Start(psi);
             if (process == null)
+            {
                 return false;
+            }
 
             Task<string> errorOutput = process.StandardError.ReadToEndAsync();
             Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
 
             if (!process.WaitForExit(3000))
             {
-                try { process.Kill(entireProcessTree: true); } catch { }
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+                catch
+                {
+                }
                 return false;
             }
 
             if (!Task.WaitAll([errorOutput, standardOutput], 1000))
+            {
                 return false;
+            }
+
             string versionOutput = errorOutput.Result + standardOutput.Result;
 
             Match match = JavaVersionRegex().Match(versionOutput);
             if (!match.Success)
+            {
                 return false;
+            }
 
             ReadOnlySpan<char> version = match.Groups[1].ValueSpan.Trim();
             version = version.StartsWith("1.", StringComparison.Ordinal) ? version[2..] : version;

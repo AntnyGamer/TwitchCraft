@@ -18,8 +18,13 @@ public partial class Start : UserControl
     private static bool IsDigits(string text)
     {
         foreach (char c in text)
+        {
             if (!char.IsAsciiDigit(c))
+            {
                 return false;
+            }
+        }
+
         return true;
     }
 
@@ -48,7 +53,9 @@ public partial class Start : UserControl
     private void RCONPort_Pasting(object sender, DataObjectPastingEventArgs e)
     {
         if (e.DataObject.GetData(DataFormats.Text) is not string text || !IsDigits(text))
+        {
             e.CancelCommand();
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -72,7 +79,9 @@ public partial class Start : UserControl
     private void Start_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (!IsVisible || e.Handled)
+        {
             return;
+        }
 
         Key key = e.Key == Key.System ? e.SystemKey : e.Key;
         bool pressedRemoteShortcut = key == Key.R
@@ -95,7 +104,10 @@ public partial class Start : UserControl
             _remoteControllerUnlocked = false;
             RemoteRCONPasswordShowCheckbox.IsChecked = false;
             if (_multiplayerBeforeRemoteControl.HasValue)
+            {
                 MultiplayerCheckbox.IsChecked = _multiplayerBeforeRemoteControl.Value;
+            }
+
             _multiplayerBeforeRemoteControl = null;
         }
 
@@ -125,13 +137,22 @@ public partial class Start : UserControl
             MultiplayerCheckbox.IsChecked = false;
             OnlineModeCheckbox.IsChecked = true;
             if (!string.Equals(RemoteHostTextbox.Text, config.Server.RemoteHost, StringComparison.Ordinal))
+            {
                 RemoteHostTextbox.Text = config.Server.RemoteHost;
+            }
+
             string RCONPortText = config.Server.RCON.Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (!string.Equals(RemoteRCONPortTextbox.Text, RCONPortText, StringComparison.Ordinal))
+            {
                 RemoteRCONPortTextbox.Text = RCONPortText;
+            }
+
             ClearRCONPassword();
             if (!string.Equals(MCUserTextbox.Text, config.Identity.StreamerMinecraftName, StringComparison.Ordinal))
+            {
                 MCUserTextbox.Text = config.Identity.StreamerMinecraftName;
+            }
+
             _showMinecraftUsernameUntilStart = !MinecraftNameHelper.IsValidPlayerName(MCUserTextbox.Text);
             UpdateLaunchUI();
         }
@@ -193,7 +214,10 @@ public partial class Start : UserControl
         try
         {
             if (_launchClickInProgress || _worldImportInProgress)
+            {
                 return;
+            }
+
             TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
             if (parent == null)
             {
@@ -253,7 +277,10 @@ public partial class Start : UserControl
                     MinecraftWorldImporter.ReplaceWorld(importPlan, () =>
                     {
                         if (multiplayerEnabled)
+                        {
                             DatapackInstaller.SyncLocateDatapack(importPlan.ServerDirectory, config.Server.MinecraftVersion, importPlan.LevelName);
+                        }
+
                         ServerPropertyEditor.ApplyProfile(config);
                     });
                 });
@@ -296,7 +323,9 @@ public partial class Start : UserControl
     {
         parent = AppHelpers.GetTwitchCraftWindow(this)!;
         if (parent != null)
+        {
             return true;
+        }
 
         ErrorHandling.ShowNavigationError(this);
         return false;
@@ -317,7 +346,9 @@ public partial class Start : UserControl
     {
         bool remoteControlEnabled = _remoteControllerUnlocked;
         if (remoteControlEnabled && MultiplayerCheckbox.IsChecked == true)
+        {
             MultiplayerCheckbox.IsChecked = false;
+        }
 
         bool multiplayerEnabled = !remoteControlEnabled && MultiplayerCheckbox.IsChecked == true;
         string minecraftUser = (MCUserTextbox.Text ?? string.Empty).Trim();
@@ -328,7 +359,10 @@ public partial class Start : UserControl
         OnlineModeCheckbox.IsEnabled = multiplayerEnabled;
 
         if (!multiplayerEnabled || OnlineModeCheckbox.IsChecked == null)
+        {
             OnlineModeCheckbox.IsChecked = true;
+        }
+
         Visibility multiplayerVisibility = remoteControlEnabled ? Visibility.Collapsed : Visibility.Visible;
         Multiplayer.Visibility = multiplayerVisibility;
         MultiplayerCheckbox.Visibility = multiplayerVisibility;
@@ -382,15 +416,24 @@ public partial class Start : UserControl
         {
             string remoteHost = RemoteHostTextbox.Text;
             if (string.IsNullOrWhiteSpace(remoteHost))
+            {
                 return "Enter the host server address for Remote Control Mode.";
+            }
 
             if (!ConfigurationStore.IsValidRemoteHost(remoteHost))
+            {
                 return "Enter a valid host server address for Remote Control Mode.";
+            }
+
             if (!TryGetRCONPort(out _))
+            {
                 return "Enter a valid RCON port from 1 to 65535.";
+            }
 
             if (string.IsNullOrWhiteSpace(GetRCONPassword()))
+            {
                 return "Enter the host server RCON password.";
+            }
         }
 
         return null;
@@ -407,7 +450,9 @@ public partial class Start : UserControl
 
         bool remoteControlEnabled = _remoteControllerUnlocked;
         if (remoteControlEnabled && MultiplayerCheckbox.IsChecked == true)
+        {
             MultiplayerCheckbox.IsChecked = false;
+        }
 
         bool multiplayerEnabled = !remoteControlEnabled && MultiplayerCheckbox.IsChecked == true;
         bool requireOnlineMode = !multiplayerEnabled || OnlineModeCheckbox.IsChecked == true;

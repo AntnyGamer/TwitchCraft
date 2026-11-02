@@ -38,7 +38,9 @@ public sealed class BackupRetentionPolicyTests
             "20260830-120000-a1b2c3"
         ];
         foreach (string name in names)
+        {
             CreateCompleteBackup(root.Path, name);
+        }
 
         DataMaintenance.PruneBackups(root.Path, retentionCount: 3);
 

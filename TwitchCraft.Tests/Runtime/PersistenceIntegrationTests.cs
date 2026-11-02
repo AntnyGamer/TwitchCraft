@@ -20,7 +20,9 @@ public sealed class PersistenceIntegrationTests : IDisposable
         StatisticsStore.CloseConnection();
         SqliteConnection.ClearAllPools();
         foreach (string name in new[] { "statistics.db", "statistics.db-wal", "statistics.db-shm", "config.json", "config.json.tmp" })
+        {
             File.Delete(Path.Combine(TestApplicationData.Path, name));
+        }
     }
 
     [Fact]
@@ -263,8 +265,14 @@ public sealed class PersistenceIntegrationTests : IDisposable
             Assert.Equal("changedbot", ConfigurationStore.Load().Twitch.BotName);
             Assert.Equal(125, tokens.GetBalance("viewer"));
             TokenStore restoredTokens = new(Path.Combine(backup, "viewer_tokens.db"));
-            try { Assert.Equal(75, restoredTokens.GetBalance("viewer")); }
-            finally { restoredTokens.CloseConnection(); }
+            try
+            {
+                Assert.Equal(75, restoredTokens.GetBalance("viewer"));
+            }
+            finally
+            {
+                restoredTokens.CloseConnection();
+            }
 
             using SqliteConnection restoredStats = new(new SqliteConnectionStringBuilder
             {
@@ -281,7 +289,10 @@ public sealed class PersistenceIntegrationTests : IDisposable
             Assert.Equal(0, reader.GetInt64(2));
             Assert.Equal(1, StatisticsStore.LoadGlobal()!.SessionsStarted);
         }
-        finally { tokens.Close(); }
+        finally
+        {
+            tokens.Close();
+        }
     }
 
     [Fact]

@@ -84,7 +84,9 @@ internal static class MinecraftVersionSupport
     public static MinecraftVersionInfo GetVersion(string? versionID)
     {
         if (TryGetVersion(versionID, out MinecraftVersionInfo version))
+        {
             return version;
+        }
 
         string display = string.IsNullOrWhiteSpace(versionID) ? "(not specified)" : versionID.Trim();
         throw new NotSupportedException("Minecraft version '" + display + "' is not supported by this TwitchCraft build.");
@@ -94,7 +96,9 @@ internal static class MinecraftVersionSupport
     {
         ReadOnlySpan<char> normalizedEffectID = effectID.AsSpan().Trim();
         if (normalizedEffectID.IsEmpty)
+        {
             return false;
+        }
 
         MinecraftVersionInfo version = GetVersion(versionID);
         return normalizedEffectID switch
@@ -112,7 +116,9 @@ internal static class MinecraftVersionSupport
         {
             map[version.ID] = version;
             if (version.DisplayID != version.ID)
+            {
                 map[version.DisplayID] = version;
+            }
         }
 
         return map;
@@ -147,7 +153,9 @@ internal static class MinecraftVersionSupport
         public string GetPackFormatJson()
         {
             if (DataPackFormatMinor > 0 || UsesModernPackMetadata)
+            {
                 return "[" + DataPackFormatMajor.ToString(CultureInfo.InvariantCulture) + ", " + DataPackFormatMinor.ToString(CultureInfo.InvariantCulture) + "]";
+            }
 
             return DataPackFormatMajor.ToString(CultureInfo.InvariantCulture);
         }

@@ -28,8 +28,10 @@ public sealed class MinigameTransactionTests
             MinigameManager.BetUpdateResult.OverMax,
             MinigameManager.BetUpdateResult.Closed
         })
+        {
             Assert.True(await MinigameManager.ReplyBetErrorAsync(
                 result, "viewer", "chicken run", "betting is closed.", capture, CancellationToken.None), result.ToString());
+        }
 
         bool handled = await MinigameManager.ReplyBetErrorAsync(
             MinigameManager.BetUpdateResult.Updated,
@@ -148,9 +150,14 @@ public sealed class MinigameTransactionTests
                 successes.Clear();
                 List<string> arguments = [];
                 if (first != null)
+                {
                     arguments.Add(first);
+                }
+
                 if (second != null)
+                {
                     arguments.Add(second);
+                }
 
                 await handlers[command]([.. arguments], "viewer", TestContext.Current.CancellationToken);
 

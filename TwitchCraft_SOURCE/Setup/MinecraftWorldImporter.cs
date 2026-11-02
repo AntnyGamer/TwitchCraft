@@ -56,14 +56,20 @@ internal static class MinecraftWorldImporter
 
         string sourcePrefix = Path.GetFullPath(plan.SourceWorldPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
         if (Path.GetFullPath(plan.StagingWorldPath).StartsWith(sourcePrefix, StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidOperationException("The source world cannot contain TwitchCraft's import staging folder.");
+        }
 
         bool backupCreated = false;
         bool destinationExisted = Directory.Exists(plan.DestinationWorldPath);
         try
         {
             FileSystemHelper.CopyDirectory(plan.SourceWorldPath, plan.StagingWorldPath);
-            if (!IsWorldFolder(plan.StagingWorldPath)) throw new InvalidDataException("The staged world is incomplete.");
+            if (!IsWorldFolder(plan.StagingWorldPath))
+            {
+                throw new InvalidDataException("The staged world is incomplete.");
+            }
+
             if (destinationExisted)
             {
                 Directory.Move(plan.DestinationWorldPath, plan.BackupWorldPath);
@@ -79,7 +85,9 @@ internal static class MinecraftWorldImporter
             try
             {
                 if (!destinationExisted || backupCreated)
+                {
                     FileSystemHelper.DeleteDirectorySafe(plan.DestinationWorldPath);
+                }
 
                 if (backupCreated && Directory.Exists(plan.BackupWorldPath))
                 {

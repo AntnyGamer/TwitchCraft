@@ -198,7 +198,9 @@ public sealed class GameplayCommandIntegrationTests
         await using MinecraftRuntimeScenario scenario = await StartAsync(
             ["PlayerOne", "PlayerTwo"],
             multiplayer: true,
-            maxHealth: 20, attributes: "[{Name:'generic.max_health',Modifiers:[{Name:'twitchcraft_health',UUID:[I;-1,-1,-1,-1],Amount:2.0d,Operation:0}]}]", minecraftVersion: "1.20.5");
+            maxHealth: 20,
+            attributes: "[{Name:'generic.max_health',Modifiers:[{Name:'twitchcraft_health',UUID:[I;-1,-1,-1,-1],Amount:2.0d,Operation:0}]}]",
+            minecraftVersion: "1.20.5");
         scenario.Runtime.Tokens.Award("viewer", 300);
         int cursor = scenario.CaptureCommandCursor();
 

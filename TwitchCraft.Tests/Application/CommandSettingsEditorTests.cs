@@ -134,8 +134,15 @@ public sealed class CommandSettingsEditorTests
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             DependencyObject child = VisualTreeHelper.GetChild(parent, i);
-            if (child is T match) yield return match;
-            foreach (T nested in Descendants<T>(child)) yield return nested;
+            if (child is T match)
+            {
+                yield return match;
+            }
+
+            foreach (T nested in Descendants<T>(child))
+            {
+                yield return nested;
+            }
         }
     }
 }

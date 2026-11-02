@@ -16,7 +16,13 @@ public sealed partial class MainHandler
         {
             TwitchCraftConfig activeConfig = ConfigurationStore.Clone(config);
             ConfigurationStore.NormalizeRuntime(activeConfig);
-            bool minigamesEnabledChanged = false, difficultyChanged = false, pvpChanged = false, passiveScheduleChanged = false, followRewardsChanged = false, twitchAuthChanged = false, maximumBalanceNeedsClamp = false;
+            bool minigamesEnabledChanged = false;
+            bool difficultyChanged = false;
+            bool pvpChanged = false;
+            bool passiveScheduleChanged = false;
+            bool followRewardsChanged = false;
+            bool twitchAuthChanged = false;
+            bool maximumBalanceNeedsClamp = false;
 
             lock (_configPersistenceGate)
             {
@@ -27,7 +33,8 @@ public sealed partial class MainHandler
                     pvpChanged = _activeConfig.Settings.MultiplayerPvPEnabled != activeConfig.Settings.MultiplayerPvPEnabled;
                     followRewardsChanged = _activeConfig.Settings.AutomaticFollowRewardsEnabled != activeConfig.Settings.AutomaticFollowRewardsEnabled;
                     twitchAuthChanged = !preserveTwitchAuth && !string.Equals(NormalizeToken(_activeConfig.Twitch.BotToken), NormalizeToken(activeConfig.Twitch.BotToken), StringComparison.Ordinal);
-                    maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 && (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
+                    maximumBalanceNeedsClamp = activeConfig.Settings.MaximumTokenBalance > 0 &&
+                        (_activeConfig.Settings.MaximumTokenBalance == 0 || activeConfig.Settings.MaximumTokenBalance < _activeConfig.Settings.MaximumTokenBalance);
                     passiveScheduleChanged =
                         _activeConfig.Settings.PassiveTokenEarningEnabled != activeConfig.Settings.PassiveTokenEarningEnabled ||
                         _activeConfig.Settings.PassiveRewardsRequireActivity != activeConfig.Settings.PassiveRewardsRequireActivity ||
@@ -36,7 +43,11 @@ public sealed partial class MainHandler
                     activeConfig.Settings.RemoteControlEnabled = _activeConfig.Settings.RemoteControlEnabled;
                     activeConfig.Settings.RequireOnlineMode = _activeConfig.Settings.RequireOnlineMode;
                     if (_activeConfig.Settings.RemoteControlEnabled || _runtimeState != RuntimeState.Stopped)
-                        (activeConfig.Server.RCON.Port, activeConfig.Server.RCON.Password) = (_activeConfig.Server.RCON.Port, _activeConfig.Server.RCON.Password);
+                    {
+                        (activeConfig.Server.RCON.Port, activeConfig.Server.RCON.Password) =
+                            (_activeConfig.Server.RCON.Port, _activeConfig.Server.RCON.Password);
+                    }
+
                     if (preserveTwitchAuth)
                     {
                         activeConfig.Twitch.BotToken = _activeConfig.Twitch.BotToken;
@@ -45,7 +56,11 @@ public sealed partial class MainHandler
                     }
                 }
 
-                if (maximumBalanceNeedsClamp && _runtimeState == RuntimeState.Running) Tokens.ApplyMaximumBalance(activeConfig.Settings.MaximumTokenBalance);
+                if (maximumBalanceNeedsClamp && _runtimeState == RuntimeState.Running)
+                {
+                    Tokens.ApplyMaximumBalance(activeConfig.Settings.MaximumTokenBalance);
+                }
+
                 SetConfig(activeConfig);
                 if (passiveScheduleChanged)
                 {
@@ -53,23 +68,42 @@ public sealed partial class MainHandler
                     {
                         _viewerRewardSchedule.Clear();
                         if (!activeConfig.Settings.PassiveRewardsRequireActivity)
+                        {
                             _viewerLastChatActivity.Clear();
+                        }
                     }
                 }
             }
 
             if (!activeConfig.Settings.GlobalGameCommandCooldownEnabled)
+            {
                 Commands.ClearGlobalCooldown();
-            if (twitchAuthChanged) _twitchSession.CloseSocket();
-            if (twitchAuthChanged || followRewardsChanged) await RestartFollowRewardsAsync().ConfigureAwait(false);
+            }
+
+            if (twitchAuthChanged)
+            {
+                _twitchSession.CloseSocket();
+            }
+
+            if (twitchAuthChanged || followRewardsChanged)
+            {
+                await RestartFollowRewardsAsync().ConfigureAwait(false);
+            }
 
             if (refreshMinigameLoops || minigamesEnabledChanged)
+            {
                 RefreshMinigames(activeConfig.Settings.MinigamesEnabled);
+            }
 
             if (difficultyChanged && !activeConfig.Settings.RemoteControlEnabled && TryGetSessionToken(requireMultiplayer: false, out CancellationToken token))
+            {
                 await SendServerCommandAsync("difficulty " + (activeConfig.Settings.Difficulty == "Medium" ? "normal" : activeConfig.Settings.Difficulty.ToLowerInvariant()), token).ConfigureAwait(false);
+            }
+
             if (pvpChanged)
+            {
                 await ApplyPvPGameRuleAsync().ConfigureAwait(false);
+            }
         }
         finally
         {
@@ -80,7 +114,9 @@ public sealed partial class MainHandler
     private void RefreshMinigames(bool minigamesEnabled)
     {
         if (_runtimeState != RuntimeState.Running)
+        {
             return;
+        }
 
         if (!minigamesEnabled)
         {
@@ -90,7 +126,9 @@ public sealed partial class MainHandler
 
         CancellationTokenSource? sessionCts = _sessionCts;
         if (sessionCts != null)
+        {
             MinigameManager.StartLoops(this, sessionCts.Token);
+        }
     }
 
     private async Task RestartFollowRewardsAsync()
@@ -100,9 +138,17 @@ public sealed partial class MainHandler
         _twitchSession.FollowRewardsCts = null;
         _twitchSession.FollowRewardsTask = null;
         oldCts?.Cancel();
-        if (oldTask != null) await oldTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        if (oldTask != null)
+        {
+            await oldTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        }
+
         oldCts?.Dispose();
-        if (!AutomaticFollowRewardsEnabled || _runtimeState != RuntimeState.Running || _sessionCts == null) return;
+        if (!AutomaticFollowRewardsEnabled || _runtimeState != RuntimeState.Running || _sessionCts == null)
+        {
+            return;
+        }
+
         _twitchSession.FollowRewardsCts = CancellationTokenSource.CreateLinkedTokenSource(_sessionCts.Token);
         _twitchSession.FollowRewardsTask = RunFollowRewardsAsync(_twitchSession.FollowRewardsCts.Token);
         TrackTask(_twitchSession.FollowRewardsTask);

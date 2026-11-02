@@ -10,18 +10,24 @@ public static partial class MinigameManager
     private static async Task RunGuessNumberAsync(MainHandler runtime, CancellationToken cancellationToken)
     {
         if (!TryStart(runtime, "GuessNumber", out long runID))
+        {
             return;
+        }
 
         try
         {
             if (!TryStartGuessGame(runtime, out long roundID, out int minValue, out int maxValue))
+            {
                 return;
+            }
 
             await PlaySoundAsync(runtime, "minecraft:block.note_block.pling", cancellationToken).ConfigureAwait(false);
             await ShowSubtitleAsync(runtime, "GUESS THE NUMBER", cancellationToken).ConfigureAwait(false);
             await SafeReplyAsync(
                 runtime,
-                string.Create(CultureInfo.InvariantCulture, $"🔴 Guess The Number has started! Use !guess <number> to guess a number between {minValue} and {maxValue}. If you win you will get free tokens! You have 60 seconds!"),
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"🔴 Guess The Number has started! Use !guess <number> to guess a number between {minValue} and {maxValue}. If you win you will get free tokens! You have 60 seconds!"),
                 cancellationToken).ConfigureAwait(false);
 
             DateTime endAtUtc = DateTime.UtcNow.AddSeconds(60.0);
@@ -30,7 +36,9 @@ public static partial class MinigameManager
                 await Task.Delay(OneSecondDelay, cancellationToken).ConfigureAwait(false);
 
                 if (!IsGuessRoundActive(runtime, roundID))
+                {
                     break;
+                }
             }
 
             int answer = 0;
@@ -68,7 +76,9 @@ public static partial class MinigameManager
         maxValue = 100;
 
         if (runtime == null)
+        {
             return false;
+        }
 
         lock (MinigameGate)
         {
@@ -80,7 +90,9 @@ public static partial class MinigameManager
 
             GuessNumberState state = GetGuessStateNoLock(runtime);
             if (state.Active)
+            {
                 return false;
+            }
 
             state.Active = true;
             state.LastGuessAtUtc.Clear();
@@ -97,7 +109,9 @@ public static partial class MinigameManager
         targetNumber = 0;
 
         if (runtime == null)
+        {
             return;
+        }
 
         lock (MinigameGate)
         {
@@ -105,7 +119,9 @@ public static partial class MinigameManager
             active = IsGuessRoundActiveNoLock(runtime, state, state.RoundID);
             targetNumber = state.TargetNumber;
             if (!active)
+            {
                 return;
+            }
 
             if (guess == state.TargetNumber)
             {

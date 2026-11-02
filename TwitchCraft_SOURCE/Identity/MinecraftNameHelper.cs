@@ -11,11 +11,15 @@ internal static class MinecraftNameHelper
     {
         normalized = string.Empty;
         if (string.IsNullOrEmpty(value))
+        {
             return false;
+        }
 
         ReadOnlySpan<char> trimmed = value.AsSpan().Trim();
         if (!IsValidNameSegment(trimmed))
+        {
             return false;
+        }
 
         normalized = trimmed.Length == value.Length ? value : trimmed.ToString();
         return true;
@@ -26,7 +30,9 @@ internal static class MinecraftNameHelper
         normalized = string.Empty;
         value = value.Trim();
         if (!IsValidNameSegment(value))
+        {
             return false;
+        }
 
         normalized = value.ToString();
         return true;
@@ -35,13 +41,17 @@ internal static class MinecraftNameHelper
     private static bool IsValidNameSegment(ReadOnlySpan<char> value)
     {
         if (value.Length is < 3 or > 16)
+        {
             return false;
+        }
 
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
             if (!char.IsAsciiLetterOrDigit(c) && c != '_')
+            {
                 return false;
+            }
         }
 
         return true;

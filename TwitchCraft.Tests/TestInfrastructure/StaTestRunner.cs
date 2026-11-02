@@ -32,6 +32,8 @@ internal static class StaTestRunner
         thread.Start();
         Assert.True(thread.Join(timeout), timeoutMessage);
         if (failure != null)
+        {
             ExceptionDispatchInfo.Capture(failure).Throw();
+        }
     }
 }

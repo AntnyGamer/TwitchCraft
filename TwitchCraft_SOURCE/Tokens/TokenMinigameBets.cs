@@ -16,22 +16,31 @@ internal sealed partial class TokenStore
     internal void AcquireDatabaseSessionLock()
     {
         lock (_gate)
+        {
             _databaseSessionLock ??= new FileStream(_dbPath + ".minigame.lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
     }
 
     internal bool TrySpendForMinigameBet(string user, int amount)
     {
         string name = Normalize(user);
         if (name.Length == 0 || amount <= 0)
+        {
             return false;
+        }
 
         lock (_gate)
         {
             if (!EnsureLoadedNoLock(name))
+            {
                 return false;
+            }
+
             _balances.TryGetValue(name, out int balance);
             if (balance < amount)
+            {
                 return false;
+            }
 
             try
             {
@@ -43,7 +52,10 @@ internal sealed partial class TokenStore
                 stake.CommandText = remaining == 0 ? DeleteBalanceSql + AddStakeSql : UpsertBalanceSql + AddStakeSql;
                 stake.Parameters.AddWithValue("$username", name);
                 if (remaining > 0)
+                {
                     stake.Parameters.AddWithValue("$balance", remaining);
+                }
+
                 stake.Parameters.AddWithValue("$amount", amount);
                 stake.ExecuteNonQuery();
                 transaction.Commit();
@@ -76,11 +88,15 @@ internal sealed partial class TokenStore
                     read.CommandText = "SELECT Username, Amount FROM PendingMinigameBets;";
                     using SqliteDataReader reader = read.ExecuteReader();
                     while (reader.Read())
+                    {
                         pending.Add(Normalize(reader.GetString(0)), reader.GetInt32(1));
+                    }
                 }
 
                 if (pending.Count == 0)
+                {
                     return refund;
+                }
 
                 Dictionary<string, int> adjustments = refund ? pending : new(StringComparer.Ordinal);
                 if (!refund)
@@ -89,7 +105,10 @@ internal sealed partial class TokenStore
                     {
                         string name = Normalize(payout.Key);
                         if (name.Length == 0 || payout.Value <= 0 || !pending.ContainsKey(name))
+                        {
                             return false;
+                        }
+
                         adjustments[name] = adjustments.TryGetValue(name, out int current)
                             ? checked(current + payout.Value)
                             : payout.Value;
@@ -97,7 +116,9 @@ internal sealed partial class TokenStore
                 }
 
                 if (!EnsureManyLoadedNoLock(adjustments.Keys))
+                {
                     return false;
+                }
 
                 Dictionary<string, int> balances = new(adjustments.Count, StringComparer.Ordinal);
                 using SqliteTransaction transaction = connection.BeginTransaction();
@@ -108,7 +129,10 @@ internal sealed partial class TokenStore
                     _balances.TryGetValue(adjustment.Key, out int current);
                     int updated = ClampAdjusted(current, adjustment.Value, maximumBalance);
                     if (updated == current)
+                    {
                         continue;
+                    }
+
                     SaveBalanceNoLock(upsert, delete, adjustment.Key, updated);
                     balances.Add(adjustment.Key, updated);
                 }
@@ -120,7 +144,10 @@ internal sealed partial class TokenStore
                 transaction.Commit();
 
                 foreach (KeyValuePair<string, int> balance in balances)
+                {
                     SetCacheNoLock(balance.Key, balance.Value);
+                }
+
                 return true;
             }
             catch (Exception ex)
