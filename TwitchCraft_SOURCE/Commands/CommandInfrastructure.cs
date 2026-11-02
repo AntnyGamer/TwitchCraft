@@ -23,13 +23,9 @@ internal static class CommandRandom
 public sealed class EffectDefinition
 {
     public string ID { get; set; } = string.Empty;
-
     public int MinSeconds { get; set; }
-
     public int MaxSeconds { get; set; }
-
     public int MinAmplifier { get; set; }
-
     public int MaxAmplifier { get; set; }
 }
 
@@ -38,17 +34,11 @@ public delegate Task ChatCommandHandler(string[] args, string sender, Cancellati
 public sealed class ResolvedTarget
 {
     public string Selector { get; set; } = "@a";
-
     public string DisplayName { get; set; } = "everyone";
-
     public string MinecraftName { get; set; } = string.Empty;
-
     public int PlayerCount { get; set; } = 1;
-
     public bool DefaultPlayerInclusionKnown { get; set; }
-
     public bool IncludesDefaultMinecraftPlayer { get; set; }
-
     public List<string>? TargetablePlayers { get; set; }
 }
 
@@ -108,13 +98,7 @@ public static class MinecraftCommandBuilder
     public static string ApplyEffect(string selector, string effect, int seconds, int amplifier)
         => $"effect give {selector} minecraft:{effect} {seconds} {amplifier}";
 
-    public static string Tellraw(
-        string selector,
-        string message,
-        string color,
-        bool bold,
-        bool usesInlineTextComponents
-    )
+    public static string Tellraw(string selector, string message, string color, bool bold, bool usesInlineTextComponents)
         => $"tellraw {selector} {BuildTextComponent(message, color, bold, usesInlineTextComponents)}";
 
     public static string ClearColumn(string selector, int height)
@@ -179,13 +163,7 @@ public static class MinecraftCommandBuilder
             scale.ToString("0.###", CultureInfo.InvariantCulture);
     }
 
-    public static string AddMaxHealthModifier(
-        string selector,
-        string ID,
-        int delta,
-        bool modernAttribute,
-        bool namespacedID
-    )
+    public static string AddMaxHealthModifier(string selector, string ID, int delta, bool modernAttribute, bool namespacedID)
         => "execute as " + selector + " run attribute @s " + (modernAttribute ? "minecraft:max_health" : "minecraft:generic.max_health") +
             " modifier add " + ID + (namespacedID ? "" : " twitchcraft_health") + " " + delta.ToString(CultureInfo.InvariantCulture) + " add_value";
 
@@ -259,12 +237,7 @@ public static class MinecraftCommandBuilder
     public static string EscapeSnbt(string? value)
         => EscapeMinecraft(value, escapeDoubleQuote: false, escapeSingleQuote: true, escapeControls: true);
 
-    private static string EscapeMinecraft(
-        string? value,
-        bool escapeDoubleQuote,
-        bool escapeSingleQuote,
-        bool escapeControls
-    )
+    private static string EscapeMinecraft(string? value, bool escapeDoubleQuote, bool escapeSingleQuote, bool escapeControls)
     {
         if (string.IsNullOrEmpty(value))
         {

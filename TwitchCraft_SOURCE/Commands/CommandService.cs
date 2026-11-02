@@ -102,9 +102,7 @@ public sealed class CommandService
     private sealed class CommandExecutionState(string name, bool moderator)
     {
         internal string Name { get; } = name;
-
         internal bool Moderator { get; } = moderator;
-
         internal bool Succeeded;
     }
 
@@ -254,8 +252,7 @@ public sealed class CommandService
         string keyOwner,
         double? cooldownSeconds,
         out TimeSpan remaining,
-        out CooldownReservation reservation
-    )
+        out CooldownReservation reservation)
     {
         remaining = TimeSpan.Zero;
         reservation = default;
@@ -448,12 +445,7 @@ public sealed class CommandService
         }
     }
 
-    internal bool TryUseTimedCommand(
-        string commandName,
-        out TimeSpan remaining,
-        out long reservationTimestamp,
-        long? nowTimestamp = null
-    )
+    internal bool TryUseTimedCommand(string commandName, out TimeSpan remaining, out long reservationTimestamp, long? nowTimestamp = null)
     {
         string normalizedCommand = (commandName ?? string.Empty).Trim();
         if (normalizedCommand.Length == 0)
@@ -594,8 +586,7 @@ public sealed class CommandService
         int startIndex,
         string requester,
         Func<string, CancellationToken, Task> replyAsync,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(replyAsync);
         TwitchCraftConfig? config = _config;

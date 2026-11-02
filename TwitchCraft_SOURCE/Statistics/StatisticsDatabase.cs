@@ -136,12 +136,7 @@ internal static partial class StatisticsStore
         _incrementCommandUseCommand.ExecuteNonQuery();
     }
 
-    private static void SaveViewerScoreNoLock(
-        SqliteTransaction transaction,
-        string username,
-        long dangerousScore,
-        long niceScore
-    )
+    private static void SaveViewerScoreNoLock(SqliteTransaction transaction, string username, long dangerousScore, long niceScore)
     {
         if (_upsertViewerScoreCommand == null)
         {
@@ -202,12 +197,7 @@ internal static partial class StatisticsStore
         _saveDeathScoreBaselineCommand.ExecuteNonQuery();
     }
 
-    private static void UpdateDeathScoreNoLock(
-        SqliteTransaction transaction,
-        long deathCount,
-        long deathScore,
-        long survivedSeconds
-    )
+    private static void UpdateDeathScoreNoLock(SqliteTransaction transaction, long deathCount, long deathScore, long survivedSeconds)
     {
         if (_applyDeathScoreCommand == null)
         {

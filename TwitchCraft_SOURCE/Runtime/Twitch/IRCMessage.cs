@@ -5,7 +5,6 @@ namespace TwitchCraft_V1;
 internal sealed class IRCMessage
 {
     public int Bits { get; private set; }
-
     public string ID { get; private set; } = string.Empty;
 
     public bool IsModerator { get; private set; }

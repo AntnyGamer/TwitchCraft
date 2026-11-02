@@ -133,8 +133,7 @@ public sealed partial class ConfigurationStore
     }
 
     private static Dictionary<string, CommandCustomization> CloneCommands(
-        Dictionary<string, CommandCustomization>? source
-    )
+        Dictionary<string, CommandCustomization>? source)
     {
         Dictionary<string, CommandCustomization> result = new(source?.Count ?? 0, StringComparer.OrdinalIgnoreCase);
         if (source != null)

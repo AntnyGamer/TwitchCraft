@@ -280,11 +280,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static async Task WaitForDelayAsync(
-        MainHandler runtime,
-        LoopState expectedLoop,
-        CancellationToken cancellationToken
-    )
+    private static async Task WaitForDelayAsync(MainHandler runtime, LoopState expectedLoop, CancellationToken cancellationToken)
     {
         TimeSpan delay;
         lock (MinigameGate)

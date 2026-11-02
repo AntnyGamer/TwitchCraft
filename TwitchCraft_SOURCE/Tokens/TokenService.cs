@@ -80,8 +80,7 @@ public sealed class TokenService
         string userLogin,
         DateTimeOffset followedAt,
         int rewardAmount,
-        out int awardedAmount
-    )
+        out int awardedAmount)
         => _store.TryRewardFollower(
             userID,
             userLogin,

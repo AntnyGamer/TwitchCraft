@@ -32,9 +32,7 @@ public partial class Setup : UserControl
     private sealed class VersionOption(string ID, string label, int requiredJDK)
     {
         public string ID { get; } = ID;
-
         public string Label { get; } = label;
-
         public string Group { get; } = $"JDK {requiredJDK} REQUIRED";
     }
 
@@ -439,8 +437,7 @@ public partial class Setup : UserControl
         string botToken,
         string refreshToken,
         string channel,
-        string botUser
-    )
+        string botUser)
     {
         return new TwitchCraftConfig
         {
@@ -465,10 +462,7 @@ public partial class Setup : UserControl
         };
     }
 
-    private async Task<(string JavaExe, string JavaHome)> FindJavaAsync(
-        int javaVersion,
-        CancellationToken cancellationToken
-    )
+    private async Task<(string JavaExe, string JavaHome)> FindJavaAsync(int javaVersion, CancellationToken cancellationToken)
     {
         while (true)
         {

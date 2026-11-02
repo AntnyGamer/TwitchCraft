@@ -32,8 +32,7 @@ internal sealed class TimedPlayerScaleController
         Func<string, bool> isPlayerOnline,
         Action<Task> trackTask,
         Action<string> log,
-        Func<TimeSpan, CancellationToken, Task>? delay = null
-    )
+        Func<TimeSpan, CancellationToken, Task>? delay = null)
     {
         _sendCommand = sendCommand ?? throw new ArgumentNullException(nameof(sendCommand));
         _sendCommands = sendCommands ?? throw new ArgumentNullException(nameof(sendCommands));
@@ -50,8 +49,7 @@ internal sealed class TimedPlayerScaleController
         bool usesInlineTextComponents,
         TimeSpan duration,
         Func<IReadOnlyList<string>, CancellationToken, Task<bool>> dispatchInitialCommands,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(playerNames);
         ArgumentNullException.ThrowIfNull(dispatchInitialCommands);
@@ -139,11 +137,7 @@ internal sealed class TimedPlayerScaleController
 
     internal void MarkForRecovery() => Volatile.Write(ref _recoveryGeneration, Volatile.Read(ref _nextGeneration));
 
-    internal async Task ResetAllAsync(
-        CancellationToken cancellationToken,
-        long maxGeneration = long.MaxValue,
-        string? playerName = null
-    )
+    internal async Task ResetAllAsync(CancellationToken cancellationToken, long maxGeneration = long.MaxValue, string? playerName = null)
     {
         List<string> players;
         lock (_gate)
@@ -192,8 +186,7 @@ internal sealed class TimedPlayerScaleController
         string player,
         ScaleState state,
         TimeSpan duration,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -244,8 +237,7 @@ internal sealed class TimedPlayerScaleController
     private async Task<bool> ShowRestoreWarningAsync(
         string player,
         ScaleState state,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         SemaphoreSlim playerGate = GetGate(player);
         await playerGate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -290,8 +282,7 @@ internal sealed class TimedPlayerScaleController
         string player,
         ScaleState state,
         bool retryUntilCancelled,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         string command = MinecraftCommandBuilder.SetScale(
             MinecraftCommandBuilder.SinglePlayerSelector(player),
@@ -325,7 +316,9 @@ internal sealed class TimedPlayerScaleController
         return false;
     }
 
-    private async Task<SemaphoreSlim[]> LockPlayersAsync(List<string> players, CancellationToken cancellationToken)
+    private async Task<SemaphoreSlim[]> LockPlayersAsync(
+        List<string> players,
+        CancellationToken cancellationToken)
     {
         SemaphoreSlim[] acquired = new SemaphoreSlim[players.Count];
         int acquiredCount = 0;
@@ -386,8 +379,7 @@ internal sealed class TimedPlayerScaleController
 
     private void RestoreStates(
         IReadOnlyList<(string Player, ScaleState Applied, ScaleState? Previous)> appliedStates,
-        int count
-    )
+        int count)
     {
         lock (_gate)
         {

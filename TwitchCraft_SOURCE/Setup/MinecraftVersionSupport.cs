@@ -138,27 +138,16 @@ internal static class MinecraftVersionSupport
         int additionalLootTableCount)
     {
         public string ID { get; } = ID;
-
         public string DisplayID { get; } = alias.Length > 0 ? alias : ID;
-
         public int RequiredJDK { get; } = requiredJDK;
-
         public int DataPackFormatMajor { get; } = dataPackFormatMajor;
-
         public int DataPackFormatMinor { get; } = dataPackFormatMinor;
-
         public bool UsesSingularFunctionDirectories { get; } = usesSingularFunctionDirectories;
-
         public bool UsesInlineTextComponents { get; } = usesInlineTextComponents;
-
         public bool UsesModernPackMetadata { get; } = usesModernPackMetadata;
-
         public bool UsesNamespacedGameRules { get; } = usesNamespacedGameRules;
-
         public bool UsesServerSettingGameRules => DataPackFormatMajor >= 88;
-
         public ReadOnlySpan<string> AdditionalMobIDs => AdditionalMobs.AsSpan(0, additionalMobCount);
-
         public ReadOnlySpan<string> AdditionalLootTableIDs => AdditionalLootTables.AsSpan(0, additionalLootTableCount);
 
         public string GetPackFormatJson()

@@ -491,11 +491,7 @@ public partial class Main : UserControl
     private Task RunRestartResetAsync(Func<TwitchCraft, Task> action, Action parentMissingAction)
         => RunServerActionAsync(action, parentMissingAction, "Restart/reset button failed");
 
-    private async Task RunServerActionAsync(
-        Func<TwitchCraft, Task> action,
-        Action parentMissingAction,
-        string errorContext
-    )
+    private async Task RunServerActionAsync(Func<TwitchCraft, Task> action, Action parentMissingAction, string errorContext)
     {
         if (Interlocked.Exchange(ref _serverActionRunning, 1) != 0)
         {

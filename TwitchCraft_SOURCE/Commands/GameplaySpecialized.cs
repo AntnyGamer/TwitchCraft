@@ -592,8 +592,7 @@ public static partial class CommandList
             double scale,
             string sizeDescription,
             string othersMessage,
-            CancellationToken ct
-        )
+            CancellationToken ct)
         {
             const int baseCost = 20;
             List<string> playerNames = await GetPlayersAsync(target, ct).ConfigureAwait(false);

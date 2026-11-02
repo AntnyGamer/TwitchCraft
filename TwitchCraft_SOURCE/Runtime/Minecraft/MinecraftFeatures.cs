@@ -13,8 +13,7 @@ public sealed partial class MainHandler
         double scale,
         TimeSpan duration,
         Func<IReadOnlyList<string>, CancellationToken, Task<bool>> dispatchInitialCommands,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
         => _timedPlayerScaleController.ApplyAsync(
             playerNames,
             scale,
@@ -24,13 +23,7 @@ public sealed partial class MainHandler
             dispatchInitialCommands,
             cancellationToken);
 
-    public Task SendTellrawAsync(
-        string selector,
-        string message,
-        string color,
-        bool bold,
-        CancellationToken cancellationToken
-    )
+    public Task SendTellrawAsync(string selector, string message, string color, bool bold, CancellationToken cancellationToken)
         => SendServerCommandAsync(
             MinecraftCommandBuilder.Tellraw(string.IsNullOrWhiteSpace(selector) ? "@a" : selector, message, color, bold, UsesInlineTextComponentSyntax),
             cancellationToken);
@@ -50,13 +43,7 @@ public sealed partial class MainHandler
         }
     }
 
-    public Task TellrawOthersAsync(
-        ResolvedTarget target,
-        string message,
-        string color,
-        bool bold,
-        CancellationToken cancellationToken
-    )
+    public Task TellrawOthersAsync(ResolvedTarget target, string message, string color, bool bold, CancellationToken cancellationToken)
     {
         if (!MultiTargetingEnabled || target == null || string.IsNullOrWhiteSpace(message) || target.PlayerCount != 1)
         {
@@ -93,7 +80,6 @@ public sealed partial class MainHandler
     public bool UsesInlineTextComponentSyntax => GetMinecraftVersion().UsesInlineTextComponents;
 
     public bool UsesModernEntityAttributeNbt => GetMinecraftVersion().DataPackFormatMajor >= 48;
-
     public bool UsesNamespacedAttributeModifierIDs => GetMinecraftVersion().DataPackFormatMajor >= 48;
 
     public bool UsesModernAttributeIDs => GetMinecraftVersion().DataPackFormatMajor >= 57;

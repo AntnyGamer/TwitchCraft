@@ -135,7 +135,6 @@ public sealed partial class MainHandler
     public bool RemoteControlEnabled => CurrentSettings.RemoteControlEnabled;
 
     internal bool ProfileApplied => _profileApplied || _runtimeState != RuntimeState.Stopped;
-
     public bool RequireOnlineMode => CurrentSettings.RequireOnlineMode;
 
     internal void StageLocalRCONPassword(string password) => _minecraftSession.StageLocalRCONPassword(password);

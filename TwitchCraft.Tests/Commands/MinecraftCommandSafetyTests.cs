@@ -41,8 +41,7 @@ public sealed class MinecraftCommandSafetyTests
     public void TryNormalizePlayerName_EnforcesMinecraftNameRules(
         string? value,
         bool expectedResult,
-        string expectedNormalized
-    )
+        string expectedNormalized)
     {
         Assert.Equal(expectedResult, MinecraftNameHelper.TryNormalizePlayerName(value, out string normalized));
         Assert.Equal(expectedNormalized, normalized);

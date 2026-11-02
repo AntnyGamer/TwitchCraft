@@ -45,7 +45,6 @@ static async Task WriteOutputAsync(string line)
 }
 
 string? jarPath = null;
-
 for (int i = 0; i + 1 < args.Length; i++)
 {
     if (string.Equals(args[i], "-jar", StringComparison.Ordinal))
@@ -63,11 +62,8 @@ if (string.IsNullOrWhiteSpace(jarPath))
 string mode = File.Exists(jarPath)
     ? (await File.ReadAllTextAsync(jarPath)).Trim()
     : string.Empty;
-
 bool responsive = string.Equals(mode, "ready-responsive", StringComparison.Ordinal);
-
 await File.WriteAllLinesAsync(jarPath + ".args", args);
-
 await File.WriteAllTextAsync(jarPath + ".pid", Environment.ProcessId.ToString(CultureInfo.InvariantCulture));
 
 if (string.Equals(mode, "exit-immediately", StringComparison.Ordinal))
@@ -98,7 +94,6 @@ await using FileStream commandLog = new(
     FileMode.Append,
     FileAccess.Write,
     FileShare.ReadWrite);
-
 await using StreamWriter commandWriter = new(commandLog);
 
 while (await Console.In.ReadLineAsync() is string line)

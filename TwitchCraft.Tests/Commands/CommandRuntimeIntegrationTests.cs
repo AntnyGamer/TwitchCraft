@@ -368,8 +368,7 @@ public sealed class CommandRuntimeIntegrationTests
     private static async Task<int> StartReadyRuntimeAsync(
         MainHandler runtime,
         TwitchCraftConfig config,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         await runtime.ApplySettingsAsync(config);
         await runtime.StartServerAsync(config, cancellationToken);
@@ -388,8 +387,7 @@ public sealed class CommandRuntimeIntegrationTests
         MainHandler runtime,
         string payload,
         string sender,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         TaskCompletionSource<bool> completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 

@@ -14,8 +14,7 @@ public static partial class CommandList
         Func<string?, CancellationToken, Task> sayToChannel,
         Func<string?, CancellationToken, Task> saySuccessfulToChannel,
         Func<string?, CancellationToken, Task> sayConfirmationToChannel,
-        Func<string, string, CancellationToken, Task<bool>> requireAllowed
-    )
+        Func<string, string, CancellationToken, Task<bool>> requireAllowed)
     {
         handlers["gambletokens"] = async (args, sender, ct) =>
         {
@@ -100,13 +99,7 @@ public static partial class CommandList
             AdjustTokensAsync(args, sender, "givetokens", isGive: true, ct);
         handlers["removetokens"] = (args, sender, ct) =>
             AdjustTokensAsync(args, sender, "removetokens", isGive: false, ct);
-        async Task AdjustTokensAsync(
-            string[]? args,
-            string sender,
-            string commandName,
-            bool isGive,
-            CancellationToken ct
-        )
+        async Task AdjustTokensAsync(string[]? args, string sender, string commandName, bool isGive, CancellationToken ct)
         {
             if (!await requireAllowed(sender, commandName, ct).ConfigureAwait(false))
             {

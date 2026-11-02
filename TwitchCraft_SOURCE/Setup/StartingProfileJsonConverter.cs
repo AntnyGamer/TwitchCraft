@@ -120,8 +120,7 @@ internal sealed class StartingProfileJsonConverter : JsonConverter<StartingProfi
         Type objectType,
         StartingProfile? existingValue,
         bool hasExistingValue,
-        JsonSerializer serializer
-    )
+        JsonSerializer serializer)
     {
         if (reader.TokenType == JsonToken.Null)
         {

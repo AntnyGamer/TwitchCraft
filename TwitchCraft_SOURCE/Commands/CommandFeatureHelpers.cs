@@ -13,8 +13,7 @@ internal static class ItemComponents
         string redeemerName,
         bool usesInlineTextComponents,
         out string command,
-        out string prettyItemName
-    )
+        out string prettyItemName)
     {
         command = string.Empty;
         prettyItemName = string.Empty;
@@ -64,8 +63,7 @@ internal static class ItemComponents
         int level,
         bool usesFlattenedEnchantmentsComponent,
         out string command,
-        out string prettyItemName
-    )
+        out string prettyItemName)
     {
         command = string.Empty;
         prettyItemName = string.Empty;
@@ -263,8 +261,7 @@ internal static class ItemComponents
         ref int bracketDepth,
         ref int parenDepth,
         ref char quote,
-        ref bool escape
-    )
+        ref bool escape)
     {
         if (quote != '\0')
         {
@@ -481,12 +478,7 @@ internal static class GameplayCommands
             SlaughterRestoreCommand(mobLootGameRuleName)
         ];
 
-    public static string[] BuildJohnny(
-        string selector,
-        Random random,
-        bool usesInlineTextComponents,
-        bool usesModernEntityAttributeNbt
-    )
+    public static string[] BuildJohnny(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
         => BuildPursuer(
             selector,
             random,
@@ -498,12 +490,7 @@ internal static class GameplayCommands
             string.Empty,
             "Johnny is coming!");
 
-    public static string[] BuildChargedCreeper(
-        string selector,
-        Random random,
-        bool usesInlineTextComponents,
-        bool usesModernEntityAttributeNbt
-    )
+    public static string[] BuildChargedCreeper(string selector, Random random, bool usesInlineTextComponents, bool usesModernEntityAttributeNbt)
         => BuildPursuer(
             selector,
             random,
@@ -524,8 +511,7 @@ internal static class GameplayCommands
         string displayName,
         string entityTag,
         string additionalNbt,
-        string warning
-    )
+        string warning)
     {
         ArgumentNullException.ThrowIfNull(random);
 

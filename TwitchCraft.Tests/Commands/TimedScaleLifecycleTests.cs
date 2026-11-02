@@ -157,8 +157,7 @@ public sealed class TimedScaleLifecycleTests
     private static TimedPlayerScaleController CreateController(
         List<string> sentCommands,
         List<Task> trackedTasks,
-        Channel<TaskCompletionSource> delays
-    )
+        Channel<TaskCompletionSource> delays)
         => new(
             (command, _) =>
             {
@@ -190,7 +189,8 @@ public sealed class TimedScaleLifecycleTests
             (_, _) => Task.FromResult(true),
             CancellationToken.None);
 
-    private static async Task<TaskCompletionSource> WaitForNextDelayAsync(Channel<TaskCompletionSource> delays)
+    private static async Task<TaskCompletionSource> WaitForNextDelayAsync(
+        Channel<TaskCompletionSource> delays)
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

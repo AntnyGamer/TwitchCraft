@@ -21,8 +21,7 @@ internal readonly struct ParsedCommand
         string payload,
         string primaryPrefix,
         string secondaryPrefix,
-        out string matchedPrefix
-    )
+        out string matchedPrefix)
     {
         matchedPrefix = string.Empty;
         if (string.IsNullOrEmpty(payload))

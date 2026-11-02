@@ -12,11 +12,7 @@ namespace TwitchCraft_V1.Frames;
 
 public partial class Setup : UserControl
 {
-    private static async Task<JObject> LoadVersionAsync(
-        string versionID,
-        Uri detailUri,
-        CancellationToken cancellationToken
-    )
+    private static async Task<JObject> LoadVersionAsync(string versionID, Uri detailUri, CancellationToken cancellationToken)
     {
         string localPath = Environment.ExpandEnvironmentVariables($@"%APPDATA%\.minecraft\versions\{versionID}\{versionID}.json");
         if (File.Exists(localPath))
@@ -49,8 +45,7 @@ public partial class Setup : UserControl
         string jarPath,
         string expectedSHA,
         long? expectedSize,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         if (!IsValidSHA1Hex(expectedSHA))
         {
@@ -93,12 +88,7 @@ public partial class Setup : UserControl
         }
     }
 
-    private static async Task DownloadJarAsync(
-        HttpClient http,
-        Uri downloadUri,
-        string outputPath,
-        CancellationToken cancellationToken
-    )
+    private static async Task DownloadJarAsync(HttpClient http, Uri downloadUri, string outputPath, CancellationToken cancellationToken)
     {
         using CancellationTokenSource downloadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         downloadCts.CancelAfter(TimeSpan.FromMinutes(15));
@@ -118,12 +108,7 @@ public partial class Setup : UserControl
         await CopyLimitedAsync(input, output, MaxServerJarDownloadBytes, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task CopyLimitedAsync(
-        Stream input,
-        Stream output,
-        long maxBytes,
-        CancellationToken cancellationToken
-    )
+    private static async Task CopyLimitedAsync(Stream input, Stream output, long maxBytes, CancellationToken cancellationToken)
     {
         byte[] buffer = ArrayPool<byte>.Shared.Rent(DownloadBufferSize);
         long totalBytes = 0;

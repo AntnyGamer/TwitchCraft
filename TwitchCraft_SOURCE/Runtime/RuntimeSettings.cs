@@ -12,13 +12,9 @@ public sealed partial class MainHandler
     private readonly Dictionary<string, long> _viewerLastChatActivity = new(StringComparer.OrdinalIgnoreCase);
 
     public bool ShowConnectionHealth => CurrentSettings.ShowConnectionHealth;
-
     public bool TwitchChatConnected => _twitchSession.ChatConnected;
-
     public bool LowResourceModeEnabled => CurrentSettings.LowResourceModeEnabled;
-
     public bool PauseUIUpdatesWhenMinimized => CurrentSettings.PauseUIUpdatesWhenMinimized || CurrentSettings.LowResourceModeEnabled;
-
     public int MaxVisibleTwitchLogLines => CurrentSettings.LowResourceModeEnabled
         ? Math.Min(100, CurrentSettings.MaxVisibleTwitchLogLines)
         : CurrentSettings.MaxVisibleTwitchLogLines;
@@ -36,17 +32,13 @@ public sealed partial class MainHandler
         : CurrentSettings.MaxGameplayCommandQueue;
 
     internal TimeSpan RCONTimeout => TimeSpan.FromSeconds(CurrentSettings.RCONTimeoutSeconds);
-
     internal TimeSpan GracefulShutdownTimeout => TimeSpan.FromSeconds(CurrentSettings.GracefulShutdownTimeoutSeconds);
-
     internal IReadOnlyList<string> RegisteredCommandNames => _commandRegistry.CommandNames;
 
     private StartingProfile CurrentSettings => _activeConfig?.Settings ?? DefaultSettings;
 
     internal string CommandPrefix => CurrentSettings.CommandPrefix;
-
     internal string SecondaryCommandPrefix => CurrentSettings.SecondaryCommandPrefix;
-
     internal string BotResponseVerbosity => CurrentSettings.BotResponseVerbosity;
 
     internal static string FormatReply(string message, string sender, bool mentionViewer)

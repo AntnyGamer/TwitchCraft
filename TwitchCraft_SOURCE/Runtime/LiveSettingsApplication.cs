@@ -7,11 +7,7 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    public async Task ApplySettingsAsync(
-        TwitchCraftConfig config,
-        bool refreshMinigameLoops = false,
-        bool preserveTwitchAuth = false
-    )
+    public async Task ApplySettingsAsync(TwitchCraftConfig config, bool refreshMinigameLoops = false, bool preserveTwitchAuth = false)
     {
         ArgumentNullException.ThrowIfNull(config);
 

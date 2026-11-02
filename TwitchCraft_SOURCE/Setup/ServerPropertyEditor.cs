@@ -262,10 +262,7 @@ public sealed class ServerPropertyEditor
         return SaveProperties(propsPath, props, existingContent);
     }
 
-    private static void ApplyVersion(
-        Dictionary<string, string> props,
-        MinecraftVersionSupport.MinecraftVersionInfo version
-    )
+    private static void ApplyVersion(Dictionary<string, string> props, MinecraftVersionSupport.MinecraftVersionInfo version)
     {
         if (version.DataPackFormatMajor >= 57)
         {

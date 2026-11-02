@@ -217,33 +217,19 @@ public sealed class PaidDispatchAtomicityTests
     private sealed class TransactionHarness
     {
         internal int Balance { get; private set; } = 100;
-
         internal int SpendCalls { get; private set; }
-
         internal int RefundCalls { get; private set; }
-
         internal bool RefundSucceeds { get; set; } = true;
-
         internal int DispatchCalls { get; private set; }
-
         internal int StatisticsCalls { get; private set; }
-
         internal List<int> RecordedCosts { get; } = [];
-
         internal int DispatchFailureReports { get; private set; }
-
         internal bool? LastReportedRefund { get; private set; }
-
         internal int InsufficientTokenReports { get; private set; }
-
         internal int FailureNotifications { get; private set; }
-
         internal long CurrentReservation { get; set; }
-
         internal long? NextReservation { get; set; } = 101;
-
         internal Func<CancellationToken, Task<bool>>? DispatchOverride { get; set; }
-
         internal List<long> ReleasedReservations { get; } = [];
 
         internal Task<bool> ExecuteAsync(int cost, CancellationToken cancellationToken)

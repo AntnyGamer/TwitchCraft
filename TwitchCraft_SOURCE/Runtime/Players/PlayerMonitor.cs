@@ -107,8 +107,7 @@ public sealed partial class MainHandler
         Func<CancellationToken, Task> work,
         Action clearQueued,
         string? errorContext = null,
-        CancellationToken token = default
-    )
+        CancellationToken token = default)
     {
         TrackTask(Task.Run(async () =>
         {
@@ -157,8 +156,7 @@ public sealed partial class MainHandler
         Action clearQueued,
         string? errorContext = null,
         Action<Exception>? onError = null,
-        CancellationToken token = default
-    )
+        CancellationToken token = default)
     {
         TrackTask(Task.Run(async () =>
         {
@@ -501,8 +499,7 @@ public sealed partial class MainHandler
         in ServerLogLineFlags flags,
         bool isCommandParserError,
         bool isUnexpectedCommandError,
-        bool isMinecraftCommandErrorContext
-    )
+        bool isMinecraftCommandErrorContext)
     {
         if (string.IsNullOrEmpty(line) || isUnexpectedCommandError || isCommandParserError || isMinecraftCommandErrorContext)
         {

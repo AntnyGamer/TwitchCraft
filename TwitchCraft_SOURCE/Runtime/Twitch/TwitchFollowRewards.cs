@@ -210,8 +210,7 @@ public sealed partial class MainHandler
         string broadcasterID,
         string moderatorID,
         CancellationToken cancellationToken,
-        TaskCompletionSource<bool>? welcomeSignal = null
-    )
+        TaskCompletionSource<bool>? welcomeSignal = null)
     {
         bool welcomeReceived = false;
         TimeSpan messageTimeout = TimeSpan.FromSeconds(15);
@@ -370,8 +369,7 @@ public sealed partial class MainHandler
         string moderatorID,
         string clientID,
         string botToken,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         var body = new
         {
@@ -406,8 +404,7 @@ public sealed partial class MainHandler
     private static async Task<string?> ReceiveEventAsync(
         ClientWebSocket socket,
         TimeSpan timeout,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         byte[] buffer = ArrayPool<byte>.Shared.Rent(16 * 1024);
         using CancellationTokenSource receiveTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

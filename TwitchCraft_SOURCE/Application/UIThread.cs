@@ -39,8 +39,7 @@ internal static class UIThread
         string text,
         string caption,
         MessageBoxButton buttons,
-        MessageBoxImage image
-    )
+        MessageBoxImage image)
     {
         MessageBoxResult result = MessageBoxResult.None;
 

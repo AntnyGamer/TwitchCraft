@@ -29,13 +29,7 @@ internal static class MinecraftRCONClient
     private static int _port;
     private static int _nextRequestID = Environment.TickCount & 0x3FFFFFFF;
 
-    public static Task<bool> ExecuteCommandAsync(
-        string host,
-        int port,
-        string password,
-        string command,
-        CancellationToken cancellationToken
-    )
+    public static Task<bool> ExecuteCommandAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command))
         {
@@ -49,13 +43,7 @@ internal static class MinecraftRCONClient
         }, cancellationToken);
     }
 
-    public static Task<bool> ExecuteCommandsAsync(
-        string host,
-        int port,
-        string password,
-        IReadOnlyList<string> commands,
-        CancellationToken cancellationToken
-    )
+    public static Task<bool> ExecuteCommandsAsync(string host, int port, string password, IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || commands.Count == 0)
         {
@@ -66,13 +54,7 @@ internal static class MinecraftRCONClient
             token => WriteCommandsAsync(commands, token), cancellationToken);
     }
 
-    public static Task<string?> ExecuteQueryAsync(
-        string host,
-        int port,
-        string password,
-        string command,
-        CancellationToken cancellationToken
-    )
+    public static Task<string?> ExecuteQueryAsync(string host, int port, string password, string command, CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || string.IsNullOrWhiteSpace(command))
         {
@@ -88,8 +70,7 @@ internal static class MinecraftRCONClient
         int port,
         string password,
         IReadOnlyList<string> commands,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         if (IsInvalidRequest(host, port, password) || commands.Count == 0)
         {
@@ -159,8 +140,7 @@ internal static class MinecraftRCONClient
         int port,
         string password,
         Func<CancellationToken, Task<T>> action,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         await ConnectionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -186,12 +166,7 @@ internal static class MinecraftRCONClient
     private static bool IsInvalidRequest(string host, int port, string password)
         => string.IsNullOrWhiteSpace(host) || port is < 1 or > 65535 || string.IsNullOrEmpty(password);
 
-    private static async Task<bool> EnsureConnectedAsync(
-        string host,
-        int port,
-        string password,
-        CancellationToken cancellationToken
-    )
+    private static async Task<bool> EnsureConnectedAsync(string host, int port, string password, CancellationToken cancellationToken)
     {
         if (_client?.Connected == true && !(_client.Client.Poll(0, SelectMode.SelectRead) && _client.Available == 0)
             && _stream != null
@@ -256,10 +231,7 @@ internal static class MinecraftRCONClient
         }
     }
 
-    private static async Task<bool> WriteCommandsAsync(
-        IReadOnlyList<string> commands,
-        CancellationToken cancellationToken
-    )
+    private static async Task<bool> WriteCommandsAsync(IReadOnlyList<string> commands, CancellationToken cancellationToken)
     {
         bool confirmedAny = false;
         try
@@ -344,8 +316,7 @@ internal static class MinecraftRCONClient
         byte[] packetLengthBuffer,
         int requestID,
         string password,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         await WritePacketAsync(stream, requestID, AuthPacketType, password, cancellationToken).ConfigureAwait(false);
 
@@ -369,13 +340,7 @@ internal static class MinecraftRCONClient
         }
     }
 
-    private static async Task WritePacketAsync(
-        Stream stream,
-        int ID,
-        int type,
-        string payload,
-        CancellationToken cancellationToken
-    )
+    private static async Task WritePacketAsync(Stream stream, int ID, int type, string payload, CancellationToken cancellationToken)
     {
         int payloadLength = RCONEncoding.GetByteCount(payload);
         int length = payloadLength + 10;
@@ -409,8 +374,7 @@ internal static class MinecraftRCONClient
         byte[] packetLengthBuffer,
         CancellationToken cancellationToken,
         bool decodePayload = true,
-        Decoder? decoder = null
-    )
+        Decoder? decoder = null)
     {
         await stream.ReadExactlyAsync(packetLengthBuffer.AsMemory(0, 4), cancellationToken).ConfigureAwait(false);
         int length = BinaryPrimitives.ReadInt32LittleEndian(packetLengthBuffer);
@@ -502,9 +466,7 @@ internal static class MinecraftRCONClient
     private readonly struct RCONPacket(int ID, int type, string payload)
     {
         public int ID { get; } = ID;
-
         public int Type { get; } = type;
-
         public string Payload { get; } = payload;
     }
 }

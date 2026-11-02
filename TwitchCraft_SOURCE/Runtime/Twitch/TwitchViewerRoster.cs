@@ -287,8 +287,7 @@ public sealed partial class MainHandler
         string streamerName,
         string clientID,
         string token,
-        CancellationToken cancellationToken
-    )
+        CancellationToken cancellationToken)
     {
         string url = "https://api.twitch.tv/helix/users?login=" + Uri.EscapeDataString(botName) + "&login=" + Uri.EscapeDataString(streamerName);
         using HttpRequestMessage request = new(HttpMethod.Get, url);

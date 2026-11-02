@@ -102,13 +102,7 @@ public static partial class MinigameManager
         }
     }
 
-    private static void EvaluateGuess(
-        MainHandler runtime,
-        int guess,
-        out bool active,
-        out bool correct,
-        out int targetNumber
-    )
+    private static void EvaluateGuess(MainHandler runtime, int guess, out bool active, out bool correct, out int targetNumber)
     {
         active = false;
         correct = false;

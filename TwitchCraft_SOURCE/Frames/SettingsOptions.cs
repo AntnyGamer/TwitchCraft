@@ -344,15 +344,11 @@ public partial class Settings
         }
 
         public string Name { get; }
-
         public CooldownOption<int>[] PerUserOptions { get; }
-
         public CooldownOption<double>[] GlobalOptions { get; }
-
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public bool Enabled { get => _enabled; set => Change(ref _enabled, value); }
-
         // A recycled ComboBox may temporarily clear its selection; that is not an edit.
         public CooldownOption<int> PerUserCooldown
         {
@@ -365,7 +361,6 @@ public partial class Settings
                 }
             }
         }
-
         public CooldownOption<double> GlobalCooldown
         {
             get => _globalCooldown;
@@ -391,9 +386,7 @@ public partial class Settings
         }
 
         private static (CooldownOption<T>[] Options, CooldownOption<T> Selected) OptionsFor<T>(
-            CooldownOption<T>[] presets,
-            T? value
-        ) where T : struct, IFormattable
+            CooldownOption<T>[] presets, T? value) where T : struct, IFormattable
         {
             foreach (CooldownOption<T> option in presets)
             {

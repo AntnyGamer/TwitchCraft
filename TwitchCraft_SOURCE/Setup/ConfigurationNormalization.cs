@@ -390,8 +390,7 @@ public sealed partial class ConfigurationStore
         int choice5,
         int? choice6 = null,
         int? choice7 = null,
-        int? choice8 = null
-    )
+        int? choice8 = null)
         => value == choice1 || value == choice2 || value == choice3 || value == choice4 || value == choice5 ||
            value == choice6 || value == choice7 || value == choice8
             ? value

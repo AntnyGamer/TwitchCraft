@@ -14,7 +14,6 @@ internal enum FollowRewardResult
 }
 
 internal readonly record struct TokenRankResult(string Username, int Balance, int Rank);
-
 internal enum TokenAdjustmentStatus
 {
     Failed, Insufficient, Adjusted
@@ -133,8 +132,7 @@ internal sealed partial class TokenStore(string path)
         int delta,
         int maximumBalance,
         out int balance,
-        out int appliedDelta
-    )
+        out int appliedDelta)
     {
         balance = appliedDelta = 0;
         string normalized = Normalize(user);
@@ -269,8 +267,7 @@ internal sealed partial class TokenStore(string path)
         DateTimeOffset followedAt,
         int amount,
         out int awardedAmount,
-        int maximumBalance = 0
-    )
+        int maximumBalance = 0)
     {
         awardedAmount = 0;
         string normalizedUserID = (twitchUserID ?? string.Empty).Trim();
