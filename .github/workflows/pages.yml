@@ -68,20 +68,17 @@ jobs:
           python3 - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
-          from tempfile import TemporaryDirectory
           import re
           import subprocess
 
           class Tags(HTMLParser):
               def __init__(self):
                   super().__init__()
-                  self.tags = []
-                  self.references = []
+                  self.elements = []
 
               def handle_starttag(self, tag, attrs):
-                  self.tags.append(tag)
                   values = dict(attrs)
-                  self.references.append((tag, values.get("id"), values.get("href"), values.get("src")))
+                  self.elements.append((tag, values.get("id"), values.get("href"), values.get("src")))
 
               handle_startendtag = handle_starttag
 
@@ -92,7 +89,7 @@ jobs:
               before, after = Tags(), Tags()
               before.feed(source.read_text(encoding="utf-8"))
               after.feed(published.read_text(encoding="utf-8"))
-              if (before.tags, before.references) != (after.tags, after.references):
+              if before.elements != after.elements:
                   raise SystemExit(f"HTML structure or important attributes changed: {published}")
 
           assert Path("site/COMMANDS.md").is_file()
@@ -101,10 +98,7 @@ jobs:
           script = re.search(r"<script\b[^>]*>(.*?)</script\s*>", html, re.I | re.S)
           if not script:
               raise SystemExit("Command page JavaScript missing")
-          with TemporaryDirectory() as directory:
-              path = Path(directory, "commands.js")
-              path.write_text(script.group(1), encoding="utf-8")
-              subprocess.run(["node", "--check", str(path)], check=True)
+          subprocess.run(["node", "--check"], input=script.group(1), text=True, check=True)
           PY
 
       - name: Configure Pages
