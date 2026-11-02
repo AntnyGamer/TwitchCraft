@@ -10,9 +10,7 @@ namespace TwitchCraft_V1;
 
 public sealed partial class MainHandler
 {
-    private async Task<TwitchCraftConfig> EnsureAuthAsync(
-        TwitchCraftConfig config,
-        CancellationToken cancellationToken)
+    private async Task<TwitchCraftConfig> EnsureAuthAsync(TwitchCraftConfig config, CancellationToken cancellationToken)
     {
         if (TwitchOAuthAuthorizer.IsOAuthConfigured &&
             !string.Equals(config.Twitch.ClientID, TwitchOAuthAuthorizer.ApplicationClientID, StringComparison.Ordinal))
@@ -79,9 +77,7 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> TryRefreshAuthAsync(
-        string rejectedToken,
-        CancellationToken cancellationToken)
+    private async Task<bool> TryRefreshAuthAsync(string rejectedToken, CancellationToken cancellationToken)
     {
         string normalizedRejectedToken = NormalizeToken(rejectedToken);
         await _twitchSession.TokenRefreshGate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -242,7 +238,11 @@ public sealed partial class MainHandler
         }
     }
 
-    private static async Task<string> ValidateBotAsync(string token, string clientID, CancellationToken cancellationToken)
+    private static async Task<string> ValidateBotAsync(
+        string token,
+        string clientID,
+        CancellationToken cancellationToken
+    )
     {
         using HttpRequestMessage request = new(HttpMethod.Get, "https://id.twitch.tv/oauth2/validate");
         request.Headers.TryAddWithoutValidation("Authorization", TwitchTokenHelper.BuildValidateHeader(token));

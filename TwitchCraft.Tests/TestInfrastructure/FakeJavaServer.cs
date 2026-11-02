@@ -63,7 +63,8 @@ internal static class FakeJavaServer
         IReadOnlyList<string>? spectators = null,
         double maxHealth = 20,
         string? selectedItem = null,
-        string? attributes = null)
+        string? attributes = null
+    )
     {
         File.WriteAllText(jarPath + ".players", string.Join(",", players));
         if (spectators is { Count: > 0 })
@@ -122,10 +123,7 @@ internal static class FakeJavaServer
             "TwitchCraft did not observe the fake Minecraft server ready line within 10 seconds.",
             cancellationToken);
 
-    internal static Task WaitForLineCountAsync(
-        string path,
-        int expectedLineCount,
-        CancellationToken cancellationToken)
+    internal static Task WaitForLineCountAsync(string path, int expectedLineCount, CancellationToken cancellationToken)
         => WaitUntilAsync(
             () => File.Exists(path) && ReadAllLinesShared(path).Count >= expectedLineCount,
             $"Expected at least {expectedLineCount} line(s) in '{path}' within 10 seconds.",
@@ -151,7 +149,8 @@ internal static class FakeJavaServer
     internal static async Task WaitUntilAsync(
         Func<bool> condition,
         string timeoutMessage,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(PollingTimeout);

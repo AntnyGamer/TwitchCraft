@@ -29,7 +29,8 @@ internal sealed class FakeRCONServer : IAsyncDisposable
         string? malformedResponseCommand = null,
         string? wrongTypeResponseCommand = null,
         Func<string, string>? responseFactory = null,
-        bool rejectPipelinedRequests = false)
+        bool rejectPipelinedRequests = false
+    )
     {
         _password = password;
         _rejectPipelinedRequests = rejectPipelinedRequests;
@@ -200,7 +201,8 @@ internal sealed class FakeRCONServer : IAsyncDisposable
         int ID,
         int type,
         string payload,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         int payloadLength = UTF8.GetByteCount(payload);
         int length = 4 + 4 + payloadLength + 2;

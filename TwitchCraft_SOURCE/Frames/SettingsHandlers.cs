@@ -13,7 +13,8 @@ public partial class Settings
         ComboBox dropdown,
         (T Value, string Label)[] options,
         out T value,
-        StringComparison comparison = StringComparison.Ordinal)
+        StringComparison comparison = StringComparison.Ordinal
+    )
     {
         if (dropdown.SelectedItem is string selected)
         {
@@ -36,7 +37,8 @@ public partial class Settings
         (int Value, string Label)[] options,
         int minimum,
         int maximum,
-        out int value)
+        out int value
+    )
     {
         // SelectionChanged fires before WPF has reliably copied a newly selected item's label
         // into the editable Text property. Prefer SelectedItem so preset clicks always use the
@@ -75,7 +77,8 @@ public partial class Settings
         (double Value, string Label)[] options,
         double minimum,
         double maximum,
-        out double value)
+        out double value
+    )
     {
         if (TryGetOption(dropdown, options, out value, StringComparison.OrdinalIgnoreCase))
         {
@@ -374,7 +377,8 @@ public partial class Settings
     private void RestoreIntValue(
         ComboBox dropdown,
         (int Value, string Label)[] options,
-        Func<StartingProfile, int> getValue)
+        Func<StartingProfile, int> getValue
+    )
     {
         try
         {
@@ -654,7 +658,11 @@ public partial class Settings
         await SaveBoolAsync(AutomaticBackupsCheckbox, static (settings, value) => settings.AutomaticBackupsEnabled = value);
     }
 
-    private Task SaveOptionAsync(ComboBox dropdown, (int Value, string Label)[] options, Action<StartingProfile, int> update)
+    private Task SaveOptionAsync(
+        ComboBox dropdown,
+        (int Value, string Label)[] options,
+        Action<StartingProfile, int> update
+    )
         => _initializing || !TryGetOption(dropdown, options, out int value)
             ? Task.CompletedTask
             : SaveConfigAsync(config => update(config.Settings, value));
@@ -667,7 +675,8 @@ public partial class Settings
         Func<StartingProfile, int> getValue,
         Action<StartingProfile, int> update,
         bool refreshLowResourceSummary = false,
-        Action<TwitchCraftConfig>? beforeSave = null)
+        Action<TwitchCraftConfig>? beforeSave = null
+    )
     {
         if (_initializing || _updatingCustomValueControls)
         {
@@ -699,7 +708,8 @@ public partial class Settings
         int minimum,
         int maximum,
         Func<StartingProfile, int> getValue,
-        Action<StartingProfile, int> update)
+        Action<StartingProfile, int> update
+    )
         => SaveEditableIntAsync(
             dropdown, options, minimum, maximum, getValue, update,
             beforeSave: ApplyLocalProfile);

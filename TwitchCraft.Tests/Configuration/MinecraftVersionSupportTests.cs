@@ -21,7 +21,8 @@ public sealed class MinecraftVersionSupportTests
         string displayID,
         int requiredJDK,
         int packFormatMajor,
-        int packFormatMinor)
+        int packFormatMinor
+    )
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(requested, out var version));
         Assert.Multiple(
@@ -43,7 +44,8 @@ public sealed class MinecraftVersionSupportTests
         bool serverSettingGameRules,
         bool inlineTextComponents,
         bool namespacedGameRules,
-        bool supportsInfested)
+        bool supportsInfested
+    )
     {
         Assert.True(MinecraftVersionSupport.TryGetVersion(ID, out var version));
         Assert.Multiple(

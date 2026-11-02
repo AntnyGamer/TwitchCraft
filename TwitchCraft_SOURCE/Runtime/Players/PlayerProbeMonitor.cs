@@ -30,7 +30,8 @@ public sealed partial class MainHandler
         Lock gate,
         Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
         Func<Action, CancellationToken, Task<bool>> sendProbe,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (!MinecraftNameHelper.IsValidPlayerName(playerName))
         {
@@ -68,7 +69,8 @@ public sealed partial class MainHandler
         Lock gate,
         Dictionary<string, TaskCompletionSource<TResult>> pendingRequests,
         TaskCompletionSource<TResult> waiter,
-        TResult result)
+        TResult result
+    )
     {
         lock (gate)
         {
@@ -84,7 +86,8 @@ public sealed partial class MainHandler
     private static async Task<bool> SendPlayerQueryAsync(
         Func<Action, CancellationToken, Task<bool>> sendProbe,
         Action completeProbe,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -118,9 +121,12 @@ public sealed partial class MainHandler
             cancellationToken);
 
     private Task<string?> QueryEntityDataAsync(
-        string playerName, string path, Lock gate,
+        string playerName,
+        string path,
+        Lock gate,
         Dictionary<string, TaskCompletionSource<string?>> pendingRequests,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
         => QueryPlayerAsync<string?>(
             playerName,
             gate,
@@ -135,7 +141,10 @@ public sealed partial class MainHandler
     public Task<string?> QueryItemAsync(string playerName, CancellationToken cancellationToken)
         => QueryEntityDataAsync(playerName, "SelectedItem", _selectedItemProbeGate, _pendingSelectedItemRequests, cancellationToken);
 
-    public async Task<Dictionary<string, string?>> QueryItemsAsync(List<string> players, CancellationToken cancellationToken)
+    public async Task<Dictionary<string, string?>> QueryItemsAsync(
+        List<string> players,
+        CancellationToken cancellationToken
+    )
     {
         players = SortedListHelper.NormalizePlayerNames(players, PlayerNameComparer);
         Dictionary<string, string?> results = new(players.Count, PlayerNameComparer);

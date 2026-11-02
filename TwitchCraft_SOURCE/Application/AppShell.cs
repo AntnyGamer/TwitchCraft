@@ -24,10 +24,15 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
     public ShellPage CurrentPage { get; private set; }
 
     public bool IsSetupVisible => CurrentPage == ShellPage.Setup;
+
     public bool IsLaunchVisible => CurrentPage == ShellPage.Start;
+
     public bool IsConsoleVisible => CurrentPage == ShellPage.Main;
+
     public bool IsHelpVisible => CurrentPage == ShellPage.Help;
+
     public bool IsSettingsVisible => CurrentPage == ShellPage.Settings;
+
     public bool IsStatisticsVisible => CurrentPage == ShellPage.Statistics;
 
     public void Navigate(ShellPage page)

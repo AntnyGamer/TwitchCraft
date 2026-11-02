@@ -81,7 +81,11 @@ public sealed class HelixIdentityParsingTests
     [InlineData("""{"client_id":"client123","login":" BotAccount ","user_id":"42","expires_in":3600,"scopes":["chat:read","chat:edit","moderator:read:chatters","moderator:read:followers"]}""", true, "botaccount")]
     [InlineData("""{"client_id":"client123","login":null,"user_id":"42","expires_in":3600,"scopes":["chat:read","chat:edit","moderator:read:chatters","moderator:read:followers"]}""", false, "")]
     [InlineData("""{"client_id":"client123","user_id":"42","expires_in":3600,"scopes":["chat:read","chat:edit","moderator:read:chatters","moderator:read:followers"]}""", false, "")]
-    public void TryReadIdentity_NormalizesLoginOrRejectsMissingLogin(string json, bool expectedAccepted, string expectedLogin)
+    public void TryReadIdentity_NormalizesLoginOrRejectsMissingLogin(
+        string json,
+        bool expectedAccepted,
+        string expectedLogin
+    )
     {
         using JsonDocument document = JsonDocument.Parse(json);
 

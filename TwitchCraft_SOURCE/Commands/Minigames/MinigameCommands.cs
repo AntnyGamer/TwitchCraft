@@ -14,7 +14,8 @@ public static partial class MinigameManager
         MainHandler runtime,
         Dictionary<string, ChatCommandHandler> handlers,
         Func<string, CancellationToken, Task> sayToChannel,
-        Func<string, CancellationToken, Task> saySuccessfulToChannel)
+        Func<string, CancellationToken, Task> saySuccessfulToChannel
+    )
     {
         ArgumentNullException.ThrowIfNull(handlers);
         handlers["chickenbet"] = async delegate (string[] args, string sender, CancellationToken ct)

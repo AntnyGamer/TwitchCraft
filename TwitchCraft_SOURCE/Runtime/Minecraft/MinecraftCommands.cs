@@ -50,7 +50,11 @@ public sealed partial class MainHandler
         return false;
     }
 
-    public async Task<bool> SendServerCommandAsync(string command, CancellationToken cancellationToken, bool applyRemoteTimeout = true)
+    public async Task<bool> SendServerCommandAsync(
+        string command,
+        CancellationToken cancellationToken,
+        bool applyRemoteTimeout = true
+    )
     {
         ArgumentNullException.ThrowIfNull(command);
         string commandText = CleanServerCommand(command);
@@ -162,7 +166,12 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> SendRCONCommandAsync(TwitchCraftConfig config, string command, CancellationToken cancellationToken, bool applyTimeout = true)
+    private async Task<bool> SendRCONCommandAsync(
+        TwitchCraftConfig config,
+        string command,
+        CancellationToken cancellationToken,
+        bool applyTimeout = true
+    )
     {
         await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         CancellationTokenSource? timeoutCts = null;
@@ -200,7 +209,11 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> SendRCONCommandsAsync(TwitchCraftConfig config, IReadOnlyList<string> commands, CancellationToken cancellationToken)
+    private async Task<bool> SendRCONCommandsAsync(
+        TwitchCraftConfig config,
+        IReadOnlyList<string> commands,
+        CancellationToken cancellationToken
+    )
     {
         await _minecraftSession.WriteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -282,7 +295,10 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<List<string?>?> ExecuteRCONQueriesAsync(IReadOnlyList<string> commands, CancellationToken cancellationToken)
+    private async Task<List<string?>?> ExecuteRCONQueriesAsync(
+        IReadOnlyList<string> commands,
+        CancellationToken cancellationToken
+    )
     {
         TwitchCraftConfig? config = _activeConfig;
         if (config?.Settings.RemoteControlEnabled != true || commands.Count == 0)
@@ -399,7 +415,11 @@ public sealed partial class MainHandler
     private static bool HasLineBreak(ReadOnlySpan<char> command)
         => command.IndexOfAny('\r', '\n') >= 0;
 
-    private Task<bool> WriteCommandNoLockAsync(Process process, string normalizedCommand, CancellationToken cancellationToken)
+    private Task<bool> WriteCommandNoLockAsync(
+        Process process,
+        string normalizedCommand,
+        CancellationToken cancellationToken
+    )
     {
         ReadOnlySpan<char> commandSpan = normalizedCommand.AsSpan();
         int byteCount = ServerCommandEncoding.GetByteCount(commandSpan) + ServerCommandNewLineBytes.Length;
@@ -435,7 +455,11 @@ public sealed partial class MainHandler
         return snapshot;
     }
 
-    private Task<bool> WriteCommandsNoLockAsync(Process process, List<string> commands, CancellationToken cancellationToken)
+    private Task<bool> WriteCommandsNoLockAsync(
+        Process process,
+        List<string> commands,
+        CancellationToken cancellationToken
+    )
     {
         int count = commands.Count;
         int byteCount = 0;
@@ -465,7 +489,12 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> WriteBytesNoLockAsync(Stream baseStream, byte[] rented, int written, CancellationToken cancellationToken)
+    private async Task<bool> WriteBytesNoLockAsync(
+        Stream baseStream,
+        byte[] rented,
+        int written,
+        CancellationToken cancellationToken
+    )
     {
         bool writeCompleted = false;
 

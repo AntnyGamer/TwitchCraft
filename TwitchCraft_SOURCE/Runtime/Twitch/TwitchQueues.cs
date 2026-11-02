@@ -30,7 +30,8 @@ public sealed partial class MainHandler
         TwitchSession.WorkQueueState state,
         Func<CancellationToken, Task> work,
         string context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (cancellationToken.IsCancellationRequested)
         {
@@ -75,17 +76,18 @@ public sealed partial class MainHandler
         return true;
     }
 
-    internal bool QueueCommand(
-        Func<CancellationToken, Task> work,
-        string context,
-        CancellationToken cancellationToken)
+    internal bool QueueCommand(Func<CancellationToken, Task> work, string context, CancellationToken cancellationToken)
         => QueueIRCWork(
             _twitchSession.CommandQueue,
             work,
             context,
             cancellationToken);
 
-    private async Task RunQueueAsync(TwitchSession.WorkQueueState state, Queue<TwitchSession.QueuedWork> queue, bool quick)
+    private async Task RunQueueAsync(
+        TwitchSession.WorkQueueState state,
+        Queue<TwitchSession.QueuedWork> queue,
+        bool quick
+    )
     {
         try
         {
@@ -197,7 +199,13 @@ public sealed partial class MainHandler
             : Prefix + payload;
     }
 
-    internal async Task DispatchAsync(string payload, string prefix, string sender, bool isModerator, CancellationToken cancellationToken)
+    internal async Task DispatchAsync(
+        string payload,
+        string prefix,
+        string sender,
+        bool isModerator,
+        CancellationToken cancellationToken
+    )
     {
         ParsedCommand parsed = ParsedCommand.Parse(payload, prefix);
         if (parsed.Name.Length == 0)

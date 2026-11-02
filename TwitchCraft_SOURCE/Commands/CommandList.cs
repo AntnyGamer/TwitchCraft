@@ -14,7 +14,8 @@ public static partial class CommandList
 
     public static Dictionary<string, ChatCommandHandler> BuildCommands(
         MainHandler runtime,
-        Dictionary<string, ChatCommandStatisticFlags>? statisticFlags = null)
+        Dictionary<string, ChatCommandStatisticFlags>? statisticFlags = null
+    )
     {
         ArgumentNullException.ThrowIfNull(runtime);
         return new CommandBuildContext(runtime, statisticFlags).Build();
@@ -33,9 +34,7 @@ public static partial class CommandList
         private readonly Dictionary<string, List<(int Delta, string ID, bool Expired)>> activeHeartEffects = new(StringComparer.OrdinalIgnoreCase);
         private readonly SemaphoreSlim heartGate = new(1, 1);
 
-        internal CommandBuildContext(
-            MainHandler runtime,
-            Dictionary<string, ChatCommandStatisticFlags>? statisticFlags)
+        internal CommandBuildContext(MainHandler runtime, Dictionary<string, ChatCommandStatisticFlags>? statisticFlags)
         {
             this.runtime = runtime;
             this.statisticFlags = statisticFlags;

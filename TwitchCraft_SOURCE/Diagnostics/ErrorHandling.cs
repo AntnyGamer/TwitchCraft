@@ -63,7 +63,8 @@ internal static partial class ErrorHandling
         object? source,
         string? title,
         string? message,
-        MessageBoxImage image = MessageBoxImage.Question)
+        MessageBoxImage image = MessageBoxImage.Question
+    )
         => Show(source, message, title, MessageBoxButton.YesNo, image);
 
     private static MessageBoxResult Show(
@@ -71,7 +72,8 @@ internal static partial class ErrorHandling
         string? message,
         string? title,
         MessageBoxButton buttons,
-        MessageBoxImage image)
+        MessageBoxImage image
+    )
     {
         Window? owner = ResolveOwner(source);
         string safeMessage = message ?? string.Empty;
@@ -233,13 +235,20 @@ internal static partial class ErrorHandling
     private sealed class StructuredLogEvent
     {
         public required string Timestamp { get; init; }
+
         public required string Level { get; init; }
+
         public required string Event { get; init; }
+
         public required string ApplicationVersion { get; init; }
+
         [JsonPropertyName("sessionID")]
         public required string SessionID { get; init; }
+
         public string? ExceptionType { get; init; }
+
         public string? Message { get; init; }
+
         [JsonPropertyName("details")]
         public string? OriginalError { get; init; }
     }

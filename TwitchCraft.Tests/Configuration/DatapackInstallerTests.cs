@@ -43,7 +43,8 @@ public sealed class DatapackInstallerTests
         string firstVersion,
         string secondVersion,
         string firstLayout,
-        string secondLayout)
+        string secondLayout
+    )
     {
         using TemporaryDirectory directory = new();
         string datapack = Path.Combine(directory.Path, "world", "datapacks", "locateplayers");
@@ -68,7 +69,8 @@ public sealed class DatapackInstallerTests
         string minecraftVersion,
         bool expectsPluralLayout,
         bool expectsSingularLayout,
-        bool expectsInlineText)
+        bool expectsInlineText
+    )
     {
         using TemporaryDirectory directory = new();
         string destination = Path.Combine(directory.Path, "world", "datapacks", "locateplayers");
@@ -103,7 +105,8 @@ public sealed class DatapackInstallerTests
         string version,
         bool modern,
         int formatMajor,
-        int formatMinor)
+        int formatMinor
+    )
     {
         using JsonDocument document = JsonDocument.Parse(
             DatapackInstaller.BuildPackMetadata(version));

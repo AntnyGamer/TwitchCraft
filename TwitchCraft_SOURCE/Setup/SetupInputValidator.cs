@@ -12,7 +12,8 @@ internal static class SetupInputValidator
         string authorizedClientID,
         string botToken,
         string channel,
-        string botName)
+        string botName
+    )
         => GetBlockingReason(
             minecraftVersion,
             bindIP,
@@ -29,7 +30,8 @@ internal static class SetupInputValidator
         string authorizedClientID,
         string botToken,
         string channel,
-        string botName)
+        string botName
+    )
     {
         if (string.IsNullOrWhiteSpace(minecraftVersion))
         {

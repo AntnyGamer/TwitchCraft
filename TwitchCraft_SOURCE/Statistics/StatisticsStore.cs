@@ -108,7 +108,13 @@ internal static partial class StatisticsStore
         }
     }
 
-    public static bool ApplyCommandDelta(string commandName, long tokensSpent, string normalizedViewer, long dangerousScore, long niceScore)
+    public static bool ApplyCommandDelta(
+        string commandName,
+        long tokensSpent,
+        string normalizedViewer,
+        long dangerousScore,
+        long niceScore
+    )
     {
         long safeDangerousScore = Math.Max(0L, dangerousScore);
         long safeNiceScore = Math.Max(0L, niceScore);

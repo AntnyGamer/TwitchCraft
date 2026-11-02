@@ -363,7 +363,11 @@ public sealed class PersistenceIntegrationTests : IDisposable
         Assert.False(File.Exists(ConfigurationStore.ConfigPath + ".tmp"));
     }
 
-    private static StatisticsService CreateStatistics(List<string> deathRefreshes, List<string> respawnRefreshes, List<string>? refreshes = null)
+    private static StatisticsService CreateStatistics(
+        List<string> deathRefreshes,
+        List<string> respawnRefreshes,
+        List<string>? refreshes = null
+    )
     {
         StatisticsService service = new(new(
             command => command switch

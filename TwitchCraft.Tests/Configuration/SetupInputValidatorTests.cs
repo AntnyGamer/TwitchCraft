@@ -29,7 +29,8 @@ public sealed class SetupInputValidatorTests
         string authorizedClientID,
         string token,
         string channel,
-        string botName)
+        string botName
+    )
     {
         Assert.False(SetupInputValidator.CanStart(
             version, bindIP, clientID, authorizedClientID, token, channel, botName));

@@ -112,7 +112,11 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> SendProbeAsync(string command, Action onProbeCompleted, CancellationToken cancellationToken)
+    private async Task<bool> SendProbeAsync(
+        string command,
+        Action onProbeCompleted,
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(command))
         {
@@ -163,7 +167,11 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task<bool> SendProbesAsync(string[] commands, Action onProbeCompleted, CancellationToken cancellationToken)
+    private async Task<bool> SendProbesAsync(
+        string[] commands,
+        Action onProbeCompleted,
+        CancellationToken cancellationToken
+    )
     {
         if (commands.Length == 0)
         {
@@ -350,7 +358,8 @@ public sealed partial class MainHandler
         bool isCommandParserError,
         bool isUnexpectedCommandError,
         bool isMinecraftCommandErrorContext,
-        bool isSidebarObjectiveIssue)
+        bool isSidebarObjectiveIssue
+    )
     {
         if (string.IsNullOrEmpty(line))
         {

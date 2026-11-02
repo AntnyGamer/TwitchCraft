@@ -32,7 +32,9 @@ internal static class TwitchOAuthAuthorizer
     // DO NOT CHANGE THIS UNLESS YOU ARE PLANNING ON MAKING YOUR OWN APPLICATION
     // This desktop flow intentionally has no Client Secret, so the Twitch application MUST use Client Type: Public
     internal const string ApplicationClientID = "yrk6lg8m6fe9qd4pv5h2ex3aerrid3";
+
     internal static bool IsOAuthConfigured => ApplicationClientID.Length > 0;
+
     private static readonly Uri DeviceUri = new("https://id.twitch.tv/oauth2/device");
     private static readonly Uri TokenUri = new("https://id.twitch.tv/oauth2/token");
     private static readonly Uri ValidateUri = new("https://id.twitch.tv/oauth2/validate");
@@ -132,7 +134,8 @@ internal static class TwitchOAuthAuthorizer
     public static async Task<TwitchOAuthResult> RefreshAsync(
         string clientID,
         string refreshToken,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         string normalizedClientID = (clientID ?? string.Empty).Trim();
         string normalizedRefreshToken = (refreshToken ?? string.Empty).Trim();
@@ -212,7 +215,8 @@ internal static class TwitchOAuthAuthorizer
     internal static bool TryReadDeviceAuth(
         JsonElement root,
         out TwitchDeviceAuthorization authorization,
-        out string error)
+        out string error
+    )
     {
         authorization = default;
         error = string.Empty;
@@ -250,11 +254,7 @@ internal static class TwitchOAuthAuthorizer
         return true;
     }
 
-    internal static bool TryReadIdentity(
-        JsonElement root,
-        string expectedClientID,
-        out string login,
-        out string error)
+    internal static bool TryReadIdentity(JsonElement root, string expectedClientID, out string login, out string error)
     {
         login = string.Empty;
         error = string.Empty;
@@ -318,7 +318,8 @@ internal static class TwitchOAuthAuthorizer
     private static async Task<DeviceTokenPollResult> PollForTokenAsync(
         string clientID,
         string deviceCode,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -373,11 +374,7 @@ internal static class TwitchOAuthAuthorizer
         }
     }
 
-    private static bool TryReadTokens(
-        JsonElement root,
-        out string token,
-        out string refreshToken,
-        out string error)
+    private static bool TryReadTokens(JsonElement root, out string token, out string refreshToken, out string error)
     {
         token = GetString(root, "access_token");
         refreshToken = GetString(root, "refresh_token");
@@ -398,7 +395,8 @@ internal static class TwitchOAuthAuthorizer
         string token,
         string refreshToken,
         string clientID,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {

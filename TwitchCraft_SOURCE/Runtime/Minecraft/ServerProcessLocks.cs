@@ -232,7 +232,8 @@ public sealed partial class MainHandler
         uint applicationCount,
         RM_UNIQUE_PROCESS* applications,
         uint serviceCount,
-        char** serviceNames);
+        char** serviceNames
+    );
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("rstrtmgr.dll", EntryPoint = "RmGetList")]
@@ -241,7 +242,8 @@ public sealed partial class MainHandler
         out uint processInfoNeeded,
         ref uint processInfoCount,
         RM_PROCESS_INFO* processInfo,
-        ref uint rebootReasons);
+        ref uint rebootReasons
+    );
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("rstrtmgr.dll", EntryPoint = "RmEndSession")]

@@ -62,7 +62,8 @@ internal static class Enchantments
         bool supportsMaceEnchantments,
         out string enchantID,
         out string prettyEnchantName,
-        out int level)
+        out int level
+    )
     {
         ArgumentNullException.ThrowIfNull(random);
 

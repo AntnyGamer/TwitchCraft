@@ -21,7 +21,8 @@ public sealed partial class MainHandler
         bool remoteControlEnabled = false,
         string remoteHost = "",
         int RCONPort = 25575,
-        string RCONPassword = "")
+        string RCONPassword = ""
+    )
     {
         TwitchCraftConfig config = ConfigurationStore.Load();
         if (!remoteControlEnabled)

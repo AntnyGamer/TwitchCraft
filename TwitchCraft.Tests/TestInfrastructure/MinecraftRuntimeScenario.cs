@@ -19,7 +19,8 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         TemporaryDirectory directory,
         CancellationTokenSource cts,
         TwitchCraftConfig config,
-        MainHandler runtime)
+        MainHandler runtime
+    )
     {
         _directory = directory;
         _cts = cts;
@@ -28,8 +29,11 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
     }
 
     internal TwitchCraftConfig Config { get; }
+
     internal MainHandler Runtime { get; }
+
     internal string JarPath => Config.Server.JarPath;
+
     internal CancellationToken Token => _cts.Token;
 
     internal static async Task<MinecraftRuntimeScenario> StartAsync(
@@ -39,7 +43,9 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
         bool multiplayer = false,
         double maxHealth = 20,
         string? selectedItem = null,
-        string? attributes = null, string? minecraftVersion = null)
+        string? attributes = null,
+        string? minecraftVersion = null
+    )
     {
         TemporaryDirectory directory = new();
         CancellationTokenSource? cts = null;

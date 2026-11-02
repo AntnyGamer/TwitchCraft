@@ -9,8 +9,7 @@ public sealed class TwitchMessagingPolicyTests
     [Theory]
     [InlineData(" hello ", "hello")]
     [InlineData(" line one\r\nline two ", "line one  line two")]
-    public void CleanChannelMessage_TrimsAndRemovesProtocolLineBreaks(
-        string message, string expected)
+    public void CleanChannelMessage_TrimsAndRemovesProtocolLineBreaks(string message, string expected)
     {
         Assert.Equal(expected, MainHandler.CleanChannelMessage(message));
     }
@@ -28,10 +27,7 @@ public sealed class TwitchMessagingPolicyTests
     [InlineData("A😀B", 4, "A")]
     [InlineData("A😀B", 5, "A😀")]
     [InlineData("A😀B", 6, "A😀B")]
-    public void TruncateUTF8_RespectsByteLimitsWithoutSplittingUnicode(
-        string message,
-        int maxBytes,
-        string expected)
+    public void TruncateUTF8_RespectsByteLimitsWithoutSplittingUnicode(string message, int maxBytes, string expected)
     {
         Assert.Equal(expected, MainHandler.TruncateUTF8(message, maxBytes));
     }
@@ -46,7 +42,8 @@ public sealed class TwitchMessagingPolicyTests
         string sender,
         string botName,
         bool separateBotAccount,
-        bool expected)
+        bool expected
+    )
     {
         Assert.Equal(expected, MainHandler.IsIgnoredUser(sender, botName, separateBotAccount));
     }
@@ -55,9 +52,7 @@ public sealed class TwitchMessagingPolicyTests
     [InlineData(1000, 2000)]
     [InlineData(8000, 15000)]
     [InlineData(15000, 15000)]
-    public void GetReconnectDelayMs_DoublesAndCapsBackoff(
-        int currentDelay,
-        int expected)
+    public void GetReconnectDelayMs_DoublesAndCapsBackoff(int currentDelay, int expected)
     {
         Assert.Equal(expected, MainHandler.GetReconnectDelayMs(currentDelay));
     }
@@ -77,10 +72,7 @@ public sealed class TwitchMessagingPolicyTests
     [InlineData("Reduced", nameof(BotResponseKind.Announcement), true)]
     [InlineData("Essential Only", nameof(BotResponseKind.Essential), true)]
     [InlineData("Essential Only", nameof(BotResponseKind.Announcement), false)]
-    public void ShouldSend_AllowsOnlyConfiguredResponseKinds(
-        string verbosity,
-        string kind,
-        bool expected)
+    public void ShouldSend_AllowsOnlyConfiguredResponseKinds(string verbosity, string kind, bool expected)
     {
         Assert.Equal(
             expected,
@@ -108,7 +100,8 @@ public sealed class TwitchMessagingPolicyTests
         string primary,
         string secondary,
         bool expectedMatch,
-        string expectedPrefix)
+        string expectedPrefix
+    )
     {
         Assert.Equal(expectedMatch, ParsedCommand.TryMatchPrefix(payload, primary, secondary, out string actual));
         Assert.Equal(expectedPrefix, actual);

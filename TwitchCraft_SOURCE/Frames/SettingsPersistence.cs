@@ -61,7 +61,8 @@ public partial class Settings
         SettingsCategory category,
         StartingProfile defaults,
         ServerConfig defaultServer,
-        TwitchCraftConfig config)
+        TwitchCraftConfig config
+    )
     {
         StartingProfile settings = config.Settings;
         switch (category)
@@ -180,12 +181,20 @@ public partial class Settings
         ReloadAfterReset();
     }
 
-    private Task UpdateBoolAsync(bool enabled, Action<TwitchCraftConfig, bool> update, bool refreshMinigameLoops = false)
+    private Task UpdateBoolAsync(
+        bool enabled,
+        Action<TwitchCraftConfig, bool> update,
+        bool refreshMinigameLoops = false
+    )
         => _initializing
             ? Task.CompletedTask
             : SaveConfigAsync(config => update(config, enabled), refreshMinigameLoops: refreshMinigameLoops);
 
-    private async Task SaveConfigAsync(Action<TwitchCraftConfig> update, Action<TwitchCraftConfig>? beforeSave = null, bool refreshMinigameLoops = false)
+    private async Task SaveConfigAsync(
+        Action<TwitchCraftConfig> update,
+        Action<TwitchCraftConfig>? beforeSave = null,
+        bool refreshMinigameLoops = false
+    )
     {
         await _settingsSaveGate.WaitAsync();
         try

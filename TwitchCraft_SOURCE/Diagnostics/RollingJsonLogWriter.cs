@@ -19,11 +19,7 @@ internal sealed class RollingJsonLogWriter : IDisposable
     private bool _disposed;
     private bool _retentionCleaned;
 
-    internal RollingJsonLogWriter(
-        string logPath,
-        long maxBytes,
-        int maxRetainedFiles,
-        Encoding encoding)
+    internal RollingJsonLogWriter(string logPath, long maxBytes, int maxRetainedFiles, Encoding encoding)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(logPath);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBytes);

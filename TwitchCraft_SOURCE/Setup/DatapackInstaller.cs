@@ -29,7 +29,8 @@ internal static class DatapackInstaller
         string serverDirectory,
         string minecraftVersion,
         string? levelName,
-        Action<string, Exception> reportWarning)
+        Action<string, Exception> reportWarning
+    )
     {
         ArgumentNullException.ThrowIfNull(reportWarning);
         if (string.IsNullOrWhiteSpace(serverDirectory))
@@ -88,7 +89,10 @@ internal static class DatapackInstaller
         }
     }
 
-    private static (string FunctionDirectoryName, bool RewriteCommands) PrepareDestination(string destinationDirectory, string minecraftVersion)
+    private static (string FunctionDirectoryName, bool RewriteCommands) PrepareDestination(
+        string destinationDirectory,
+        string minecraftVersion
+    )
     {
         Directory.CreateDirectory(destinationDirectory);
         File.WriteAllText(Path.Combine(destinationDirectory, "pack.mcmeta"), BuildPackMetadata(minecraftVersion), UTF8NoBOM);

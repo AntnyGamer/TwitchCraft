@@ -245,10 +245,7 @@ public sealed class WorldReplacementSafetyTests
             () => Assert.Equal("blocks automatic restoration", File.ReadAllText(destination)));
     }
 
-    private static MinecraftWorldImportPlan CreatePlan(
-        string serverDirectory,
-        string source,
-        string destination)
+    private static MinecraftWorldImportPlan CreatePlan(string serverDirectory, string source, string destination)
         => new()
         {
             SourceWorldPath = source,

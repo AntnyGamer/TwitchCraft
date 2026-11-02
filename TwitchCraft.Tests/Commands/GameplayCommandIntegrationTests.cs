@@ -402,7 +402,10 @@ public sealed class GameplayCommandIntegrationTests
         IReadOnlyList<string>? spectators = null,
         bool multiplayer = false,
         double maxHealth = 20,
-        string? selectedItem = null, string? attributes = null, string? minecraftVersion = null)
+        string? selectedItem = null,
+        string? attributes = null,
+        string? minecraftVersion = null
+    )
         => MinecraftRuntimeScenario.StartAsync(
             TestContext.Current.CancellationToken,
             players,

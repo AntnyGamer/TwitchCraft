@@ -166,7 +166,11 @@ public static partial class MinigameManager
         }
     }
 
-    private static async Task ShowSubtitleAsync(MainHandler runtime, string subtitleText, CancellationToken cancellationToken)
+    private static async Task ShowSubtitleAsync(
+        MainHandler runtime,
+        string subtitleText,
+        CancellationToken cancellationToken
+    )
     {
         if (runtime == null || string.IsNullOrWhiteSpace(subtitleText))
         {
@@ -252,7 +256,8 @@ public static partial class MinigameManager
         BettingState<TBet> state,
         string kind,
         long runID,
-        List<KeyValuePair<string, int>> payouts) where TBet : IBet
+        List<KeyValuePair<string, int>> payouts
+    ) where TBet : IBet
     {
         lock (state.SettlementGate)
         {
@@ -302,7 +307,8 @@ public static partial class MinigameManager
         string game,
         string closedMessage,
         Func<string, CancellationToken, Task> sayToChannel,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         string? message = result switch
         {

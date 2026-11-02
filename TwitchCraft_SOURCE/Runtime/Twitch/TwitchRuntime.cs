@@ -79,7 +79,11 @@ public sealed partial class MainHandler
         }
     }
 
-    private async Task SendIRCLinesAsync(StreamWriter writer, IReadOnlyList<string> lines, CancellationToken cancellationToken)
+    private async Task SendIRCLinesAsync(
+        StreamWriter writer,
+        IReadOnlyList<string> lines,
+        CancellationToken cancellationToken
+    )
     {
         if (lines.Count == 0)
         {
@@ -533,20 +537,31 @@ internal sealed class TwitchSession
     private StreamWriter? _writer;
 
     internal SemaphoreSlim WriteGate { get; } = new(1, 1);
+
     internal SemaphoreSlim ChatRateGate { get; } = new(1, 1);
+
     internal SemaphoreSlim BotIdentityResolveGate { get; } = new(1, 1);
+
     internal SemaphoreSlim TokenRefreshGate { get; } = new(1, 1);
+
     internal HashSet<string> MessageIDs { get; } = new(StringComparer.Ordinal);
+
     internal Queue<string> MessageIDOrder { get; } = new();
+
     internal Queue<long> ChatSendTimes { get; } = new(100);
+
     internal WorkQueueState CommandQueue { get; } = new(MaxQueuedCommands);
+
     internal WorkQueueState QuickQueue { get; } = new(MaxQueuedQuickWork);
+
     internal CancellationTokenSource? FollowRewardsCts;
     internal Task? FollowRewardsTask;
     internal int QueueGeneration;
     internal long LastCommandOverflowNoticeMilliseconds;
     internal volatile bool ChatConnected;
+
     internal string ChannelPrefix { get; private set; } = string.Empty;
+
     internal int ChannelMessageMaxBytes { get; private set; }
 
     internal TcpClient? Socket
@@ -638,17 +653,23 @@ internal sealed class TwitchSession
         CancellationToken cancellationToken)
     {
         internal Func<CancellationToken, Task> Work { get; } = work;
+
         internal string Context { get; } = context;
+
         internal int Generation { get; } = generation;
+
         internal CancellationToken CancellationToken { get; } = cancellationToken;
     }
 
     internal sealed class WorkQueueState(int maxDepth)
     {
         internal Lock Gate { get; } = new();
+
         internal Queue<QueuedWork> Queue { get; set; } = new();
+
         internal int Depth;
         internal int Active;
+
         internal int MaxDepth { get; } = maxDepth;
     }
 }

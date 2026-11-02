@@ -21,7 +21,8 @@ public static partial class CommandList
         private void AddCommand(
             string commandName,
             ChatCommandHandler handler,
-            ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None)
+            ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None
+        )
         {
             handlers[commandName] = handler;
             if (commandStatisticFlags != ChatCommandStatisticFlags.None)
@@ -112,7 +113,8 @@ public static partial class CommandList
             Func<CancellationToken, Task<long?>> reserveCooldownAsync,
             Action<long> releaseCooldown,
             CancellationToken ct,
-            Action? onSendFailure = null)
+            Action? onSendFailure = null
+        )
         {
             return PaidCommandTransaction.ExecuteAsync(
                 cost,
@@ -135,7 +137,13 @@ public static partial class CommandList
                 onSendFailure);
         }
 
-        private Task<bool> TrySendPaidNoCooldownAsync(string sender, int cost, string command, Action? onSendFailure, CancellationToken ct)
+        private Task<bool> TrySendPaidNoCooldownAsync(
+            string sender,
+            int cost,
+            string command,
+            Action? onSendFailure,
+            CancellationToken ct
+        )
         {
             return RunPaidCommandAsync(
                 sender,
@@ -147,7 +155,12 @@ public static partial class CommandList
                 onSendFailure);
         }
 
-        private Task<bool> TrySendPricedAsync(string sender, int cost, Func<IEnumerable<string>> buildCommands, CancellationToken ct)
+        private Task<bool> TrySendPricedAsync(
+            string sender,
+            int cost,
+            Func<IEnumerable<string>> buildCommands,
+            CancellationToken ct
+        )
         {
             return RunPaidCommandAsync(
                 sender,
@@ -189,7 +202,11 @@ public static partial class CommandList
 
         private bool IsSingleplayer() => !runtime.MultiTargetingEnabled;
 
-        private async Task<ResolvedTarget?> FilterSpectatorsAsync(ResolvedTarget? target, CancellationToken ct, List<string>? cachedTargetablePlayers = null)
+        private async Task<ResolvedTarget?> FilterSpectatorsAsync(
+            ResolvedTarget? target,
+            CancellationToken ct,
+            List<string>? cachedTargetablePlayers = null
+        )
         {
             if (target == null)
             {
@@ -305,7 +322,12 @@ public static partial class CommandList
             return HasPlayer(targetablePlayers, streamerMinecraftName);
         }
 
-        private async Task<ResolvedTarget?> ResolveTargetAsync(IReadOnlyList<string>? args, int startIndex, string sender, CancellationToken ct)
+        private async Task<ResolvedTarget?> ResolveTargetAsync(
+            IReadOnlyList<string>? args,
+            int startIndex,
+            string sender,
+            CancellationToken ct
+        )
         {
             if (args is not null && startIndex >= 0 && startIndex < args.Count)
             {
@@ -393,7 +415,8 @@ public static partial class CommandList
             string sender,
             CancellationToken ct,
             bool checkGameCooldown = true,
-            int minimumTokenCost = 0)
+            int minimumTokenCost = 0
+        )
         {
             if (checkGameCooldown && !await RequireCooldownAsync(sender, ct).ConfigureAwait(false))
             {
@@ -462,7 +485,13 @@ public static partial class CommandList
 
         private string TargetName(ResolvedTarget target) => GetChatTarget(runtime, target);
 
-        private async Task NotifyOthersAsync(ResolvedTarget? target, string message, string color, bool bold, CancellationToken ct)
+        private async Task NotifyOthersAsync(
+            ResolvedTarget? target,
+            string message,
+            string color,
+            bool bold,
+            CancellationToken ct
+        )
         {
             if (target is null || !runtime.MultiTargetingEnabled || target.PlayerCount != 1)
             {
@@ -547,7 +576,8 @@ public static partial class CommandList
             string? othersMessage = null,
             string color = DefaultCommandTextColor,
             bool bold = true,
-            string? othersColor = null)
+            string? othersColor = null
+        )
         {
             int cost = runtime.Commands.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedAsync(sender, cost, () => buildCommands(target), ct).ConfigureAwait(false))
@@ -578,7 +608,8 @@ public static partial class CommandList
             string? othersMessage = null,
             string color = DefaultCommandTextColor,
             bool bold = true,
-            string? othersColor = null)
+            string? othersColor = null
+        )
         {
             int cost = runtime.Commands.ScaleCost(baseCost, target.PlayerCount);
             if (!await TrySendPricedAsync(sender, cost, command, ct).ConfigureAwait(false))
@@ -610,7 +641,8 @@ public static partial class CommandList
             string color,
             bool bold,
             string? othersColor,
-            CancellationToken ct)
+            CancellationToken ct
+        )
         {
             if (await SendPricedAsync(target, sender, baseCost, buildCommands, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
             {
@@ -629,7 +661,8 @@ public static partial class CommandList
             string color,
             bool bold,
             string? othersColor,
-            CancellationToken ct)
+            CancellationToken ct
+        )
         {
             if (await SendPricedAsync(target, sender, baseCost, command, ct, targetMessage, othersMessage, color, bold, othersColor).ConfigureAwait(false))
             {
@@ -642,7 +675,8 @@ public static partial class CommandList
             Func<ResolvedTarget, string, CancellationToken, Task> execute,
             ChatCommandStatisticFlags commandStatisticFlags = ChatCommandStatisticFlags.None,
             bool checkGameCooldown = true,
-            int minimumTokenCost = 0)
+            int minimumTokenCost = 0
+        )
         {
             AddCommand(commandName, async (args, sender, ct) =>
             {

@@ -74,7 +74,8 @@ internal sealed partial class TokenStore
     internal bool TryCompleteMinigameBets(
         IReadOnlyList<KeyValuePair<string, int>> payouts,
         int maximumBalance,
-        bool refund = false)
+        bool refund = false
+    )
     {
         ArgumentNullException.ThrowIfNull(payouts);
         lock (_gate)

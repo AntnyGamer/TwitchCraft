@@ -234,10 +234,7 @@ internal sealed class DataMaintenance(
         }
     }
 
-    private static bool TryGetBackupTime(
-        DirectoryInfo directory,
-        bool requireCompleteBackup,
-        out DateTime timestampUtc)
+    private static bool TryGetBackupTime(DirectoryInfo directory, bool requireCompleteBackup, out DateTime timestampUtc)
     {
         timestampUtc = DateTime.MinValue;
         string name = directory.Name;
