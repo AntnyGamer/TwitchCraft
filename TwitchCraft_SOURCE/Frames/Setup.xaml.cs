@@ -255,14 +255,24 @@ public partial class Setup : UserControl
 
     private void SelectVersion(string versionID)
     {
-        MCVersionDropdown.SelectedItem = string.IsNullOrWhiteSpace(versionID)
-            ? null
-            : MCVersionDropdown.Items.Cast<object>().FirstOrDefault(item =>
-                item is VersionOption option
+        object? selectedVersion = null;
+        if (!string.IsNullOrWhiteSpace(versionID))
+        {
+            foreach (object item in MCVersionDropdown.Items)
+            {
+                bool matches = item is VersionOption option
                     ? string.Equals(option.ID, versionID, StringComparison.OrdinalIgnoreCase)
                         || string.Equals(option.Label, versionID, StringComparison.OrdinalIgnoreCase)
-                    : item is string text && string.Equals(text, versionID, StringComparison.OrdinalIgnoreCase));
+                    : item is string text && string.Equals(text, versionID, StringComparison.OrdinalIgnoreCase);
+                if (matches)
+                {
+                    selectedVersion = item;
+                    break;
+                }
+            }
+        }
 
+        MCVersionDropdown.SelectedItem = selectedVersion;
         UpdateJavaText();
     }
 
