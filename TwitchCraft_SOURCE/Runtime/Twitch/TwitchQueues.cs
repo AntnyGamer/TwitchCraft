@@ -50,11 +50,11 @@ public sealed partial class MainHandler
                 return false;
             }
 
-            int depth = Interlocked.Increment(ref state.Depth);
+            state.Depth++;
             int maxDepth = quick ? state.MaxDepth : MaxGameplayCommandQueue;
-            if (depth > maxDepth)
+            if (state.Depth > maxDepth)
             {
-                Interlocked.Decrement(ref state.Depth);
+                state.Depth--;
                 return false;
             }
 
@@ -154,7 +154,7 @@ public sealed partial class MainHandler
             {
                 if (item.Generation == Volatile.Read(ref _twitchSession.QueueGeneration))
                 {
-                    Interlocked.Decrement(ref state.Depth);
+                    state.Depth--;
                 }
             }
         }
@@ -176,7 +176,7 @@ public sealed partial class MainHandler
     private static void ResetQueueNoLock(TwitchSession.WorkQueueState state)
     {
         state.Queue = new Queue<TwitchSession.QueuedWork>();
-        Volatile.Write(ref state.Depth, 0);
+        state.Depth = 0;
     }
 
     internal static bool IsIgnoredUser(string sender, string botName, bool separateBotAccount)

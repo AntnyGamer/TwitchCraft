@@ -16,7 +16,8 @@ From the repository root:
 ```powershell
 dotnet restore TwitchCraft.slnx
 dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
-dotnet test --project TwitchCraft.Tests/TwitchCraft.Tests.csproj -c Release --no-restore
+cd TwitchCraft.Tests
+dotnet test --project TwitchCraft.Tests.csproj -c Release --no-restore
 ```
 
 The test command builds the app, tests, and fake server through project references. Restore, formatting, and tests must pass before review.
@@ -24,13 +25,13 @@ The test command builds the app, tests, and fake server through project referenc
 Rerun one class without rebuilding:
 
 ```powershell
-dotnet TwitchCraft.Tests/bin/Release/net10.0-windows/TwitchCraft.Tests.dll -class '*PlayerStateParsingTests'
+dotnet bin/Release/net10.0-windows/TwitchCraft.Tests.dll -class '*PlayerStateParsingTests'
 ```
 
 CI also collects a Cobertura coverage report and publishes it as the `code-coverage` workflow artifact. To generate the same coverage report locally:
 
 ```powershell
-dotnet test --project TwitchCraft.Tests/TwitchCraft.Tests.csproj -c Release --no-build --results-directory TestResults --coverlet --coverlet-output-format cobertura
+dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build --results-directory ..\TestResults --coverlet --coverlet-output-format cobertura
 ```
 
 CI enforces a 50% minimum line-coverage floor to prevent major coverage regressions.
