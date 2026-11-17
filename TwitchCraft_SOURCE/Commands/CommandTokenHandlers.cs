@@ -209,7 +209,7 @@ public static partial class CommandList
         handlers["tokenleaderboard"] = async (_, sender, ct) =>
         {
             string whoAsked = NormalizeUser(sender);
-            if (!runtime.Tokens.TryGetTopBalances(5, out IReadOnlyList<KeyValuePair<string, int>> leaders))
+            if (!runtime.Tokens.TryGetTopBalances(5, runtime.TokenLeaderboardBotName, out IReadOnlyList<KeyValuePair<string, int>> leaders))
             {
                 await sayToChannel(whoAsked + ", token data is temporarily unavailable. Try again in a moment.", ct).ConfigureAwait(false);
                 return;
@@ -240,7 +240,14 @@ public static partial class CommandList
                 return;
             }
 
-            if (!runtime.Tokens.TryGetRank(queryUser, out TokenRankResult? rank))
+            string botName = runtime.TokenLeaderboardBotName;
+            if (MainHandler.IsIgnoredUser(queryUser, botName, botName.Length > 0))
+            {
+                await saySuccessfulToChannel(whoAsked + ", " + queryUser + " is not ranked because bot accounts are excluded from the token leaderboard.", ct).ConfigureAwait(false);
+                return;
+            }
+
+            if (!runtime.Tokens.TryGetRank(queryUser, botName, out TokenRankResult? rank))
             {
                 await sayToChannel(whoAsked + ", token data is temporarily unavailable. Try again in a moment.", ct).ConfigureAwait(false);
                 return;

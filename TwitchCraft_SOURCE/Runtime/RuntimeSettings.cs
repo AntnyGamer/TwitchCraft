@@ -41,6 +41,18 @@ public sealed partial class MainHandler
     internal string SecondaryCommandPrefix => CurrentSettings.SecondaryCommandPrefix;
     internal string BotResponseVerbosity => CurrentSettings.BotResponseVerbosity;
 
+    // A broadcaster using their own account to connect should remain eligible for rankings.
+    internal string TokenLeaderboardBotName
+    {
+        get
+        {
+            TwitchConfig? twitch = _activeConfig?.Twitch;
+            return twitch != null && !string.Equals(twitch.BotName, twitch.StreamerName, StringComparison.OrdinalIgnoreCase)
+                ? twitch.BotName
+                : string.Empty;
+        }
+    }
+
     internal static string FormatReply(string message, string sender, bool mentionViewer)
     {
         if (!mentionViewer || sender.Length == 0 || string.IsNullOrWhiteSpace(message))
