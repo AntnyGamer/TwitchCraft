@@ -10,6 +10,146 @@ namespace TwitchCraft.Tests.Commands;
 public sealed class GameplayCommandIntegrationTests
 {
     [Fact]
+    public async Task PausedCommands_KeepBroadcasterInControlAndResumeViewersWithoutLostTokens()
+    {
+        await using MinecraftRuntimeScenario scenario = await StartAsync();
+        scenario.Config.Settings.ViewerCommandsPaused = true;
+        scenario.Config.Settings.CommandCustomizations["night"] = new() { CooldownSeconds = 60 };
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        scenario.Runtime.Tokens.Award("viewer", 100);
+        scenario.Runtime.Tokens.Award("streamer", 100);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.DispatchAsync("!night");
+        List<string> pausedCommands = await scenario.DrainCommandsAsync(cursor);
+        Assert.DoesNotContain("time set night", pausedCommands);
+        Assert.Equal(100, scenario.Runtime.Tokens.GetBalance("viewer"));
+
+        await scenario.DispatchAsync("!night", "streamer");
+        scenario.Config.Settings.ViewerCommandsPaused = false;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await scenario.DispatchAsync("!night");
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Equal(2, commands.Count(command => command == "time set night"));
+        Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
+        Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("streamer"));
+    }
+
+    [Fact]
+    public async Task LivePricing_ChargesForActivePlayersAndAllowsFreeRedemptionsWithoutTokens()
+    {
+        await using MinecraftRuntimeScenario scenario = await StartAsync(
+            ["PlayerOne", "PlayerTwo", "PlayerThree", "Spectator"],
+            spectators: ["Spectator"],
+            multiplayer: true);
+        scenario.Config.Settings.CommandCostMultiplier = 1.25;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        scenario.Runtime.Tokens.Award("viewer", 100);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.DispatchAsync("!heal all");
+        // Three active players cost six tokens before the multiplier, rounded up to eight.
+        Assert.Equal(92, scenario.Runtime.Tokens.GetBalance("viewer"));
+
+        scenario.Config.Settings.CommandCostMultiplier = 0;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await scenario.DispatchAsync("!heal all", "newviewer");
+        Assert.Equal(0, scenario.Runtime.Tokens.GetBalance("newviewer"));
+
+        scenario.Config.Settings.CommandCostMultiplier = 0.5;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await scenario.DispatchAsync("!heal all");
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Equal(89, scenario.Runtime.Tokens.GetBalance("viewer"));
+        Assert.Equal(3, commands.Count(command =>
+            command == "effect give @a[gamemode=!spectator] minecraft:instant_health 1 1"));
+    }
+
+    [Fact]
+    public async Task ModeratorPermissions_CanBeGrantedAndRevokedWithoutExposingTheStreamer()
+    {
+        await using MinecraftRuntimeScenario scenario = await StartAsync(
+            ["PlayerOne", "PlayerTwo"], multiplayer: true);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.DispatchAsync("!whitelistadd PlayerTwo", "moderator", isModerator: true);
+        List<string> deniedCommands = await scenario.DrainCommandsAsync(cursor);
+        Assert.DoesNotContain("whitelist add PlayerTwo", deniedCommands);
+
+        scenario.Config.Settings.ModeratorsCanUseStreamerCommands = true;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await scenario.DispatchAsync("!whitelistadd PlayerTwo", "moderator");
+        await scenario.DispatchAsync("!whitelistadd PlayerTwo", "moderator", isModerator: true);
+        await scenario.DispatchAsync("!kick PlayerOne", "moderator", isModerator: true);
+        await scenario.DispatchAsync("!whitelistremove PlayerOne", "moderator", isModerator: true);
+
+        scenario.Config.Settings.ModeratorsCanUseStreamerCommands = false;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await scenario.DispatchAsync("!whitelistremove PlayerTwo", "moderator", isModerator: true);
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Equal(["whitelist add PlayerTwo"], commands.Where(command =>
+            command.StartsWith("whitelist ", StringComparison.Ordinal) ||
+            command.StartsWith("kick ", StringComparison.Ordinal)));
+        Assert.Equal(0, scenario.Runtime.Tokens.GetBalance("moderator"));
+    }
+
+    [Fact]
+    public async Task RandomTargeting_RespectsLiveToggleAndOnlyAffectsActivePlayers()
+    {
+        await using MinecraftRuntimeScenario scenario = await StartAsync(
+            ["Spectator", "PlayerTwo"], spectators: ["Spectator"], multiplayer: true);
+        scenario.Config.Settings.AllowRandomPlayerTarget = false;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        scenario.Runtime.Tokens.Award("viewer", 100);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.DispatchAsync("!heal random");
+        List<string> disabledCommands = await scenario.DrainCommandsAsync(cursor);
+        Assert.DoesNotContain(disabledCommands, command => command.StartsWith("effect give ", StringComparison.Ordinal));
+        Assert.Equal(100, scenario.Runtime.Tokens.GetBalance("viewer"));
+
+        scenario.Config.Settings.AllowRandomPlayerTarget = true;
+        await scenario.Runtime.ApplySettingsAsync(scenario.Config);
+        await scenario.DispatchAsync("!heal random");
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+
+        Assert.Equal(97, scenario.Runtime.Tokens.GetBalance("viewer"));
+        Assert.Equal(
+            "effect give @a[name=\"PlayerTwo\",gamemode=!spectator] minecraft:instant_health 1 1",
+            Assert.Single(commands, command => command.StartsWith("effect give ", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task Fireworks_CompletesTenSafeRocketsForActivePlayersWithOneCharge()
+    {
+        await using MinecraftRuntimeScenario scenario = await StartAsync(
+            ["PlayerOne", "PlayerTwo", "Spectator"], spectators: ["Spectator"], multiplayer: true);
+        scenario.Runtime.Tokens.Award("viewer", 100);
+        int cursor = scenario.CaptureCommandCursor();
+
+        await scenario.DispatchAsync("!fireworks all");
+        await FakeJavaServer.WaitUntilAsync(
+            () => FakeJavaServer.ReadAllLinesShared(scenario.JarPath + ".stdin").Skip(cursor)
+                .Count(command => command.Contains("run summon firework_rocket ", StringComparison.Ordinal)) >= 10,
+            "The fireworks celebration did not complete all ten rockets.",
+            scenario.Token);
+        List<string> commands = await scenario.DrainCommandsAsync(cursor);
+        List<string> rockets = commands.FindAll(command =>
+            command.Contains("run summon firework_rocket ", StringComparison.Ordinal));
+
+        Assert.Equal(85, scenario.Runtime.Tokens.GetBalance("viewer"));
+        Assert.Equal(10, rockets.Count);
+        Assert.All(rockets, rocket => Assert.Equal(
+            "execute at @a[gamemode=!spectator] run summon firework_rocket ~ ~1 ~ {LifeTime:20}", rocket));
+        Assert.Single(commands, command =>
+            command.StartsWith("tellraw @a[gamemode=!spectator] ", StringComparison.Ordinal) &&
+            command.Contains("viewer sent you some fireworks.", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Effect_DeliversValidCountsAndRejectsInvalidWithoutExtraCharge()
     {
         await using MinecraftRuntimeScenario scenario = await StartAsync();

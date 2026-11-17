@@ -15,8 +15,8 @@ public sealed class IRCQueueConcurrencyTests
     public async Task QueueCommand_EnforcesCapacityThenRecoversWithFifoAndOneActiveWorker()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
         TaskCompletionSource<bool> firstStarted = CreateSignal();
         TaskCompletionSource<bool> releaseFirst = CreateSignal();
         TaskCompletionSource<bool> allCompleted = CreateSignal();
@@ -86,7 +86,6 @@ public sealed class IRCQueueConcurrencyTests
         {
             runtime.ResetQueues();
             releaseFirst.TrySetResult(true);
-            runtime.Tokens.Close();
         }
     }
 
@@ -94,8 +93,8 @@ public sealed class IRCQueueConcurrencyTests
     public async Task QueueCommand_ContinuesAfterAnItemThrows()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
         TaskCompletionSource<bool> firstStarted = CreateSignal();
         TaskCompletionSource<bool> releaseFirst = CreateSignal();
         TaskCompletionSource<bool> secondCompleted = CreateSignal();
@@ -129,7 +128,6 @@ public sealed class IRCQueueConcurrencyTests
         {
             runtime.ResetQueues();
             releaseFirst.TrySetResult(true);
-            runtime.Tokens.Close();
         }
     }
 
@@ -137,8 +135,8 @@ public sealed class IRCQueueConcurrencyTests
     public async Task ResetQueues_DropsOldQueuedWorkAndSerializesNewWorkAfterRunningWork()
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
-        using TemporaryDirectory directory = new();
-        MainHandler runtime = FakeJavaServer.CreateRuntime(directory.Path);
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
         TaskCompletionSource<bool> oldWorkStarted = CreateSignal();
         TaskCompletionSource<bool> releaseOldWork = CreateSignal();
         TaskCompletionSource<bool> oldWorkCompleted = CreateSignal();
@@ -207,9 +205,8 @@ public sealed class IRCQueueConcurrencyTests
                 cancellationToken));
 
             releaseOldWork.TrySetResult(true);
-            await Task.WhenAll(
-                oldWorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken),
-                newWorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken));
+            await Task.WhenAll(oldWorkCompleted.Task, newWorkCompleted.Task)
+                .WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
 
             Assert.Equal(0, Volatile.Read(ref oldQueuedWorkRuns));
             Assert.Equal(["old-start", "old-end", "new-start", "new-end"], order);
@@ -218,7 +215,6 @@ public sealed class IRCQueueConcurrencyTests
         {
             runtime.ResetQueues();
             releaseOldWork.TrySetResult(true);
-            runtime.Tokens.Close();
         }
     }
 

@@ -35,28 +35,33 @@ internal static class CommandUserHelper
             return string.Empty;
         }
 
-        bool needsNewString = start != 0 || length != user.Length;
+        return LowerSegment(user, start, length);
+    }
+
+    internal static string LowerSegment(string value, int start, int length)
+    {
+        if (length <= 0)
+        {
+            return string.Empty;
+        }
+
         for (int i = 0; i < length; i++)
         {
-            if (LowerFast(user[start + i]) != user[start + i])
+            if (CommandUserHelper.LowerFast(value[start + i]) == value[start + i])
             {
-                needsNewString = true;
-                break;
+                continue;
             }
+
+            return string.Create(length, (Value: value, Start: start), static (destination, state) =>
+            {
+                for (int j = 0; j < destination.Length; j++)
+                {
+                    destination[j] = CommandUserHelper.LowerFast(state.Value[state.Start + j]);
+                }
+            });
         }
 
-        if (!needsNewString)
-        {
-            return user;
-        }
-
-        return string.Create(length, (User: user, Start: start), static (destination, state) =>
-        {
-            for (int i = 0; i < destination.Length; i++)
-            {
-                destination[i] = CommandUserHelper.LowerFast(state.User[state.Start + i]);
-            }
-        });
+        return start == 0 && length == value.Length ? value : value.Substring(start, length);
     }
 
     internal static bool TryNormalizeTwitchUser(string? user, out string normalized)

@@ -11,6 +11,33 @@ namespace TwitchCraft_V1.Frames;
 
 public partial class Settings
 {
+    private const double DefaultGlobalCooldownSeconds = 10.0;
+    private static readonly (double Seconds, string Label)[] GlobalCooldownOptions =
+    [
+        (0.1, "0.1s"),
+        (0.5, "0.5s"),
+        (1.0, "1s"),
+        (2.0, "2s"),
+        (3.0, "3s"),
+        (5.0, "5s"),
+        (10.0, "10s"),
+        (15.0, "15s"),
+        (30.0, "30s"),
+        (60.0, "60s"),
+        (120.0, "120s")
+    ];
+    private static readonly (double Multiplier, string Label)[] CommandCostMultiplierOptions =
+    [
+        (0.0, "0x"),
+        (0.5, "0.5x"),
+        (0.75, "0.75x"),
+        (1.0, "1x"),
+        (1.25, "1.25x"),
+        (1.5, "1.5x"),
+        (2.0, "2x"),
+        (3.0, "3x")
+    ];
+
     private static readonly (int Value, string Label)[] PassivePayoutAmountOptions =
     [
         (1, "1"), (2, "2"), (5, "5"), (10, "10"), (25, "25"), (50, "50"), (100, "100")
@@ -43,6 +70,59 @@ public partial class Settings
         ("red", "Red"), ("light_purple", "Light Purple"), ("yellow", "Yellow"),
         ("white", "White")
     ];
+
+    private void AddMinigameOptions()
+    {
+        if (MinigameCooldownDropdown.Items.Count > 0)
+        {
+            return;
+        }
+
+        for (int i = 2; i <= 30; i++)
+        {
+            MinigameCooldownDropdown.Items.Add(i + " minutes");
+        }
+    }
+
+    private void AddEconomyOptions()
+    {
+        AddStringOptions(ResponseVerbosityDropdown,
+            [
+                BotResponseVerbositySettings.Normal,
+                BotResponseVerbositySettings.Reduced,
+                BotResponseVerbositySettings.EssentialOnly
+            ]);
+
+        AddOptions(CommandCostMultiplierDropdown, CommandCostMultiplierOptions);
+        AddStringOptions(FollowRewardAmountDropdown, ["25", "50", "100", "200", "500", "1000"]);
+    }
+
+    private void SetCostMultiplier(double multiplier)
+        => SetDoubleValue(CommandCostMultiplierDropdown, CommandCostMultiplierOptions, multiplier);
+
+    private void SetFollowReward(int amount)
+        => SetTextValue(
+            FollowRewardAmountDropdown,
+            amount.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    private void UpdateFollowReward(bool enabled)
+        => FollowRewardAmountDropdown?.IsEnabled = enabled;
+
+    private void SetGlobalCooldown(double seconds)
+        => SetDoubleValue(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, seconds);
+
+    private void UpdateGlobalCooldown(bool visible)
+        => GlobalCooldownSecondsDropdown.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+
+    private void SetDifficulty(string? difficulty)
+    {
+        DifficultyDropdown.SelectedIndex = ConfigurationStore.NormalizeDifficulty(difficulty) switch
+        {
+            "Easy" => 0,
+            "Hard" => 2,
+            _ => 1
+        };
+    }
 
     private void AddMainOptions()
     {
@@ -124,6 +204,72 @@ public partial class Settings
         RelayTimestampsCheckbox.IsChecked = settings.IncludeRelayTimestamps;
         SetRelayColor(settings.MinecraftRelayTextColor);
         ConnectionHealthCheckbox.IsChecked = settings.ShowConnectionHealth;
+    }
+
+    private void SetTextValue(ComboBox dropdown, string text)
+    {
+        void ApplyValue()
+        {
+            _updatingCustomValueControls = true;
+            try
+            {
+                dropdown.SelectedIndex = -1;
+                dropdown.Text = text;
+            }
+            finally
+            {
+                _updatingCustomValueControls = false;
+            }
+        }
+
+        // Clearing SelectedIndex from inside SelectionChanged lets WPF's remaining selection
+        // processing overwrite the editor afterward, which can leave it blank. Defer only that
+        // case until the current input/selection event has completely finished.
+        if (dropdown.SelectedIndex >= 0)
+        {
+            object selection = dropdown.SelectedItem;
+            string originalText = dropdown.Text;
+            dropdown.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() =>
+                {
+                    if (Equals(dropdown.SelectedItem, selection) && string.Equals(dropdown.Text, originalText, StringComparison.Ordinal))
+                    {
+                        ApplyValue();
+                    }
+                }));
+            return;
+        }
+
+        ApplyValue();
+    }
+
+    private void SetIntValue(ComboBox dropdown, (int Value, string Label)[] options, int value)
+    {
+        foreach ((int option, string label) in options)
+        {
+            if (option == value)
+            {
+                SetTextValue(dropdown, label);
+                return;
+            }
+        }
+
+        SetTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
+    }
+
+    private void SetDoubleValue(ComboBox dropdown, (double Value, string Label)[] options, double value)
+    {
+        foreach ((double option, string label) in options)
+        {
+            if (Math.Abs(option - value) < 0.0000001)
+            {
+                SetTextValue(dropdown, label);
+                return;
+            }
+        }
+
+        SetTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
     }
 
     private static void SetIntOption(ComboBox dropdown, (int Value, string Label)[] options, int value, int fallback)

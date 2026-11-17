@@ -131,13 +131,60 @@ public sealed partial class MainHandler
 
     internal static bool TryParseMaxHealthResponse(string line, string player, out double health)
     {
-        int entity = line.LastIndexOf(" for entity ", StringComparison.OrdinalIgnoreCase);
-        int value = line.LastIndexOf(" is ", StringComparison.OrdinalIgnoreCase);
         health = 0;
-        return entity >= 0 && value >= 0 && line.Contains("value of attribute ", StringComparison.OrdinalIgnoreCase) &&
-            (line.Contains("Max Health", StringComparison.OrdinalIgnoreCase) || line.Contains("max_health", StringComparison.OrdinalIgnoreCase)) &&
-            double.TryParse(line.AsSpan(value + 4).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out health) &&
-            MatchesPlayer(line.AsSpan(entity + 12, value - entity - 12).Trim(), player);
+        if (string.IsNullOrEmpty(player))
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> message = line.AsSpan().Trim();
+        int separator = message.IndexOf("]: ", StringComparison.Ordinal);
+        if (separator >= 0)
+        {
+            message = message[(separator + 3)..].TrimStart();
+        }
+
+        if (message.StartsWith("System chat: ", StringComparison.OrdinalIgnoreCase))
+        {
+            message = message["System chat: ".Length..].TrimStart();
+        }
+        else if (message.StartsWith("[System] [CHAT] ", StringComparison.OrdinalIgnoreCase))
+        {
+            message = message["[System] [CHAT] ".Length..].TrimStart();
+        }
+
+        if (message.StartsWith("Base ", StringComparison.OrdinalIgnoreCase))
+        {
+            message = message["Base ".Length..];
+        }
+
+        const string attributePrefix = "Value of attribute ";
+        const string entityMarker = " for entity ";
+        int entity = message.LastIndexOf(entityMarker, StringComparison.OrdinalIgnoreCase);
+        int value = message.LastIndexOf(" is ", StringComparison.OrdinalIgnoreCase);
+        int entityStart = entity + entityMarker.Length;
+        if (!message.StartsWith(attributePrefix, StringComparison.OrdinalIgnoreCase) ||
+            entity < attributePrefix.Length || value < entityStart)
+        {
+            return false;
+        }
+
+        ReadOnlySpan<char> attribute = message[attributePrefix.Length..entity].Trim();
+        if (!attribute.Contains("Max Health", StringComparison.OrdinalIgnoreCase) &&
+            !attribute.Contains("max_health", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!double.TryParse(message[(value + 4)..].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedHealth) ||
+            !double.IsFinite(parsedHealth) || parsedHealth <= 0 ||
+            !MatchesPlayer(message[entityStart..value].Trim(), player))
+        {
+            return false;
+        }
+
+        health = parsedHealth;
+        return true;
     }
 
     private bool TryHandleMaxHealth(string line)

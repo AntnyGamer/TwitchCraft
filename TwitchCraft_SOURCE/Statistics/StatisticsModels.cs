@@ -61,7 +61,7 @@ internal static class StatisticNameHelper
 
         return start > end
             ? string.Empty
-            : ParsedCommand.LowerSegment(commandName, start, end - start + 1);
+            : CommandUserHelper.LowerSegment(commandName, start, end - start + 1);
     }
 }
 

@@ -3,12 +3,222 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using TwitchCraft_V1.Setup;
 
 namespace TwitchCraft_V1.Frames;
 
 public partial class Settings
 {
+    private enum NumericComboBoxInputMode
+    {
+        UnsignedInteger,
+        SignedInteger,
+        Decimal
+    }
+
+    private const int MaxRAMGB = 128;
+
+    private static bool IsAsciiDigitsOnly(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < value.Length; i++)
+        {
+            if (!char.IsAsciiDigit(value[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool ShouldSaveEditableValue(object sender, RoutedEventArgs e)
+    {
+        if (_initializing || _updatingCustomValueControls)
+        {
+            return false;
+        }
+
+        // Preset selections save immediately; typed values save when focus leaves the editor.
+        return e is not SelectionChangedEventArgs || sender is ComboBox { SelectedItem: string };
+    }
+
+    private void RAM_PreviewTextInput(object sender, TextCompositionEventArgs args)
+    {
+        if (sender is not TextBox textBox)
+        {
+            args.Handled = true;
+            return;
+        }
+
+        args.Handled = !IsValidRAMText(BuildTextCandidate(textBox, args.Text));
+    }
+
+    private void RAM_Pasting(object sender, DataObjectPastingEventArgs args)
+    {
+        if (sender is not TextBox textBox ||
+            args.DataObject.GetData(typeof(string)) is not string pastedText ||
+            !IsValidRAMText(BuildTextCandidate(textBox, pastedText)))
+        {
+            args.CancelCommand();
+        }
+    }
+
+    private static string BuildTextCandidate(TextBox textBox, string insertedText)
+    {
+        string current = textBox.Text ?? string.Empty;
+        int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
+        int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
+        ArgumentNullException.ThrowIfNull(insertedText, "value");
+        if (length == 0 && insertedText.Length == 0)
+        {
+            return current;
+        }
+
+        ReadOnlySpan<char> textBeforeSelection = current.AsSpan(0, start);
+        ReadOnlySpan<char> textAfterSelection = current.AsSpan(start + length);
+        return string.Concat(textBeforeSelection, insertedText.AsSpan(), textAfterSelection);
+    }
+
+    private static bool IsValidRAMText(string candidate)
+        => IsAsciiDigitsOnly(candidate) && int.TryParse(candidate, out int value) && value <= MaxRAMGB;
+
+    private void SetupNumericBox(ComboBox dropdown)
+    {
+        dropdown.PreviewTextInput += NumericBox_PreviewTextInput;
+        dropdown.GotKeyboardFocus += NumericBox_GotFocus;
+        DataObject.AddPastingHandler(dropdown, NumericBox_Pasting);
+    }
+
+    private void NumericBox_GotFocus(object sender, KeyboardFocusChangedEventArgs args)
+    {
+        if (sender is not ComboBox dropdown)
+        {
+            return;
+        }
+
+        dropdown.ApplyTemplate();
+        if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is TextBox editor)
+        {
+            editor.SelectAll();
+        }
+    }
+
+    private void NumericBox_PreviewTextInput(object sender, TextCompositionEventArgs args)
+    {
+        if (sender is not ComboBox dropdown)
+        {
+            return;
+        }
+
+        string candidate = BuildNumberCandidate(dropdown, args.Text);
+        args.Handled = !IsValidNumberText(candidate, GetNumberMode(dropdown));
+    }
+
+    private void NumericBox_Pasting(object sender, DataObjectPastingEventArgs args)
+    {
+        if (sender is not ComboBox dropdown)
+        {
+            return;
+        }
+
+        if (args.DataObject.GetData(typeof(string)) is not string pastedText ||
+            !IsValidNumberText(
+                BuildNumberCandidate(dropdown, pastedText),
+                GetNumberMode(dropdown)))
+        {
+            args.CancelCommand();
+        }
+    }
+
+    private static string BuildNumberCandidate(ComboBox dropdown, string insertedText)
+    {
+        dropdown.ApplyTemplate();
+        if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is not TextBox editor)
+        {
+            return (dropdown.Text ?? string.Empty) + insertedText;
+        }
+
+        return BuildTextCandidate(editor, insertedText);
+    }
+
+    private NumericComboBoxInputMode GetNumberMode(ComboBox dropdown)
+    {
+        if (ReferenceEquals(dropdown, GlobalCooldownSecondsDropdown) ||
+            ReferenceEquals(dropdown, CommandCostMultiplierDropdown))
+        {
+            return NumericComboBoxInputMode.Decimal;
+        }
+
+        return ReferenceEquals(dropdown, NetworkCompressionDropdown)
+            ? NumericComboBoxInputMode.SignedInteger
+            : NumericComboBoxInputMode.UnsignedInteger;
+    }
+
+    private static bool IsValidNumberText(string text, NumericComboBoxInputMode mode)
+    {
+        if (text.Length == 0)
+        {
+            return true;
+        }
+
+        int index = 0;
+        if (mode == NumericComboBoxInputMode.SignedInteger && text[0] == '-')
+        {
+            index = 1;
+            if (text.Length == 1)
+            {
+                return true;
+            }
+        }
+
+        bool decimalPointSeen = false;
+        for (; index < text.Length; index++)
+        {
+            char character = text[index];
+            if (character >= '0' && character <= '9')
+            {
+                continue;
+            }
+
+            if (mode == NumericComboBoxInputMode.Decimal && character == '.' && !decimalPointSeen)
+            {
+                decimalPointSeen = true;
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryGetRAM(out int minRAM, out int maxRAM)
+    {
+        minRAM = 0;
+        maxRAM = 0;
+
+        if (!int.TryParse(MinRAMTextBox.Text.AsSpan().Trim(), out int parsedMin) ||
+            !int.TryParse(MaxRAMTextBox.Text.AsSpan().Trim(), out int parsedMax))
+        {
+            return false;
+        }
+
+        if (parsedMin <= 0 || parsedMax <= 0 || parsedMin > parsedMax || parsedMax > MaxRAMGB)
+        {
+            return false;
+        }
+
+        minRAM = parsedMin;
+        maxRAM = parsedMax;
+        return true;
+    }
+
     private static bool TryGetOption<T>(
         ComboBox dropdown,
         (T Value, string Label)[] options,
@@ -208,49 +418,37 @@ public partial class Settings
         return SaveConfigAsync(config => update(config.Settings, value));
     }
 
-    private async void PayoutAmount_Changed(object sender, SelectionChangedEventArgs e)
+    private async void PayoutAmount_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && PassivePayoutAmountDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SavePayoutAmountAsync();
         }
     }
 
-    private async void PayoutAmount_LostFocus(object sender, RoutedEventArgs e)
-        => await SavePayoutAmountAsync();
-
-    private async void PayoutRange_Changed(object sender, SelectionChangedEventArgs e)
+    private async void PayoutRange_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && sender is ComboBox { SelectedItem: string })
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SavePayoutRangeAsync(sender);
         }
     }
 
-    private async void PayoutRange_LostFocus(object sender, RoutedEventArgs e)
-        => await SavePayoutRangeAsync(sender);
-
-    private async void TokenLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void TokenLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && MaximumTokenBalanceDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveTokenLimitAsync();
         }
     }
 
-    private async void TokenLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveTokenLimitAsync();
-
-    private async void ChannelLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void ChannelLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && ChannelCommandLimitDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveChannelLimitAsync();
         }
     }
-
-    private async void ChannelLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveChannelLimitAsync();
 
     private Task SavePayoutAmountAsync()
         => SaveEditableIntAsync(
@@ -304,72 +502,6 @@ public partial class Settings
             ChannelCommandLimitDropdown, ChannelCommandLimitOptions, 0, 1000,
             static settings => settings.ChannelCommandLimitPerMinute,
             static (settings, value) => settings.ChannelCommandLimitPerMinute = value);
-
-    private void SetTextValue(ComboBox dropdown, string text)
-    {
-        void ApplyValue()
-        {
-            _updatingCustomValueControls = true;
-            try
-            {
-                dropdown.SelectedIndex = -1;
-                dropdown.Text = text;
-            }
-            finally
-            {
-                _updatingCustomValueControls = false;
-            }
-        }
-
-        // Clearing SelectedIndex from inside SelectionChanged lets WPF's remaining selection
-        // processing overwrite the editor afterward, which can leave it blank. Defer only that
-        // case until the current input/selection event has completely finished.
-        if (dropdown.SelectedIndex >= 0)
-        {
-            object selection = dropdown.SelectedItem;
-            string originalText = dropdown.Text;
-            dropdown.Dispatcher.BeginInvoke(
-                System.Windows.Threading.DispatcherPriority.Background,
-                new Action(() =>
-                {
-                    if (Equals(dropdown.SelectedItem, selection) && string.Equals(dropdown.Text, originalText, StringComparison.Ordinal))
-                    {
-                        ApplyValue();
-                    }
-                }));
-            return;
-        }
-
-        ApplyValue();
-    }
-
-    private void SetIntValue(ComboBox dropdown, (int Value, string Label)[] options, int value)
-    {
-        foreach ((int option, string label) in options)
-        {
-            if (option == value)
-            {
-                SetTextValue(dropdown, label);
-                return;
-            }
-        }
-
-        SetTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
-    }
-
-    private void SetDoubleValue(ComboBox dropdown, (double Value, string Label)[] options, double value)
-    {
-        foreach ((double option, string label) in options)
-        {
-            if (Math.Abs(option - value) < 0.0000001)
-            {
-                SetTextValue(dropdown, label);
-                return;
-            }
-        }
-
-        SetTextValue(dropdown, value.ToString(CultureInfo.InvariantCulture));
-    }
 
     private void RestoreIntValue(
         ComboBox dropdown,
@@ -433,16 +565,13 @@ public partial class Settings
             };
         });
 
-    private async void ViewerLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void ViewerLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && ViewerCommandLimitDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveViewerLimitAsync();
         }
     }
-
-    private async void ViewerLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveViewerLimitAsync();
 
     private Task SaveViewerLimitAsync()
         => SaveEditableIntAsync(
@@ -459,9 +588,9 @@ public partial class Settings
     private async void BackupRetention_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(BackupRetentionDropdown, BackupRetentionOptions, static (settings, value) => settings.AutomaticBackupRetentionCount = value);
 
-    private async void TwitchLogLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void TwitchLogLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && MaxTwitchLogLinesDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleTwitchLogLines,
@@ -470,15 +599,9 @@ public partial class Settings
         }
     }
 
-    private async void TwitchLogLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
-            static settings => settings.MaxVisibleTwitchLogLines,
-            static (settings, value) => settings.MaxVisibleTwitchLogLines = value,
-            refreshLowResourceSummary: true);
-
-    private async void MinecraftLogLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void MinecraftLogLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && MaxMinecraftLogLinesDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleMinecraftLogLines,
@@ -486,12 +609,6 @@ public partial class Settings
                 refreshLowResourceSummary: true);
         }
     }
-
-    private async void MinecraftLogLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
-            static settings => settings.MaxVisibleMinecraftLogLines,
-            static (settings, value) => settings.MaxVisibleMinecraftLogLines = value,
-            refreshLowResourceSummary: true);
 
     private async void RosterInterval_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -502,9 +619,9 @@ public partial class Settings
         }
     }
 
-    private async void RelayRate_Changed(object sender, SelectionChangedEventArgs e)
+    private async void RelayRate_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && RelayRateDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
                 static settings => settings.MinecraftRelayMessagesPerSecond,
@@ -513,15 +630,9 @@ public partial class Settings
         }
     }
 
-    private async void RelayRate_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
-            static settings => settings.MinecraftRelayMessagesPerSecond,
-            static (settings, value) => settings.MinecraftRelayMessagesPerSecond = value,
-            refreshLowResourceSummary: true);
-
-    private async void QueueLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void QueueLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && GameplayQueueDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
                 static settings => settings.MaxGameplayCommandQueue,
@@ -530,26 +641,15 @@ public partial class Settings
         }
     }
 
-    private async void QueueLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
-            static settings => settings.MaxGameplayCommandQueue,
-            static (settings, value) => settings.MaxGameplayCommandQueue = value,
-            refreshLowResourceSummary: true);
-
-    private async void RCONTimeout_Changed(object sender, SelectionChangedEventArgs e)
+    private async void RCONTimeout_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && RCONTimeoutDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
                 static settings => settings.RCONTimeoutSeconds,
                 static (settings, value) => settings.RCONTimeoutSeconds = value);
         }
     }
-
-    private async void RCONTimeout_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
-            static settings => settings.RCONTimeoutSeconds,
-            static (settings, value) => settings.RCONTimeoutSeconds = value);
 
     private async void ShutdownTimeout_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(
@@ -574,9 +674,9 @@ public partial class Settings
         await SaveConfigAsync(config => config.Settings.WhitelistEnabled = enabled, beforeSave: ApplyLocalProfile);
     }
 
-    private async void ViewDistance_Changed(object sender, SelectionChangedEventArgs e)
+    private async void ViewDistance_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && ViewDistanceDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.ViewDistance,
@@ -584,14 +684,9 @@ public partial class Settings
         }
     }
 
-    private async void ViewDistance_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
-            static settings => settings.ViewDistance,
-            static (settings, value) => settings.ViewDistance = value);
-
-    private async void Simulation_Changed(object sender, SelectionChangedEventArgs e)
+    private async void Simulation_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && SimulationDistanceDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.SimulationDistance,
@@ -599,14 +694,9 @@ public partial class Settings
         }
     }
 
-    private async void Simulation_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
-            static settings => settings.SimulationDistance,
-            static (settings, value) => settings.SimulationDistance = value);
-
-    private async void EntityRange_Changed(object sender, SelectionChangedEventArgs e)
+    private async void EntityRange_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && EntityBroadcastRangeDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
                 static settings => settings.EntityBroadcastRangePercentage,
@@ -614,25 +704,15 @@ public partial class Settings
         }
     }
 
-    private async void EntityRange_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
-            static settings => settings.EntityBroadcastRangePercentage,
-            static (settings, value) => settings.EntityBroadcastRangePercentage = value);
-
-    private async void Compression_Changed(object sender, SelectionChangedEventArgs e)
+    private async void Compression_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && NetworkCompressionDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
                 static settings => settings.NetworkCompressionThreshold,
                 static (settings, value) => settings.NetworkCompressionThreshold = value);
         }
     }
-
-    private async void Compression_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
-            static settings => settings.NetworkCompressionThreshold,
-            static (settings, value) => settings.NetworkCompressionThreshold = value);
 
     private async void LowResource_Changed(object sender, RoutedEventArgs e)
     {

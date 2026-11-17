@@ -25,7 +25,8 @@ internal static class AppHelpers
 
         try
         {
-            return Process.GetCurrentProcess().MainModule?.FileName;
+            using Process process = Process.GetCurrentProcess();
+            return process.MainModule?.FileName;
         }
         catch
         {

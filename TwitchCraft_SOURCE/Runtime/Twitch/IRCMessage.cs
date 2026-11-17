@@ -217,6 +217,6 @@ internal sealed class IRCMessage
             end--;
         }
 
-        return start > end ? string.Empty : ParsedCommand.LowerSegment(line, start, end - start + 1);
+        return start > end ? string.Empty : CommandUserHelper.LowerSegment(line, start, end - start + 1);
     }
 }
