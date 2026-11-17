@@ -121,49 +121,37 @@ public partial class Settings
         return SaveConfigAsync(config => update(config.Settings, value));
     }
 
-    private async void PayoutAmount_Changed(object sender, SelectionChangedEventArgs e)
+    private async void PayoutAmount_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && PassivePayoutAmountDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SavePayoutAmountAsync();
         }
     }
 
-    private async void PayoutAmount_LostFocus(object sender, RoutedEventArgs e)
-        => await SavePayoutAmountAsync();
-
-    private async void PayoutRange_Changed(object sender, SelectionChangedEventArgs e)
+    private async void PayoutRange_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && sender is ComboBox { SelectedItem: string })
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SavePayoutRangeAsync(sender);
         }
     }
 
-    private async void PayoutRange_LostFocus(object sender, RoutedEventArgs e)
-        => await SavePayoutRangeAsync(sender);
-
-    private async void TokenLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void TokenLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && MaximumTokenBalanceDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveTokenLimitAsync();
         }
     }
 
-    private async void TokenLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveTokenLimitAsync();
-
-    private async void ChannelLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void ChannelLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && ChannelCommandLimitDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveChannelLimitAsync();
         }
     }
-
-    private async void ChannelLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveChannelLimitAsync();
 
     private Task SavePayoutAmountAsync()
         => SaveEditableIntAsync(
@@ -280,16 +268,13 @@ public partial class Settings
             };
         });
 
-    private async void ViewerLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void ViewerLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && ViewerCommandLimitDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveViewerLimitAsync();
         }
     }
-
-    private async void ViewerLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveViewerLimitAsync();
 
     private Task SaveViewerLimitAsync()
         => SaveEditableIntAsync(
@@ -306,9 +291,9 @@ public partial class Settings
     private async void BackupRetention_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(BackupRetentionDropdown, BackupRetentionOptions, static (settings, value) => settings.AutomaticBackupRetentionCount = value);
 
-    private async void TwitchLogLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void TwitchLogLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && MaxTwitchLogLinesDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleTwitchLogLines,
@@ -317,15 +302,9 @@ public partial class Settings
         }
     }
 
-    private async void TwitchLogLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(MaxTwitchLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
-            static settings => settings.MaxVisibleTwitchLogLines,
-            static (settings, value) => settings.MaxVisibleTwitchLogLines = value,
-            refreshLowResourceSummary: true);
-
-    private async void MinecraftLogLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void MinecraftLogLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && MaxMinecraftLogLinesDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
                 static settings => settings.MaxVisibleMinecraftLogLines,
@@ -333,12 +312,6 @@ public partial class Settings
                 refreshLowResourceSummary: true);
         }
     }
-
-    private async void MinecraftLogLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(MaxMinecraftLogLinesDropdown, VisibleLogLineOptions, 50, 5000,
-            static settings => settings.MaxVisibleMinecraftLogLines,
-            static (settings, value) => settings.MaxVisibleMinecraftLogLines = value,
-            refreshLowResourceSummary: true);
 
     private async void RosterInterval_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -349,9 +322,9 @@ public partial class Settings
         }
     }
 
-    private async void RelayRate_Changed(object sender, SelectionChangedEventArgs e)
+    private async void RelayRate_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && RelayRateDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
                 static settings => settings.MinecraftRelayMessagesPerSecond,
@@ -360,15 +333,9 @@ public partial class Settings
         }
     }
 
-    private async void RelayRate_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(RelayRateDropdown, RelayRateOptions, 0, 100,
-            static settings => settings.MinecraftRelayMessagesPerSecond,
-            static (settings, value) => settings.MinecraftRelayMessagesPerSecond = value,
-            refreshLowResourceSummary: true);
-
-    private async void QueueLimit_Changed(object sender, SelectionChangedEventArgs e)
+    private async void QueueLimit_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && GameplayQueueDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
                 static settings => settings.MaxGameplayCommandQueue,
@@ -377,26 +344,15 @@ public partial class Settings
         }
     }
 
-    private async void QueueLimit_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(GameplayQueueDropdown, GameplayQueueOptions, 10, 1000,
-            static settings => settings.MaxGameplayCommandQueue,
-            static (settings, value) => settings.MaxGameplayCommandQueue = value,
-            refreshLowResourceSummary: true);
-
-    private async void RCONTimeout_Changed(object sender, SelectionChangedEventArgs e)
+    private async void RCONTimeout_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && RCONTimeoutDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveEditableIntAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
                 static settings => settings.RCONTimeoutSeconds,
                 static (settings, value) => settings.RCONTimeoutSeconds = value);
         }
     }
-
-    private async void RCONTimeout_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveEditableIntAsync(RCONTimeoutDropdown, RCONTimeoutOptions, 1, 60,
-            static settings => settings.RCONTimeoutSeconds,
-            static (settings, value) => settings.RCONTimeoutSeconds = value);
 
     private async void ShutdownTimeout_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveOptionAsync(
@@ -421,9 +377,9 @@ public partial class Settings
         await SaveConfigAsync(config => config.Settings.WhitelistEnabled = enabled, beforeSave: ApplyLocalProfile);
     }
 
-    private async void ViewDistance_Changed(object sender, SelectionChangedEventArgs e)
+    private async void ViewDistance_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && ViewDistanceDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.ViewDistance,
@@ -431,14 +387,9 @@ public partial class Settings
         }
     }
 
-    private async void ViewDistance_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(ViewDistanceDropdown, DistanceOptions, 2, 32,
-            static settings => settings.ViewDistance,
-            static (settings, value) => settings.ViewDistance = value);
-
-    private async void Simulation_Changed(object sender, SelectionChangedEventArgs e)
+    private async void Simulation_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && SimulationDistanceDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
                 static settings => settings.SimulationDistance,
@@ -446,14 +397,9 @@ public partial class Settings
         }
     }
 
-    private async void Simulation_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(SimulationDistanceDropdown, DistanceOptions, 2, 32,
-            static settings => settings.SimulationDistance,
-            static (settings, value) => settings.SimulationDistance = value);
-
-    private async void EntityRange_Changed(object sender, SelectionChangedEventArgs e)
+    private async void EntityRange_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && EntityBroadcastRangeDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
                 static settings => settings.EntityBroadcastRangePercentage,
@@ -461,25 +407,15 @@ public partial class Settings
         }
     }
 
-    private async void EntityRange_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(EntityBroadcastRangeDropdown, EntityBroadcastOptions, 10, 1000,
-            static settings => settings.EntityBroadcastRangePercentage,
-            static (settings, value) => settings.EntityBroadcastRangePercentage = value);
-
-    private async void Compression_Changed(object sender, SelectionChangedEventArgs e)
+    private async void Compression_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && NetworkCompressionDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveServerValueAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
                 static settings => settings.NetworkCompressionThreshold,
                 static (settings, value) => settings.NetworkCompressionThreshold = value);
         }
     }
-
-    private async void Compression_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveServerValueAsync(NetworkCompressionDropdown, NetworkCompressionOptions, -1, 4096,
-            static settings => settings.NetworkCompressionThreshold,
-            static (settings, value) => settings.NetworkCompressionThreshold = value);
 
     private async void LowResource_Changed(object sender, RoutedEventArgs e)
     {

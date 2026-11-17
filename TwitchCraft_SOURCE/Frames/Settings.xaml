@@ -266,7 +266,7 @@
                                                           AutomationProperties.Name="Commands per viewer per minute"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="ViewerLimit_Changed"
-                                                          LostFocus="ViewerLimit_LostFocus"
+                                                          LostFocus="ViewerLimit_Changed"
                                                           ToolTip="Choose a preset or type 0–1,000. Zero means unlimited." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -275,7 +275,7 @@
                                                           AutomationProperties.Name="Channel commands per minute"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="ChannelLimit_Changed"
-                                                          LostFocus="ChannelLimit_LostFocus"
+                                                          LostFocus="ChannelLimit_Changed"
                                                           ToolTip="Choose a preset or type 0–1,000. Zero means unlimited." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -291,7 +291,7 @@
                                                               Visibility="Collapsed"
                                                               Style="{StaticResource NumericEditableComboBox}"
                                                               SelectionChanged="CooldownTime_Changed"
-                                                              LostFocus="CooldownTime_LostFocus"
+                                                              LostFocus="CooldownTime_Changed"
                                                               ToolTip="Choose a preset or type 0.1–120 seconds." />
                                                 </StackPanel>
                                             </DockPanel>
@@ -392,7 +392,7 @@
                                                           AutomationProperties.Name="Passive tokens per payout"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="PayoutAmount_Changed"
-                                                          LostFocus="PayoutAmount_LostFocus"
+                                                          LostFocus="PayoutAmount_Changed"
                                                           ToolTip="Choose a preset or type 1–1,000,000." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -402,14 +402,14 @@
                                                               AutomationProperties.Name="Minimum passive interval"
                                                               Style="{StaticResource NumericEditableComboBox}"
                                                               SelectionChanged="PayoutRange_Changed"
-                                                              LostFocus="PayoutRange_LostFocus"
+                                                              LostFocus="PayoutRange_Changed"
                                                               ToolTip="Minimum: choose a preset or type 10–900 seconds." />
                                                     <TextBlock Text=" to " VerticalAlignment="Center" Foreground="#C6C6C6" />
                                                     <ComboBox x:Name="PassivePayoutMaximumDropdown"
                                                               AutomationProperties.Name="Maximum passive interval"
                                                               Style="{StaticResource NumericEditableComboBox}"
                                                               SelectionChanged="PayoutRange_Changed"
-                                                              LostFocus="PayoutRange_LostFocus"
+                                                              LostFocus="PayoutRange_Changed"
                                                               ToolTip="Maximum: choose a preset or type 10–900 seconds." />
                                                 </StackPanel>
                                             </DockPanel>
@@ -434,7 +434,7 @@
                                                           AutomationProperties.Name="Maximum token balance"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="TokenLimit_Changed"
-                                                          LostFocus="TokenLimit_LostFocus"
+                                                          LostFocus="TokenLimit_Changed"
                                                           ToolTip="Choose a preset or type 0–2,147,483,647. Zero means unlimited." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -443,7 +443,7 @@
                                                           AutomationProperties.Name="Command-cost multiplier"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="CostMultiplier_Changed"
-                                                          LostFocus="CostMultiplier_LostFocus"
+                                                          LostFocus="CostMultiplier_Changed"
                                                           ToolTip="Choose a preset or type a multiplier from 0–5.0. 0x makes priced commands free." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -459,7 +459,7 @@
                                                           AutomationProperties.Name="Tokens per new follower"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="FollowReward_Changed"
-                                                          LostFocus="FollowReward_LostFocus"
+                                                          LostFocus="FollowReward_Changed"
                                                           ToolTipService.ShowOnDisabled="True"
                                                           ToolTip="Choose a preset or type 1–1,000,000. Available when new-follower rewards are enabled." />
                                             </DockPanel>
@@ -552,7 +552,7 @@
                                                           AutomationProperties.Name="Minecraft relay messages per second"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="RelayRate_Changed"
-                                                          LostFocus="RelayRate_LostFocus"
+                                                          LostFocus="RelayRate_Changed"
                                                           ToolTip="Choose a preset or type 0–100 messages per second. Zero means unlimited." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}" ToolTip="Shows Twitch and Minecraft connection status above the viewer list on the main screen.">
@@ -608,7 +608,7 @@
                                                           AutomationProperties.Name="Maximum visible Twitch log lines"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="TwitchLogLimit_Changed"
-                                                          LostFocus="TwitchLogLimit_LostFocus"
+                                                          LostFocus="TwitchLogLimit_Changed"
                                                           ToolTip="Choose a preset or type 50–5,000 lines." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -617,7 +617,7 @@
                                                           AutomationProperties.Name="Maximum visible Minecraft log lines"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="MinecraftLogLimit_Changed"
-                                                          LostFocus="MinecraftLogLimit_LostFocus"
+                                                          LostFocus="MinecraftLogLimit_Changed"
                                                           ToolTip="Choose a preset or type 50–5,000 lines." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -626,7 +626,7 @@
                                                           AutomationProperties.Name="Maximum queued gameplay commands"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="QueueLimit_Changed"
-                                                          LostFocus="QueueLimit_LostFocus"
+                                                          LostFocus="QueueLimit_Changed"
                                                           ToolTip="Choose a preset or type 10–1,000 queued commands." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -679,7 +679,7 @@
                                                           AutomationProperties.Name="View distance in chunks"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="ViewDistance_Changed"
-                                                          LostFocus="ViewDistance_LostFocus"
+                                                          LostFocus="ViewDistance_Changed"
                                                           ToolTip="Choose a preset or type 2–32 chunks." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -688,7 +688,7 @@
                                                           AutomationProperties.Name="Simulation distance in chunks"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="Simulation_Changed"
-                                                          LostFocus="Simulation_LostFocus"
+                                                          LostFocus="Simulation_Changed"
                                                           ToolTip="Choose a preset or type 2–32 chunks." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -697,7 +697,7 @@
                                                           AutomationProperties.Name="Entity broadcast range percentage"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="EntityRange_Changed"
-                                                          LostFocus="EntityRange_LostFocus"
+                                                          LostFocus="EntityRange_Changed"
                                                           ToolTip="Choose a preset or type 10–1,000 percent." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -706,7 +706,7 @@
                                                           AutomationProperties.Name="Network compression threshold"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="Compression_Changed"
-                                                          LostFocus="Compression_LostFocus"
+                                                          LostFocus="Compression_Changed"
                                                           ToolTip="Choose a preset or type -1–4,096 bytes. -1 disables compression." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
@@ -715,7 +715,7 @@
                                                           AutomationProperties.Name="RCON timeout"
                                                           Style="{StaticResource NumericEditableComboBox}"
                                                           SelectionChanged="RCONTimeout_Changed"
-                                                          LostFocus="RCONTimeout_LostFocus"
+                                                          LostFocus="RCONTimeout_Changed"
                                                           ToolTip="Choose a preset or type 1–60 seconds." />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">

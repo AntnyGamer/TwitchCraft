@@ -35,6 +35,17 @@ public partial class Settings
         return true;
     }
 
+    private bool ShouldSaveEditableValue(object sender, RoutedEventArgs e)
+    {
+        if (_initializing || _updatingCustomValueControls)
+        {
+            return false;
+        }
+
+        // Preset selections save immediately; typed values save when focus leaves the editor.
+        return e is not SelectionChangedEventArgs || sender is ComboBox { SelectedItem: string };
+    }
+
     private void RAM_PreviewTextInput(object sender, TextCompositionEventArgs args)
     {
         if (sender is not TextBox textBox)

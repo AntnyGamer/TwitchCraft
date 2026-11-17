@@ -417,16 +417,13 @@ public partial class Settings : UserControl
         }
     }
 
-    private async void CostMultiplier_Changed(object sender, SelectionChangedEventArgs e)
+    private async void CostMultiplier_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && CommandCostMultiplierDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveCostMultiplierAsync();
         }
     }
-
-    private async void CostMultiplier_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveCostMultiplierAsync();
 
     private async Task SaveCostMultiplierAsync()
     {
@@ -454,16 +451,13 @@ public partial class Settings : UserControl
             static (config, value) => config.Settings.AutomaticFollowRewardsEnabled = value);
     }
 
-    private async void FollowReward_Changed(object sender, SelectionChangedEventArgs e)
+    private async void FollowReward_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && FollowRewardAmountDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveFollowRewardAsync();
         }
     }
-
-    private async void FollowReward_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveFollowRewardAsync();
 
     private async Task SaveFollowRewardAsync()
     {
@@ -512,16 +506,13 @@ public partial class Settings : UserControl
         }
     }
 
-    private async void CooldownTime_Changed(object sender, SelectionChangedEventArgs e)
+    private async void CooldownTime_Changed(object sender, RoutedEventArgs e)
     {
-        if (!_initializing && !_updatingCustomValueControls && GlobalCooldownSecondsDropdown.SelectedItem is string)
+        if (ShouldSaveEditableValue(sender, e))
         {
             await SaveGlobalCooldownAsync();
         }
     }
-
-    private async void CooldownTime_LostFocus(object sender, RoutedEventArgs e)
-        => await SaveGlobalCooldownAsync();
 
     private async Task SaveGlobalCooldownAsync()
     {
