@@ -128,7 +128,7 @@ public static partial class MinigameManager
 
     // ===== Shared minigame runtime helpers =====
 
-    private static async Task SafeReplyAsync(MainHandler runtime, string message, CancellationToken cancellationToken, BotResponseKind kind = BotResponseKind.Announcement)
+    private static async Task SafeReplyAsync(MainHandler runtime, string message, CancellationToken cancellationToken, BotResponseKind kind)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(message))
         {

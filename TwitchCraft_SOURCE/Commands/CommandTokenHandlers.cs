@@ -13,7 +13,6 @@ public static partial class CommandList
         Dictionary<string, ChatCommandHandler> handlers,
         Func<string?, CancellationToken, Task> sayToChannel,
         Func<string?, CancellationToken, Task> saySuccessfulToChannel,
-        Func<string?, CancellationToken, Task> sayConfirmationToChannel,
         Func<string, string, CancellationToken, Task<bool>> requireAllowed)
     {
         handlers["gambletokens"] = async (args, sender, ct) =>
@@ -145,7 +144,7 @@ public static partial class CommandList
                     : amount.ToString(CultureInfo.InvariantCulture);
                 if (adjustedCount == viewers.Count)
                 {
-                    await sayConfirmationToChannel(
+                    await saySuccessfulToChannel(
                         string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {amountDescription} {TokenLabel(amount)} {direction} all live viewers ({viewers.Count})."),
                         ct).ConfigureAwait(false);
                 }
@@ -171,7 +170,7 @@ public static partial class CommandList
                 string chosen = viewers[CommandRandom.Next(viewers.Count)];
                 int adjusted = isGive ? runtime.Tokens.Award(chosen, amount) : runtime.Tokens.Adjust(chosen, delta);
                 int actualAmount = Math.Abs(adjusted);
-                await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {actualAmount} {TokenLabel(actualAmount)} {direction} random viewer {chosen}."), ct).ConfigureAwait(false);
+                await saySuccessfulToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {actualAmount} {TokenLabel(actualAmount)} {direction} random viewer {chosen}."), ct).ConfigureAwait(false);
                 return;
             }
             if (!CommandUserHelper.TryNormalizeTwitchUser(targetToken, out string targetUsername))
@@ -181,7 +180,7 @@ public static partial class CommandList
             }
             int changed = isGive ? runtime.Tokens.Award(targetUsername, amount) : runtime.Tokens.Adjust(targetUsername, delta);
             int changedAmount = Math.Abs(changed);
-            await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {changedAmount} {TokenLabel(changedAmount)} {direction} {targetUsername}."), ct).ConfigureAwait(false);
+            await saySuccessfulToChannel(string.Create(CultureInfo.InvariantCulture, $"{who} {verb} {changedAmount} {TokenLabel(changedAmount)} {direction} {targetUsername}."), ct).ConfigureAwait(false);
         }
         handlers["tokens"] = async (args, sender, ct) =>
         {
@@ -302,7 +301,7 @@ public static partial class CommandList
                 await sayToChannel(received is < 0 ? fromUser + ", you don't have enough tokens to trade." : fromUser + ", the token trade could not be completed. Try again.", ct).ConfigureAwait(false);
                 return;
             }
-            await sayConfirmationToChannel(string.Create(CultureInfo.InvariantCulture, $"{fromUser} traded {amount} tokens to {toUser}. {toUser} received {received} tokens."), ct).ConfigureAwait(false);
+            await saySuccessfulToChannel(string.Create(CultureInfo.InvariantCulture, $"{fromUser} traded {amount} tokens to {toUser}. {toUser} received {received} tokens."), ct).ConfigureAwait(false);
         };
     }
 }

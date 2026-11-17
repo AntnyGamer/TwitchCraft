@@ -38,7 +38,7 @@ public static partial class MinigameManager
                 " HP. Max " +
                 MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
                     " tokens per person. If the Wither dies in time, each player gets 1.2x their bet back. If it is not killed in 5 minutes, everyone loses half.",
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
 
             Task timerTask = Task.Delay(WitherBattleDuration, cancellationToken);
             await Task.WhenAny(timerTask, defeatedSignal.Task).ConfigureAwait(false);
@@ -70,7 +70,7 @@ public static partial class MinigameManager
 
             if (bets.Count == 0)
             {
-                await SafeReplyAsync(runtime, "The Wither Battle ended because nobody joined.", cancellationToken).ConfigureAwait(false);
+                await SafeReplyAsync(runtime, "The Wither Battle ended because nobody joined.", cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
                 return;
             }
 

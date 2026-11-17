@@ -94,7 +94,7 @@ public static partial class CommandList
                 await SayAsync(sender + ", the " + commandName + " command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
                 return;
             }
-            await ConfirmAsync(sender + ", " + past + " " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
+            await SuccessAsync(sender + ", " + past + " " + playerName + (string.IsNullOrEmpty(reason) ? "." : " (" + reason + ")."), ct).ConfigureAwait(false);
         }
 
         private async Task UnbanAsync(string[]? args, string sender, CancellationToken ct)
@@ -116,7 +116,7 @@ public static partial class CommandList
                 await SayAsync(sender + ", the unban command could not be sent because the Minecraft server is not ready.", ct).ConfigureAwait(false);
                 return;
             }
-            await ConfirmAsync(sender + ", unbanned " + playerName + ".", ct).ConfigureAwait(false);
+            await SuccessAsync(sender + ", unbanned " + playerName + ".", ct).ConfigureAwait(false);
         }
 
         private Task WhitelistAddAsync(string[]? args, string sender, CancellationToken ct)
@@ -154,7 +154,7 @@ public static partial class CommandList
             }
 
             string result = add ? "added " + playerName + " to" : "removed " + playerName + " from";
-            await ConfirmAsync(sender + ", " + result + " the whitelist.", ct).ConfigureAwait(false);
+            await SuccessAsync(sender + ", " + result + " the whitelist.", ct).ConfigureAwait(false);
         }
 
         private async Task EffectAsync(string[]? args, string sender, CancellationToken ct)

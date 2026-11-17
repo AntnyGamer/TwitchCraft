@@ -28,7 +28,7 @@ public static partial class MinigameManager
                 string.Create(
                     CultureInfo.InvariantCulture,
                     $"🔴 Guess The Number has started! Use !guess <number> to guess a number between {minValue} and {maxValue}. If you win you will get free tokens! You have 60 seconds!"),
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
 
             DateTime endAtUtc = DateTime.UtcNow.AddSeconds(60.0);
             while (DateTime.UtcNow < endAtUtc)
@@ -60,7 +60,7 @@ public static partial class MinigameManager
                 await SafeReplyAsync(
                     runtime,
                     string.Create(CultureInfo.InvariantCulture, $"Guess The Number is over! Nobody got it. The correct number was {answer}."),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
             }
         }
         finally

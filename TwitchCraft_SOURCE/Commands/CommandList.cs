@@ -47,7 +47,7 @@ public static partial class CommandList
         {
             AddCommand("addheart", (args, sender, ct) => HeartAsync(args, sender, true, ct), NiceCommand);
             AddCommand("ban", BanAsync);
-            AddTokenHandlers(runtime, handlers, SayAsync, SuccessAsync, ConfirmAsync, RequirePermissionAsync);
+            AddTokenHandlers(runtime, handlers, SayAsync, SuccessAsync, RequirePermissionAsync);
             AddCommand("commandstats", CommandStatsAsync);
             AddCommand("followreward", FollowRewardAsync);
             AddCommand("help", HelpAsync);
