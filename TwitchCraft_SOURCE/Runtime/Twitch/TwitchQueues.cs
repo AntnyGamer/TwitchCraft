@@ -149,9 +149,13 @@ public sealed partial class MainHandler
         }
         finally
         {
-            if (item.Generation == Volatile.Read(ref _twitchSession.QueueGeneration))
+            // Queue resets must not happen between checking the generation and updating its depth.
+            lock (state.Gate)
             {
-                Interlocked.Decrement(ref state.Depth);
+                if (item.Generation == Volatile.Read(ref _twitchSession.QueueGeneration))
+                {
+                    Interlocked.Decrement(ref state.Depth);
+                }
             }
         }
     }

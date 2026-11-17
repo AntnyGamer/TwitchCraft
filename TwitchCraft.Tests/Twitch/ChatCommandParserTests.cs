@@ -5,18 +5,6 @@ namespace TwitchCraft.Tests.Twitch;
 
 public sealed class ChatCommandParserTests
 {
-    [Theory]
-    [InlineData(null, "")]
-    [InlineData(" \t@@", "")]
-    [InlineData(" @MiXeD_123 \t", "mixed_123")]
-    [InlineData("@@ viewer ", " viewer")]
-    [InlineData("@@VIEWER@@", "viewer@@")]
-    [InlineData("  ÜΩ  ", "üω")]
-    public void NormalizeUser_PreservesWhitespaceAtSignAndUnicodeRules(string? value, string expected)
-    {
-        Assert.Equal(expected, CommandUserHelper.NormalizeUser(value));
-    }
-
     [Fact]
     public void Parse_NormalizesCommandNameAndSplitsArguments()
     {

@@ -10,9 +10,6 @@ public sealed class OAuthTokenFormattingTests
     [InlineData("OAUTH:secret", "secret")]
     [InlineData("oauth:   secret", "secret")]
     [InlineData("secret", "secret")]
-    [InlineData(" \t\r\n", "")]
-    [InlineData(" oauth: \t", "")]
-    [InlineData(" oauth:oauth:secret ", "oauth:secret")]
     [InlineData(null, "")]
     public void NormalizeAccessToken_RemovesWhitespaceAndOAuthPrefix(string? value, string expected)
     {

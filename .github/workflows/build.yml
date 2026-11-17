@@ -34,12 +34,9 @@ jobs:
       - name: Verify formatting
         run: dotnet format TwitchCraft.slnx --verify-no-changes --no-restore
 
-      - name: Build
-        run: dotnet build TwitchCraft.slnx -c Release --no-restore
-
-      - name: Test
+      - name: Build and test
         working-directory: TwitchCraft.Tests
-        run: dotnet test --project TwitchCraft.Tests.csproj -c Release --no-build --results-directory ..\TestResults --coverlet --coverlet-output-format cobertura
+        run: dotnet test --project TwitchCraft.Tests.csproj -c Release --no-restore --results-directory ..\TestResults --coverlet --coverlet-output-format cobertura
 
       - name: Enforce code coverage
         run: |
