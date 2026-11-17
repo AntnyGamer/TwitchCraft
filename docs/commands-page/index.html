@@ -1422,12 +1422,12 @@ a:hover {
   // The desktop app's preset list is the source of truth. Fetch it from the
   // public main branch so the website picks up future preset changes without
   // maintaining a separate preset array in the frontend.
-  const presetSource = 'https://raw.githubusercontent.com/AntnyGamer/TwitchCraft/main/TwitchCraft_SOURCE/Frames/Settings.xaml.cs';
+  const presetSource = 'https://raw.githubusercontent.com/AntnyGamer/TwitchCraft/main/TwitchCraft_SOURCE/Frames/SettingsOptions.cs';
 
   function parseMultiplierOptions(source) {
     const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
     if (!definition) {
-      throw new Error('Multiplier presets were not found in Settings.xaml.cs');
+      throw new Error('Multiplier presets were not found in SettingsOptions.cs');
     }
     const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
       match => ({
