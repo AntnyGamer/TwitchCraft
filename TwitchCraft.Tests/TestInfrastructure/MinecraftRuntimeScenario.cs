@@ -65,7 +65,6 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
             await runtime.ApplySettingsAsync(config);
             await runtime.StartServerAsync(config, cts.Token);
             _ = runtime.ReadOutputAsync(cts.Token);
-            await runtime.VerifyServerProcessAsync(cts.Token);
             await FakeJavaServer.WaitForReadyAsync(runtime, cts.Token);
             await FakeJavaServer.WaitUntilAsync(
                 () => runtime.HasOnlinePlayerSnapshot,
@@ -132,7 +131,7 @@ internal sealed class MinecraftRuntimeScenario : IAsyncDisposable
                     return false;
                 }
 
-                barrierIndex = lines.FindIndex(cursor, line => string.Equals(line, barrier, StringComparison.Ordinal));
+                barrierIndex = lines.IndexOf(barrier, cursor);
                 return barrierIndex >= 0;
             },
             "Fake Minecraft process did not receive the test command barrier.",

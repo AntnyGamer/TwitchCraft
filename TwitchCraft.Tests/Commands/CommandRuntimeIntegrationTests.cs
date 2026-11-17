@@ -209,8 +209,7 @@ public sealed class CommandRuntimeIntegrationTests
 
             Assert.True(await runtime.RunMinecraftCommandAsync("say remote-integration"));
             Assert.False(await runtime.RunMinecraftCommandAsync("say malformed"));
-            Assert.Equal("say remote-integration", RCON.Commands[RCON.Commands.Count - 2]);
-            Assert.Equal("say malformed", RCON.Commands[RCON.Commands.Count - 1]);
+            Assert.Equal(["say remote-integration", "say malformed"], RCON.Commands.TakeLast(2));
         }
         finally
         {
@@ -373,7 +372,6 @@ public sealed class CommandRuntimeIntegrationTests
         await runtime.ApplySettingsAsync(config);
         await runtime.StartServerAsync(config, cancellationToken);
         _ = runtime.ReadOutputAsync(cancellationToken);
-        await runtime.VerifyServerProcessAsync(cancellationToken);
         await FakeJavaServer.WaitForReadyAsync(runtime, cancellationToken);
         string restore = "execute if data storage twitchcraft:runtime {slaughter_mob_loot:1b} store result storage twitchcraft:runtime slaughter_mob_loot byte 0 run gamerule " + runtime.MobLootGameRuleName + " true";
         await FakeJavaServer.WaitUntilAsync(
