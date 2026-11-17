@@ -10,13 +10,6 @@ namespace TwitchCraft_V1.Frames;
 
 public partial class Settings : UserControl
 {
-    private enum NumericComboBoxInputMode
-    {
-        UnsignedInteger,
-        SignedInteger,
-        Decimal
-    }
-
     private enum SettingsCategory
     {
         Commands,
@@ -28,34 +21,6 @@ public partial class Settings : UserControl
         Server,
         Dangerous
     }
-
-    private const int MaxRAMGB = 128;
-    private const double DefaultGlobalCooldownSeconds = 10.0;
-    private static readonly (double Seconds, string Label)[] GlobalCooldownOptions =
-    [
-        (0.1, "0.1s"),
-        (0.5, "0.5s"),
-        (1.0, "1s"),
-        (2.0, "2s"),
-        (3.0, "3s"),
-        (5.0, "5s"),
-        (10.0, "10s"),
-        (15.0, "15s"),
-        (30.0, "30s"),
-        (60.0, "60s"),
-        (120.0, "120s")
-    ];
-    private static readonly (double Multiplier, string Label)[] CommandCostMultiplierOptions =
-    [
-        (0.0, "0x"),
-        (0.5, "0.5x"),
-        (0.75, "0.75x"),
-        (1.0, "1x"),
-        (1.25, "1.25x"),
-        (1.5, "1.5x"),
-        (2.0, "2x"),
-        (3.0, "3x")
-    ];
 
     private bool _initializing = true;
     private SettingsCategory _currentCategory = SettingsCategory.Commands;
@@ -69,24 +34,6 @@ public partial class Settings : UserControl
     private string _savedCommandPrefix = "!";
     private string _savedSecondaryCommandPrefix = string.Empty;
     private string _savedRCONPassword = string.Empty;
-
-    private static bool IsAsciiDigitsOnly(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return false;
-        }
-
-        for (int i = 0; i < value.Length; i++)
-        {
-            if (!char.IsAsciiDigit(value[i]))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     public Settings()
     {
@@ -145,156 +92,6 @@ public partial class Settings : UserControl
         catch
         {
         }
-    }
-
-    private void RAM_PreviewTextInput(object sender, TextCompositionEventArgs args)
-    {
-        if (sender is not TextBox textBox)
-        {
-            args.Handled = true;
-            return;
-        }
-
-        args.Handled = !IsValidRAMText(BuildTextCandidate(textBox, args.Text));
-    }
-
-    private void RAM_Pasting(object sender, DataObjectPastingEventArgs args)
-    {
-        if (sender is not TextBox textBox ||
-            args.DataObject.GetData(typeof(string)) is not string pastedText ||
-            !IsValidRAMText(BuildTextCandidate(textBox, pastedText)))
-        {
-            args.CancelCommand();
-        }
-    }
-
-    private static string BuildTextCandidate(TextBox textBox, string insertedText)
-    {
-        string current = textBox.Text ?? string.Empty;
-        int start = Math.Clamp(textBox.SelectionStart, 0, current.Length);
-        int length = Math.Clamp(textBox.SelectionLength, 0, current.Length - start);
-        ArgumentNullException.ThrowIfNull(insertedText, "value");
-        if (length == 0 && insertedText.Length == 0)
-        {
-            return current;
-        }
-
-        ReadOnlySpan<char> textBeforeSelection = current.AsSpan(0, start);
-        ReadOnlySpan<char> textAfterSelection = current.AsSpan(start + length);
-        return string.Concat(textBeforeSelection, insertedText.AsSpan(), textAfterSelection);
-    }
-
-    private static bool IsValidRAMText(string candidate)
-        => IsAsciiDigitsOnly(candidate) && int.TryParse(candidate, out int value) && value <= MaxRAMGB;
-
-    private void SetupNumericBox(ComboBox dropdown)
-    {
-        dropdown.PreviewTextInput += NumericBox_PreviewTextInput;
-        dropdown.GotKeyboardFocus += NumericBox_GotFocus;
-        DataObject.AddPastingHandler(dropdown, NumericBox_Pasting);
-    }
-
-    private void NumericBox_GotFocus(object sender, KeyboardFocusChangedEventArgs args)
-    {
-        if (sender is not ComboBox dropdown)
-        {
-            return;
-        }
-
-        dropdown.ApplyTemplate();
-        if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is TextBox editor)
-        {
-            editor.SelectAll();
-        }
-    }
-
-    private void NumericBox_PreviewTextInput(object sender, TextCompositionEventArgs args)
-    {
-        if (sender is not ComboBox dropdown)
-        {
-            return;
-        }
-
-        string candidate = BuildNumberCandidate(dropdown, args.Text);
-        args.Handled = !IsValidNumberText(candidate, GetNumberMode(dropdown));
-    }
-
-    private void NumericBox_Pasting(object sender, DataObjectPastingEventArgs args)
-    {
-        if (sender is not ComboBox dropdown)
-        {
-            return;
-        }
-
-        if (args.DataObject.GetData(typeof(string)) is not string pastedText ||
-            !IsValidNumberText(
-                BuildNumberCandidate(dropdown, pastedText),
-                GetNumberMode(dropdown)))
-        {
-            args.CancelCommand();
-        }
-    }
-
-    private static string BuildNumberCandidate(ComboBox dropdown, string insertedText)
-    {
-        dropdown.ApplyTemplate();
-        if (dropdown.Template.FindName("PART_EditableTextBox", dropdown) is not TextBox editor)
-        {
-            return (dropdown.Text ?? string.Empty) + insertedText;
-        }
-
-        return BuildTextCandidate(editor, insertedText);
-    }
-
-    private NumericComboBoxInputMode GetNumberMode(ComboBox dropdown)
-    {
-        if (ReferenceEquals(dropdown, GlobalCooldownSecondsDropdown) ||
-            ReferenceEquals(dropdown, CommandCostMultiplierDropdown))
-        {
-            return NumericComboBoxInputMode.Decimal;
-        }
-
-        return ReferenceEquals(dropdown, NetworkCompressionDropdown)
-            ? NumericComboBoxInputMode.SignedInteger
-            : NumericComboBoxInputMode.UnsignedInteger;
-    }
-
-    private static bool IsValidNumberText(string text, NumericComboBoxInputMode mode)
-    {
-        if (text.Length == 0)
-        {
-            return true;
-        }
-
-        int index = 0;
-        if (mode == NumericComboBoxInputMode.SignedInteger && text[0] == '-')
-        {
-            index = 1;
-            if (text.Length == 1)
-            {
-                return true;
-            }
-        }
-
-        bool decimalPointSeen = false;
-        for (; index < text.Length; index++)
-        {
-            char character = text[index];
-            if (character >= '0' && character <= '9')
-            {
-                continue;
-            }
-
-            if (mode == NumericComboBoxInputMode.Decimal && character == '.' && !decimalPointSeen)
-            {
-                decimalPointSeen = true;
-                continue;
-            }
-
-            return false;
-        }
-
-        return true;
     }
 
     private void OnVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -987,77 +784,4 @@ public partial class Settings : UserControl
         }
     }
 
-    private void AddMinigameOptions()
-    {
-        if (MinigameCooldownDropdown.Items.Count > 0)
-        {
-            return;
-        }
-
-        for (int i = 2; i <= 30; i++)
-        {
-            MinigameCooldownDropdown.Items.Add(i + " minutes");
-        }
-    }
-
-    private void AddEconomyOptions()
-    {
-        AddStringOptions(ResponseVerbosityDropdown,
-            [
-                BotResponseVerbositySettings.Normal,
-                BotResponseVerbositySettings.Reduced,
-                BotResponseVerbositySettings.EssentialOnly
-            ]);
-
-        AddOptions(CommandCostMultiplierDropdown, CommandCostMultiplierOptions);
-        AddStringOptions(FollowRewardAmountDropdown, ["25", "50", "100", "200", "500", "1000"]);
-    }
-
-    private void SetCostMultiplier(double multiplier)
-        => SetDoubleValue(CommandCostMultiplierDropdown, CommandCostMultiplierOptions, multiplier);
-
-    private void SetFollowReward(int amount)
-        => SetTextValue(
-            FollowRewardAmountDropdown,
-            amount.ToString(System.Globalization.CultureInfo.InvariantCulture));
-
-    private void UpdateFollowReward(bool enabled)
-        => FollowRewardAmountDropdown?.IsEnabled = enabled;
-
-    private void SetGlobalCooldown(double seconds)
-        => SetDoubleValue(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, seconds);
-
-    private void UpdateGlobalCooldown(bool visible)
-        => GlobalCooldownSecondsDropdown.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-
-    private bool TryGetRAM(out int minRAM, out int maxRAM)
-    {
-        minRAM = 0;
-        maxRAM = 0;
-
-        if (!int.TryParse(MinRAMTextBox.Text.AsSpan().Trim(), out int parsedMin) ||
-            !int.TryParse(MaxRAMTextBox.Text.AsSpan().Trim(), out int parsedMax))
-        {
-            return false;
-        }
-
-        if (parsedMin <= 0 || parsedMax <= 0 || parsedMin > parsedMax || parsedMax > MaxRAMGB)
-        {
-            return false;
-        }
-
-        minRAM = parsedMin;
-        maxRAM = parsedMax;
-        return true;
-    }
-
-    private void SetDifficulty(string? difficulty)
-    {
-        DifficultyDropdown.SelectedIndex = ConfigurationStore.NormalizeDifficulty(difficulty) switch
-        {
-            "Easy" => 0,
-            "Hard" => 2,
-            _ => 1
-        };
-    }
 }
