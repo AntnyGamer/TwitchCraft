@@ -241,6 +241,12 @@ public static partial class CommandList
             }
 
             string botName = runtime.TokenLeaderboardBotName;
+            if (MainHandler.IsIgnoredUser(queryUser, botName, botName.Length > 0))
+            {
+                await saySuccessfulToChannel(whoAsked + ", " + queryUser + " is not ranked because bot accounts are excluded from the token leaderboard.", ct).ConfigureAwait(false);
+                return;
+            }
+
             if (!runtime.Tokens.TryGetRank(queryUser, out TokenRankResult? rank, botName))
             {
                 await sayToChannel(whoAsked + ", token data is temporarily unavailable. Try again in a moment.", ct).ConfigureAwait(false);
@@ -249,10 +255,7 @@ public static partial class CommandList
             if (rank is not TokenRankResult result)
             {
                 string subject = string.Equals(queryUser, whoAsked, StringComparison.OrdinalIgnoreCase) ? "you are" : queryUser + " is";
-                string reason = MainHandler.IsIgnoredUser(queryUser, botName, botName.Length > 0)
-                    ? " because bot accounts are excluded from the token leaderboard."
-                    : " yet because the balance is 0 tokens.";
-                await saySuccessfulToChannel(whoAsked + ", " + subject + " not ranked" + reason, ct).ConfigureAwait(false);
+                await saySuccessfulToChannel(whoAsked + ", " + subject + " not ranked yet because the balance is 0 tokens.", ct).ConfigureAwait(false);
                 return;
             }
 
