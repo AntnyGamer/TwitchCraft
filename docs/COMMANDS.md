@@ -81,8 +81,8 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 | `!followreward` | `!followreward` | Free | None | Everyone | Explains the automatic one-time follower reward and its configured amount (50 tokens by default). |
 | `!help` | `!help` | Free | None | Everyone | Links to the full TwitchCraft command list. |
 | `!playerlist` | `!playerlist` | Free | Online players | Everyone | Gives a list of players currently in Minecraft. |
-| `!tokenleaderboard` | `!tokenleaderboard` | Free | Twitch viewers | Everyone | Shows the 5 viewers with the highest token balances. |
-| `!tokenrank` | `!tokenrank [twitch-user]` | Free | Twitch user | Everyone | Checks your token leaderboard rank or another viewer's rank. |
+| `!tokenleaderboard` | `!tokenleaderboard` | Free | Twitch viewers | Everyone | Shows the 5 highest token balances among non-bot viewers (excluding the separately authorized bot and recognized chat bots). |
+| `!tokenrank` | `!tokenrank [twitch-user]` | Free | Twitch user | Everyone | Checks your or another viewer's rank among non-bot token holders. |
 | `!tokens` | `!tokens [twitch-user]` | Free | Twitch user | Everyone | Checks how many tokens you or another viewer has. |
 | `!tradetokens` | `!tradetokens <twitch-user> <amount>` | Entered amount | Twitch user | Everyone | Gives another viewer half of the specified tokens, rounded down, while removing the full amount from you (minimum 2 tokens). |
 

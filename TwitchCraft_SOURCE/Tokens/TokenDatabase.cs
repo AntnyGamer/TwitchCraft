@@ -10,7 +10,7 @@ namespace TwitchCraft_V1;
 
 internal sealed partial class TokenStore
 {
-    internal bool TryGetTopBalances(int limit, out IReadOnlyList<KeyValuePair<string, int>> result)
+    internal bool TryGetTopBalances(int limit, out IReadOnlyList<KeyValuePair<string, int>> result, string excludedBotName = "")
     {
         result = [];
         if (limit <= 0)
@@ -25,8 +25,15 @@ internal sealed partial class TokenStore
             {
                 SqliteConnection connection = GetConnectionNoLock();
                 using SqliteCommand command = connection.CreateCommand();
-                command.CommandText = "SELECT Username, Balance FROM TokenBalances WHERE Balance > 0 ORDER BY Balance DESC, Username COLLATE NOCASE ASC LIMIT $limit;";
+                command.CommandText = """
+                    SELECT Username, Balance FROM TokenBalances
+                    WHERE Balance > 0
+                      AND Username NOT IN ('nightbot', 'streamlabs', 'streamelements')
+                      AND Username <> $botName COLLATE NOCASE
+                    ORDER BY Balance DESC, Username COLLATE NOCASE ASC LIMIT $limit;
+                    """;
                 command.Parameters.AddWithValue("$limit", limit);
+                command.Parameters.AddWithValue("$botName", Normalize(excludedBotName));
 
                 List<KeyValuePair<string, int>> resultList = new(limit);
                 using SqliteDataReader reader = command.ExecuteReader();
@@ -51,7 +58,7 @@ internal sealed partial class TokenStore
         }
     }
 
-    internal bool TryGetRank(string user, out TokenRankResult? result)
+    internal bool TryGetRank(string user, out TokenRankResult? result, string excludedBotName = "")
     {
         result = null;
         string normalized = Normalize(user);
@@ -70,12 +77,17 @@ internal sealed partial class TokenStore
                     SELECT b.Username, b.Balance,
                            1 + (SELECT COUNT(*)
                                 FROM TokenBalances AS ranked
-                                WHERE ranked.Balance > b.Balance
-                                   OR (ranked.Balance = b.Balance AND ranked.Username COLLATE NOCASE < b.Username COLLATE NOCASE)) AS Position
+                                WHERE ranked.Username NOT IN ('nightbot', 'streamlabs', 'streamelements')
+                                  AND ranked.Username <> $botName COLLATE NOCASE
+                                  AND (ranked.Balance > b.Balance
+                                    OR (ranked.Balance = b.Balance AND ranked.Username COLLATE NOCASE < b.Username COLLATE NOCASE))) AS Position
                     FROM TokenBalances AS b
-                    WHERE b.Username = $username COLLATE NOCASE AND b.Balance > 0;
+                    WHERE b.Username = $username COLLATE NOCASE AND b.Balance > 0
+                      AND b.Username NOT IN ('nightbot', 'streamlabs', 'streamelements')
+                      AND b.Username <> $botName COLLATE NOCASE;
                     """;
                 command.Parameters.AddWithValue("$username", normalized);
+                command.Parameters.AddWithValue("$botName", Normalize(excludedBotName));
 
                 using SqliteDataReader reader = command.ExecuteReader();
                 if (!reader.Read())

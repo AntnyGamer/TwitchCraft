@@ -21,10 +21,11 @@ public sealed class TokenService
 
     internal bool TryGetBalance(string user, out int balance) => _store.TryGetBalance(user, out balance);
 
-    internal bool TryGetTopBalances(int limit, out IReadOnlyList<KeyValuePair<string, int>> result)
-        => _store.TryGetTopBalances(limit, out result);
+    internal bool TryGetTopBalances(int limit, out IReadOnlyList<KeyValuePair<string, int>> result, string excludedBotName = "")
+        => _store.TryGetTopBalances(limit, out result, excludedBotName);
 
-    internal bool TryGetRank(string user, out TokenRankResult? result) => _store.TryGetRank(user, out result);
+    internal bool TryGetRank(string user, out TokenRankResult? result, string excludedBotName = "")
+        => _store.TryGetRank(user, out result, excludedBotName);
 
     internal TokenAdjustmentStatus TryGamble(string user, int stake, int delta, out int balance, out int appliedDelta)
         => _store.TryAdjustIfAtLeast(user, stake, delta, MaximumBalance, out balance, out appliedDelta);

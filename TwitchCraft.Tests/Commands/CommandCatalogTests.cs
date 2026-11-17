@@ -47,6 +47,27 @@ public sealed class CommandCatalogTests
     }
 
     [Fact]
+    public async Task TokenLeaderboardBotName_ExcludesOnlySeparateAuthorizedBot()
+    {
+        using RuntimeTestScope scope = new();
+        MainHandler runtime = scope.Runtime;
+
+        TwitchCraftConfig config = new();
+        config.Twitch.StreamerName = " @STREAMER ";
+        config.Twitch.BotName = " @CustomBot ";
+        await runtime.ApplySettingsAsync(config);
+        Assert.Equal("custombot", runtime.TokenLeaderboardBotName);
+
+        config.Twitch.BotName = "STREAMER";
+        await runtime.ApplySettingsAsync(config);
+        Assert.Equal(string.Empty, runtime.TokenLeaderboardBotName);
+
+        config.Twitch.BotName = "@StReAmEr";
+        await runtime.ApplySettingsAsync(config);
+        Assert.Equal(string.Empty, runtime.TokenLeaderboardBotName);
+    }
+
+    [Fact]
     public async Task GiveTokensAll_UsesFullRosterIncludingLongUsernames()
     {
         using RuntimeTestScope scope = new();

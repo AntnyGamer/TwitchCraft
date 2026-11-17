@@ -170,6 +170,47 @@ public sealed class EconomyBalanceTests
     }
 
     [Fact]
+    public void TokenLeaderboard_ExcludesOnlyRecognizedBotsAndKeepsViewerRanksConsistent()
+    {
+        using TemporaryDirectory directory = new();
+        TokenService tokens = new(Path.Combine(directory.Path, "viewer_tokens.db"), static () => 0);
+
+        try
+        {
+            tokens.Award("NightBot", 500);
+            tokens.Award("streamlabs", 450);
+            tokens.Award("streamelements", 400);
+            tokens.Award("CustomBot", 350);
+            tokens.Award("roboticsfan", 100);
+            tokens.Award("alice", 90);
+            tokens.Award("streamer", 80);
+
+            Assert.True(tokens.TryGetTopBalances(3, out IReadOnlyList<KeyValuePair<string, int>> leaders, "custombot"));
+            Assert.Equal(["roboticsfan", "alice", "streamer"], leaders.Select(entry => entry.Key));
+            Assert.Equal([100, 90, 80], leaders.Select(entry => entry.Value));
+
+            Assert.True(tokens.TryGetRank("roboticsfan", out TokenRankResult? first, "custombot"));
+            Assert.Equal(new TokenRankResult("roboticsfan", 100, 1), first);
+            Assert.True(tokens.TryGetRank("streamer", out TokenRankResult? third, "custombot"));
+            Assert.Equal(new TokenRankResult("streamer", 80, 3), third);
+            Assert.True(tokens.TryGetRank("nightbot", out TokenRankResult? knownBot, "custombot"));
+            Assert.Null(knownBot);
+            Assert.True(tokens.TryGetRank("CUSTOMBOT", out TokenRankResult? configuredBot, "custombot"));
+            Assert.Null(configuredBot);
+
+            // The filter changes ranking only, not stored balances or unrelated user accounts.
+            Assert.Equal(500, tokens.GetBalance("nightbot"));
+            Assert.Equal(350, tokens.GetBalance("custombot"));
+            Assert.True(tokens.TryGetTopBalances(1, out IReadOnlyList<KeyValuePair<string, int>> withoutSeparateBot));
+            Assert.Equal("custombot", Assert.Single(withoutSeparateBot).Key);
+        }
+        finally
+        {
+            tokens.Close();
+        }
+    }
+
+    [Fact]
     public void BalanceClampsAtValidLimitsAndDeletesZeroRows()
     {
         using TemporaryDirectory directory = new();
