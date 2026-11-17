@@ -185,17 +185,17 @@ public sealed class EconomyBalanceTests
             tokens.Award("alice", 90);
             tokens.Award("streamer", 80);
 
-            Assert.True(tokens.TryGetTopBalances(3, "custombot", out IReadOnlyList<KeyValuePair<string, int>> leaders));
+            Assert.True(tokens.TryGetTopBalances(3, out IReadOnlyList<KeyValuePair<string, int>> leaders, "custombot"));
             Assert.Equal(["roboticsfan", "alice", "streamer"], leaders.Select(entry => entry.Key));
             Assert.Equal([100, 90, 80], leaders.Select(entry => entry.Value));
 
-            Assert.True(tokens.TryGetRank("roboticsfan", "custombot", out TokenRankResult? first));
+            Assert.True(tokens.TryGetRank("roboticsfan", out TokenRankResult? first, "custombot"));
             Assert.Equal(new TokenRankResult("roboticsfan", 100, 1), first);
-            Assert.True(tokens.TryGetRank("streamer", "custombot", out TokenRankResult? third));
+            Assert.True(tokens.TryGetRank("streamer", out TokenRankResult? third, "custombot"));
             Assert.Equal(new TokenRankResult("streamer", 80, 3), third);
-            Assert.True(tokens.TryGetRank("nightbot", "custombot", out TokenRankResult? knownBot));
+            Assert.True(tokens.TryGetRank("nightbot", out TokenRankResult? knownBot, "custombot"));
             Assert.Null(knownBot);
-            Assert.True(tokens.TryGetRank("CUSTOMBOT", "custombot", out TokenRankResult? configuredBot));
+            Assert.True(tokens.TryGetRank("CUSTOMBOT", out TokenRankResult? configuredBot, "custombot"));
             Assert.Null(configuredBot);
 
             // The filter changes ranking only, not stored balances or unrelated user accounts.
