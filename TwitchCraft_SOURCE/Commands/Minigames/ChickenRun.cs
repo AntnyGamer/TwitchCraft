@@ -45,7 +45,7 @@ public static partial class MinigameManager
                 " seconds for how long the chicken survives! Max " +
                 MaxBetPerPlayer.ToString(CultureInfo.InvariantCulture) +
                 " tokens per person. Max-second bets pay 3x if the chicken survives the full range. (!chickenbet <amount> <seconds>)",
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
 
             await Task.Delay(ChickenRunBettingDelay, cancellationToken).ConfigureAwait(false);
 
@@ -68,7 +68,7 @@ public static partial class MinigameManager
 
             if (!hasBets)
             {
-                await SafeReplyAsync(runtime, "Chicken Run was cancelled because nobody placed a bet.", cancellationToken).ConfigureAwait(false);
+                await SafeReplyAsync(runtime, "Chicken Run was cancelled because nobody placed a bet.", cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
                 return;
             }
 
@@ -81,7 +81,7 @@ public static partial class MinigameManager
             }
 
             await PlaySoundAsync(runtime, "minecraft:entity.chicken.ambient", cancellationToken).ConfigureAwait(false);
-            await SafeReplyAsync(runtime, "Chicken Run has started! The chicken is now running...", cancellationToken).ConfigureAwait(false);
+            await SafeReplyAsync(runtime, "Chicken Run has started! The chicken is now running...", cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
             await Task.Delay(TimeSpan.FromSeconds(killAtSeconds), cancellationToken).ConfigureAwait(false);
 
             if (!IsActive(runtime, "ChickenRun", runID))
@@ -131,7 +131,7 @@ public static partial class MinigameManager
                 "The chicken has been killed at " +
                 killAtSeconds.ToString(CultureInfo.InvariantCulture) +
                 "! Viewers who bet by or before this time win! Bets can pay up to 3x if the chicken survives (later bets pay more).",
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

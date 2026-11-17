@@ -128,7 +128,7 @@ public static partial class MinigameManager
 
     // ===== Shared minigame runtime helpers =====
 
-    private static async Task SafeReplyAsync(MainHandler runtime, string message, CancellationToken cancellationToken)
+    private static async Task SafeReplyAsync(MainHandler runtime, string message, CancellationToken cancellationToken, BotResponseKind kind)
     {
         if (runtime == null || string.IsNullOrWhiteSpace(message))
         {
@@ -137,7 +137,7 @@ public static partial class MinigameManager
 
         try
         {
-            await runtime.SendChatAsync(message, cancellationToken).ConfigureAwait(false);
+            await runtime.SendBotMessageAsync(message, kind, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

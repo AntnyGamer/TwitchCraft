@@ -36,7 +36,17 @@ internal static class PaidCommandTransaction
                 return true;
             }
 
-            bool refunded = refundTokens(cost);
+            bool refunded;
+            try
+            {
+                refunded = refundTokens(cost);
+            }
+            catch (Exception ex)
+            {
+                ErrorHandling.LogNonFatal("A paid command refund threw an exception", ex);
+                return false;
+            }
+
             if (!refunded)
             {
                 ErrorHandling.LogNonFatal(

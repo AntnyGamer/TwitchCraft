@@ -172,34 +172,18 @@ internal sealed partial class TokenStore(string path)
 
     public bool TrySpend(string user, int amount)
     {
-        string normalized = Normalize(user);
-        if (normalized.Length == 0 || amount <= 0)
+        if (amount <= 0)
         {
             return false;
         }
 
-        lock (_gate)
-        {
-            if (!EnsureLoadedNoLock(normalized))
-            {
-                return false;
-            }
-
-            _balances.TryGetValue(normalized, out int current);
-            if (current < amount)
-            {
-                return false;
-            }
-
-            int newBalance = current - amount;
-            if (!SaveChangedNoLock(normalized, newBalance))
-            {
-                return false;
-            }
-
-            SetCacheNoLock(normalized, newBalance);
-            return true;
-        }
+        return TryAdjustIfAtLeast(
+            user,
+            amount,
+            -amount,
+            0,
+            out _,
+            out _) == TokenAdjustmentStatus.Adjusted;
     }
 
     internal int? TryTransfer(string from, string to, int amount, int maximumBalance)
@@ -254,13 +238,14 @@ internal sealed partial class TokenStore(string path)
 
     public int AdjustBalance(string user, int delta, int maximumBalance = 0)
     {
-        string normalized = Normalize(user);
-        if (normalized.Length != 0 && delta != 0)
-        {
-            return AdjustBalanceCore(normalized, delta, maximumBalance);
-        }
-
-        return 0;
+        _ = TryAdjustIfAtLeast(
+            user,
+            0,
+            delta,
+            maximumBalance,
+            out _,
+            out int appliedDelta);
+        return appliedDelta;
     }
 
     public FollowRewardResult TryRewardFollower(
@@ -335,32 +320,6 @@ internal sealed partial class TokenStore(string path)
                 ErrorHandling.LogNonFatal("Failed to save Twitch follow reward", ex);
                 return FollowRewardResult.Failed;
             }
-        }
-    }
-
-    private int AdjustBalanceCore(string normalized, int delta, int maximumBalance = 0)
-    {
-        lock (_gate)
-        {
-            if (!EnsureLoadedNoLock(normalized))
-            {
-                return 0;
-            }
-
-            _balances.TryGetValue(normalized, out int current);
-            int newBalance = ClampAdjusted(current, delta, maximumBalance);
-            if (newBalance == current)
-            {
-                return 0;
-            }
-
-            if (!SaveChangedNoLock(normalized, newBalance))
-            {
-                return 0;
-            }
-
-            SetCacheNoLock(normalized, newBalance);
-            return newBalance - current;
         }
     }
 

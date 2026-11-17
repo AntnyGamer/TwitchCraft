@@ -119,7 +119,18 @@ public static partial class CommandList
                 reserveCooldownAsync,
                 releaseCooldown,
                 amount => runtime.Tokens.TrySpend(sender, amount),
-                amount => runtime.Tokens.Adjust(sender, amount) == amount,
+                amount =>
+                {
+                    int credited = runtime.Tokens.Adjust(sender, amount);
+                    if (credited != amount)
+                    {
+                        ErrorHandling.LogNonFatal(
+                            $"Paid-command refund for {sender}: {credited} of {amount} tokens credited; {amount - credited} still owed.",
+                            new InvalidOperationException("An incomplete refund requires reconciliation."));
+                    }
+
+                    return credited == amount;
+                },
                 dispatchAsync,
                 amount =>
                 {
@@ -130,7 +141,7 @@ public static partial class CommandList
                 (refunded, token) => SayAsync(
                     sender + (refunded
                         ? ", the Minecraft command could not be completed, so your tokens were refunded."
-                        : ", the Minecraft command could not be completed and the full token refund could not be saved; check your balance."), token),
+                        : ", the Minecraft command could not be completed and the full token refund could not be applied; contact the streamer."), token),
                 ct,
                 onSendFailure);
         }

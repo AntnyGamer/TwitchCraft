@@ -47,7 +47,7 @@ public static partial class CommandList
         {
             AddCommand("addheart", (args, sender, ct) => HeartAsync(args, sender, true, ct), NiceCommand);
             AddCommand("ban", BanAsync);
-            AddTokenHandlers(runtime, handlers, SayAsync, SuccessAsync, ConfirmAsync, RequirePermissionAsync);
+            AddTokenHandlers(runtime, handlers, SayAsync, SuccessAsync, RequirePermissionAsync);
             AddCommand("commandstats", CommandStatsAsync);
             AddCommand("followreward", FollowRewardAsync);
             AddCommand("help", HelpAsync);
@@ -216,7 +216,7 @@ public static partial class CommandList
                 DangerousCommand,
                 minimumTokenCost: 20);
             AddCommand("weather", WeatherAsync, DangerousCommand);
-            MinigameManager.AddHandlers(runtime, handlers, SayAsync, SuccessAsync);
+            MinigameManager.AddHandlers(runtime, handlers, SayAsync, SuccessAsync, ConfirmAsync);
 
             Dictionary<string, ChatCommandHandler> result = handlers;
             handlers = null!;
