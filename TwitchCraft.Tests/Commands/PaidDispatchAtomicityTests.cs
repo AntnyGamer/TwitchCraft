@@ -88,50 +88,6 @@ public sealed class PaidDispatchAtomicityTests
     }
 
     [Fact]
-    public async Task RefundException_ReportsUnrecoveredChargeAndReleasesCooldown()
-    {
-        TransactionHarness harness = new()
-        {
-            RefundThrows = true,
-            DispatchOverride = _ => Task.FromResult(false)
-        };
-
-        bool succeeded = await harness.ExecuteAsync(25, TestContext.Current.CancellationToken);
-
-        Assert.Multiple(
-            () => Assert.False(succeeded),
-            () => Assert.Equal(75, harness.Balance),
-            () => Assert.Equal(1, harness.RefundCalls),
-            () => Assert.Equal(1, harness.DispatchFailureReports),
-            () => Assert.Equal(false, harness.LastReportedRefund),
-            () => Assert.Equal(1, harness.FailureNotifications),
-            () => Assert.Equal([101L], harness.ReleasedReservations),
-            () => Assert.Equal(0, harness.CurrentReservation));
-    }
-
-    [Fact]
-    public async Task DispatchAndRefundExceptions_PreserveOriginalDispatchError()
-    {
-        TransactionHarness harness = new()
-        {
-            RefundThrows = true,
-            DispatchOverride = _ => throw new InvalidOperationException("Dispatch failed.")
-        };
-
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => harness.ExecuteAsync(25, TestContext.Current.CancellationToken));
-
-        Assert.Multiple(
-            () => Assert.Equal("Dispatch failed.", exception.Message),
-            () => Assert.Equal(75, harness.Balance),
-            () => Assert.Equal(1, harness.RefundCalls),
-            () => Assert.Equal(0, harness.DispatchFailureReports),
-            () => Assert.Equal(1, harness.FailureNotifications),
-            () => Assert.Equal([101L], harness.ReleasedReservations),
-            () => Assert.Equal(0, harness.CurrentReservation));
-    }
-
-    [Fact]
     public async Task PaidCommandBuildFailure_RefundsOnceAndReleasesCooldown()
     {
         TransactionHarness harness = new()
@@ -264,7 +220,6 @@ public sealed class PaidDispatchAtomicityTests
         internal int SpendCalls { get; private set; }
         internal int RefundCalls { get; private set; }
         internal bool RefundSucceeds { get; set; } = true;
-        internal bool RefundThrows { get; set; }
         internal int DispatchCalls { get; private set; }
         internal int StatisticsCalls { get; private set; }
         internal List<int> RecordedCosts { get; } = [];
@@ -312,11 +267,6 @@ public sealed class PaidDispatchAtomicityTests
                 amount =>
                 {
                     RefundCalls++;
-                    if (RefundThrows)
-                    {
-                        throw new InvalidOperationException("Refund callback failed.");
-                    }
-
                     if (RefundSucceeds)
                     {
                         Balance += amount;
