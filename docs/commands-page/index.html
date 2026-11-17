@@ -1422,12 +1422,12 @@ a:hover {
   // The desktop app's preset list is the source of truth. Fetch it from the
   // public main branch so the website picks up future preset changes without
   // maintaining a separate preset array in the frontend.
-  const presetSource = 'https://raw.githubusercontent.com/AntnyGamer/TwitchCraft/main/TwitchCraft_SOURCE/Frames/Settings.xaml.cs';
+  const presetSource = 'https://raw.githubusercontent.com/AntnyGamer/TwitchCraft/main/TwitchCraft_SOURCE/Frames/SettingsOptions.cs';
 
   function parseMultiplierOptions(source) {
     const definition = source.match(/CommandCostMultiplierOptions\s*=\s*\[([\s\S]*?)\]/);
     if (!definition) {
-      throw new Error('Multiplier presets were not found in Settings.xaml.cs');
+      throw new Error('Multiplier presets were not found in SettingsOptions.cs');
     }
     const options = Array.from(definition[1].matchAll(/\(\s*(\d+(?:\.\d+)?)\s*,\s*"([^"]+)"\s*\)/g),
       match => ({
@@ -1739,18 +1739,17 @@ a:hover {
       if (copyRequests.get(button) !== request) {
         return;
       }
+      window.clearTimeout(copyResetTimers.get(button));
+      const label = button.querySelector('span');
       if (!success) {
-        window.clearTimeout(copyResetTimers.get(button));
-        button.querySelector('span').textContent = 'Copy syntax';
+        label.textContent = 'Copy syntax';
         button.classList.remove('copied');
         showToast('Clipboard blocked. Select the syntax shown on the card to copy.');
         return;
       }
-      const label = button.querySelector('span');
       label.textContent = 'Copied!';
       button.classList.add('copied');
       showToast('Copied ' + button.dataset.command + ' syntax. Replace placeholders before sending.');
-      window.clearTimeout(copyResetTimers.get(button));
       copyResetTimers.set(button, window.setTimeout(() => {
         label.textContent = 'Copy syntax';
         button.classList.remove('copied');

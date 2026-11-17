@@ -429,11 +429,6 @@ public partial class Settings : UserControl
 
     private async Task SaveCostMultiplierAsync()
     {
-        if (_initializing || _updatingCustomValueControls)
-        {
-            return;
-        }
-
         if (!TryReadDouble(CommandCostMultiplierDropdown, CommandCostMultiplierOptions, 0.0, 5.0, out double multiplier))
         {
             ReloadSettings();
@@ -463,11 +458,6 @@ public partial class Settings : UserControl
 
     private async Task SaveFollowRewardAsync()
     {
-        if (_initializing || _updatingCustomValueControls)
-        {
-            return;
-        }
-
         if (!TryReadInt(FollowRewardAmountDropdown, 1, 1_000_000, out int amount))
         {
             ReloadSettings();
@@ -518,11 +508,6 @@ public partial class Settings : UserControl
 
     private async Task SaveGlobalCooldownAsync()
     {
-        if (_initializing || _updatingCustomValueControls)
-        {
-            return;
-        }
-
         if (!TryReadDouble(GlobalCooldownSecondsDropdown, GlobalCooldownOptions, 0.1, 120.0, out double seconds))
         {
             ReloadSettings();
