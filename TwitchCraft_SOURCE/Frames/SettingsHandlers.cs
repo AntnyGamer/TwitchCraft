@@ -37,7 +37,6 @@ public partial class Settings
         return true;
     }
 
-    // Editable-setting handlers check this before calling their save helpers.
     private bool ShouldSaveEditableValue(object sender, RoutedEventArgs e)
     {
         if (_initializing || _updatingCustomValueControls)
