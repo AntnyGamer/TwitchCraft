@@ -131,7 +131,7 @@ public static partial class MinigameManager
                 "The chicken has been killed at " +
                 killAtSeconds.ToString(CultureInfo.InvariantCulture) +
                 "! Viewers who bet by or before this time win! Bets can pay up to 3x if the chicken survives (later bets pay more).",
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

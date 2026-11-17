@@ -216,7 +216,7 @@ public static partial class CommandList
                 DangerousCommand,
                 minimumTokenCost: 20);
             AddCommand("weather", WeatherAsync, DangerousCommand);
-            MinigameManager.AddHandlers(runtime, handlers, SayAsync, SuccessAsync);
+            MinigameManager.AddHandlers(runtime, handlers, SayAsync, SuccessAsync, ConfirmAsync);
 
             Dictionary<string, ChatCommandHandler> result = handlers;
             handlers = null!;

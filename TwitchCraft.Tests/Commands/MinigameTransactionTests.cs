@@ -133,7 +133,7 @@ public sealed class MinigameTransactionTests
         List<(string Expected, string[] Errors, string[] Successes, int Balance, long Persisted, long Pending)> results = [];
 
         runtime.Tokens.Award("viewer", 500);
-        MinigameManager.AddHandlers(runtime, handlers, CaptureMessages(errors), CaptureMessages(successes));
+        MinigameManager.AddHandlers(runtime, handlers, CaptureMessages(errors), CaptureMessages(successes), CaptureMessages(successes));
 
         try
         {

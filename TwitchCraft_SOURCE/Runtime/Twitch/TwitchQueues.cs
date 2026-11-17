@@ -23,7 +23,7 @@ public sealed partial class MainHandler
         }
 
         _shellWindow?.AddChatLogLine("[IRC] Command queue overloaded; skipped commands temporarily.");
-        await SendChatAsync("The bot is backed up, so commands are being skipped for a moment. Try again in a few seconds.", cancellationToken).ConfigureAwait(false);
+        await SendBotMessageAsync("The bot is backed up, so commands are being skipped for a moment. Try again in a few seconds.", BotResponseKind.Essential, cancellationToken).ConfigureAwait(false);
     }
 
     private bool QueueIRCWork(

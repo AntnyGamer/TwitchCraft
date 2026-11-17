@@ -110,7 +110,7 @@ public static partial class MinigameManager
                         "The Wither should have been defeated, but it fled at the last second! Total damage: " +
                         totalDamage.ToString(CultureInfo.InvariantCulture) +
                         ". Everyone gets 75% of their stake back and only loses 25%.",
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
                 }
                 else
                 {
@@ -119,7 +119,7 @@ public static partial class MinigameManager
                         "The Wither was defeated in time! Total damage: " +
                         totalDamage.ToString(CultureInfo.InvariantCulture) +
                         ". Everyone who joined gets 1.2x their tokens back!",
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
                 }
             }
             else
@@ -129,7 +129,7 @@ public static partial class MinigameManager
                     "Time is up! The Wither survived with " +
                     Math.Max(0, witherHealth - totalDamage).ToString(CultureInfo.InvariantCulture) +
                     " HP left. Everyone who joined gets 50% of their stake back and loses 50%.",
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken, BotResponseKind.Essential).ConfigureAwait(false);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

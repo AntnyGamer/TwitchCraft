@@ -124,6 +124,14 @@ public sealed partial class MainHandler
         }
     }
 
+    internal Task SendBotMessageAsync(
+        string message,
+        BotResponseKind kind,
+        CancellationToken cancellationToken)
+        => BotResponseVerbositySettings.ShouldSend(BotResponseVerbosity, kind)
+            ? SendChatAsync(message, cancellationToken)
+            : Task.CompletedTask;
+
     internal Task SendReplyAsync(
         string message,
         BotResponseKind kind,
