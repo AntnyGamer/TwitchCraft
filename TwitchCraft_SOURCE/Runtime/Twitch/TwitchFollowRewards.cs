@@ -346,7 +346,7 @@ public sealed partial class MainHandler
             ? " received " + awardedAmount.ToString(CultureInfo.InvariantCulture) + " tokens."
             : " was already at the maximum token balance.";
         _shellWindow?.AddChatLogLine(notification.UserLogin + " followed and" + rewardText);
-        TrackTask(SendReplyAsync(
+        TrackTask(SendBotMessageAsync(
             "@" + notification.UserLogin + " thanks for following!" +
                 (awardedAmount > 0
                     ? " You received " + awardedAmount.ToString(CultureInfo.InvariantCulture) + " tokens!"
