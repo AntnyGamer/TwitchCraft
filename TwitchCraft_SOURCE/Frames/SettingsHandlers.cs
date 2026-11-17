@@ -37,6 +37,7 @@ public partial class Settings
         return true;
     }
 
+    // Editable-setting handlers check this before calling their save helpers.
     private bool ShouldSaveEditableValue(object sender, RoutedEventArgs e)
     {
         if (_initializing || _updatingCustomValueControls)
@@ -458,11 +459,6 @@ public partial class Settings
 
     private async Task SavePayoutRangeAsync(object changedControl)
     {
-        if (_initializing || _updatingCustomValueControls)
-        {
-            return;
-        }
-
         if (!TryReadEditableInt(PassivePayoutMinimumDropdown, PassivePayoutRangeOptions, 10, 900, out int minimum) ||
             !TryReadEditableInt(PassivePayoutMaximumDropdown, PassivePayoutRangeOptions, 10, 900, out int maximum))
         {
@@ -749,11 +745,6 @@ public partial class Settings
         bool refreshLowResourceSummary = false,
         Action<TwitchCraftConfig>? beforeSave = null)
     {
-        if (_initializing || _updatingCustomValueControls)
-        {
-            return;
-        }
-
         if (!TryReadEditableInt(dropdown, options, minimum, maximum, out int value))
         {
             RestoreIntValue(dropdown, options, getValue);
