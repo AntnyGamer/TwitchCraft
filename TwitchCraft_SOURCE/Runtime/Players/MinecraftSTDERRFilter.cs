@@ -18,20 +18,20 @@ internal sealed class MinecraftSTDERRFilter
         ArgumentNullException.ThrowIfNull(line);
         ArgumentNullException.ThrowIfNull(showLine);
 
-        string message = RemoveDisplayPrefix(line);
+        ReadOnlySpan<char> message = RemoveDisplayPrefix(line);
         bool matchesNextLine = _candidateLines.Count switch
         {
-            0 => string.Equals(message, DeprecationHeader, StringComparison.Ordinal),
+            0 => message.Equals(DeprecationHeader, StringComparison.Ordinal),
             1 => IsJomlCallerLine(message),
-            2 => string.Equals(message, ReportJomlCaller, StringComparison.Ordinal),
-            3 => string.Equals(message, RemovalNotice, StringComparison.Ordinal),
+            2 => message.Equals(ReportJomlCaller, StringComparison.Ordinal),
+            3 => message.Equals(RemovalNotice, StringComparison.Ordinal),
             _ => false
         };
 
         if (!matchesNextLine)
         {
             Flush(showLine);
-            if (string.Equals(message, DeprecationHeader, StringComparison.Ordinal))
+            if (message.Equals(DeprecationHeader, StringComparison.Ordinal))
             {
                 _candidateLines.Add(line);
             }
@@ -62,12 +62,12 @@ internal sealed class MinecraftSTDERRFilter
         _candidateLines.Clear();
     }
 
-    private static string RemoveDisplayPrefix(string line)
+    private static ReadOnlySpan<char> RemoveDisplayPrefix(string line)
         => line.StartsWith(STDERRPrefix, StringComparison.Ordinal)
-            ? line[STDERRPrefix.Length..]
-            : line;
+            ? line.AsSpan(STDERRPrefix.Length)
+            : line.AsSpan();
 
-    private static bool IsJomlCallerLine(string line)
+    private static bool IsJomlCallerLine(ReadOnlySpan<char> line)
         => line.StartsWith(JomlCallerPrefix, StringComparison.Ordinal) &&
             (line.Length == JomlCallerPrefix.Length ||
              char.IsWhiteSpace(line[JomlCallerPrefix.Length]) ||

@@ -79,38 +79,12 @@ internal readonly struct ParsedCommand
         int nameEnd = payload.IndexOf(' ', start, end - start + 1);
         if (nameEnd < 0)
         {
-            return new ParsedCommand(LowerSegment(payload, start, end - start + 1));
+            return new ParsedCommand(CommandUserHelper.LowerSegment(payload, start, end - start + 1));
         }
 
         return new ParsedCommand(
-            LowerSegment(payload, start, nameEnd - start),
+            CommandUserHelper.LowerSegment(payload, start, nameEnd - start),
             SplitArgs(payload.AsSpan(nameEnd + 1, end - nameEnd)));
-    }
-
-    internal static string LowerSegment(string value, int start, int length)
-    {
-        if (length <= 0)
-        {
-            return string.Empty;
-        }
-
-        for (int i = 0; i < length; i++)
-        {
-            if (CommandUserHelper.LowerFast(value[start + i]) == value[start + i])
-            {
-                continue;
-            }
-
-            return string.Create(length, (Value: value, Start: start), static (destination, state) =>
-            {
-                for (int j = 0; j < destination.Length; j++)
-                {
-                    destination[j] = CommandUserHelper.LowerFast(state.Value[state.Start + j]);
-                }
-            });
-        }
-
-        return start == 0 && length == value.Length ? value : value.Substring(start, length);
     }
 
     private static string[] SplitArgs(ReadOnlySpan<char> args)

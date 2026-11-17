@@ -393,10 +393,12 @@ public partial class Settings : UserControl
             return;
         }
 
-        string selected = (MinigameCooldownDropdown.SelectedItem as string
+        ReadOnlySpan<char> selected = (MinigameCooldownDropdown.SelectedItem as string
             ?? MinigameCooldownDropdown.Text
-            ?? string.Empty).Trim();
-        if (!int.TryParse(selected.Split(' ')[0], out int minutes) || minutes < 2 || minutes > 30)
+            ?? string.Empty).AsSpan().Trim();
+        int firstSpace = selected.IndexOf(' ');
+        ReadOnlySpan<char> minutesText = firstSpace < 0 ? selected : selected[..firstSpace];
+        if (!int.TryParse(minutesText, out int minutes) || minutes < 2 || minutes > 30)
         {
             return;
         }

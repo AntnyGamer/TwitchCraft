@@ -6,14 +6,19 @@ internal static class TwitchTokenHelper
 {
     internal static string NormalizeAccessToken(string? token)
     {
-        string value = (token ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(token))
+        {
+            return string.Empty;
+        }
+
+        ReadOnlySpan<char> value = token.AsSpan().Trim();
 
         if (value.StartsWith("oauth:", StringComparison.OrdinalIgnoreCase))
         {
-            value = value.AsSpan(6).Trim().ToString();
+            value = value[6..].Trim();
         }
 
-        return value;
+        return value.Length == token.Length ? token : value.ToString();
     }
 
     internal static string BuildIRCPassword(string? token)
