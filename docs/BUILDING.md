@@ -58,7 +58,9 @@ Do not commit or share private runtime files such as:
 
 ## Run from source
 
-To run TwitchCraft without publishing:
+This build is intended for Windows x64.
+
+If you only want to run the source code while developing, use:
 
 ```powershell
 dotnet run --project ".\TwitchCraft_SOURCE\TwitchCraft.csproj"
