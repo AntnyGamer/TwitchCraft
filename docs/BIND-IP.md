@@ -1,7 +1,5 @@
 # TwitchCraft Bind IP Support Guide
 
-To use different Bind IPs in TwitchCraft, it is important to understand what each one does and how to use it properly.
-
 Most users should not change the Bind IP. If normal multiplayer works for you, follow the normal [multiplayer guide](MULTIPLAYER.md) instead.
 
 ## What Is the Bind IP?
