@@ -92,13 +92,13 @@ These commands are available to the broadcaster and authorized bot; moderators m
 
 | Command | Syntax | Cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
-| `!ban` | `!ban <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Permanently bans a Minecraft player from the local multiplayer server. |
-| `!givetokens` | `!givetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Gives tokens to a viewer, all viewers, or a random viewer. |
-| `!kick` | `!kick <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Kicks a Minecraft player from the local multiplayer server. |
-| `!removetokens` | `!removetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Removes tokens from a viewer, all viewers, or a random viewer. |
-| `!unban` | `!unban <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Unbans a Minecraft player from the local multiplayer server. |
-| `!whitelistadd` | `!whitelistadd <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Adds a Minecraft player to the local server whitelist. |
-| `!whitelistremove` | `!whitelistremove <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Removes a Minecraft player from the local server whitelist. |
+| `!ban` | `!ban <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Permanently bans a Minecraft player from the local multiplayer server (streamer/bot; moderators if enabled). |
+| `!givetokens` | `!givetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Gives tokens to a viewer, all viewers, or a random viewer (streamer/bot; moderators if enabled). |
+| `!kick` | `!kick <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Kicks a Minecraft player from the local multiplayer server (streamer/bot; moderators if enabled). |
+| `!removetokens` | `!removetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Removes tokens from a viewer, all viewers, or a random viewer (streamer/bot; moderators if enabled). |
+| `!unban` | `!unban <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Unbans a Minecraft player from the local multiplayer server (streamer/bot; moderators if enabled). |
+| `!whitelistadd` | `!whitelistadd <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Adds a Minecraft player to the local server whitelist (streamer/bot; moderators if enabled). |
+| `!whitelistremove` | `!whitelistremove <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Removes a Minecraft player from the local server whitelist (streamer/bot; moderators if enabled). |
 
 ## Viewer token notes
 
