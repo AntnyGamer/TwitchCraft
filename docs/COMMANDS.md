@@ -105,6 +105,7 @@ These commands are available to the broadcaster and authorized bot; moderators m
 - When automatic Bit rewards are enabled by the streamer, **1 Bit earns 1 token** (for example, 100 Bits earns 100 tokens).
 - New followers receive a **one-time reward of 50 tokens by default**, unless the streamer changes or disables it.
 - Streamers can disable commands or change prefixes, costs, and cooldowns. The listed prices reflect default settings and may be different in a particular channel.
+
 ## Compatibility and failure cases
 
 Gameplay commands are intended for the Minecraft versions listed in [INSTALLATION.md](INSTALLATION.md) and use the application's version-support layer for syntax differences. Local stdin and remote RCON are supported unless a row says local-only.

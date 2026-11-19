@@ -14,17 +14,17 @@
                    2. JAVA / JDK SETUP
 ============================================================
 
-  For Minecraft versions 1.20.5–1.21.11:
-  - You will need Java SE 21 (JDK 21)
-  - Download: https://www.oracle.com/java/technologies/downloads/#jdk21-windows
-  - Use the Windows x64 Installer version
-  - Any JDK 21.x version should work
-
   For Minecraft versions 26.1.0–26.3.0:
   - You will need Java SE 25 (JDK 25)
   - Download: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
   - Use the Windows x64 Installer version
   - Any JDK 25.x version should work
+
+  For Minecraft versions 1.20.5–1.21.11:
+  - You will need Java SE 21 (JDK 21)
+  - Download: https://www.oracle.com/java/technologies/downloads/#jdk21-windows
+  - Use the Windows x64 Installer version
+  - Any JDK 21.x version should work
 
 ============================================================
                     3. BOT ACCOUNT SETUP
