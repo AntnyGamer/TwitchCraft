@@ -24,7 +24,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 
 | Command | Syntax | Base cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
-| `!effect` | `!effect [count 1-25] [target]` | 1 per effect | Player(s) | Everyone | Gives the player 1–25 random effects, depending on the amount specified. |
+| `!effect` | `!effect [count 1-25] [target]` | 1 per effect | Player(s) | Everyone | Gives the player 1–25 random effects. |
 | `!givelight` | `!givelight [target]` | 3 | Player(s) | Everyone | Spawns a light block near the player. |
 | `!heal` | `!heal [target]` | 3 | Player(s) | Everyone | Heals the player by 4 hearts. |
 | `!anvil` | `!anvil [target]` | 5 | Player(s) | Everyone | Drops an anvil above the player after clearing a short vertical column. |
@@ -92,19 +92,20 @@ These commands are available to the broadcaster and authorized bot; moderators m
 
 | Command | Syntax | Cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
-| `!ban` | `!ban <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Permanently bans a Minecraft player from the local multiplayer server (streamer/bot; moderators if enabled). |
-| `!givetokens` | `!givetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Gives tokens to a viewer, all viewers, or a random viewer (streamer/bot; moderators if enabled). |
-| `!kick` | `!kick <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Kicks a Minecraft player from the local multiplayer server (streamer/bot; moderators if enabled). |
-| `!removetokens` | `!removetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Removes tokens from a viewer, all viewers, or a random viewer (streamer/bot; moderators if enabled). |
-| `!unban` | `!unban <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Unbans a Minecraft player from the local multiplayer server (streamer/bot; moderators if enabled). |
-| `!whitelistadd` | `!whitelistadd <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Adds a Minecraft player to the local server whitelist (streamer/bot; moderators if enabled). |
-| `!whitelistremove` | `!whitelistremove <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Removes a Minecraft player from the local server whitelist (streamer/bot; moderators if enabled). |
+| `!ban` | `!ban <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Permanently bans a Minecraft player from the local multiplayer server. |
+| `!givetokens` | `!givetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Gives tokens to a viewer, all viewers, or a random viewer. |
+| `!kick` | `!kick <minecraft-user> [reason]` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Kicks a Minecraft player from the local multiplayer server. |
+| `!removetokens` | `!removetokens [twitch-user\|all\|random] <amount>` | Free admin action | Twitch viewers | Broadcaster/bot; moderators if enabled | Removes tokens from a viewer, all viewers, or a random viewer. |
+| `!unban` | `!unban <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Unbans a Minecraft player from the local multiplayer server. |
+| `!whitelistadd` | `!whitelistadd <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Adds a Minecraft player to the local server whitelist. |
+| `!whitelistremove` | `!whitelistremove <minecraft-user>` | Free admin action | Minecraft user | Broadcaster/bot; moderators if enabled | Removes a Minecraft player from the local server whitelist. |
 
 ## Viewer token notes
 
 - When automatic Bit rewards are enabled by the streamer, **1 Bit earns 1 token** (for example, 100 Bits earns 100 tokens).
 - New followers receive a **one-time reward of 50 tokens by default**, unless the streamer changes or disables it.
 - Streamers can disable commands or change prefixes, costs, and cooldowns. The listed prices reflect default settings and may be different in a particular channel.
+
 ## Compatibility and failure cases
 
 Gameplay commands are intended for the Minecraft versions listed in [INSTALLATION.md](INSTALLATION.md) and use the application's version-support layer for syntax differences. Local stdin and remote RCON are supported unless a row says local-only.
