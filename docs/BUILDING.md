@@ -56,7 +56,7 @@ Do not commit or share private runtime files such as:
 - RCON passwords
 - Personal Minecraft server files
 
-## Run from source
+## Notes
 
 This build is intended for Windows x64.
 
