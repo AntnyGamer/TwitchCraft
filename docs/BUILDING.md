@@ -63,3 +63,5 @@ To run TwitchCraft without publishing:
 ```powershell
 dotnet run --project ".\TwitchCraft_SOURCE\TwitchCraft.csproj"
 ```
+
+If you want to create a release build for users, use the publish command above.
