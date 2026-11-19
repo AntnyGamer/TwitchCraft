@@ -24,7 +24,7 @@ The optional global gameplay-command cooldown applies to normal gameplay command
 
 | Command | Syntax | Base cost | Targeting | Permission | Description |
 |---|---|---:|---|---|---|
-| `!effect` | `!effect [count 1-25] [target]` | 1 per effect | Player(s) | Everyone | Gives the player 1–25 random effects. |
+| `!effect` | `!effect [count 1-25] [target]` | 1 per effect | Player(s) | Everyone | Gives the player 1–25 random effects, depending on the amount specified. |
 | `!givelight` | `!givelight [target]` | 3 | Player(s) | Everyone | Spawns a light block near the player. |
 | `!heal` | `!heal [target]` | 3 | Player(s) | Everyone | Heals the player by 4 hearts. |
 | `!anvil` | `!anvil [target]` | 5 | Player(s) | Everyone | Drops an anvil above the player after clearing a short vertical column. |
