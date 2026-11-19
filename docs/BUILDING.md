@@ -56,14 +56,10 @@ Do not commit or share private runtime files such as:
 - RCON passwords
 - Personal Minecraft server files
 
-## Notes
+## Run from source
 
-This build is intended for Windows x64.
-
-If you only want to run the source code while developing, use:
+To run TwitchCraft without publishing:
 
 ```powershell
 dotnet run --project ".\TwitchCraft_SOURCE\TwitchCraft.csproj"
 ```
-
-If you want to create a release build for users, use the publish command above.
