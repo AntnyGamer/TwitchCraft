@@ -73,10 +73,9 @@ On the Start screen, make sure:
 4. On the Setup page, make sure **Twitch Channel Name** is the channel you are streaming on
 5. Make sure **Authorized Bot Account** shows the bot account you intended to use
 6. If the bot account is wrong or authorization looks stale, open **Settings --> Dangerous --> Reauthorize Twitch** and authorize the correct bot account
-7. If the crashing still continues, make sure:
+7. If TwitchCraft still crashes, check that:
 
-   * All TwitchCraft files are installed
-   * All files are in the correct location
+   * All TwitchCraft files are installed in the correct location
    * You followed the Java / JDK Setup in the README
 
 ## SERVER STARTS THEN CLOSES
