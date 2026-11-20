@@ -19,9 +19,10 @@ public partial class Main : UserControl
     private const string TwitchDisconnectedText = "Twitch: Disconnected";
     private const string MinecraftConnectedText = "Minecraft: Connected";
     private const string MinecraftDisconnectedText = "Minecraft: Disconnected";
+    private static readonly TimeSpan LogFlushInterval = TimeSpan.FromMilliseconds(50);
     private static readonly StringComparer ViewerNameComparer = StringComparer.OrdinalIgnoreCase;
-    private readonly Queue<string> _minecraftLogLines = [];
-    private readonly Queue<string> _twitchLogLines = [];
+    private readonly Queue<int> _minecraftLogLineLengths = [];
+    private readonly Queue<int> _twitchLogLineLengths = [];
     private readonly Queue<string> _pendingMinecraftLogLines = [];
     private readonly Queue<string> _pendingTwitchLogLines = [];
     private readonly Lock _logGate = new();
@@ -40,8 +41,8 @@ public partial class Main : UserControl
     public Main()
     {
         InitializeComponent();
-        _flushMinecraftLogs = () => FlushLogs(MinecraftLogs, _minecraftLogLines, _pendingMinecraftLogLines, isMinecraftLog: true);
-        _flushTwitchLogs = () => FlushLogs(TwitchLogs, _twitchLogLines, _pendingTwitchLogLines, isMinecraftLog: false);
+        _flushMinecraftLogs = () => FlushLogs(MinecraftLogs, _minecraftLogLineLengths, _pendingMinecraftLogLines, isMinecraftLog: true);
+        _flushTwitchLogs = () => FlushLogs(TwitchLogs, _twitchLogLineLengths, _pendingTwitchLogLines, isMinecraftLog: false);
         _connectionHealthTimer = new() { Interval = TimeSpan.FromSeconds(1) };
         _connectionHealthTimer.Tick += HealthTimer_Tick;
         IsVisibleChanged += Visibility_Changed;
@@ -160,7 +161,7 @@ public partial class Main : UserControl
 
     public void ClearServerLog()
     {
-        ClearLog(MinecraftLogs, _minecraftLogLines, _pendingMinecraftLogLines, isMinecraftLog: true);
+        ClearLog(MinecraftLogs, _minecraftLogLineLengths, _pendingMinecraftLogLines);
     }
 
     public void AddChatLogLine(string line)
@@ -170,7 +171,7 @@ public partial class Main : UserControl
 
     public void ClearChatLog()
     {
-        ClearLog(TwitchLogs, _twitchLogLines, _pendingTwitchLogLines, isMinecraftLog: false);
+        ClearLog(TwitchLogs, _twitchLogLineLengths, _pendingTwitchLogLines);
     }
 
     public void UpdateViewers(List<string> viewers)
@@ -221,11 +222,29 @@ public partial class Main : UserControl
 
         if (shouldSchedule)
         {
-            SafeInvoke(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
+            _ = ScheduleLogFlushAsync(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
         }
     }
 
-    private void FlushLogs(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
+    private async Task ScheduleLogFlushAsync(Action flush)
+    {
+        // Coalesce bursts before touching the TextBox and let WPF service input
+        // and render work between flushes. Producers still enqueue immediately.
+        await Task.Delay(LogFlushInterval).ConfigureAwait(false);
+        if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+        {
+            try
+            {
+                _ = Dispatcher.BeginInvoke(flush, DispatcherPriority.Background);
+            }
+            catch (InvalidOperationException)
+            {
+                // The dispatcher can shut down after the check above.
+            }
+        }
+    }
+
+    private void FlushLogs(TextBox box, Queue<int> lineLengths, Queue<string> pendingLines, bool isMinecraftLog)
     {
         if (ShouldPauseUIUpdates())
         {
@@ -265,51 +284,7 @@ public partial class Main : UserControl
         int maxLines = GetMaxLogLines(isMinecraftLog);
         double scrollOffset = box.VerticalOffset;
         bool followTail = scrollOffset >= Math.Max(0, box.ExtentHeight - box.ViewportHeight) - 1;
-        bool rebuild = lines.Count + batchCount > maxLines;
-        string newLine = Environment.NewLine;
-
-        if (batchCount == 1)
-        {
-            while (lines.Count >= maxLines)
-            {
-                lines.Dequeue();
-                rebuild = true;
-            }
-
-            lines.Enqueue(singleLine!);
-            if (rebuild)
-            {
-                box.Text = string.Join(newLine, lines) + newLine;
-            }
-            else
-            {
-                box.AppendText(singleLine + newLine);
-            }
-        }
-        else
-        {
-            StringBuilder? appended = rebuild ? null : new StringBuilder(Math.Min(batchCount * 64, 8192));
-            foreach (string entry in batch!)
-            {
-                while (lines.Count >= maxLines)
-                {
-                    lines.Dequeue();
-                    rebuild = true;
-                }
-
-                lines.Enqueue(entry);
-                appended?.Append(entry).Append(newLine);
-            }
-
-            if (rebuild)
-            {
-                box.Text = string.Join(newLine, lines) + newLine;
-            }
-            else if (appended is { Length: > 0 })
-            {
-                box.AppendText(appended.ToString());
-            }
-        }
+        AppendLogBatch(box, lineLengths, maxLines, singleLine, batch);
 
         if (followTail)
         {
@@ -319,32 +294,68 @@ public partial class Main : UserControl
         {
             box.ScrollToVerticalOffset(scrollOffset);
         }
+    }
 
-        bool shouldSchedule = false;
-        lock (_logGate)
+    private static void AppendLogBatch(TextBox box, Queue<int> lineLengths, int maxLines, string? singleLine, string[]? batch)
+    {
+        int batchCount = batch?.Length ?? 1;
+        // The setting can shrink between queuing the entries and flushing them.
+        int retainedBatchCount = Math.Min(batchCount, maxLines);
+        int trimLength = 0;
+        while (lineLengths.Count > maxLines - retainedBatchCount)
         {
-            if (pendingLines.Count > 0)
-            {
-                shouldSchedule = TryQueueFlush(isMinecraftLog);
-            }
+            trimLength += lineLengths.Dequeue();
         }
 
-        if (shouldSchedule)
+        string newLine = Environment.NewLine;
+        string appended;
+        if (batch == null)
         {
-            SafeInvoke(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
+            lineLengths.Enqueue(singleLine!.Length + newLine.Length);
+            appended = singleLine + newLine;
+        }
+        else
+        {
+            StringBuilder builder = new(Math.Min(retainedBatchCount * 64, 8192));
+            for (int index = batchCount - retainedBatchCount; index < batchCount; index++)
+            {
+                string entry = batch[index];
+                lineLengths.Enqueue(entry.Length + newLine.Length);
+                builder.Append(entry).Append(newLine);
+            }
+
+            appended = builder.ToString();
+        }
+
+        if (trimLength == 0)
+        {
+            box.AppendText(appended);
+            return;
+        }
+
+        int selectionStart = box.SelectionStart;
+        int selectionEnd = selectionStart + box.SelectionLength;
+        // Group the prefix removal and append into one TextBox change. Translate
+        // both selection endpoints so any selected text still retained stays selected.
+        using (box.DeclareChangeBlock())
+        {
+            box.Select(0, trimLength);
+            box.SelectedText = string.Empty;
+            box.AppendText(appended);
+            int start = Math.Max(0, selectionStart - trimLength);
+            box.Select(start, Math.Max(0, selectionEnd - trimLength) - start);
         }
     }
 
-    private void ClearLog(TextBox box, Queue<string> lines, Queue<string> pendingLines, bool isMinecraftLog)
+    private void ClearLog(TextBox box, Queue<int> lineLengths, Queue<string> pendingLines)
     {
         SafeInvoke(() =>
         {
             lock (_logGate)
             {
-                lines.Clear();
+                lineLengths.Clear();
                 pendingLines.Clear();
-
-                CancelQueuedFlush(isMinecraftLog);
+                // An already scheduled flush can service entries added after this clear.
             }
 
             box.Clear();
@@ -407,12 +418,12 @@ public partial class Main : UserControl
 
         if (flushMinecraft)
         {
-            SafeInvoke(_flushMinecraftLogs);
+            _ = ScheduleLogFlushAsync(_flushMinecraftLogs);
         }
 
         if (flushTwitch)
         {
-            SafeInvoke(_flushTwitchLogs);
+            _ = ScheduleLogFlushAsync(_flushTwitchLogs);
         }
 
         UpdateHealth();
