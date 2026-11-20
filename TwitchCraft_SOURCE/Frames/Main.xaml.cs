@@ -228,8 +228,6 @@ public partial class Main : UserControl
 
     private async Task ScheduleLogFlushAsync(Action flush)
     {
-        // Coalesce bursts before touching the TextBox and let WPF service input
-        // and render work between flushes. Producers still enqueue immediately.
         await Task.Delay(LogFlushInterval).ConfigureAwait(false);
         if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
         {
@@ -239,7 +237,6 @@ public partial class Main : UserControl
             }
             catch (InvalidOperationException)
             {
-                // The dispatcher can shut down after the check above.
             }
         }
     }
@@ -299,7 +296,6 @@ public partial class Main : UserControl
     private static void AppendLogBatch(TextBox box, Queue<int> lineLengths, int maxLines, string? singleLine, string[]? batch)
     {
         int batchCount = batch?.Length ?? 1;
-        // The setting can shrink between queuing the entries and flushing them.
         int retainedBatchCount = Math.Min(batchCount, maxLines);
         int trimLength = 0;
         while (lineLengths.Count > maxLines - retainedBatchCount)
@@ -335,8 +331,6 @@ public partial class Main : UserControl
 
         int selectionStart = box.SelectionStart;
         int selectionEnd = selectionStart + box.SelectionLength;
-        // Group the prefix removal and append into one TextBox change. Translate
-        // both selection endpoints so any selected text still retained stays selected.
         using (box.DeclareChangeBlock())
         {
             box.Select(0, trimLength);
@@ -355,7 +349,6 @@ public partial class Main : UserControl
             {
                 lineLengths.Clear();
                 pendingLines.Clear();
-                // An already scheduled flush can service entries added after this clear.
             }
 
             box.Clear();
