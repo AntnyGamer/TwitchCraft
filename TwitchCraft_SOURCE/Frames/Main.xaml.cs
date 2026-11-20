@@ -302,39 +302,35 @@ public partial class Main : UserControl
         int maxLines = GetMaxLogLines(isMinecraftLog);
         double scrollOffset = box.VerticalOffset;
         bool followTail = scrollOffset >= Math.Max(0, box.ExtentHeight - box.ViewportHeight) - 1;
-        int firstVisibleLine = !followTail && lineLengths.Count + batchCount > maxLines
-            ? box.GetFirstVisibleLineIndex()
-            : -1;
-        int trimmedLines = AppendLogBatch(box, lineLengths, maxLines, singleLine, batch);
+        double horizontalOffset = followTail ? 0 : box.HorizontalOffset;
+        bool preserveScroll = !followTail && lineLengths.Count + batchCount > maxLines && box.LineCount > 0;
+        double lineHeight = preserveScroll ? box.ExtentHeight / box.LineCount : 0;
+        int removedVisualLines = AppendLogBatch(box, lineLengths, maxLines, singleLine, batch, preserveScroll);
 
         if (followTail)
         {
             box.ScrollToEnd();
         }
-        else if (trimmedLines > 0 && firstVisibleLine >= 0 && box.LineCount > 0)
-        {
-            double horizontalOffset = box.HorizontalOffset;
-            box.ScrollToLine(Math.Min(box.LineCount - 1, Math.Max(0, firstVisibleLine - trimmedLines)));
-            box.ScrollToHorizontalOffset(horizontalOffset);
-        }
         else
         {
-            box.ScrollToVerticalOffset(scrollOffset);
+            box.ScrollToVerticalOffset(Math.Max(0, scrollOffset - removedVisualLines * lineHeight));
+            box.ScrollToHorizontalOffset(horizontalOffset);
         }
     }
 
-    private static int AppendLogBatch(TextBox box, Queue<int> lineLengths, int maxLines, string? singleLine, string[]? batch)
+    private static int AppendLogBatch(TextBox box, Queue<int> lineLengths, int maxLines, string? singleLine, string[]? batch, bool preserveScroll)
     {
         int batchCount = batch?.Length ?? 1;
         int retainedBatchCount = Math.Min(batchCount, maxLines);
         int trimLength = 0;
-        int trimmedLines = 0;
         while (lineLengths.Count > maxLines - retainedBatchCount)
         {
             trimLength += lineLengths.Dequeue();
-            trimmedLines++;
         }
 
+        int removedVisualLines = preserveScroll && trimLength > 0
+            ? Math.Max(0, box.GetLineIndexFromCharacterIndex(trimLength))
+            : 0;
         string newLine = Environment.NewLine;
         string appended;
         if (batch == null)
@@ -372,7 +368,7 @@ public partial class Main : UserControl
             box.Select(start, Math.Max(0, selectionEnd - trimLength) - start);
         }
 
-        return trimmedLines;
+        return removedVisualLines;
     }
 
     private void ClearLog(TextBox box, Queue<int> lineLengths, Queue<string> pendingLines)
