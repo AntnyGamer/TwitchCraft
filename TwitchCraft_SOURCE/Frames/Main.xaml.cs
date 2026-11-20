@@ -269,10 +269,9 @@ public partial class Main : UserControl
                 return;
             }
 
+            _logFlushTimer.Stop();
             _logFlushScheduled = false;
         }
-
-        _logFlushTimer.Stop();
     }
 
     private void FlushLogs(TextBox box, Queue<int> lineLengths, Queue<string> pendingLines, bool isMinecraftLog)
@@ -312,9 +311,11 @@ public partial class Main : UserControl
         {
             box.ScrollToEnd();
         }
-        else if (trimmedLines > 0 && firstVisibleLine >= 0)
+        else if (trimmedLines > 0 && firstVisibleLine >= 0 && box.LineCount > 0)
         {
-            box.ScrollToLine(Math.Max(0, firstVisibleLine - trimmedLines));
+            double horizontalOffset = box.HorizontalOffset;
+            box.ScrollToLine(Math.Min(box.LineCount - 1, Math.Max(0, firstVisibleLine - trimmedLines)));
+            box.ScrollToHorizontalOffset(horizontalOffset);
         }
         else
         {
