@@ -19,7 +19,6 @@ public partial class Main : UserControl
     private const string TwitchDisconnectedText = "Twitch: Disconnected";
     private const string MinecraftConnectedText = "Minecraft: Connected";
     private const string MinecraftDisconnectedText = "Minecraft: Disconnected";
-    private static readonly TimeSpan LogFlushInterval = TimeSpan.FromMilliseconds(50);
     private static readonly StringComparer ViewerNameComparer = StringComparer.OrdinalIgnoreCase;
     private readonly Queue<int> _minecraftLogLineLengths = [];
     private readonly Queue<int> _twitchLogLineLengths = [];
@@ -27,10 +26,8 @@ public partial class Main : UserControl
     private readonly Queue<string> _pendingTwitchLogLines = [];
     private readonly Lock _logGate = new();
     private readonly DispatcherTimer _connectionHealthTimer;
-    private readonly Action _flushMinecraftLogs;
-    private readonly Action _flushTwitchLogs;
-    private bool _minecraftFlushQueued;
-    private bool _twitchFlushQueued;
+    private readonly DispatcherTimer _logFlushTimer;
+    private bool _logFlushScheduled;
     private int _serverActionRunning;
     private Window? _parentWindow;
     private MainHandler? _runtime;
@@ -41,8 +38,8 @@ public partial class Main : UserControl
     public Main()
     {
         InitializeComponent();
-        _flushMinecraftLogs = () => FlushLogs(MinecraftLogs, _minecraftLogLineLengths, _pendingMinecraftLogLines, isMinecraftLog: true);
-        _flushTwitchLogs = () => FlushLogs(TwitchLogs, _twitchLogLineLengths, _pendingTwitchLogLines, isMinecraftLog: false);
+        _logFlushTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(50) };
+        _logFlushTimer.Tick += LogFlushTimer_Tick;
         _connectionHealthTimer = new() { Interval = TimeSpan.FromSeconds(1) };
         _connectionHealthTimer.Tick += HealthTimer_Tick;
         IsVisibleChanged += Visibility_Changed;
@@ -66,6 +63,11 @@ public partial class Main : UserControl
         Unloaded += (_, _) =>
         {
             _connectionHealthTimer.Stop();
+            _logFlushTimer.Stop();
+            lock (_logGate)
+            {
+                _logFlushScheduled = false;
+            }
             _parentWindow?.StateChanged -= Parent_StateChanged;
             _parentWindow = null;
             Volatile.Write(ref _windowMinimized, 0);
@@ -206,8 +208,7 @@ public partial class Main : UserControl
 
     private void QueueLog(Queue<string> pendingLines, bool isMinecraftLog, string? line)
     {
-        bool shouldSchedule;
-
+        bool startTimer;
         lock (_logGate)
         {
             pendingLines.Enqueue(line ?? string.Empty);
@@ -217,42 +218,65 @@ public partial class Main : UserControl
                 pendingLines.Dequeue();
             }
 
-            shouldSchedule = !ShouldPauseUIUpdates() && TryQueueFlush(isMinecraftLog);
+            startTimer = !ShouldPauseUIUpdates() && !_logFlushScheduled;
+            if (startTimer)
+            {
+                _logFlushScheduled = true;
+            }
         }
 
-        if (shouldSchedule)
+        if (startTimer)
         {
-            _ = ScheduleLogFlushAsync(isMinecraftLog ? _flushMinecraftLogs : _flushTwitchLogs);
+            SafeInvoke(StartLogFlushTimer);
         }
     }
 
-    private async Task ScheduleLogFlushAsync(Action flush)
-    {
-        await Task.Delay(LogFlushInterval).ConfigureAwait(false);
-        if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
-        {
-            try
-            {
-                _ = Dispatcher.BeginInvoke(flush, DispatcherPriority.Background);
-            }
-            catch (InvalidOperationException)
-            {
-            }
-        }
-    }
-
-    private void FlushLogs(TextBox box, Queue<int> lineLengths, Queue<string> pendingLines, bool isMinecraftLog)
+    private void StartLogFlushTimer()
     {
         if (ShouldPauseUIUpdates())
         {
             lock (_logGate)
             {
-                CancelQueuedFlush(isMinecraftLog);
+                _logFlushScheduled = false;
             }
 
             return;
         }
 
+        _logFlushTimer.Start();
+    }
+
+    private void LogFlushTimer_Tick(object? sender, EventArgs e)
+    {
+        if (ShouldPauseUIUpdates())
+        {
+            _logFlushTimer.Stop();
+            lock (_logGate)
+            {
+                _logFlushScheduled = false;
+            }
+
+            return;
+        }
+
+        FlushLogs(MinecraftLogs, _minecraftLogLineLengths, _pendingMinecraftLogLines, isMinecraftLog: true);
+        FlushLogs(TwitchLogs, _twitchLogLineLengths, _pendingTwitchLogLines, isMinecraftLog: false);
+
+        lock (_logGate)
+        {
+            if (_pendingMinecraftLogLines.Count > 0 || _pendingTwitchLogLines.Count > 0)
+            {
+                return;
+            }
+
+            _logFlushScheduled = false;
+        }
+
+        _logFlushTimer.Stop();
+    }
+
+    private void FlushLogs(TextBox box, Queue<int> lineLengths, Queue<string> pendingLines, bool isMinecraftLog)
+    {
         int batchCount;
         string? singleLine = null;
         string[]? batch = null;
@@ -269,8 +293,6 @@ public partial class Main : UserControl
                 batch = [.. pendingLines];
                 pendingLines.Clear();
             }
-
-            CancelQueuedFlush(isMinecraftLog);
         }
 
         if (batchCount == 0)
@@ -281,11 +303,18 @@ public partial class Main : UserControl
         int maxLines = GetMaxLogLines(isMinecraftLog);
         double scrollOffset = box.VerticalOffset;
         bool followTail = scrollOffset >= Math.Max(0, box.ExtentHeight - box.ViewportHeight) - 1;
-        AppendLogBatch(box, lineLengths, maxLines, singleLine, batch);
+        int firstVisibleLine = !followTail && lineLengths.Count + batchCount > maxLines
+            ? box.GetFirstVisibleLineIndex()
+            : -1;
+        int trimmedLines = AppendLogBatch(box, lineLengths, maxLines, singleLine, batch);
 
         if (followTail)
         {
             box.ScrollToEnd();
+        }
+        else if (trimmedLines > 0 && firstVisibleLine >= 0)
+        {
+            box.ScrollToLine(Math.Max(0, firstVisibleLine - trimmedLines));
         }
         else
         {
@@ -293,14 +322,16 @@ public partial class Main : UserControl
         }
     }
 
-    private static void AppendLogBatch(TextBox box, Queue<int> lineLengths, int maxLines, string? singleLine, string[]? batch)
+    private static int AppendLogBatch(TextBox box, Queue<int> lineLengths, int maxLines, string? singleLine, string[]? batch)
     {
         int batchCount = batch?.Length ?? 1;
         int retainedBatchCount = Math.Min(batchCount, maxLines);
         int trimLength = 0;
+        int trimmedLines = 0;
         while (lineLengths.Count > maxLines - retainedBatchCount)
         {
             trimLength += lineLengths.Dequeue();
+            trimmedLines++;
         }
 
         string newLine = Environment.NewLine;
@@ -326,7 +357,7 @@ public partial class Main : UserControl
         if (trimLength == 0)
         {
             box.AppendText(appended);
-            return;
+            return 0;
         }
 
         int selectionStart = box.SelectionStart;
@@ -339,6 +370,8 @@ public partial class Main : UserControl
             int start = Math.Max(0, selectionStart - trimLength);
             box.Select(start, Math.Max(0, selectionEnd - trimLength) - start);
         }
+
+        return trimmedLines;
     }
 
     private void ClearLog(TextBox box, Queue<int> lineLengths, Queue<string> pendingLines)
@@ -353,30 +386,6 @@ public partial class Main : UserControl
 
             box.Clear();
         });
-    }
-
-    private bool TryQueueFlush(bool isMinecraftLog)
-    {
-        ref bool flushQueued = ref (isMinecraftLog ? ref _minecraftFlushQueued : ref _twitchFlushQueued);
-        if (flushQueued)
-        {
-            return false;
-        }
-
-        flushQueued = true;
-        return true;
-    }
-
-    private void CancelQueuedFlush(bool isMinecraftLog)
-    {
-        if (isMinecraftLog)
-        {
-            _minecraftFlushQueued = false;
-        }
-        else
-        {
-            _twitchFlushQueued = false;
-        }
     }
 
     private int GetMaxLogLines(bool isMinecraftLog)
@@ -394,14 +403,16 @@ public partial class Main : UserControl
     private void FlushDeferredUpdates()
     {
         List<string>? viewers;
-        bool flushMinecraft;
-        bool flushTwitch;
+        bool startTimer;
         lock (_logGate)
         {
             viewers = _deferredViewerList;
             _deferredViewerList = null;
-            flushMinecraft = _pendingMinecraftLogLines.Count > 0 && TryQueueFlush(isMinecraftLog: true);
-            flushTwitch = _pendingTwitchLogLines.Count > 0 && TryQueueFlush(isMinecraftLog: false);
+            startTimer = !_logFlushScheduled && (_pendingMinecraftLogLines.Count > 0 || _pendingTwitchLogLines.Count > 0);
+            if (startTimer)
+            {
+                _logFlushScheduled = true;
+            }
         }
 
         if (viewers != null)
@@ -409,14 +420,9 @@ public partial class Main : UserControl
             UpdateViewers(viewers);
         }
 
-        if (flushMinecraft)
+        if (startTimer)
         {
-            _ = ScheduleLogFlushAsync(_flushMinecraftLogs);
-        }
-
-        if (flushTwitch)
-        {
-            _ = ScheduleLogFlushAsync(_flushTwitchLogs);
+            StartLogFlushTimer();
         }
 
         UpdateHealth();
