@@ -243,6 +243,8 @@ public partial class Main : UserControl
             return;
         }
 
+        FlushLogs(MinecraftLogs, _minecraftLogLineLengths, _pendingMinecraftLogLines, isMinecraftLog: true);
+        FlushLogs(TwitchLogs, _twitchLogLineLengths, _pendingTwitchLogLines, isMinecraftLog: false);
         _logFlushTimer.Start();
     }
 
