@@ -43,7 +43,7 @@ jobs:
           $report = Get-ChildItem "TestResults\coverage.cobertura.*.xml" | Select-Object -First 1
           if (-not $report) { throw "Coverage report not found." }
           [xml]$coverage = Get-Content $report.FullName
-          $lineCoverage = [double]$coverage.coverage.'line-rate' * 100
+          $lineCoverage = [double]$coverage.coverage.'lines-covered' / [double]$coverage.coverage.'lines-valid' * 100
           Write-Host "Line coverage: $($lineCoverage.ToString('0.00'))%"
           if ($lineCoverage -lt 50) { throw "Line coverage fell below 50%." }
 
