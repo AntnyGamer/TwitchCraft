@@ -4,7 +4,7 @@ All notable changes to this project are documented here. Release entries are lis
 
 ## [1.10.1.0] - Unreleased
 
-- Improved WPF log responsiveness under heavy Twitch and Minecraft output using 50 ms UI batching and incremental text updates
+- Improved WPF log responsiveness with 25 ms UI batching, incremental text updates, and more precise scroll position preservation
 - Simplified redundant source comments and refreshed application version metadata
 
 ## [1.10.0.1] - 2026-10-17
