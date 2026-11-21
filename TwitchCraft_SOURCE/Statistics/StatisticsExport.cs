@@ -5,18 +5,20 @@ namespace TwitchCraft_V1;
 
 internal static partial class StatisticsStore
 {
+    private const string SelectGlobalStatsSql = """
+        SELECT Deaths, LastDeathScore, SessionsStarted, LongestSurvivalSeconds, ShortestSurvivalSeconds,
+               GameCommandsRun, TokensSpent, EffectsGiven
+        FROM GlobalStats
+        WHERE ID = 1
+        LIMIT 1;
+        """;
+
     private static LifetimeStatistics LoadGlobalCore(SqliteConnection connection)
     {
         LifetimeStatistics statistics = new();
         using (SqliteCommand command = connection.CreateCommand())
         {
-            command.CommandText = """
-                SELECT Deaths, LastDeathScore, SessionsStarted, LongestSurvivalSeconds, ShortestSurvivalSeconds,
-                       GameCommandsRun, TokensSpent, EffectsGiven
-                FROM GlobalStats
-                WHERE ID = 1
-                LIMIT 1;
-                """;
+            command.CommandText = SelectGlobalStatsSql;
 
             using SqliteDataReader reader = command.ExecuteReader();
             if (reader.Read())
@@ -112,13 +114,7 @@ internal static partial class StatisticsStore
 
                 using (SqliteCommand command = connection.CreateCommand())
                 {
-                    command.CommandText = """
-                        SELECT Deaths, LastDeathScore, SessionsStarted, LongestSurvivalSeconds, ShortestSurvivalSeconds,
-                               GameCommandsRun, TokensSpent, EffectsGiven
-                        FROM GlobalStats
-                        WHERE ID = 1
-                        LIMIT 1;
-                        """;
+                    command.CommandText = SelectGlobalStatsSql;
 
                     using SqliteDataReader reader = command.ExecuteReader();
                     if (reader.Read())
