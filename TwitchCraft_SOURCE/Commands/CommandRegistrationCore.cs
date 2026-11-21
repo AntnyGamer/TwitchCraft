@@ -34,15 +34,12 @@ public static partial class CommandList
             => ReplyAsync(msg, BotResponseKind.Essential, ct);
 
         private Task ConfirmAsync(string? msg, CancellationToken ct)
-        {
-            runtime.Commands.MarkCommandSuccess();
-            return ReplyAsync(msg, BotResponseKind.Confirmation, ct);
-        }
+            => SuccessAsync(msg, ct, BotResponseKind.Confirmation);
 
-        private Task SuccessAsync(string? msg, CancellationToken ct)
+        private Task SuccessAsync(string? msg, CancellationToken ct, BotResponseKind kind = BotResponseKind.Essential)
         {
             runtime.Commands.MarkCommandSuccess();
-            return ReplyAsync(msg, BotResponseKind.Essential, ct);
+            return ReplyAsync(msg, kind, ct);
         }
 
         private Task ReplyAsync(string? msg, BotResponseKind kind, CancellationToken ct)
