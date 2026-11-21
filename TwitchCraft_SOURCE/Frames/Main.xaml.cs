@@ -468,30 +468,14 @@ public partial class Main : UserControl
     }
 
     private async void SendCommand_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            await SendCommandAsync();
-        }
-        catch (Exception ex)
-        {
-            ErrorHandling.LogNonFatal("Manual command send failed", ex);
-        }
-    }
+        => await SendCommandAsync();
 
     private async void CommandBox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Return)
         {
             e.Handled = true;
-            try
-            {
-                await SendCommandAsync();
-            }
-            catch (Exception ex)
-            {
-                ErrorHandling.LogNonFatal("Manual command send failed", ex);
-            }
+            await SendCommandAsync();
         }
     }
 
@@ -573,23 +557,30 @@ public partial class Main : UserControl
 
     private async Task SendCommandAsync()
     {
-        string command = CommandTextBox.Text;
-        if (string.IsNullOrWhiteSpace(command))
+        try
         {
-            return;
-        }
+            string command = CommandTextBox.Text;
+            if (string.IsNullOrWhiteSpace(command))
+            {
+                return;
+            }
 
-        TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
-        if (parent == null)
-        {
-            ErrorHandling.ShowCommandWindowError(this);
-            return;
-        }
+            TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
+            if (parent == null)
+            {
+                ErrorHandling.ShowCommandWindowError(this);
+                return;
+            }
 
-        CommandTextBox.Clear();
-        if (!await parent.RunMinecraftCommandAsync(command) && CommandTextBox.Text.Length == 0)
+            CommandTextBox.Clear();
+            if (!await parent.RunMinecraftCommandAsync(command) && CommandTextBox.Text.Length == 0)
+            {
+                CommandTextBox.Text = command;
+            }
+        }
+        catch (Exception ex)
         {
-            CommandTextBox.Text = command;
+            ErrorHandling.LogNonFatal("Manual command send failed", ex);
         }
     }
 
