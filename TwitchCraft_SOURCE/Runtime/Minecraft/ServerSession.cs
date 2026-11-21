@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchCraft_V1.Setup;
@@ -38,10 +39,7 @@ public sealed partial class MainHandler
 
         lock (_spectatorProbeGate)
         {
-            foreach (TaskCompletionSource<int?> waiter in _pendingGamemodeRequests.Values)
-            {
-                waiter.TrySetResult(null);
-            }
+            CompletePendingRequests(_pendingGamemodeRequests, (int?)null);
 
             _pendingGamemodeRequests.Clear();
             _spectatorPlayers.Clear();
@@ -51,35 +49,23 @@ public sealed partial class MainHandler
 
         lock (_selectedItemProbeGate)
         {
-            foreach (TaskCompletionSource<string?> waiter in _pendingSelectedItemRequests.Values)
-            {
-                waiter.TrySetResult(null);
-            }
+            CompletePendingRequests(_pendingSelectedItemRequests, (string?)null);
 
             _pendingSelectedItemRequests.Clear();
         }
 
         lock (_maxHealthProbeGate)
         {
-            foreach (TaskCompletionSource<double?> waiter in _pendingMaxHealthRequests.Values)
-            {
-                waiter.TrySetResult(null);
-            }
+            CompletePendingRequests(_pendingMaxHealthRequests, (double?)null);
 
-            foreach (TaskCompletionSource<string?> waiter in _pendingHeartAttributeRequests.Values)
-            {
-                waiter.TrySetResult(null);
-            }
+            CompletePendingRequests(_pendingHeartAttributeRequests, (string?)null);
 
             _pendingMaxHealthRequests.Clear();
             _pendingHeartAttributeRequests.Clear();
         }
         lock (_respawnProbeGate)
         {
-            foreach (TaskCompletionSource<bool> waiter in _pendingRespawnRequests.Values)
-            {
-                waiter.TrySetResult(false);
-            }
+            CompletePendingRequests(_pendingRespawnRequests, false);
 
             _pendingRespawnRequests.Clear();
         }
@@ -107,6 +93,14 @@ public sealed partial class MainHandler
         _shellWindow?.ClearServerLog();
         _shellWindow?.ClearChatLog();
         _shellWindow?.UpdateViewers([]);
+    }
+
+    private static void CompletePendingRequests<T>(Dictionary<string, TaskCompletionSource<T>> requests, T result)
+    {
+        foreach (TaskCompletionSource<T> waiter in requests.Values)
+        {
+            waiter.TrySetResult(result);
+        }
     }
 
     internal Task StopProcessSafeAsync(bool waitBriefly)
