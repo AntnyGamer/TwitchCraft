@@ -8,8 +8,6 @@ namespace TwitchCraft_V1;
 
 public static partial class MinigameManager
 {
-    // ===== Chat command registration =====
-
     public static void AddHandlers(
         MainHandler runtime,
         Dictionary<string, ChatCommandHandler> handlers,
@@ -193,7 +191,7 @@ public static partial class MinigameManager
                 return;
             }
 
-            runtime.Tokens.Award(sender, 10); //Guess Number Win
+            runtime.Tokens.Award(sender, 10);
             await saySuccessfulToChannel(sender + ", you guessed the number " + targetNumber.ToString(CultureInfo.InvariantCulture) + " and won 10 tokens!", ct).ConfigureAwait(false);
         };
 

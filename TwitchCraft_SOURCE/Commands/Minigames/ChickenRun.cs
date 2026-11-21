@@ -117,7 +117,7 @@ public static partial class MinigameManager
                 int payout = (int)Math.Round(bet.TokenAmount * multiplier, MidpointRounding.AwayFromZero);
                 if (payout > 0)
                 {
-                    payouts.Add(new(bet.Viewer, payout)); //Chicken Run Win
+                    payouts.Add(new(bet.Viewer, payout));
                 }
             }
 

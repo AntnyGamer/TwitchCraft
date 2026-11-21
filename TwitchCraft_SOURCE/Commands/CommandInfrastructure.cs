@@ -91,8 +91,6 @@ public sealed class ChatCommandRegistry(
     }
 }
 
-// ===== Minecraft command string helpers =====
-
 public static class MinecraftCommandBuilder
 {
     public static string ApplyEffect(string selector, string effect, int seconds, int amplifier)

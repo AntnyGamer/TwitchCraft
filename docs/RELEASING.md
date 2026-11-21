@@ -5,8 +5,8 @@
 Before publishing, align the release identity:
 
 - Application `Version` and `FileVersion` in `TwitchCraft_SOURCE/TwitchCraft.csproj` use the four-part Windows/.NET form (for example, `1.9.0.0`); `FileVersion` is the canonical version reported in structured logs
-- Git tag, GitHub Release title, and `CHANGELOG.md` use the public three-part release for normal versions (for example, `1.9.0`) or a four-part release for intentional revisions (for example, `1.10.0.1`)
-- The public version must match `Version` and `FileVersion`, omitting only a trailing `.0` for three-part releases. Keep all four components when publishing a revision like `1.10.0.1`; leave `AssemblyVersion` unchanged to preserve the assembly identity
+- Git tag, GitHub Release title, and `CHANGELOG.md` use the public three-part release for normal versions (for example, `1.9.0`) or a four-part release for intentional revisions (for example, `1.10.1.0`)
+- The public version must match `Version` and `FileVersion`. Omit a trailing `.0` only when publishing a three-part release; retain all four components for an explicitly four-part release like `1.10.1.0`. Normally leave `AssemblyVersion` unchanged to preserve assembly identity unless intentionally updating it.
 
 Do not publish from an unreviewed working tree.
 
