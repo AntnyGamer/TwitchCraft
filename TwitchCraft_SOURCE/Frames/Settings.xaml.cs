@@ -555,7 +555,13 @@ public partial class Settings : UserControl
         }
     }
 
-    private async void GameplaySetting_Changed(object sender, RoutedEventArgs e)
+    private async void PvP_Changed(object sender, RoutedEventArgs e)
+        => await SaveGameplayAsync();
+
+    private async void Hardcore_Changed(object sender, RoutedEventArgs e)
+        => await SaveGameplayAsync();
+
+    private async void Difficulty_Changed(object sender, SelectionChangedEventArgs e)
         => await SaveGameplayAsync();
 
     private async Task SaveGameplayAsync()
