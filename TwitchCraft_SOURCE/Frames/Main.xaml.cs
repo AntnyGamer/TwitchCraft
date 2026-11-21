@@ -38,7 +38,7 @@ public partial class Main : UserControl
     public Main()
     {
         InitializeComponent();
-        _logFlushTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(50) };
+        _logFlushTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(25) };
         _logFlushTimer.Tick += LogFlushTimer_Tick;
         _connectionHealthTimer = new() { Interval = TimeSpan.FromSeconds(1) };
         _connectionHealthTimer.Tick += HealthTimer_Tick;
@@ -304,7 +304,27 @@ public partial class Main : UserControl
         bool followTail = scrollOffset >= Math.Max(0, box.ExtentHeight - box.ViewportHeight) - 1;
         double horizontalOffset = followTail ? 0 : box.HorizontalOffset;
         bool preserveScroll = !followTail && lineLengths.Count + batchCount > maxLines && box.LineCount > 0;
-        double lineHeight = preserveScroll ? box.ExtentHeight / box.LineCount : 0;
+        double lineHeight = 0;
+        if (preserveScroll)
+        {
+            int firstVisible = box.GetFirstVisibleLineIndex();
+            if (firstVisible >= 0 && firstVisible + 1 < box.LineCount)
+            {
+                int firstIndex = box.GetCharacterIndexFromLineIndex(firstVisible);
+                int secondIndex = box.GetCharacterIndexFromLineIndex(firstVisible + 1);
+                Rect first = box.GetRectFromCharacterIndex(firstIndex);
+                Rect second = box.GetRectFromCharacterIndex(secondIndex);
+                if (!first.IsEmpty && !second.IsEmpty && second.Top > first.Top)
+                {
+                    lineHeight = second.Top - first.Top;
+                }
+            }
+
+            if (lineHeight <= 0)
+            {
+                lineHeight = box.ExtentHeight / box.LineCount;
+            }
+        }
         int removedVisualLines = AppendLogBatch(box, lineLengths, maxLines, singleLine, batch, preserveScroll);
 
         if (followTail)
@@ -448,30 +468,14 @@ public partial class Main : UserControl
     }
 
     private async void SendCommand_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            await SendCommandAsync();
-        }
-        catch (Exception ex)
-        {
-            ErrorHandling.LogNonFatal("Manual command send failed", ex);
-        }
-    }
+        => await SendCommandAsync();
 
     private async void CommandBox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Return)
         {
             e.Handled = true;
-            try
-            {
-                await SendCommandAsync();
-            }
-            catch (Exception ex)
-            {
-                ErrorHandling.LogNonFatal("Manual command send failed", ex);
-            }
+            await SendCommandAsync();
         }
     }
 
@@ -553,23 +557,30 @@ public partial class Main : UserControl
 
     private async Task SendCommandAsync()
     {
-        string command = CommandTextBox.Text;
-        if (string.IsNullOrWhiteSpace(command))
+        try
         {
-            return;
-        }
+            string command = CommandTextBox.Text;
+            if (string.IsNullOrWhiteSpace(command))
+            {
+                return;
+            }
 
-        TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
-        if (parent == null)
-        {
-            ErrorHandling.ShowCommandWindowError(this);
-            return;
-        }
+            TwitchCraft? parent = AppHelpers.GetTwitchCraftWindow(this);
+            if (parent == null)
+            {
+                ErrorHandling.ShowCommandWindowError(this);
+                return;
+            }
 
-        CommandTextBox.Clear();
-        if (!await parent.RunMinecraftCommandAsync(command) && CommandTextBox.Text.Length == 0)
+            CommandTextBox.Clear();
+            if (!await parent.RunMinecraftCommandAsync(command) && CommandTextBox.Text.Length == 0)
+            {
+                CommandTextBox.Text = command;
+            }
+        }
+        catch (Exception ex)
         {
-            CommandTextBox.Text = command;
+            ErrorHandling.LogNonFatal("Manual command send failed", ex);
         }
     }
 

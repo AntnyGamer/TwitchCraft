@@ -318,13 +318,12 @@ public sealed partial class MainHandler
         return players;
     }
 
-    private static bool TryParseList(string response, out List<string> players)
+    private static List<string>? ParseOnlinePlayerList(string response)
     {
-        players = [];
         ReadOnlySpan<char> text = response.AsSpan().Trim();
         if (text.IsEmpty)
         {
-            return false;
+            return null;
         }
 
         int marker = text.IndexOf("players online".AsSpan(), StringComparison.OrdinalIgnoreCase);
@@ -333,19 +332,18 @@ public sealed partial class MainHandler
             marker = text.IndexOf("player online".AsSpan(), StringComparison.OrdinalIgnoreCase);
         }
 
-        if (marker >= 0)
+        if (marker < 0)
         {
-            int colon = text[marker..].IndexOf(':');
-            if (colon >= 0)
-            {
-                players = ParsePlayers(text[(marker + colon + 1)..]);
-                return true;
-            }
-
-            return TryParseInt(text[..marker], out int count) && count == 0;
+            return null;
         }
 
-        return false;
+        int colon = text[marker..].IndexOf(':');
+        if (colon >= 0)
+        {
+            return ParsePlayers(text[(marker + colon + 1)..]);
+        }
+
+        return TryParseInt(text[..marker], out int count) && count == 0 ? [] : null;
     }
 
     private static bool TryParseInt(ReadOnlySpan<char> text, out int value)

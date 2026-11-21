@@ -332,7 +332,8 @@ public sealed partial class MainHandler
             return;
         }
 
-        if (!TryParseList(line, out List<string> players))
+        List<string>? players = ParseOnlinePlayerList(line);
+        if (players == null)
         {
             return;
         }

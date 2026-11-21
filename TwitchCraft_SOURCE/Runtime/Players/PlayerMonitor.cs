@@ -286,7 +286,8 @@ public sealed partial class MainHandler
             }
 
             _minecraftSession.RCONHealthy = true;
-            if (!TryParseList(response, out List<string> players))
+            List<string>? players = ParseOnlinePlayerList(response);
+            if (players == null)
             {
                 return false;
             }
