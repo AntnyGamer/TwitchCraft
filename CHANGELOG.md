@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Release entries are listed in reverse chronological order.
 
+## [1.10.1.0] - Unreleased
+
+- Improved WPF log responsiveness under heavy Twitch and Minecraft output using 50 ms UI batching and incremental text updates
+- Simplified redundant source comments and refreshed application version metadata
+
 ## [1.10.0.1] - 2026-10-17
 
 - HOTFIX: Replaced the removed Twitch developer application's public Client ID so users can use TwitchCraft again
