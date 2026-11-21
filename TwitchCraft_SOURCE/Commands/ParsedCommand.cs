@@ -116,11 +116,6 @@ internal readonly struct ParsedCommand
             }
         }
 
-        if (count == 0)
-        {
-            return [];
-        }
-
         if (count == 1)
         {
             return [args[firstStart..(lastNonSpace + 1)].ToString()];
