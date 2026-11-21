@@ -39,8 +39,7 @@ public sealed partial class MainHandler
 
         lock (_spectatorProbeGate)
         {
-            CompletePendingRequests(_pendingGamemodeRequests, (int?)null);
-
+            CompletePendingRequests(_pendingGamemodeRequests, null);
             _pendingGamemodeRequests.Clear();
             _spectatorPlayers.Clear();
             _lastSpectatorRefreshUtc = DateTime.MinValue;
@@ -49,24 +48,20 @@ public sealed partial class MainHandler
 
         lock (_selectedItemProbeGate)
         {
-            CompletePendingRequests(_pendingSelectedItemRequests, (string?)null);
-
+            CompletePendingRequests(_pendingSelectedItemRequests, null);
             _pendingSelectedItemRequests.Clear();
         }
 
         lock (_maxHealthProbeGate)
         {
-            CompletePendingRequests(_pendingMaxHealthRequests, (double?)null);
-
-            CompletePendingRequests(_pendingHeartAttributeRequests, (string?)null);
-
+            CompletePendingRequests(_pendingMaxHealthRequests, null);
+            CompletePendingRequests(_pendingHeartAttributeRequests, null);
             _pendingMaxHealthRequests.Clear();
             _pendingHeartAttributeRequests.Clear();
         }
         lock (_respawnProbeGate)
         {
             CompletePendingRequests(_pendingRespawnRequests, false);
-
             _pendingRespawnRequests.Clear();
         }
 
