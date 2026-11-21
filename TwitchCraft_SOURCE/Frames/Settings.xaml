@@ -492,12 +492,12 @@
                                                 <TextBlock Text="Enable hardcore mode:" Style="{StaticResource SettingLabel}" />
                                                 <CheckBox x:Name="HardcoreCheckbox"
                                                           AutomationProperties.Name="Enable hardcore mode"
-                                                          Checked="Hardcore_Changed"
-                                                          Unchecked="Hardcore_Changed" />
+                                                          Checked="GameplaySetting_Changed"
+                                                          Unchecked="GameplaySetting_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Difficulty:" Style="{StaticResource SettingLabel}" />
-                                                <ComboBox x:Name="DifficultyDropdown" AutomationProperties.Name="Difficulty" SelectionChanged="Difficulty_Changed">
+                                                <ComboBox x:Name="DifficultyDropdown" AutomationProperties.Name="Difficulty" SelectionChanged="GameplaySetting_Changed">
                                                     <ComboBoxItem Content="Easy" />
                                                     <ComboBoxItem Content="Medium" />
                                                     <ComboBoxItem Content="Hard" />
@@ -505,7 +505,7 @@
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Enable PvP in multiplayer" Style="{StaticResource SettingLabel}" />
-                                                <CheckBox x:Name="PvPCheckbox" AutomationProperties.Name="Enable PvP in multiplayer" Checked="PvP_Changed" Unchecked="PvP_Changed" />
+                                                <CheckBox x:Name="PvPCheckbox" AutomationProperties.Name="Enable PvP in multiplayer" Checked="GameplaySetting_Changed" Unchecked="GameplaySetting_Changed" />
                                             </DockPanel>
                                             <DockPanel Style="{StaticResource SettingRow}">
                                                 <TextBlock Text="Allow targeting all players:" Style="{StaticResource SettingLabel}" />
