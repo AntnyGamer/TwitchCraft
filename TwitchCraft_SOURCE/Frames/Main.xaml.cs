@@ -304,7 +304,7 @@ public partial class Main : UserControl
         bool followTail = scrollOffset >= Math.Max(0, box.ExtentHeight - box.ViewportHeight) - 1;
         double horizontalOffset = followTail ? 0 : box.HorizontalOffset;
         bool preserveScroll = !followTail && lineLengths.Count + batchCount > maxLines && box.LineCount > 0;
-        double lineHeight = 0;
+        double lineHeight = preserveScroll ? box.ExtentHeight / box.LineCount : 0;
         if (preserveScroll)
         {
             int firstVisible = box.GetFirstVisibleLineIndex();
@@ -314,15 +314,10 @@ public partial class Main : UserControl
                 int secondIndex = box.GetCharacterIndexFromLineIndex(firstVisible + 1);
                 Rect first = box.GetRectFromCharacterIndex(firstIndex);
                 Rect second = box.GetRectFromCharacterIndex(secondIndex);
-                if (!first.IsEmpty && !second.IsEmpty)
+                if (!first.IsEmpty && !second.IsEmpty && second.Top > first.Top)
                 {
                     lineHeight = second.Top - first.Top;
                 }
-            }
-
-            if (lineHeight <= 0)
-            {
-                lineHeight = box.ExtentHeight / box.LineCount;
             }
         }
         int removedVisualLines = AppendLogBatch(box, lineLengths, maxLines, singleLine, batch, preserveScroll);
