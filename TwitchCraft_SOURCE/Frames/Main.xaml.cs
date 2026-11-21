@@ -208,11 +208,11 @@ public partial class Main : UserControl
 
     private void QueueLog(Queue<string> pendingLines, bool isMinecraftLog, string? line)
     {
+        int maxLines = GetMaxLogLines(isMinecraftLog);
         bool startTimer;
         lock (_logGate)
         {
             pendingLines.Enqueue(line ?? string.Empty);
-            int maxLines = GetMaxLogLines(isMinecraftLog);
             while (pendingLines.Count > maxLines)
             {
                 pendingLines.Dequeue();
