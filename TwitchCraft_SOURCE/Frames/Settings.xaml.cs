@@ -597,6 +597,18 @@ public partial class Settings : UserControl
         ? RCONPasswordTextBox.Text ?? string.Empty
         : RCONPasswordBox.Password ?? string.Empty;
 
+    private void SetRCONPasswordInput(string password)
+    {
+        if (RCONPasswordTextBox.Visibility == Visibility.Visible)
+        {
+            RCONPasswordTextBox.Text = password;
+        }
+        else
+        {
+            RCONPasswordBox.Password = password;
+        }
+    }
+
     private void CopyRCONPassword_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -663,14 +675,7 @@ public partial class Settings : UserControl
             if (!string.Equals(currentPassword, _savedRCONPassword, StringComparison.Ordinal))
             {
                 ErrorHandling.ShowInvalidRCONPassword(this);
-                if (RCONPasswordTextBox.Visibility == Visibility.Visible)
-                {
-                    RCONPasswordTextBox.Text = _savedRCONPassword;
-                }
-                else
-                {
-                    RCONPasswordBox.Password = _savedRCONPassword;
-                }
+                SetRCONPasswordInput(_savedRCONPassword);
             }
             return;
         }
@@ -679,14 +684,7 @@ public partial class Settings : UserControl
         {
             if (!string.Equals(currentPassword, password, StringComparison.Ordinal))
             {
-                if (RCONPasswordTextBox.Visibility == Visibility.Visible)
-                {
-                    RCONPasswordTextBox.Text = password;
-                }
-                else
-                {
-                    RCONPasswordBox.Password = password;
-                }
+                SetRCONPasswordInput(password);
             }
             return;
         }
@@ -701,14 +699,7 @@ public partial class Settings : UserControl
 
             await Task.Run(() => ConfigurationStore.Update(config => config.Server.RCON.Password = password));
             _savedRCONPassword = password;
-            if (RCONPasswordTextBox.Visibility == Visibility.Visible)
-            {
-                RCONPasswordTextBox.Text = password;
-            }
-            else
-            {
-                RCONPasswordBox.Password = password;
-            }
+            SetRCONPasswordInput(password);
 
             AppHelpers.GetTwitchCraftWindow(this)?.Runtime.StageLocalRCONPassword(password);
         }
