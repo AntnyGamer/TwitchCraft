@@ -289,7 +289,7 @@ public partial class Main : UserControl
             }
             else if (batchCount > 1)
             {
-                batch = [.. pendingLines];
+                batch = pendingLines.ToArray();
                 pendingLines.Clear();
             }
         }
