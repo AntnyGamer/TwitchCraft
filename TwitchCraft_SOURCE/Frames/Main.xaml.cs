@@ -310,16 +310,11 @@ public partial class Main : UserControl
             int firstVisible = box.GetFirstVisibleLineIndex();
             if (firstVisible >= 0 && firstVisible + 1 < box.LineCount)
             {
-                int firstIndex = box.GetCharacterIndexFromLineIndex(firstVisible);
-                int secondIndex = box.GetCharacterIndexFromLineIndex(firstVisible + 1);
-                if (firstIndex >= 0 && secondIndex >= 0)
+                Rect first = box.GetRectFromCharacterIndex(box.GetCharacterIndexFromLineIndex(firstVisible));
+                Rect second = box.GetRectFromCharacterIndex(box.GetCharacterIndexFromLineIndex(firstVisible + 1));
+                if (!first.IsEmpty && !second.IsEmpty)
                 {
-                    Rect first = box.GetRectFromCharacterIndex(firstIndex);
-                    Rect second = box.GetRectFromCharacterIndex(secondIndex);
-                    if (!first.IsEmpty && !second.IsEmpty)
-                    {
-                        lineHeight = second.Top - first.Top;
-                    }
+                    lineHeight = second.Top - first.Top;
                 }
             }
 
