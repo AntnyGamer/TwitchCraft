@@ -218,7 +218,7 @@ public partial class Main : UserControl
                 pendingLines.Dequeue();
             }
 
-            startTimer = !ShouldPauseUIUpdates() && !_logFlushScheduled;
+            startTimer = !_logFlushScheduled && !ShouldPauseUIUpdates();
             if (startTimer)
             {
                 _logFlushScheduled = true;
@@ -289,7 +289,7 @@ public partial class Main : UserControl
             }
             else if (batchCount > 1)
             {
-                batch = pendingLines.ToArray();
+                batch = [.. pendingLines];
                 pendingLines.Clear();
             }
         }
