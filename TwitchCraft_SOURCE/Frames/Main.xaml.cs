@@ -38,7 +38,7 @@ public partial class Main : UserControl
     public Main()
     {
         InitializeComponent();
-        _logFlushTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(50) };
+        _logFlushTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(25) };
         _logFlushTimer.Tick += LogFlushTimer_Tick;
         _connectionHealthTimer = new() { Interval = TimeSpan.FromSeconds(1) };
         _connectionHealthTimer.Tick += HealthTimer_Tick;
@@ -304,7 +304,30 @@ public partial class Main : UserControl
         bool followTail = scrollOffset >= Math.Max(0, box.ExtentHeight - box.ViewportHeight) - 1;
         double horizontalOffset = followTail ? 0 : box.HorizontalOffset;
         bool preserveScroll = !followTail && lineLengths.Count + batchCount > maxLines && box.LineCount > 0;
-        double lineHeight = preserveScroll ? box.ExtentHeight / box.LineCount : 0;
+        double lineHeight = 0;
+        if (preserveScroll)
+        {
+            int firstVisible = box.GetFirstVisibleLineIndex();
+            if (firstVisible >= 0 && firstVisible + 1 < box.LineCount)
+            {
+                int firstIndex = box.GetCharacterIndexFromLineIndex(firstVisible);
+                int secondIndex = box.GetCharacterIndexFromLineIndex(firstVisible + 1);
+                if (firstIndex >= 0 && secondIndex >= 0)
+                {
+                    Rect first = box.GetRectFromCharacterIndex(firstIndex);
+                    Rect second = box.GetRectFromCharacterIndex(secondIndex);
+                    if (!first.IsEmpty && !second.IsEmpty)
+                    {
+                        lineHeight = second.Top - first.Top;
+                    }
+                }
+            }
+
+            if (lineHeight <= 0)
+            {
+                lineHeight = box.ExtentHeight / box.LineCount;
+            }
+        }
         int removedVisualLines = AppendLogBatch(box, lineLengths, maxLines, singleLine, batch, preserveScroll);
 
         if (followTail)
